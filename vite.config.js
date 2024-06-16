@@ -26,6 +26,7 @@ export default defineConfig({
 			'@': __dirname,
 		},
 	},
+	base: "/pokesle-simulator/",
 	build: {
 		outDir: 'docs',
 	},
