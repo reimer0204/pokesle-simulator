@@ -39,16 +39,6 @@ onMounted(() => {
     </footer>
 
     <popup-area />
-
-    <div v-if="asyncWatcher.executing" class="progress">
-      <div class="name" v-if="asyncWatcher.name">{{ asyncWatcher.name }}</div>
-      <div class="progress-bar">
-        <div class="progress-bar-white" :style="{
-          width: `${asyncWatcher.progress * 100}%`
-        }">
-        </div>
-      </div>
-    </div>
   </AsyncWatcherArea>
 </template>
 

@@ -306,7 +306,7 @@ async function simulationTeam() {
                 ]"
               >
                 {{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}
-                <img v-if="subSkill != data.nextSubSkillList[i]" src="../../img/sub-skill-seed.png" />
+                <img v-if="subSkill != data.nextSubSkillList[i]" src="../img/sub-skill-seed.png" />
               </div>
             </div>
           </template>

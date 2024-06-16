@@ -1,22 +1,39 @@
 import Cooking from "./cooking"
+import largeleekImg from '../img/food/largeleek.png'
+import tastymushroomImg from '../img/food/tastymushroom.png'
+import fancyeggImg from '../img/food/fancyegg.png'
+import softpotatoImg from '../img/food/softpotato.png'
+import fancyappleImg from '../img/food/fancyapple.png'
+import fieryherbImg from '../img/food/fieryherb.png'
+import beansausageImg from '../img/food/beansausage.png'
+import moomoomilkImg from '../img/food/moomoomilk.png'
+import honeyImg from '../img/food/honey.png'
+import pureoilImg from '../img/food/pureoil.png'
+import warminggingerImg from '../img/food/warmingginger.png'
+import snoozytomatoImg from '../img/food/snoozytomato.png'
+import soothingcacaoImg from '../img/food/soothingcacao.png'
+import slowpoketailImg from '../img/food/slowpoketail.png'
+import greengrasssoybeansImg from '../img/food/greengrasssoybeans.png'
+import greengrasscornImg from '../img/food/greengrasscorn.png'
+
 
 const list = [
-  { name: 'ふといながねぎ',     energy: 185, img: 'img/food/largeleek.png'    },
-  { name: 'あじわいキノコ',     energy: 167, img: 'img/food/tastymushroom.png'    },
-  { name: 'とくせんエッグ',     energy: 115, img: 'img/food/fancyegg.png'    },
-  { name: 'ほっこりポテト',     energy: 124, img: 'img/food/softpotato.png'    },
-  { name: 'とくせんリンゴ',     energy: 90,  img: 'img/food/fancyapple.png'    },
-  { name: 'げきからハーブ',     energy: 130, img: 'img/food/fieryherb.png'    },
-  { name: 'マメミート',         energy: 103, img: 'img/food/beansausage.png'    },
-  { name: 'モーモーミルク',     energy: 98,  img: 'img/food/moomoomilk.png'    },
-  { name: 'あまいミツ',         energy: 101, img: 'img/food/honey.png'    },
-  { name: 'ピュアなオイル',     energy: 121, img: 'img/food/pureoil.png'    },
-  { name: 'あったかジンジャー', energy: 109, img: 'img/food/warmingginger.png'    },
-  { name: 'あんみんトマト',     energy: 110, img: 'img/food/snoozytomato.png'    },
-  { name: 'リラックスカカオ',   energy: 151, img: 'img/food/soothingcacao.png'    },
-  { name: 'おいしいシッポ',     energy: 342, img: 'img/food/slowpoketail.png'    },
-  { name: 'ワカクサ大豆',       energy: 100, img: 'img/food/greengrasssoybeans.png'    },
-  { name: 'ワカクサコーン',     energy: 140, img: 'img/food/greengrasscorn.png'    },
+  { name: 'ふといながねぎ',     energy: 185, img: largeleekImg },
+  { name: 'あじわいキノコ',     energy: 167, img: tastymushroomImg },
+  { name: 'とくせんエッグ',     energy: 115, img: fancyeggImg },
+  { name: 'ほっこりポテト',     energy: 124, img: softpotatoImg },
+  { name: 'とくせんリンゴ',     energy: 90,  img: fancyappleImg },
+  { name: 'げきからハーブ',     energy: 130, img: fieryherbImg },
+  { name: 'マメミート',         energy: 103, img: beansausageImg },
+  { name: 'モーモーミルク',     energy: 98,  img: moomoomilkImg },
+  { name: 'あまいミツ',         energy: 101, img: honeyImg },
+  { name: 'ピュアなオイル',     energy: 121, img: pureoilImg },
+  { name: 'あったかジンジャー', energy: 109, img: warminggingerImg },
+  { name: 'あんみんトマト',     energy: 110, img: snoozytomatoImg },
+  { name: 'リラックスカカオ',   energy: 151, img: soothingcacaoImg },
+  { name: 'おいしいシッポ',     energy: 342, img: slowpoketailImg },
+  { name: 'ワカクサ大豆',       energy: 100, img: greengrasssoybeansImg },
+  { name: 'ワカクサコーン',     energy: 140, img: greengrasscornImg },
 ]
 
 for(let food of list) {
