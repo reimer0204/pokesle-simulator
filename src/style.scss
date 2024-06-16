@@ -16,6 +16,10 @@ button {
   padding: 5px 10px;
   font-weight: bold;
 
+  &.important {
+    background-color: #E40;
+  }
+
   &:disabled {
     background-color: #CCC;
   }
@@ -24,7 +28,4 @@ button {
 input[type=text], input[type=number] {
   border: 1px #888 solid;
   border-radius: 3px;
-}
-input[type=number] {
-  // text-align:
 }

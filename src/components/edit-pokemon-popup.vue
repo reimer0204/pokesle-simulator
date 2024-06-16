@@ -11,7 +11,7 @@ const props = defineProps({
   index: { type: Number }
 })
 
-const $emit = defineEmits(['close']);
+const $emit = defineEmits(['close', 'input']);
 
 const nameInput = ref(null);
 const lvInput = ref(null);
@@ -36,10 +36,14 @@ const basePokemon = computed(() => {
   return Pokemon.map[pokemon.name]
 })
 
-const assist = reactive({
+let assist = reactive({
   name: null,
+  lv: null,
+  bag: null,
+  skillLv: null,
   foodABC: null,
   subSkillList: [null, null, null, null, null],
+  nature: null,
 });
 
 // 編集ならデフォルト値を設定
@@ -61,9 +65,9 @@ let subSkillNameSort = SubSkill.list.toSorted((a, b) => a.name > b.name ? 1 : a.
 const foodSelectList = computed(() => {
   if (basePokemon.value == null) return [[], [], []];
   return [
-    basePokemon.value.foodList.map(x => x.name).slice(0, 1),
-    basePokemon.value.foodList.map(x => x.name).slice(0, 2),
-    basePokemon.value.foodList.map(x => x.name).slice(0, 3),
+    basePokemon.value.foodList.map(x => x?.name).slice(0, 1).filter(x => x),
+    basePokemon.value.foodList.map(x => x?.name).slice(0, 2).filter(x => x),
+    basePokemon.value.foodList.map(x => x?.name).slice(0, 3).filter(x => x),
   ]
 })
 
@@ -72,15 +76,16 @@ function inferName(name) {
   name = convertRomaji(name)
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
 
-  let matchPokemon = Pokemon.list.find(x => x.name.includes(name))
-  if (matchPokemon) {
-    pokemon.name = matchPokemon.name;
+  let matchPokemonList = Pokemon.list.filter(x => x.name.includes(name))
+  if (matchPokemonList.length) {
+    matchPokemonList.sort((a, b) => Math.abs(a.name.length - name.length) - Math.abs(b.name.length - name.length))
+    pokemon.name = matchPokemonList[0].name;
   }
 }
 watch(() => assist.name, inferName)
 
 function convertFoodABC() {
-  if (basePokemon.value == null) return;
+  if (basePokemon.value == null || assist.foodABC == null) return;
 
   assist.foodABC.slice(0, 3).split('').forEach((letter, i) => {
     let foodIndex = Math.min(Math.max(letter.toUpperCase().charCodeAt(0) - 65, 0), 2);
@@ -90,6 +95,8 @@ function convertFoodABC() {
 watch(() => assist.foodABC, convertFoodABC)
 
 function convertSubSkill(index) {
+  if (assist.subSkillList[index] == null) return;
+
   let name = convertRomaji(assist.subSkillList[index])
     .toUpperCase()
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
@@ -100,6 +107,20 @@ function convertSubSkill(index) {
     pokemon.subSkillList[index] = match.name;
   }
 }
+
+function convertNature() {
+  // ローマ字をカタカナに、カタカナをひらがなに変換
+  let name = convertRomaji(assist.nature)
+    .replace(/[\u30a1-\u30f6]/g, (match) => String.fromCharCode(match.charCodeAt(0) - 0x60));
+  let regexp = new RegExp(name.split('').join('.*'))
+
+  let matchNatureList = Nature.list.filter(x => regexp.test(x.name))
+  if (matchNatureList.length) {
+    matchNatureList.sort((a, b) => Math.abs(a.name.length - name.length) - Math.abs(b.name.length - name.length))
+    pokemon.nature = matchNatureList[0].name;
+  }
+}
+watch(() => assist.name, inferName)
 
 const saveDisabled = computed(() => {
   return basePokemon.value == null || !pokemon.lv || pokemon.foodList.some(x => !x) || pokemon.subSkillList.some(x => !x) || !pokemon.nature
@@ -116,15 +137,26 @@ function save(requireContinue) {
     PokemonBox.post(sanitizedPokemon)
 
     if (requireContinue) {
-      pokemon = reactive({
-        name: null,
-        lv: null,
-        bag: null,
-        skillLv: null,
-        foodList: [null, null, null],
-        subSkillList: [null, null, null, null, null],
-        nature: null,
-      })
+      pokemon.name = null;
+      pokemon.lv = null;
+      pokemon.bag = null;
+      pokemon.skillLv = null;
+      pokemon.foodList = ['', '', ''];
+      pokemon.subSkillList = [null, null, null, null, null];
+      pokemon.nature = null;
+
+      assist.name = '';
+      assist.lv = null;
+      assist.bag = null;
+      assist.skillLv = null;
+      assist.foodABC = '';
+      assist.subSkillList = ['', '', '', '', ''];
+      assist.nature = '';
+
+      nameInput.value.focus();
+
+      $emit('input', true)
+
     } else {
       $emit('close', true);
     }
@@ -132,7 +164,13 @@ function save(requireContinue) {
     PokemonBox.post(sanitizedPokemon, props.index)
     $emit('close', true);
   }
+}
 
+function deletePokemon() {
+  if (confirm('このポケモンを削除します。よろしいですか？')) {
+    PokemonBox.delete(props.index);
+    $emit('close', true);
+  }
 }
 
 onMounted(() => {
@@ -174,7 +212,10 @@ onMounted(() => {
         <div v-if="basePokemon" class="food-sample flex-row-start-center gap-5px">
           <div v-for="(abc, i) in ['A', 'B', 'C']" class="flex-row-start-center">
             <div>{{ abc }}:</div>
-            <img :src="Food.map[basePokemon.foodList[i].name].img" />
+            <template v-if="basePokemon.foodList[i]">
+              <img :src="Food.map[basePokemon.foodList[i].name].img" />
+            </template>
+            <template v-else>-</template>
           </div>
         </div>
         <template v-for="i in 3">
@@ -204,6 +245,7 @@ onMounted(() => {
       <div>せいかく</div>
       <input
         type="text" ref="natureInput" v-model="assist.nature" @keypress.enter="save(true)"
+          @input="convertNature"
         placeholder="ローマ字/ひらがな/カタカナ"
       />
       <select v-model="pokemon.nature">
@@ -229,6 +271,8 @@ onMounted(() => {
 
 
     <div class="flex-row-start-center gap-10px mt-10px">
+      <button v-if="props.index != null" class="important" @click="deletePokemon">削除</button>
+      <div class="flex-110"></div>
       <button @click="save(true)" :disabled="saveDisabled" v-if="props.index == null">保存して続けて登録</button>
       <button @click="save(false)" :disabled="saveDisabled">保存</button>
     </div>

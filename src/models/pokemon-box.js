@@ -48,6 +48,21 @@ class PokemonBox {
     this.save();
   }
 
+  static move(index, move) {
+    if (index != null && 0 <= index + move && index + move < this._list.length) {
+      let [item] = this._list.splice(index, 1);
+      this._list.splice(index + move, 0, item)
+      // this.save();
+    }
+  }
+
+  static delete(index) {
+    if (index != null) {
+      this._list.splice(index, 1);
+      this.save();
+    }
+  }
+
   static save() {
     localStorage.setItem('pokemonBox', JSON.stringify({
       list: this._list,

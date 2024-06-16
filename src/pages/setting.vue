@@ -177,6 +177,19 @@ async function save() {
           </div>
         </div>
       </SettingList>
+
+      <h2>その他設定</h2>
+
+      <SettingList>
+
+        <div>
+          <label>スレッド数</label>
+          <div>
+            <input type="number" step="1" v-model="editConfig.workerNum" min="1" max="100">
+            <small>ワーカースレッドの数を指定します。</small>
+          </div>
+        </div>
+      </SettingList>
     </div>
 
     <div class="caution">

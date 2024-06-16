@@ -9,6 +9,7 @@ const props = defineProps({
 })
 
 const sortInfo = ref([]);
+const sortColors = ref([])
 
 if(props.config) {
   if (Array.isArray(config.sortableTable?.[props.config])) {
@@ -16,16 +17,66 @@ if(props.config) {
   }
 }
 
-const sortedDataList = computed(() => {
-  if (!sortInfo.value?.length) return props.dataList;
+const columnMap = computed(() => {
+  let result = {};
+  for(let column of props.columnList) {
+    result[column.key] = column;
+  }
+  return result;
+})
 
-  return props.dataList.toSorted((a, b) => {
+// ソートしたデータ
+const sortedDataList = computed(() => {
+  if (!sortInfo.value?.length) {
+    sortColors.value = [];
+    return props.dataList;
+  }
+
+  // ソート
+  let result = props.dataList.toSorted((a, b) => {
     for(let sort of sortInfo.value) {
       if ((a[sort.key] || 0) > (b[sort.key] || 0)) return sort.direction;
       if ((a[sort.key] || 0) < (b[sort.key] || 0)) return -sort.direction;
     }
     return 0;
   });
+
+  // 
+  sortColors.value = []
+  let minmax = {};
+  for(let data of result) {
+    for(let sort of sortInfo.value) {
+      if(columnMap.value[sort.key].type == Number) {
+        minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
+        minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
+        minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)
+      }
+    }
+  }
+  
+  let sringColorMap = new Map();
+  for(let data of result) {
+    let colors = {};
+    for(let sort of sortInfo.value) {
+      let color;
+      if(columnMap.value[sort.key].type == Number) {
+        let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
+        color = `hsl(${rate * 120}deg 90% 80% / 0.2)`
+      } else {
+        let text = String(data[sort.key] ?? '');
+        color = sringColorMap.get(text)
+        if (color == null) {
+          let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
+          color = `hsl(${code}deg 90% 80% / 0.2)`
+          sringColorMap.set(text, color)
+        }
+      }
+      colors[sort.key] = color;
+    }
+    sortColors.value.push(colors)
+  }
+
+  return result;
 })
 
 const sortInfoMap = computed(() => {
@@ -36,19 +87,32 @@ const sortInfoMap = computed(() => {
   return result;
 })
 
-function setSort(key) {
-  if (sortInfo.value.length && sortInfo.value[0].key == key) {
-    if(sortInfo.value[0].direction == 1) sortInfo.value[0].direction = -1;
-    else sortInfo.value.shift();
+function setSort(event, key) {
+  if (event.shiftKey) {
+    if (sortInfo.value.length && sortInfo.value[0].key == key) {
+      if(sortInfo.value[0].direction == 1) sortInfo.value[0].direction = -1;
+      else sortInfo.value.shift();
 
+    } else {
+      sortInfo.value = sortInfo.value.filter(x => x.key != key);
+      sortInfo.value.unshift({
+        key,
+        direction: 1,
+      })
+    }
   } else {
-    sortInfo.value = sortInfo.value.filter(x => x.key != key);
-    sortInfo.value.unshift({
-      key,
-      direction: 1,
-    })
+    if (sortInfo.value[0]?.key != key) sortInfo.value = [{ key, direction: 1 }]
+    else if(sortInfo.value[0].direction == 1) sortInfo.value = [{ key, direction: -1 }]
+    else sortInfo.value = [];
   }
 
+  if(props.config) {
+    config.sortableTable[props.config] = sortInfo.value
+  }
+}
+
+function clearSort(key) {
+  sortInfo.value = sortInfo.value.filter(x => x.key != key);
   if(props.config) {
     config.sortableTable[props.config] = sortInfo.value
   }
@@ -91,7 +155,7 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
             <template v-if="column.img"><img :src="column.img"></template>
             <template v-else>{{ column.name }}</template>
           </div>
-          <svg viewBox="0 0 100 100" width="14" @click="setSort(column.key)">
+          <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
             <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
             <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
           </svg>
@@ -100,10 +164,13 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
     </thead>
 
     <tbody>
-      <tr v-for="data in sortedDataList">
+      <tr v-for="(data, j) in sortedDataList">
         <td v-for="(column, i) in columnList"
           :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
-          :style="{ left: columnLeftList[i] }"
+          :style="{
+            left: columnLeftList[i],
+            backgroundColor: sortColors[j]?.[column.key],
+          }"
         >
           <slot :name="column.template ?? column.key" v-bind="{ data, column }">
             <template v-if="column.percent">

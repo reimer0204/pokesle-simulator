@@ -61,12 +61,15 @@ let romajiMap = Object.fromEntries(Object.entries(map).flatMap(([consonant, list
 }))
 romajiMap.NN = 'ン'
 romajiMap.N = 'ン'
+romajiMap['-'] = 'ー'
 
 let convertList = Object.entries(romajiMap)
-  .map(([romaji, letter]) => ({ romaji, letter, exp: new RegExp(romaji, 'gi') }))
+  .map(([romaji, letter]) => ({ romaji, letter, exp: new RegExp(romaji.toLowerCase(), 'g') }))
   .sort((a, b) => b.romaji.length - a.romaji.length)
 
 function convertRomaji(romaji) {
+  if (romaji == null) return '';
+
   for(let consonantRegExp of consonantRegExpList) {
     romaji = romaji.replace(consonantRegExp, (match) => 'ッ'.repeat(match.length - 1) + match[0])
   }

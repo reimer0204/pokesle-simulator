@@ -34,6 +34,7 @@ async function createPokemonList() {
     let clonedConfig = JSON.parse(JSON.stringify(config))
 
     let [stepA, stepB, stepC] = progressCounter.split(1, 2, 1)
+    // let [stepA, stepB, stepC] = progressCounter.split(1)
   
     let pokemonList = PokemonBox.list;
 
@@ -58,6 +59,9 @@ async function createPokemonList() {
     for(let i = 0; i < pokemonList.length; i++) {
       pokemonList[i].index = i;
     }
+
+    // simulatedPokemonList.value = pokemonList;
+    // return
   
     // いつ育運用分追加
     if (config.simulation.bagOverOperation) {
@@ -131,6 +135,7 @@ watch(config.simulation, createPokemonList)
 const columnList = computed(() => {
   let result = [
     { key: 'edit', name: '', type: String },
+    { key: 'index', name: 'No', type: Number },
     { key: 'name', name: '名前', type: String },
     { key: 'lv', name: 'Lv', type: Number },
     { key: 'foodList', name: '食材', type: null },
@@ -239,6 +244,13 @@ async function simulationTeam() {
   Popup.show(SimulationTeamPopup, { pokemonList: simulatedPokemonList.value })
 }
 
+function deletePokemon(index) {
+  if (confirm(`${PokemonBox.list[index].name}(Lv${PokemonBox.list[index].lv})を削除します。よろしいですか？`)) {
+    PokemonBox.delete(index);
+    createPokemonList()
+  }
+}
+
 </script>
 
 <template>
@@ -262,9 +274,23 @@ async function simulationTeam() {
         >
 
           <template #edit="{ data }">
-            <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
-              <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
-            </svg>
+            <div class="flex-row-start-center gap-3px">
+              <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
+                <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
+              </svg>
+              <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, -1); createPokemonList()">
+                <path d="M0,70 L50,20 L100,70z" fill="#888" />
+              </svg>
+              <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, 1); createPokemonList()">
+                <path d="M0,30 L50,80 L100,30z" fill="#888" />
+              </svg>
+              <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.index)">
+                <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
+              </svg>
+            </div>
+          </template>
+          <template #index="{ data }">
+            {{ data.index + 1 }}
           </template>
 
           <template #name="{ data }">
@@ -318,19 +344,19 @@ async function simulationTeam() {
           <template #evaluate="{ data, column }">
             <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
               <template v-for="after in data.afterList">
-                <div :class="{ best: data.evaluateResult[column.lv].best.score == data.evaluateResult[column.lv][after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateResult[column.lv].best.score == data.evaluateResult[column.lv][after].score }" class="text-align-right">{{ (data.evaluateResult[column.lv][after].score * 100).toFixed(1) }}%</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</div>
               </template>
             </div>
             <div v-else style="width: 6em; font-size: 80%;">
-              <div>{{ data.evaluateResult[column.lv].best.name }}</div>
-              <div class="text-align-right">{{ (data.evaluateResult[column.lv].best.score * 100).toFixed(1) }}%</div>
+              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
+              <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
             </div>
           </template>
 
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%;">
-              {{ data.afterList.join('/') }}
+              {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
             </div>
           </template>
 

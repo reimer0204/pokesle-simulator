@@ -10,7 +10,7 @@ class Popup {
         component,
         bind,
         close: (value) => {
-          resolve(value);
+          resolve(value ?? popup.input);
           let index = this.list.findIndex(x => x !== popup);
           this.list.splice(index, 1)
         }

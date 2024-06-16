@@ -23,8 +23,8 @@ addEventListener('message', (event) => {
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo(pokemonList[i]);
       
-      pokemon.evaluateResult = {};
       if (config.simulation.selectInfo) {
+        pokemon.evaluateResult = {};
         pokemon.foodIndexList = pokemon.foodList.map(foodName => pokemon.base.foodList.findIndex(baseFood => baseFood.name == foodName))
         if (!pokemon.foodIndexList.includes(-1)) {
           pokemon.evaluateResult.max = {
@@ -37,6 +37,10 @@ addEventListener('message', (event) => {
           }
 
           for(let after of pokemon.base.afterList) {
+            if (!evaluateTable[after]) {
+              continue;
+            }
+
             let afterPokemon = Pokemon.map[after];
             pokemon.evaluateResult.max[after] = { name: null, score: 0 }
             

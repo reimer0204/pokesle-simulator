@@ -14,6 +14,10 @@ async function callWorker(
       workerList.push({ worker, reject })
 
       worker.onmessage = ({ data: { status, body } }) => {
+        if (status == 'error' || status == 'success') {
+          workerList.splice(workerList.findIndex(x => x.worker == worker), 1)
+        }
+
         if (status == 'error') {
           reject(body);
           worker.terminate();
@@ -29,13 +33,14 @@ async function callWorker(
         progressCounter.set(workerProgressList.reduce((a, x) => a + x, 0) / workerProgressList.length)
       }
 
-
       worker.postMessage(parameterList[i])
     }))
   }
+  let result = await Promise.all(promiseList)
+  
   progressCounter.set(1)
 
-  return await Promise.all(promiseList)
+  return result;
 }
 
 export default callWorker;
