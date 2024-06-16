@@ -1,0 +1,475 @@
+<script setup>
+import Popup from '../models/popup/popup.js'
+import PokemonBox from '../models/pokemon-box';
+import Food from '../data/food.js';
+import SubSkill from '../data/sub-skill.js';
+import Pokemon from '../data/pokemon.js';
+import config from '../models/config';
+import SortableTable from './sortable-table.vue';
+
+import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
+import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
+import SimulationTeamPopup from '../components/simulation-team-popup.vue';
+import NatureInfo from './nature-info.vue';
+import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+import { AsyncWatcher } from '../models/async-watcher.js';
+import AsyncWatcherArea from './async-watcher-area.vue';
+import callWorker from '../models/call-worker.js';
+import EvaluateTable from '../models/evaluate-table.js';
+import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
+
+let evaluateTable = EvaluateTable.load();
+
+const simulatedPokemonList = ref([])
+const asyncWatcher = AsyncWatcher.init();
+let workerList = [];
+
+async function createPokemonList() {
+  for(let worker of workerList) {
+    worker.worker.terminate();
+    worker.reject();
+  }
+  workerList.splice(0, workerList.length);
+  asyncWatcher.run(async (progressCounter) => {
+    let clonedConfig = JSON.parse(JSON.stringify(config))
+
+    let [stepA, stepB, stepC] = progressCounter.split(1, 2, 1)
+  
+    let pokemonList = PokemonBox.list;
+
+    pokemonList = (await callWorker(
+      stepA,
+      PokemonListSimulator, 
+      new Array(config.workerNum).fill(0).map((_, i) => {
+        return {
+          type: 'init',
+          config: clonedConfig,
+          pokemonList: pokemonList.slice(
+            Math.floor(pokemonList.length * i / config.workerNum),
+            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
+          ),
+          evaluateTable,
+        }
+      }),
+      workerList
+    )).flat(1);
+
+    // インデックスを振っておく
+    for(let i = 0; i < pokemonList.length; i++) {
+      pokemonList[i].index = i;
+    }
+  
+    // いつ育運用分追加
+    if (config.simulation.bagOverOperation) {
+      pokemonList.push(
+        ...pokemonList
+        .filter(x => Pokemon.map[x.name].specialty == 'きのみ' || x.enableSubSkillList.includes('きのみの数S'))
+        .map(pokemon => {
+          return {
+            ...pokemon,
+            bagOverOperation: true,
+            bag: -100,
+            fixedBag: -100,
+            foodRate: 0,
+            skillRate: 0,
+            ceilSkillRate: 0,
+          }
+        })
+      )
+    }
+
+    pokemonList = (await callWorker(
+      stepB, 
+      PokemonListSimulator, 
+      new Array(config.workerNum).fill(0).map((_, i) => {
+        return {
+          type: 'basic',
+          config: clonedConfig,
+          pokemonList: pokemonList.slice(
+            Math.floor(pokemonList.length * i / config.workerNum),
+            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
+          ),
+        }
+      }),
+      workerList,
+    )).flat(1);
+
+    /* ここからおてボとかげんき回復系の計算 */
+    // おてボ用に概算日給の高い上位6匹をリストアップしておく
+    let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
+
+    // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
+    let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
+
+    // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
+    let healCheckTarget = pokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6)
+    healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
+
+    simulatedPokemonList.value = (await callWorker(
+      stepC, 
+      PokemonListSimulator, 
+      new Array(config.workerNum).fill(0).map((_, i) => {
+        return {
+          type: 'assist',
+          config: clonedConfig,
+          pokemonList: pokemonList.slice(
+            Math.floor(pokemonList.length * i / config.workerNum),
+            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
+          ),
+          helpBonusTop6,
+          pickupEnergyPerHelpTop5,
+          healCheckTarget,
+        }
+      }),
+      workerList
+    )).flat(1);
+  })
+}
+createPokemonList()
+watch(config.simulation, createPokemonList)
+
+const columnList = computed(() => {
+  let result = [
+    { key: 'edit', name: '', type: String },
+    { key: 'name', name: '名前', type: String },
+    { key: 'lv', name: 'Lv', type: Number },
+    { key: 'foodList', name: '食材', type: null },
+    { key: 'skillLv', name: 'スキル\nLv', type: null },
+    { key: 'subSkillList', name: 'サブスキル', type: null },
+    { key: 'natureName', name: '性格', type: null },
+    { key: 'score', name: 'スコア', type: Number, fixed: 1 },
+  ]
+
+  if (config.simulation.selectInfo) {
+    let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+    result.push(
+      { key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true },
+    )
+    for(let lv of lvList) {
+      result.push(
+        { key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true },
+      )
+    }
+  }
+
+  if (config.pokemonList.baseInfo) {
+    result.push(
+      { key: 'afterList', name: '最終進化' },
+      { key: 'berryName', name: 'きのみ' },
+      { key: 'skillName', name: 'スキル' },
+    )
+  }
+
+  if (config.pokemonList.foodInfo) {
+    for(let food of Food.list) {
+      result.push({ key: food.name, name: food.name, img: food.img, type: Number, fixed: 1 })
+    }
+  }
+
+  if (config.pokemonList.simulatedInfo) {
+    result.push(
+      { key: 'speed', name: 'おてつだい\n時間', type: Number },
+      { key: 'dayHelpNum', name: '日中おてつ\nだい回数', type: Number, fixed: 2 },
+      { key: 'nightHelpNum', name: '夜間おてつ\nだい回数', type: Number, fixed: 2 },
+      { key: 'berryNum', name: 'きのみ\n個数', type: Number },
+      { key: 'berryEnergyPerHelp', name: 'きのみ\n/手伝い', type: Number, fixed: 1 },
+      { key: 'berryEnergyPerDay', name: 'きのみ\n/日', type: Number, fixed: 1 },
+      { key: 'foodRate', name: '食材\n率', type: Number, percent: true },
+      { key: 'foodNum', name: '食材\n個数', type: Number, fixed: 1 },
+      { key: 'foodEnergyPerHelp', name: '食材\n/手伝い', type: Number, fixed: 1 },
+      { key: 'foodEnergyPerDay', name: '食材\n/日', type: Number, fixed: 1 },
+      { key: 'pickupEnergyPerHelp', name: 'きのみ+食材\n/手伝い', type: Number, fixed: 1 },
+      { key: 'pickupEnergyPerDay', name: 'きのみ+食材\n/日', type: Number, fixed: 1 },
+      { key: 'fixedBag', name: '所持\n数', type: Number },
+      { key: 'bagFullHelpNum', name: 'いつ育\n到達回数', type: Number, fixed: 1 },
+      { key: 'normalHelpNum', name: '通常おてつ\nだい回数', type: Number, fixed: 2 },
+      { key: 'berryHelpNum', name: 'いつ育おてつ\nだい回数', type: Number, fixed: 2 },
+      { key: 'fixedSkillLv', name: '補正後\nスキルLv', type: Number },
+      { key: 'skillRate', name: 'スキル\n確率', type: Number, percent: true, fixed: 2 },
+      { key: 'fixedSkillRate', name: '補正後\nスキル確率', type: Number, percent: true, fixed: 2 },
+      { key: 'ceilSkillRate', name: '天井補正\nスキル確率', type: Number, percent: true, fixed: 2 },
+      { key: 'skillPerDay', name: 'スキル\n回数/日', type: Number, fixed: 2 },
+      { key: 'skillEnergyPerDay', name: 'スキル\nエナジー/日', type: Number, fixed: 1 },
+      { key: 'shard', name: 'ゆめの\nかけら/日', type: Number, fixed: 1 },
+      { key: 'supportScorePerDay', name: 'サポート\nスコア/日', type: Number, fixed: 1 },
+      { key: 'energyPerDay', name: 'エナジー\n/日', type: Number, fixed: 1 },
+    )
+  }
+
+  return result;
+})
+
+async function showEditPopup(pokemon) {
+  if(await Popup.show(EditPokemonPopup, { index: pokemon.index })) {
+    createPokemonList()
+
+    if (config.pokemonBox.gs.autoExport) {
+      PokemonBox.exportGoogleSpreadsheet();
+    }
+  }
+}
+
+async function addPokemon() {
+  if(await Popup.show(EditPokemonPopup)) {
+    createPokemonList()
+
+    if (config.pokemonBox.gs.autoExport) {
+      PokemonBox.exportGoogleSpreadsheet();
+    }
+  }
+}
+
+async function showTsvPopup() {
+  if(await Popup.show(PokemonBoxTsvPopup)) {
+    createPokemonList()
+
+    if (config.pokemonBox.gs.autoExport) {
+      PokemonBox.exportGoogleSpreadsheet();
+    }
+  }
+}
+
+async function showGoogleSpreadsheetPopup() {
+  if(await Popup.show(GoogleSpreadsheetPopup)) {
+    createPokemonList()
+  }
+}
+
+async function simulationTeam() {
+  Popup.show(SimulationTeamPopup, { pokemonList: simulatedPokemonList.value })
+}
+
+</script>
+
+<template>
+
+  <div class="pokemon-list">
+
+    <div class="flex-row-start-center gap-10px">
+      <label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label>
+      <label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選情報</label>
+      <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label>
+      <label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label>
+      <label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label>
+      <label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label>
+      <label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで固定</label>
+    </div>
+
+    <AsyncWatcherArea :asyncWatcher="asyncWatcher">
+      <div class="scroll">
+        <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" config="pokemonList"
+          :fixColumn="config.pokemonList.fixScore ? 8 : 2"
+        >
+
+          <template #edit="{ data }">
+            <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
+              <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
+            </svg>
+          </template>
+
+          <template #name="{ data }">
+            <div :class="{ shiny: data.shiny }">
+              {{ data.name }}<template v-if="data.bagOverOperation">(いつ育)</template>
+            </div>
+          </template>
+
+          <template #foodList="{ data }">
+            <div class="flex-row-center-center gap-2px">
+              <div v-for="(food, i) of data.foodList"
+                class="food"
+                :class="{
+                  disabled: i >= data.enableFoodList.length,
+                }"
+              >
+                <img :src="Food.map[food].img" />
+                <div class="num">{{ Pokemon.map[data.name].foodMap[food].numList[i] }}</div>
+              </div>
+            </div>
+          </template>
+
+          <template #skillLv="{ data }">
+            <div class="flex-row-center-center skill-lv" :class="{ 'skill-lv-auto': data.skillLv == null }">
+              {{ data.skillLv ?? Pokemon.map[data.name].evolveLv }}
+            </div>
+          </template>
+
+          <template #subSkillList="{ data }">
+            <div class="sub-skill-list">
+              <div v-for="(subSkill, i) in data.subSkillList"
+                class="sub-skill"
+                :class="[
+                  `sub-skill-${SubSkill.map[subSkill].rarity}`,
+                  {
+                    short: config.pokemonList.subSkillShort,
+                    disabled: i >= data.enableSubSkillList.length,
+                  }
+                ]"
+              >
+                {{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}
+                <img v-if="subSkill != data.nextSubSkillList[i]" src="../../img/sub-skill-seed.png" />
+              </div>
+            </div>
+          </template>
+
+          <template #natureName="{ data }">
+            <NatureInfo :nature="data.nature" />
+          </template>
+
+          <template #evaluate="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateResult[column.lv].best.score == data.evaluateResult[column.lv][after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateResult[column.lv].best.score == data.evaluateResult[column.lv][after].score }" class="text-align-right">{{ (data.evaluateResult[column.lv][after].score * 100).toFixed(1) }}%</div>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateResult[column.lv].best.name }}</div>
+              <div class="text-align-right">{{ (data.evaluateResult[column.lv].best.score * 100).toFixed(1) }}%</div>
+            </div>
+          </template>
+
+          <template #afterList="{ data, column }">
+            <div style="width: 12em; font-size: 80%;">
+              {{ data.afterList.join('/') }}
+            </div>
+          </template>
+
+        </SortableTable>
+      </div>
+    </AsyncWatcherArea>
+
+    <div class="flex-row-start-center gap-5px">
+      <button @click="addPokemon">新規追加</button>
+      <button @click="simulationTeam">週間編成シミュレーション</button>
+      <button @click="showGoogleSpreadsheetPopup" class="ml-auto">Googleスプレッドシート連携</button>
+      <button @click="showTsvPopup">TSVインポート/エクスポート</button>
+    </div>
+  </div>
+
+
+</template>
+
+<style lang="scss" scoped>
+
+.pokemon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  .shiny {
+    font-weight: bold;
+    color: #E52;
+  }
+
+  .food {
+    width: 24px;
+    height: 24px;
+    padding: 1px;
+    position: relative;
+
+    &.disabled {
+      opacity: 0.5;
+    }
+    &:not(.disabled) {
+      background-color: #FFF;
+      border-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    img {
+      width: 100%;
+    }
+
+    .num {
+      position: absolute;
+      right: 2px;
+      bottom: -2px;
+      font-weight: bold;
+      font-size: 80%;
+
+      text-shadow:
+        0px 0px 3px #FFF,
+        0px 0px 3px #FFF,
+        0px 0px 3px #FFF,
+        0px 0px 3px #FFF,
+        0px 0px 3px #FFF;
+    }
+  }
+
+  .skill-lv {
+    &.skill-lv-auto {
+      color: #BBB;
+    }
+    &:not(.skill-lv-auto) {
+      font-weight: bold;
+    }
+  }
+
+  .sub-skill-list {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+
+  .sub-skill {
+    display: flex;
+    justify-content: center;
+    width: 11.5em;
+    padding: 2px 0px;
+    white-space: nowrap;
+    position: relative;
+
+    font-size: 80%;
+    font-weight: bold;
+    border-radius: 3px;
+
+    &.short {
+      width: 5em;
+      padding: 2px 0;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      font-weight: normal;
+    }
+
+    &.sub-skill-1 { background-color: #F8F8F8; border: 1px #AAA solid; color: #333; }
+    &.sub-skill-2 { background-color: #E0F0FF; border: 1px #9BD solid; color: #333; }
+    &.sub-skill-3 { background-color: #FFF4D0; border: 1px #B97 solid; color: #422; }
+
+    img {
+      position: absolute;
+      width: 10px;
+      top: -5px;
+      right: -5px;
+    }
+  }
+
+  .evaluate-detail {
+    display: grid;
+    font-size: 90%;
+    gap: 3px 5px;
+    grid-template-columns: 6em max-content;
+    align-items: center;
+
+    .best {
+      font-weight: bold;
+    }
+  }
+
+  .async-watcher-area {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 0;
+  }
+  .scroll {
+    
+    flex: 1 1 0;
+    overflow: auto;
+    position: relative;
+  }
+}
+</style>

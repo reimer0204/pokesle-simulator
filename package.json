@@ -1,0 +1,22 @@
+{
+  "name": "pokesle-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "unplugin-auto-import": "^0.17.5",
+    "unplugin-vue-components": "^0.27.0",
+    "vue": "^3.4.21",
+    "vue-cookies": "^1.8.4",
+    "vue-router": "^4.3.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0"
+  }
+}
