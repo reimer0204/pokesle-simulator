@@ -5,23 +5,35 @@ import Skill from "../data/skill";
 import HelpRate from "../models/help-rate";
 import PokemonSimulator from "../models/pokemon-simulator";
 
+let simulator;
+let config;
+
 addEventListener('message', (event) => {
-  let {
-    type, config, pokemonList, 
-    helpBonusTop6,
-    pickupEnergyPerHelpTop5,
-    healCheckTarget,
-    evaluateTable,
-  } = event.data;
+  let type = event.data.type;
 
-  let simulator = new PokemonSimulator(config);
+  if (type == 'config') {
+    config = event.data.config;
+    simulator = new PokemonSimulator(config);
+    
+    postMessage({
+      status: 'success',
+      body: null,
+    })
+  }
 
-  if (type == 'init') {
+  if (type == 'basic') {
+    let {
+      pokemonList, 
+      startIndex,
+      evaluateTable,
+    } = event.data;
+
     let result = [];
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
   
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo(pokemonList[i]);
+      pokemon.index = i + startIndex;
       
       if (config.simulation.selectInfo) {
         pokemon.evaluateResult = {};
@@ -113,17 +125,26 @@ addEventListener('message', (event) => {
 
       result.push(pokemon)
     }
+    
+    if (config.simulation.bagOverOperation) {
+      result.push(
+        ...result
+        .filter(x => Pokemon.map[x.name].specialty == 'きのみ' || x.enableSubSkillList.includes('きのみの数S'))
+        .map(pokemon => {
+          return {
+            ...pokemon,
+            bagOverOperation: true,
+            bag: -100,
+            fixedBag: -100,
+            foodRate: 0,
+            skillRate: 0,
+            ceilSkillRate: 0,
+          }
+        })
+      )
+    }
 
-    postMessage({
-      status: 'success',
-      body: result,
-    })
-    return;
-  }
-  
-  if (type == 'basic') {
-
-    for(let pokemon of pokemonList) {
+    for(let pokemon of result) {
       simulator.calcStatus(
         pokemon,
         pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0,
@@ -145,11 +166,17 @@ addEventListener('message', (event) => {
     
     postMessage({
       status: 'success',
-      body: pokemonList,
+      body: result,
     })
   }
 
   if (type == 'assist') {
+    let {
+      pokemonList, 
+      helpBonusTop6,
+      pickupEnergyPerHelpTop5,
+      healCheckTarget,
+    } = event.data;
 
     let helpRateCache = new Map();
 
@@ -237,6 +264,5 @@ addEventListener('message', (event) => {
     })
   }
 })
-
 
 export default {}

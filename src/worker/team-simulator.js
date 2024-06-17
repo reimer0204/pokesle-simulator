@@ -37,7 +37,10 @@ self.addEventListener('message', async (event) => {
     combinationLoop: for(let { aboutScore, combination } of combinationList) {
       aboutScore *= 7;
 
-      if (aboutScore < borderScore) break;
+      if (aboutScore < borderScore) {
+        // console.log('break', aboutScore, borderScore);
+        // break;
+      }
 
       const pokemonList = [...fixedPokemonList];
       for(let index of combination) {

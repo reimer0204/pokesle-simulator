@@ -51,7 +51,9 @@
     <h3>今後予定している機能は？</h3>
     <p>
       ・日曜に食材等の準備をするパターンのシミュレーション<br>
-      ・料理ごとのレシピレベル設定(今は一律最大値固定)
+      ・料理ごとのレシピレベル設定(今は一律最大値固定)<br>
+      ・指定レベル/最終進化になった仮定でシミュレーションして誰を育成すべきか判断できるやつ<br>
+      ・任意のポケモンをチーム編成に固定する機能
     </p>
     
 
@@ -59,7 +61,12 @@
 
     <h3>もっと処理速くならない？</h3>
     <p>
-      GitHubで公開してるので助けてください
+      <a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>でソースコード公開してるので助けてください。プルリク歓迎です。
+    </p>
+    
+    <h3>要望出したいんだけど</h3>
+    <p>
+      <a href="https://x.com/harezora_lueur" target="_blank">@harezora_lueur</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。自分も欲しい機能なら作ります。
     </p>
 
   </div>

@@ -23,7 +23,7 @@ onMounted(() => {
 <template>
   <AsyncWatcherArea class="app" :asyncWatcher="asyncWatcher">
     <header>
-      <h1>ポケシミュ</h1>
+      <h1>ポケスリシミュ</h1>
       <router-link to="/">ボックス</router-link>
       <!-- <router-link to="/cooking">料理</router-link> -->
       <!-- <router-link to="/food">食材</router-link> -->

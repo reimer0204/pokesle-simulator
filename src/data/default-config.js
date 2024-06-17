@@ -70,13 +70,15 @@ const defaultConfig = {
     bagOverOperation: true,
     researchRankMax: true,
 
-    maxRank: 30,
-    resultNum: 10,
-
     result: {
       detail: false,
       food: false,
     },
+  },
+
+  teamSimulation: {
+    maxRank: 30,
+    resultNum: 10,
   },
 
   foodDefaultNum: {},

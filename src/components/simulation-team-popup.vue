@@ -32,7 +32,7 @@ async function simulation() {
     let targetPokemonList = [];
     props.pokemonList.forEach(x => (x.fix ? fixedPokemonList : targetPokemonList).push(x))
 
-    let rankMax = Math.min(config.simulation.maxRank, targetPokemonList.length);
+    let rankMax = Math.min(config.teamSimulation.maxRank, targetPokemonList.length);
 
     // スコアの高い上位のみをピックアップ
     targetPokemonList = targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax);
@@ -66,7 +66,7 @@ async function simulation() {
     }
 
     // 概算エナジーの高い順にソート
-    combinationList.sort((b, a) => b.aboutScore - a.aboutScore)
+    combinationList.sort((a, b) => b.aboutScore - a.aboutScore)
     let workerCombinationListList = new Array(config.workerNum).fill(0).map(x => []);
     for(let i = 0; i < combinationList.length; i++) {
       workerCombinationListList[i % config.workerNum].push(combinationList[i])
@@ -95,8 +95,8 @@ async function simulation() {
             workerResultList[i] = body.bestResult;
             workerProgressList[i] = body.progress;
 
-            bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, config.simulation.resultNum);
-            if (bestResult.length >= config.simulation.resultNum) {
+            bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, config.teamSimulation.resultNum);
+            if (bestResult.length >= config.teamSimulation.resultNum) {
               for(let worker of workerList) {
                 worker.postMessage({
                   type: 'border',
@@ -145,12 +145,12 @@ onBeforeUnmount(() => {
         <SettingList class="align-self-stretch">
           <div>
             <label>対象</label>
-            <div>上位 <input type="number" v-model="config.simulation.maxRank"> 匹</div>
+            <div>上位 <input type="number" v-model="config.teamSimulation.maxRank"> 匹</div>
           </div>
 
           <div>
             <label>結果</label>
-            <div>上位 <input type="number" v-model="config.simulation.resultNum"> 件</div>
+            <div>上位 <input type="number" v-model="config.teamSimulation.resultNum"> 件</div>
           </div>
           
           <div class="flex-110 w-100 flex-column-start-stretch">
@@ -336,6 +336,13 @@ onBeforeUnmount(() => {
               <td colspan="7" class="number">
                 {{ Math.round(result.energy).toLocaleString() }}
               </td>
+            </tr>
+
+            <tr>
+              <th>せいかく</th>
+              <td v-for="pokemon in result.pokemonList">{{ pokemon.score.toFixed(0) }}</td>
+              <td>{{ result.pokemonList.reduce((a, x) => a + x.score, 0).toFixed(0) * 7 }}</td>
+              <td v-if="config.simulation.result.food">-</td>
             </tr>
 
             <tr>

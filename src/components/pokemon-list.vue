@@ -1,101 +1,64 @@
 <script setup>
 import Popup from '../models/popup/popup.js'
 import PokemonBox from '../models/pokemon-box';
+import config from '../models/config';
+
 import Food from '../data/food.js';
 import SubSkill from '../data/sub-skill.js';
 import Pokemon from '../data/pokemon.js';
-import config from '../models/config';
-import SortableTable from './sortable-table.vue';
 
+import SortableTable from './sortable-table.vue';
+import AsyncWatcherArea from './async-watcher-area.vue';
 import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
+import NatureInfo from './nature-info.vue';
+import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import SimulationTeamPopup from '../components/simulation-team-popup.vue';
-import NatureInfo from './nature-info.vue';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+
 import { AsyncWatcher } from '../models/async-watcher.js';
-import AsyncWatcherArea from './async-watcher-area.vue';
-import callWorker from '../models/call-worker.js';
+import MultiWorker from '../models/multi-worker.js';
 import EvaluateTable from '../models/evaluate-table.js';
-import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
+import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 
 let evaluateTable = EvaluateTable.load();
 
 const simulatedPokemonList = ref([])
 const asyncWatcher = AsyncWatcher.init();
-let workerList = [];
 
-async function createPokemonList() {
-  for(let worker of workerList) {
-    worker.worker.terminate();
-    worker.reject();
-  }
-  workerList.splice(0, workerList.length);
+let multiWorker = new MultiWorker(PokemonListSimulator)
+onBeforeUnmount(() => {
+  multiWorker.close();
+})
+
+async function createPokemonList(setConfig = false) {
+  multiWorker.reject();
+
   asyncWatcher.run(async (progressCounter) => {
     let clonedConfig = JSON.parse(JSON.stringify(config))
 
-    let [stepA, stepB, stepC] = progressCounter.split(1, 2, 1)
-    // let [stepA, stepB, stepC] = progressCounter.split(1)
-  
-    let pokemonList = PokemonBox.list;
-
-    pokemonList = (await callWorker(
-      stepA,
-      PokemonListSimulator, 
-      new Array(config.workerNum).fill(0).map((_, i) => {
-        return {
-          type: 'init',
-          config: clonedConfig,
-          pokemonList: pokemonList.slice(
-            Math.floor(pokemonList.length * i / config.workerNum),
-            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
-          ),
-          evaluateTable,
-        }
-      }),
-      workerList
-    )).flat(1);
-
-    // インデックスを振っておく
-    for(let i = 0; i < pokemonList.length; i++) {
-      pokemonList[i].index = i;
-    }
-
-    // simulatedPokemonList.value = pokemonList;
-    // return
-  
-    // いつ育運用分追加
-    if (config.simulation.bagOverOperation) {
-      pokemonList.push(
-        ...pokemonList
-        .filter(x => Pokemon.map[x.name].specialty == 'きのみ' || x.enableSubSkillList.includes('きのみの数S'))
-        .map(pokemon => {
-          return {
-            ...pokemon,
-            bagOverOperation: true,
-            bag: -100,
-            fixedBag: -100,
-            foodRate: 0,
-            skillRate: 0,
-            ceilSkillRate: 0,
-          }
-        })
+    let [setConfigProgress, stepA, stepB] = progressCounter.split(setConfig ? 1 : 0, 1, 2, 1)
+    
+    if (setConfig) {
+      await multiWorker.call(
+        setConfigProgress,
+        () => ({ type: 'config', config: clonedConfig })
       )
     }
+    
+    let pokemonList = PokemonBox.list;
 
-    pokemonList = (await callWorker(
-      stepB, 
-      PokemonListSimulator, 
-      new Array(config.workerNum).fill(0).map((_, i) => {
+    pokemonList = (await multiWorker.call(
+      stepA,
+      (i) => {
+        let startIndex = Math.floor(pokemonList.length * i / config.workerNum);
+        let endIndex = Math.floor(pokemonList.length * (i + 1) / config.workerNum);
         return {
           type: 'basic',
-          config: clonedConfig,
-          pokemonList: pokemonList.slice(
-            Math.floor(pokemonList.length * i / config.workerNum),
-            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
-          ),
+          pokemonList: pokemonList.slice(startIndex, endIndex),
+          startIndex,
+          evaluateTable,
         }
-      }),
-      workerList,
+      }
     )).flat(1);
 
     /* ここからおてボとかげんき回復系の計算 */
@@ -109,13 +72,11 @@ async function createPokemonList() {
     let healCheckTarget = pokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6)
     healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
 
-    simulatedPokemonList.value = (await callWorker(
-      stepC, 
-      PokemonListSimulator, 
-      new Array(config.workerNum).fill(0).map((_, i) => {
+    simulatedPokemonList.value = (await multiWorker.call(
+      stepB, 
+      (i) => {
         return {
           type: 'assist',
-          config: clonedConfig,
           pokemonList: pokemonList.slice(
             Math.floor(pokemonList.length * i / config.workerNum),
             Math.floor(pokemonList.length * (i + 1) / config.workerNum),
@@ -124,13 +85,13 @@ async function createPokemonList() {
           pickupEnergyPerHelpTop5,
           healCheckTarget,
         }
-      }),
-      workerList
+      }
     )).flat(1);
   })
 }
-createPokemonList()
-watch(config.simulation, createPokemonList)
+
+// 設定が変わる度に再計算する
+watch(config.simulation, () => createPokemonList(true), { immediate: true })
 
 const columnList = computed(() => {
   let result = [
