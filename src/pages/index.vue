@@ -1,17 +1,9 @@
 <script setup>
-import PokemonBox from '../models/pokemon-box.js';
 import config from '../models/config.js';
 import Field from '../data/field.js';
 import Berry from '../data/berry.js';
-import Cooking from '../data/cooking.js';
 import SettingList from '../components/setting-list.vue';
 import PokemonList from '../components/pokemon-list.vue';
-import EvaluateTable from '../models/evaluate-table.js';
-
-// const worker = new Worker();
-// setTimeout(() => {
-//   worker.postMessage('!')
-// }, 5000)
 
 </script>
 

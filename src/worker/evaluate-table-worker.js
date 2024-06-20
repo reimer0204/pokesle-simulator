@@ -25,7 +25,7 @@ self.addEventListener('message', async (event) => {
 
   let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
-  const simulator = new PokemonSimulator(config)
+  const simulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT)
 
   let scoreForHealerEvaluateList = [];
   let scoreForSupportEvaluateList = [];
@@ -69,7 +69,8 @@ self.addEventListener('message', async (event) => {
             score: eachResult.energyPerDay,
             baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
             pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
-            // subSkillList,
+            subSkillList,
+            eachResult,
             // nature,
           }));
 
@@ -83,11 +84,13 @@ self.addEventListener('message', async (event) => {
       }
       scoreList.sort((a, b) => a.score - b.score)
       let percentile = [];
+      let eachResultList = [];
       for(let i = 0; i <= 100; i++) {
         percentile.push(scoreList[Math.round((scoreList.length - 1) * i / 100)]);
+        eachResultList.push(scoreList[Math.round((scoreList.length - 1) * i / 100)])
       }
 
-      result[pokemon.name][foodIndexList.join('')] = percentile;
+      result[pokemon.name][foodIndexList.join('')] = percentile
 
       scoreForHealerEvaluateList.push(percentile[config.selectEvaluate.supportBorder].baseScore)
       scoreForSupportEvaluateList.push(percentile[config.selectEvaluate.supportBorder].pickupEnergyPerHelp)

@@ -14,7 +14,7 @@ async function save() {
   asyncWatcher.run(async (progressCounter) => {
 
     let [genkiCounter, tableCounter] = progressCounter.split(
-      editConfig.genkiSimulation.pickupRate * editConfig.genkiSimulation.loopNum,
+      editConfig.genkiSimulation.pickupRate * editConfig.genkiSimulation.loopNum * 4,
       EvaluateTable.getAllPatternNum(editConfig)
     );
 

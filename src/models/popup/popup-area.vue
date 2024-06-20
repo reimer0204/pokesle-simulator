@@ -5,18 +5,19 @@ import Popup from './popup.js'
 
 <template>
   <div class="popup-area" v-if="Popup.list.length">
-    <div v-for="(popup, i) in Popup.list"
-      @mousedown.self="popup.close()"
-      class="popup"
-    >
-      <component
-        :is="popup.component" v-bind="popup.bind"
-        @close="popup.close($event)"
-        @input="popup.input = $event"
-        @click.native.stop>
-      </component>
+    <div v-for="(popup, i) in Popup.list" class="scroll">
+      <div
+        @mousedown.self="popup.close()"
+        class="popup"
+      >
+        <component
+          :is="popup.component" v-bind="popup.bind"
+          @close="popup.close($event)"
+          @input="popup.input = $event"
+          @click.native.stop>
+        </component>
+      </div>
     </div>
-
   </div>
 </template>
 
@@ -26,13 +27,20 @@ import Popup from './popup.js'
   inset: 0;
   z-index: 999;
 
-  .popup {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .scroll {
+    display: block;
     position: fixed;
     inset: 0;
+    overflow: auto;
+    padding: 100px 0;
     background-color: rgba(0, 0, 0, 0.2);
+    
+    .popup {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   }
+
 }
 </style>

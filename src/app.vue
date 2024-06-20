@@ -27,6 +27,7 @@ onMounted(() => {
       <router-link to="/">ボックス</router-link>
       <!-- <router-link to="/cooking">料理</router-link> -->
       <!-- <router-link to="/food">食材</router-link> -->
+      <router-link to="/select-table">厳選テーブル</router-link>
       <router-link to="/setting">設定</router-link>
       <router-link to="/cache">その他</router-link>
       <router-link to="/faq">FAQ</router-link>

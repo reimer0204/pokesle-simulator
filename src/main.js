@@ -12,8 +12,7 @@ app.use(Popup);
 
 import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
-import CookingPage from './pages/index.vue'
-import WeekPage from './pages/index.vue'
+import SelectTablePage from './pages/select-table.vue'
 import SettingPage from './pages/setting.vue'
 import CachePage from './pages/cache.vue'
 import FaqPage from './pages/faq.vue'
@@ -23,7 +22,7 @@ app.use(createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: IndexPage },
-    { path: '/cooking', component: IndexPage },
+    { path: '/select-table', component: SelectTablePage },
     { path: '/setting', component: SettingPage },
     { path: '/cache', component: CachePage },
     { path: '/faq', component: FaqPage },
