@@ -102,7 +102,7 @@ function convertSubSkill(index) {
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
   let regexp = new RegExp(name.split('').join('.*'))
 
-  let match = SubSkill.list.find(x => regexp.test(x.katakana))
+  let match = SubSkill.listForInput.find(x => regexp.test(x.katakana))
   if (match) {
     pokemon.subSkillList[index] = match.name;
   }
@@ -183,9 +183,14 @@ onMounted(() => {
   <PopupBase class="edit-pokemon-popup" @close="$emit('close')">
     <template #headerText>ポケモン編集</template>
 
-    <p>キーボードだけで入力可能です。エンターキーで次の入力欄に移動します。</p>
+    <BaseAlert>
+      キーボードだけで入力可能です。<br>
+      「raru」まで入れると「ラルトス」が出てきたりするので、入れたいデータが出てきたらエンターキーで次の入力欄に移動し、続けて情報を入力してください。<br>
+      せいかくまで入力した状態でエンターすると保存され、新規登録の場合は次の新規登録が始まります。<br>
+      所持数とスキルLv、色違いはキーボード入力の対象外なので、進化後の直取り個体や、金種を与えた個体については別途右列の情報を直接操作してください。
+    </BaseAlert>
 
-    <div class="edit-area">
+    <div class="edit-area mt-10px">
       <header>&nbsp;</header>
       <header>入力アシスト</header>
       <header>選択</header>
@@ -251,7 +256,7 @@ onMounted(() => {
       <select v-model="pokemon.nature">
         <option v-for="nature in Nature.list" :value="nature.name">{{ nature.name }}</option>
       </select>
-      
+
       <div>所持数</div>
       <div></div>
       <!-- <input type="number" ref="bagInput" v-model="pokemon.bag" @keypress.enter="skillLvInput.focus()"/> -->
@@ -281,9 +286,10 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .edit-pokemon-popup {
-  // width: 600px;
+  width: 770px;
 
   .edit-area {
+    width: 100%;
     display: grid;
     grid-template-columns: max-content max-content max-content;
     align-items: center;
@@ -304,6 +310,10 @@ onMounted(() => {
 
     & > div:nth-child(3n + 1) {
       font-weight: bold;
+    }
+
+    select {
+      width: 150px;
     }
   }
 

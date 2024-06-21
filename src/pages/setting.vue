@@ -7,11 +7,12 @@ import EvaluateTable from '../models/evaluate-table';
 
 import Skill from '../data/skill'
 
-
 let editConfig = reactive(config.clone());
+let result = ref(null)
 
 async function save() {
   asyncWatcher.run(async (progressCounter) => {
+    let isNew = !editConfig.initSetting;
 
     let [genkiCounter, tableCounter] = progressCounter.split(
       editConfig.genkiSimulation.pickupRate * editConfig.genkiSimulation.loopNum,
@@ -27,6 +28,10 @@ async function save() {
     editConfig.initSetting = true;
 
     config.save(editConfig);
+
+    result.value = {
+      isNew,
+    }
   })
 
 }
@@ -36,11 +41,11 @@ async function save() {
 <template>
   <div class="page">
 
-    <div class="caution" v-if="!config.initSetting">
+    <DangerAlert v-if="!config.initSetting">
       ツールを使用するには初回設定が必要です。<br>
       まずは「睡眠時間」と「日中タップ回数」をご自身のものに修正してください。<br>
       他の項目は気になる方だけ修正してください。
-    </div>
+    </DangerAlert>
 
     <div class="group">
       <h2>基本設定</h2>
@@ -192,12 +197,19 @@ async function save() {
       </SettingList>
     </div>
 
-    <div class="caution">
+    <DangerAlert>
       この設定を反映すると、あなたの睡眠時間やタップ頻度に応じたヒーラーの期待値やポケモンの厳選条件の期待値を計算します。<br>
       設定や端末のスペックによりますが、3～10分ほどかかるのでお待ちください。
-    </div>
+    </DangerAlert>
 
     <button @click="save">保存</button>
+
+    <BaseAlert v-if="result">
+      各種分析が完了しました。<br>
+      <template v-if="result.isNew">
+        画面上部からボックスを開き、所持ポケモンを追加してご利用ください。
+      </template>
+    </BaseAlert>
   </div>
 </template>
 

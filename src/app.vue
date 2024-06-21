@@ -24,12 +24,12 @@ onMounted(() => {
   <AsyncWatcherArea class="app" :asyncWatcher="asyncWatcher">
     <header>
       <h1>ポケスリシミュ</h1>
-      <router-link to="/">ボックス</router-link>
+      <router-link to="/" v-if="config.initSetting">ボックス</router-link>
       <!-- <router-link to="/cooking">料理</router-link> -->
       <!-- <router-link to="/food">食材</router-link> -->
       <router-link to="/setting">設定</router-link>
-      <router-link to="/cache">その他</router-link>
-      <router-link to="/faq">FAQ</router-link>
+      <router-link to="/cache" v-if="config.initSetting">その他</router-link>
+      <router-link to="/faq" v-if="config.initSetting">FAQ</router-link>
     </header>
     <main>
       <router-view />
