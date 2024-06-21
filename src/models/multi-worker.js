@@ -34,8 +34,8 @@ class Cluster {
 }
 
 class MultiWorker {
-  constructor(workerClass) {
-    this.clusterList = new Array(config.workerNum).fill(0).map(() => (new Cluster(workerClass)))
+  constructor(workerClass, workerNum = null) {
+    this.clusterList = new Array(workerNum ?? config.workerNum).fill(0).map(() => (new Cluster(workerClass)))
     this.rejectList = [];
   }
 
@@ -47,7 +47,7 @@ class MultiWorker {
     let workerProgressList = []
     for (let i = 0; i < this.clusterList.length; i++) {
       let cluster = this.clusterList[i];
-      let parameter = parameterFunction(i);
+      let parameter = parameterFunction(i, this.clusterList.length);
       workerProgressList.push(0)
 
       promiseList.push(new Promise((resolve, reject) => {

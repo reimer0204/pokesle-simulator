@@ -2,8 +2,9 @@ import Nature from "../data/nature";
 import Pokemon from "../data/pokemon";
 import Skill from "../data/skill";
 import SubSkill from "../data/sub-skill";
-import EvaluateTableSimulator from "../worker/evaluate-table-simulator?worker";
+import EvaluateTableWorker from "../worker/evaluate-table-worker?worker";
 import config from "./config";
+import MultiWorker from "./multi-worker";
 
 export default class EvaluateTable {
 
@@ -31,7 +32,7 @@ export default class EvaluateTable {
   }
 
   static async simulation(newConfig = null, progressCounter) {
-    const fixedConfig = newConfig ?? config;
+    const fixedConfig = JSON.parse(JSON.stringify(newConfig ?? config));
 
     function combination(r, n, s = 0) {
       if (n == 0) return [[]];
@@ -46,76 +47,11 @@ export default class EvaluateTable {
       return result;
     }
 
-    async function callWorker(
-      progressCounter,
-      lv, pokemonList, foodCombinationList, subSkillCombinationMap,
-      scoreForHealerEvaluate = null, scoreForSupportEvaluate = null
-    ) {
-      let promiseList = [];
-      let workerProgressList = []
-      for (let i = 0; i < fixedConfig.workerNum; i++) {
-        workerProgressList.push(0)
+    const multiWorker = new MultiWorker(EvaluateTableWorker, fixedConfig.workerNum)
 
-        promiseList.push(new Promise((resolve, reject) => {
-          const worker = new EvaluateTableSimulator();
+    let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).flatMap(([lv, enable]) => enable ? [Number(lv)] : [])
 
-          worker.onmessage = ({ data: { status, body } }) => {
-            if (status == 'error') {
-              reject(body);
-              worker.terminate();
-            }
-
-            if (status == 'progress') {
-              workerProgressList[i] = body;
-            }
-            if (status == 'success') {
-              workerProgressList[i] = 1;
-              resolve(body)
-              worker.terminate();
-            }
-            progressCounter.set(workerProgressList.reduce((a, x) => a + x, 0) / workerProgressList.length)
-          }
-
-          let i1 = Math.floor(pokemonList.length * i / fixedConfig.workerNum);
-          let i2 = Math.floor(pokemonList.length * (i + 1) / fixedConfig.workerNum);
-
-          worker.postMessage({
-            type: 'launch',
-            lv,
-            config: JSON.parse(JSON.stringify(fixedConfig)),
-            pokemonList: pokemonList.slice(i1, i2),
-            foodCombinationList,
-            subSkillCombinationMap,
-            scoreForHealerEvaluate,
-            scoreForSupportEvaluate,
-          })
-        }))
-      }
-      progressCounter.set(1)
-
-      let result = {};
-      let scoreForHealerEvaluateList = [];
-      let scoreForSupportEvaluateList = [];
-      for(let part of await Promise.all(promiseList)) {
-        Object.assign(result, part.result);
-        scoreForHealerEvaluateList.push(...part.scoreForHealerEvaluateList);
-        scoreForSupportEvaluateList.push(...part.scoreForSupportEvaluateList);
-      }
-      scoreForHealerEvaluateList = scoreForHealerEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForHealerEvaluateList.length / 2))
-      scoreForSupportEvaluateList = scoreForSupportEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForSupportEvaluateList.length / 2))
-
-      let averageScoreForHealerEvaluate = scoreForHealerEvaluateList.reduce((a, x) => a + x, 0) / scoreForHealerEvaluateList.length;
-      let averageScoreForSupportEvaluate = scoreForSupportEvaluateList.reduce((a, x) => a + x, 0) / scoreForSupportEvaluateList.length;
-
-      return {
-        result,
-        scoreForHealerEvaluate: averageScoreForHealerEvaluate,
-        scoreForSupportEvaluate: averageScoreForSupportEvaluate,
-      }
-    }
-
-    let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-
+    // Lvごとに画面表示用の進捗カウンターを用意しておく
     let subProgressCounterList = progressCounter.split(...lvList.flatMap(lv => {
       let patternNum = this.getPatternNum(lv);
       return [patternNum, patternNum]
@@ -123,8 +59,10 @@ export default class EvaluateTable {
 
     // 最終進化のポケモンだけチェック
     let pokemonList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
-    let normalPokemonList = pokemonList.filter(pokemon => !Skill.map[pokemon.skill].team)
-    let supportPokemonList = pokemonList.filter(pokemon => Skill.map[pokemon.skill].team)
+
+    // スキルが計算しやすいポケモンと、そうでないポケモンの2つに分ける
+    let normalPokemonList = pokemonList.filter(pokemon => !Skill.map[pokemon.skill].team && !Skill.map[pokemon.skill].shard)
+    let supportPokemonList = pokemonList.filter(pokemon => Skill.map[pokemon.skill].team ||  Skill.map[pokemon.skill].shard)
 
     const subSkillCombinationMapCache = new Map();
 
@@ -132,7 +70,7 @@ export default class EvaluateTable {
       scoreForHealerEvaluate: {},
       scoreForSupportEvaluate: {},
     };
-    let counterIndex = 0;
+    let progressCounterIndex = 0;
     for(let lv of lvList) {
       const foodCombinationList = lv < 30 ? ['0'] : lv < 60 ? [ '00', '01' ] : [ '000', '001', '002', '010', '011', '012' ];
 
@@ -161,27 +99,56 @@ export default class EvaluateTable {
         subSkillCombinationMapCache.get(subSkillNum, subSkillCombinationMap);
       }
 
-      subProgressCounterList[counterIndex].setName(`Lv${lv}の厳選情報を作成しています…`)
-      let {
-        result: normalPokemonEvaluateTable,
-        scoreForHealerEvaluate,
-        scoreForSupportEvaluate,
-      } = await callWorker(
-        subProgressCounterList[counterIndex++],
-        lv, normalPokemonList, foodCombinationList, subSkillCombinationMap
-      );
+      // 
+      subProgressCounterList[progressCounterIndex].setName(`Lv${lv}の通常ポケモンの厳選情報を作成しています…`)
+      let normalPokemonResult = await multiWorker.call(
+        subProgressCounterList[progressCounterIndex++],
+        (i, length) => {
+          let i1 = Math.floor(normalPokemonList.length * i / length);
+          let i2 = Math.floor(normalPokemonList.length * (i + 1) / length);
+          return {
+            lv,
+            config: fixedConfig,
+            pokemonList: normalPokemonList.slice(i1, i2),
+            foodCombinationList,
+            subSkillCombinationMap,
+            // scoreForHealerEvaluate,
+            // scoreForSupportEvaluate,
+          }
+        }
+      )
+      
+      let normalPokemonEvaluateTable = normalPokemonResult.reduce((a, x) => ({ ...a, ...x.result}), {});
+
+      let scoreForHealerEvaluateList = normalPokemonResult.flatMap(x => x.scoreForHealerEvaluateList);
+      let scoreForSupportEvaluateList = normalPokemonResult.flatMap(x => x.scoreForSupportEvaluateList);
+      scoreForHealerEvaluateList = scoreForHealerEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForHealerEvaluateList.length / 3))
+      scoreForSupportEvaluateList = scoreForSupportEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForSupportEvaluateList.length / 3))
+      let scoreForHealerEvaluate = scoreForHealerEvaluateList.reduce((a, x) => a + x, 0) / scoreForHealerEvaluateList.length;
+      let scoreForSupportEvaluate = scoreForSupportEvaluateList.reduce((a, x) => a + x, 0) / scoreForSupportEvaluateList.length;
 
       result.scoreForHealerEvaluate[lv] = scoreForHealerEvaluate;
       result.scoreForSupportEvaluate[lv] = scoreForSupportEvaluate;
 
-      subProgressCounterList[counterIndex].setName(`Lv${lv}の厳選情報を作成しています…`)
-      let {
-        result: supportPokemonEvaluateTable,
-      } = await callWorker(
-        subProgressCounterList[counterIndex++],
-        lv, supportPokemonList, foodCombinationList, subSkillCombinationMap,
-        scoreForHealerEvaluate, scoreForSupportEvaluate
-      );
+      subProgressCounterList[progressCounterIndex].setName(`Lv${lv}のサポート系スキルポケモンの厳選情報を作成しています…`)
+      
+      let supportPokemonResult = await multiWorker.call(
+        subProgressCounterList[progressCounterIndex++],
+        (i, length) => {
+          let i1 = Math.floor(supportPokemonList.length * i / length);
+          let i2 = Math.floor(supportPokemonList.length * (i + 1) / length);
+          return {
+            lv,
+            config: fixedConfig,
+            pokemonList: supportPokemonList.slice(i1, i2),
+            foodCombinationList,
+            subSkillCombinationMap,
+            scoreForHealerEvaluate,
+            scoreForSupportEvaluate,
+          }
+        }
+      )
+      let supportPokemonEvaluateTable = supportPokemonResult.reduce((a, x) => ({ ...a, ...x.result}), {});
 
       let pokemonEvaluateTable = { ...normalPokemonEvaluateTable, ...supportPokemonEvaluateTable };
 

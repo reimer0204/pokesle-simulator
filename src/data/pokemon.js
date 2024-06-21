@@ -139,6 +139,7 @@ let list = [
   { name: 'ヌイコグマ', specialty: '食材', berry: 'クラボ', foodList: [{ name: 'ワカクサコーン', numList: [2, 5, 7] }, { name: 'マメミート', numList: [null, 6, 10] }, { name: 'とくせんエッグ', numList: [null, null, 9] }], skill: 'エナジーチャージS(ランダム)', help: 4100, bag: 13, foodRate: 0.225, skillRate: 0.011, before: null },
   { name: 'キテルグマ', specialty: '食材', berry: 'クラボ', foodList: [{ name: 'ワカクサコーン', numList: [2, 5, 7] }, { name: 'マメミート', numList: [null, 6, 10] }, { name: 'とくせんエッグ', numList: [null, null, 9] }], skill: 'エナジーチャージS(ランダム)', help: 2800, bag: 20, foodRate: 0.229, skillRate: 0.013, before: 'ヌイコグマ' },
   { name: 'キュワワー', specialty: '食材', berry: 'モモン', foodList: [{ name: 'ワカクサコーン', numList: [2, 5, 7] }, { name: 'あったかジンジャー', numList: [null, 6, 9] }, { name: 'リラックスカカオ', numList: [null, null, 7] }], skill: 'げんきエールS', help: 2500, bag: 20, foodRate: 0.139, skillRate: 0.022, before: null },
+  { name: 'ウッウ', specialty: '食材', berry: 'シーヤ', foodList: [{ name: 'ピュアなオイル', numList: [2, 5, 7] }, { name: 'ほっこりポテト', numList: [null, 4, 7] }, { name: 'とくせんエッグ', numList: [null, null, 8] }], skill: '料理チャンスS', help: 2700, bag: 19, foodRate: 0.165, skillRate: 0.033, before: null },
 ]
 
 let map =  list.reduce((a, x) => (a[x.name] = x, a), {});

@@ -27,6 +27,7 @@ onMounted(() => {
       <router-link to="/" v-if="config.initSetting">ボックス</router-link>
       <!-- <router-link to="/cooking">料理</router-link> -->
       <!-- <router-link to="/food">食材</router-link> -->
+      <router-link to="/select-table">厳選テーブル</router-link>
       <router-link to="/setting">設定</router-link>
       <router-link to="/cache" v-if="config.initSetting">その他</router-link>
       <router-link to="/faq" v-if="config.initSetting">FAQ</router-link>

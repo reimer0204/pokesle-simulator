@@ -15,7 +15,7 @@ async function save() {
     let isNew = !editConfig.initSetting;
 
     let [genkiCounter, tableCounter] = progressCounter.split(
-      editConfig.genkiSimulation.pickupRate * editConfig.genkiSimulation.loopNum,
+      editConfig.genkiSimulation.pickupRate * editConfig.genkiSimulation.loopNum * 4,
       EvaluateTable.getAllPatternNum(editConfig)
     );
 

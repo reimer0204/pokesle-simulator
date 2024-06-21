@@ -81,11 +81,11 @@ for(let type of ['カレー', 'サラダ', 'デザート']) {
 	let typeCookingList = Cooking.list.filter(c => c.type == type);
   let normalPotCookableList = typeCookingList.filter(x => x.foodNum <= Cooking.potMax)
 
-  let normalPotMaxCooking = normalPotCookableList.sort((a, b) => b.maxAddEnergy - a.maxAddEnergy)[0]
-  let allPotMaxCooking    = typeCookingList.sort(      (a, b) => b.maxAddEnergy - a.maxAddEnergy)[0]
+  let normalPotMaxCooking = normalPotCookableList.sort((a, b) => b.maxEnergy - a.maxEnergy)[0]
+  let allPotMaxCooking    = typeCookingList.sort(      (a, b) => b.maxEnergy - a.maxEnergy)[0]
 
   Cooking.cookingPowerUpEnergy = Math.max(Cooking.cookingPowerUpEnergy,
-    (allPotMaxCooking.maxAddEnergy - normalPotMaxCooking.maxAddEnergy) / (allPotMaxCooking.foodNum - normalPotMaxCooking.foodNum)
+    (allPotMaxCooking.maxEnergy - normalPotMaxCooking.maxEnergy) / (allPotMaxCooking.foodNum - normalPotMaxCooking.foodNum)
   )
 }
 

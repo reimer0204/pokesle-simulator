@@ -1,24 +1,21 @@
 <script setup>
-import Popup from '../models/popup/popup.js'
-import PokemonBox from '../models/pokemon-box';
-import config from '../models/config';
-
-import Food from '../data/food.js';
-import SubSkill from '../data/sub-skill.js';
-import Pokemon from '../data/pokemon.js';
-
-import SortableTable from './sortable-table.vue';
-import AsyncWatcherArea from './async-watcher-area.vue';
-import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
-import NatureInfo from './nature-info.vue';
-import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import SimulationTeamPopup from '../components/simulation-team-popup.vue';
-
+import Food from '../data/food.js';
+import Pokemon from '../data/pokemon.js';
+import SubSkill from '../data/sub-skill.js';
 import { AsyncWatcher } from '../models/async-watcher.js';
-import MultiWorker from '../models/multi-worker.js';
+import config from '../models/config';
 import EvaluateTable from '../models/evaluate-table.js';
+import MultiWorker from '../models/multi-worker.js';
+import PokemonBox from '../models/pokemon-box';
+import Popup from '../models/popup/popup.js';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+import AsyncWatcherArea from './async-watcher-area.vue';
+import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
+import NatureInfo from './nature-info.vue';
+import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
+import SortableTable from './sortable-table.vue';
 
 let evaluateTable = EvaluateTable.load();
 
@@ -453,7 +450,6 @@ function deletePokemon(index) {
     flex: 1 1 0;
   }
   .scroll {
-    
     flex: 1 1 0;
     overflow: auto;
     position: relative;
