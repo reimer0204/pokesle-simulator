@@ -15,6 +15,7 @@ import AsyncWatcherArea from './async-watcher-area.vue';
 import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
 import NatureInfo from './nature-info.vue';
 import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
+import SelectTableDetailPopup from './select-table-detail-popup.vue';
 import SortableTable from './sortable-table.vue';
 
 let evaluateTable = EvaluateTable.load();
@@ -209,6 +210,16 @@ function deletePokemon(index) {
   }
 }
 
+function showSelectDetail(pokemon, after, lv) {
+  Popup.show(SelectTableDetailPopup, {
+    name: after,
+    lv,
+    foodIndexList: pokemon.foodList.map(f => Math.max(pokemon.base.foodList.findIndex(f2 => f2.name == f)), 0),
+    subSkillList: pokemon.subSkillList,
+    nature: pokemon.nature,
+  })
+}
+
 </script>
 
 <template>
@@ -308,7 +319,12 @@ function deletePokemon(index) {
             </div>
             <div v-else style="width: 6em; font-size: 80%;">
               <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
-              <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              <template v-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              </template>
+              <template v-else>
+                <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              </template>
             </div>
           </template>
 
@@ -440,6 +456,17 @@ function deletePokemon(index) {
 
     .best {
       font-weight: bold;
+    }
+  }
+
+  .percentile {
+    color: #04C;
+    text-decoration: underline;
+    // border-bottom: 1px #04C solid;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #0481;
     }
   }
 

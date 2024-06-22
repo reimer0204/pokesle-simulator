@@ -29,4 +29,18 @@ SubSkill.list = list;
 SubSkill.listForInput = list.toSorted((a, b) => a.inputSort - b.inputSort);
 SubSkill.map = map;
 
+SubSkill.useSilverSeed = (subSkillList) => {
+  let tmp = subSkillList.join('/')
+
+  if (tmp.includes('最大所持数アップM'  ) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップM'  , '最大所持数アップL'  ) };
+  if (tmp.includes('最大所持数アップS'  ) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップS'  , '最大所持数アップL'  ) };
+  if (tmp.includes('最大所持数アップS'  ) && !tmp.includes('最大所持数アップM'  )) { tmp = tmp.replace('最大所持数アップS'  , '最大所持数アップM'  ) };
+  if (tmp.includes('スキルレベルアップS') && !tmp.includes('スキルレベルアップM')) { tmp = tmp.replace('スキルレベルアップS', 'スキルレベルアップM') };
+  if (tmp.includes('スキル確率アップS'  ) && !tmp.includes('スキル確率アップM'  )) { tmp = tmp.replace('スキル確率アップS'  , 'スキル確率アップM'  ) };
+  if (tmp.includes('食材確率アップS'    ) && !tmp.includes('食材確率アップM'    )) { tmp = tmp.replace('食材確率アップS'    , '食材確率アップM'    ) };
+  if (tmp.includes('おてつだいスピードS') && !tmp.includes('おてつだいスピードM')) { tmp = tmp.replace('おてつだいスピードS', 'おてつだいスピードM') };
+
+  return tmp.split('/')
+}
+
 export default SubSkill;

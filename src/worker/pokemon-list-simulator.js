@@ -2,10 +2,12 @@ import Cooking from "../data/cooking";
 import Food from "../data/food";
 import Pokemon from "../data/pokemon";
 import Skill from "../data/skill";
+import SubSkill from "../data/sub-skill";
 import HelpRate from "../models/help-rate";
 import PokemonSimulator from "../models/pokemon-simulator";
 
 let simulator;
+let evaluateSimulator;
 let config;
 
 addEventListener('message', (event) => {
@@ -14,6 +16,7 @@ addEventListener('message', (event) => {
   if (type == 'config') {
     config = event.data.config;
     simulator = new PokemonSimulator(config);
+    evaluateSimulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT);
     
     postMessage({
       status: 'success',
@@ -58,7 +61,7 @@ addEventListener('message', (event) => {
             
             for(let lv of lvList) {
               
-              let foodList = pokemon.foodIndexList.map((foodIndex, i) => {
+              let foodList = pokemon.foodIndexList.slice(0, lv < 30 ? 1 : lv < 60 ? 2 : 3).map((foodIndex, i) => {
                 const food = Food.map[pokemon.base.foodList[foodIndex].name];
                 if (food == null) return null;
                 const baseFood = pokemon.base.foodList[foodIndex];
@@ -73,12 +76,14 @@ addEventListener('message', (event) => {
 
               let foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 3;
               let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
+
+              let subSkillList = SubSkill.useSilverSeed(pokemon.subSkillList).slice(0, subSkillNum);
               
-              let selectEvaluate = simulator.selectEvaluate(
+              let selectEvaluate = evaluateSimulator.selectEvaluate(
                 afterPokemon, lv, 
                 foodList.slice(0, foodNum), 
-                pokemon.subSkillList.slice(0, subSkillNum), 
-                pokemon.natureName, 
+                subSkillList,
+                pokemon.nature, 
                 evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv]
               )
               let { energyPerDay } = selectEvaluate
@@ -86,12 +91,14 @@ addEventListener('message', (event) => {
               let evaluateResult;
               let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')].percentile;
               if (config.simulation.selectType == 0) {
-                let percentile1 = Math.max(percentileList.findLastIndex(x => x < energyPerDay), 0);
-                let percentile2 = Math.min(percentile1 + 1, 100)
-                if (percentile1 == percentile2) {
-                  evaluateResult = percentile1 / 100
+                let percentileUpper = Math.min(Math.max(percentileList.findIndex(x => x >= energyPerDay), 0), 100);
+                let percentileLower = percentileList[percentileUpper] == energyPerDay ? percentileUpper
+                  : Math.max(percentileUpper - 1, 0);
+
+                if (percentileUpper == percentileLower) {
+                  evaluateResult = percentileUpper / 100
                 } else {
-                  evaluateResult = ((energyPerDay - percentileList[percentile2]) / (percentileList[percentile1] - percentileList[percentile2]) + percentile1) / 100
+                  evaluateResult = ((energyPerDay - percentileList[percentileLower]) / (percentileList[percentileUpper] - percentileList[percentileLower]) + percentileLower) / 100
                 }
               }
               if (config.simulation.selectType == 1) {
