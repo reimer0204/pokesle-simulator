@@ -1,14 +1,7 @@
 <script setup>
-import { computed } from 'vue';
 import config from '../models/config';
-import GenkiSimulator from '../worker/genki-simulator';
-import ProgressCounter from '../models/progress-counter';
-import HelpRate from '../models/help-rate';
 import EvaluateTable from '../models/evaluate-table';
-import SettingList from '../components/setting-list.vue'
-
-let editConfig = reactive(config.clone());
-let progressCounter = reactive(new ProgressCounter());
+import ProgressCounter from '../models/progress-counter';
 
 function refreshEvaluateTable() {
   asyncWatcher.run(async (progressCounter) => {

@@ -82,8 +82,6 @@ asyncWatcher.run(async (progressCounter) => {
   ))[0].result[props.name][props.foodIndexList][props.p].eachResult
   simulationResult.value.scoreForHealerEvaluate = evaluateTable.scoreForHealerEvaluate[lv]
   simulationResult.value.scoreForSupportEvaluate = evaluateTable.scoreForSupportEvaluate[lv]
-
-  console.log(simulationResult.value);
 })
 
 const basePokemon = computed(() => Pokemon.map[props.name]);
@@ -313,16 +311,21 @@ const basePokemon = computed(() => Pokemon.map[props.name]);
           </template>
           
           <template v-if="skill.name == 'げんきエールS' || skill.name == 'げんきオールS'">
-            1日の1匹あたりの回復量：{{ simulationResult.otherHealEffect.toFixed(1) }}<br>
-            <br>
-            {{ simulationResult.scoreForHealerEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位33%のげんき補正なしエナジーの平均値<br>
-            × (<br>
-            &emsp;({{ (HelpRate.getHelpRate(simulationResult.otherHealEffect, config.dayHelpParameter) * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (HelpRate.getHelpRate(simulationResult.otherHealEffect, config.nightHelpParameter) * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーありのおてつだい倍率<br>
-            &emsp;÷ ({{ (HelpRate.getHelpRate(0, config.dayHelpParameter) * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (HelpRate.getHelpRate(0, config.nightHelpParameter) * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーなしのおてつだい倍率<br>
-            &emsp;- 1<br>
-            )<br>
-            × 4 ※4匹分<br>
-            ÷ {{ simulationResult.skillPerDay.toFixed(2) }} ※スキル発動回数で割って1回あたりの効果にする<br>
+            <template v-if="simulationResult.skill.name != 'ゆびをふる' || (simulationResult.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')">
+              1日の1匹あたりの回復量：{{ simulationResult.otherHealEffect.toFixed(1) }}<br>
+              <br>
+              {{ simulationResult.scoreForHealerEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位33%のげんき補正なしエナジーの平均値<br>
+              × (<br>
+              &emsp;({{ (HelpRate.getHelpRate(simulationResult.otherHealEffect, config.dayHelpParameter) * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (HelpRate.getHelpRate(simulationResult.otherHealEffect, config.nightHelpParameter) * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーありのおてつだい倍率<br>
+              &emsp;÷ ({{ (HelpRate.getHelpRate(0, config.dayHelpParameter) * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (HelpRate.getHelpRate(0, config.nightHelpParameter) * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーなしのおてつだい倍率<br>
+              &emsp;- 1<br>
+              )<br>
+              × 4 ※4匹分<br>
+              ÷ {{ simulationResult.skillPerDay.toFixed(2) }} ※スキル発動回数で割って1回あたりの効果にする<br>
+            </template>
+            <template v-else>
+              げんきエールSに含む
+            </template>
           </template>
 
           <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">

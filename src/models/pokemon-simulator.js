@@ -268,20 +268,31 @@ class PokemonSimulator {
       pokemon.skill.name == 'ゆびをふる' ? [Skill.map['げんきチャージS'], Skill.map['げんきエールS'], Skill.map['げんきオールS']] :
         []
 
+      let effectSum = 0;
+      let effectMap = {};
       for(let skill of healSkillList) {
-        let thisHealEffect = HelpRate.getHealEffect({
-          p: pokemon.fixedSkillRate,
-          speed: pokemon.speed,
-          bagSize: pokemon.fixedBag,
-          baseDayHelpNum: baseDayHelpNum,
-          effect: skill.effect[pokemon.fixedSkillLv - 1] * pokemon.skillEffectRate / (skill.name == 'げんきエールS' ? 5 : 1) *
-            (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1),
-        }, this.config.healEffectParameter, this.config);
+        let effect = skill.effect[pokemon.fixedSkillLv - 1] / (skill.name == 'げんきエールS' ? 5 : 1);
+        effectSum += effect
+        effectMap[skill.name] = effect;
+      }
+      let fixedEffectSum = effectSum * (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)
+      if (pokemon.skill.name == 'ゆびをふる') {
+        fixedEffectSum = fixedEffectSum / healSkillList.length * healSkillList.length / Skill.metronomeTarget.length;
+      }
 
+      let thisHealEffect = HelpRate.getHealEffect({
+        p: pokemon.fixedSkillRate,
+        speed: pokemon.speed,
+        bagSize: pokemon.fixedBag,
+        baseDayHelpNum: baseDayHelpNum,
+        effect: fixedEffectSum,
+      }, this.config.healEffectParameter, this.config);
+
+      for(let skill of healSkillList) {
         if (skill.name == 'げんきチャージS') {
-          selfHealEffect += thisHealEffect;
+          selfHealEffect += thisHealEffect * effectMap[skill.name] / effectSum;
         } else {
-          otherHealEffect += thisHealEffect;
+          otherHealEffect += thisHealEffect * effectMap[skill.name] / effectSum;
         }
       }
     }
@@ -295,6 +306,7 @@ class PokemonSimulator {
     let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
 
     let totalHealEffect = (pokemon.selfHealEffect + otherHealEffect) * (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
+
     let helpRate = this.helpRateCache.get(totalHealEffect);
     if(helpRate == null) {
       helpRate = {
@@ -405,25 +417,28 @@ class PokemonSimulator {
         case 'げんきエールS':
         case 'げんきオールS':
           if (mode == PokemonSimulator.MODE_SELECT) {
-            let helpRate = this.helpRateCache.get(otherHealEffect);
-            if(helpRate == null) {
-              helpRate = {
-                day: HelpRate.getHelpRate(otherHealEffect, this.config.dayHelpParameter),
-                night: HelpRate.getHelpRate(otherHealEffect, this.config.nightHelpParameter),
+            // げんき回復量は事前に総合的に計算しているので、ゆびをふるの場合は1回だけ評価
+            if (pokemon.skill.name != 'ゆびをふる' || (pokemon.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')) {
+              let helpRate = this.helpRateCache.get(otherHealEffect);
+              if(helpRate == null) {
+                helpRate = {
+                  day: HelpRate.getHelpRate(otherHealEffect, this.config.dayHelpParameter),
+                  night: HelpRate.getHelpRate(otherHealEffect, this.config.nightHelpParameter),
+                }
+                this.helpRateCache.set(otherHealEffect, helpRate)
               }
-              this.helpRateCache.set(otherHealEffect, helpRate)
-            }
 
-            // 一番つよいポケモンが4匹いるとして、それらのげんきオールによる増分を効果とする
-            energy =
-              scoreForHealerEvaluate
-              * (
-                (helpRate.day * (24 - this.config.sleepTime) + helpRate.night * this.config.sleepTime)
-                / (this.defaultHelpRate.day * (24 - this.config.sleepTime) + this.defaultHelpRate.night * this.config.sleepTime)
-                - 1
-              )
-              * 4
-              / pokemon.skillPerDay;
+              // 一番つよいポケモンが4匹いるとして、それらのげんきオールによる増分を効果とする
+              energy =
+                scoreForHealerEvaluate
+                * (
+                  (helpRate.day * (24 - this.config.sleepTime) + helpRate.night * this.config.sleepTime)
+                  / (this.defaultHelpRate.day * (24 - this.config.sleepTime) + this.defaultHelpRate.night * this.config.sleepTime)
+                  - 1
+                )
+                * 4
+                / pokemon.skillPerDay;
+            }
           }
 
           break;

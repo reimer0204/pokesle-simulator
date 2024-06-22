@@ -207,6 +207,32 @@ addEventListener('message', (event) => {
           pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.03 * config.simulation.shardWeight / 100
         }
       }
+
+      // げんき回復系評価
+      if (pokemon.otherHealEffect > 0) {
+
+        let healedAddEnergyList = [];
+        for(let subPokemon of healCheckTarget) {
+          if (subPokemon.index == pokemon.index) continue;
+
+          let totalHealEffect = subPokemon.healEffect
+            + pokemon.otherHealEffect * (subPokemon.nature?.good == 'げんき回復量' ? 1.2 : subPokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
+          let helpRate = helpRateCache.get(totalHealEffect);
+          if(helpRate == null) {
+            helpRate = {
+              day: HelpRate.getHelpRate(totalHealEffect, config.dayHelpParameter),
+              night: HelpRate.getHelpRate(totalHealEffect, config.nightHelpParameter),
+            }
+            helpRateCache.set(totalHealEffect, helpRate)
+          }
+
+          let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
+          let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
+          let healedAddEnergy = subPokemon.tmpScore * ((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1);
+          healedAddEnergyList.push(healedAddEnergy);
+        }
+        pokemon.supportScorePerDay += healedAddEnergyList.sort((a, b) => b - a).slice(0, 4).reduce((a, x) => a + x, 0);
+      }
   
       if (pokemon.fixedBag > 0) {
         let skillList = pokemon.skill.name == 'ゆびをふる' ? Skill.metronomeTeamTarget : [pokemon.skill];
@@ -214,32 +240,6 @@ addEventListener('message', (event) => {
         let effect = pokemon.skill.effect[pokemon.fixedSkillLv - 1];
         for(let skill of skillList) {
           switch(skill.name) {
-            case 'げんきエールS':
-            case 'げんきオールS':
-  
-              let healedAddEnergyList = [];
-              for(let subPokemon of healCheckTarget) {
-                if (subPokemon.index == pokemon.index) continue;
-  
-                let totalHealEffect = subPokemon.healEffect
-                  + pokemon.otherHealEffect * (subPokemon.nature?.good == 'げんき回復量' ? 1.2 : subPokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
-                let helpRate = helpRateCache.get(totalHealEffect);
-                if(helpRate == null) {
-                  helpRate = {
-                    day: HelpRate.getHelpRate(totalHealEffect, config.dayHelpParameter),
-                    night: HelpRate.getHelpRate(totalHealEffect, config.nightHelpParameter),
-                  }
-                  helpRateCache.set(totalHealEffect, helpRate)
-                }
-  
-                let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
-                let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
-                let healedAddEnergy = subPokemon.tmpScore * ((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1);
-                healedAddEnergyList.push(healedAddEnergy);
-              }
-              pokemon.supportScorePerDay += healedAddEnergyList.sort((a, b) => b - a).slice(0, 4).reduce((a, x) => a + x, 0);
-              break;
-  
             case 'おてつだいサポートS':
             case 'おてつだいブースト':
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.index != pokemon.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
