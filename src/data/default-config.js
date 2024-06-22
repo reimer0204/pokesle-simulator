@@ -24,7 +24,7 @@ const defaultConfig = {
 
   pokemonList: {
     selectDetail: false,
-    baseInfo: false,
+    baseInfo: true,
     subSkillShort: true,
     foodInfo: false,
     simulatedInfo: false,
@@ -110,9 +110,9 @@ const defaultConfig = {
       'げんきエールS': null,
       'げんきオールS': 6,
       '食材ゲットS': 6,
-      'おてつだいサポートS': null,
+      'おてつだいサポートS': 6,
       'おてつだいブースト': 6,
-      '料理パワーアップS': null,
+      '料理パワーアップS': 6,
       '料理チャンスS': 6,
       'ゆめのかけらゲットS': 7,
       'ゆめのかけらゲットS(ランダム)': 7,
