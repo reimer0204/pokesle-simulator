@@ -63,7 +63,7 @@ const defaultConfig = {
     cookingWeight: 1,
     shardWeight: 30,
     campTicket: false,
-    eventBonusType: 'ほのお',
+    eventBonusType: null,
     eventBonusTypeFood: 1,
     eventBonusTypeSkillRate: 1.5,
     eventBonusTypeSkillLv: 3,
