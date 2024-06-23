@@ -144,6 +144,7 @@ function save(requireContinue) {
       pokemon.foodList = ['', '', ''];
       pokemon.subSkillList = [null, null, null, null, null];
       pokemon.nature = null;
+      pokemon.shiny = false;
 
       assist.name = '';
       assist.lv = null;
@@ -152,6 +153,7 @@ function save(requireContinue) {
       assist.foodABC = '';
       assist.subSkillList = ['', '', '', '', ''];
       assist.nature = '';
+      assist.shiny = false;
 
       nameInput.value.focus();
 

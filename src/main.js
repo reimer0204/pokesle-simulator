@@ -16,6 +16,7 @@ import SelectTablePage from './pages/select-table.vue'
 import SettingPage from './pages/setting.vue'
 import CachePage from './pages/cache.vue'
 import FaqPage from './pages/faq.vue'
+import PokemonBox from './models/pokemon-box';
 // import IndexPage from './pages/index.vue'
 // import IndexPage from './pages/index.vue'
 app.use(createRouter({
@@ -28,5 +29,11 @@ app.use(createRouter({
     { path: '/faq', component: FaqPage },
   ]
 }))
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    PokemonBox.importGoogleSpreadsheet(true)
+  }
+});
 
 app.mount('#app');

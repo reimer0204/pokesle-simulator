@@ -11,6 +11,7 @@ import TeamSimulator from '../worker/team-simulator?worker';
 import NatureInfo from './nature-info.vue';
 import AsyncWatcherArea from './async-watcher-area.vue';
 import { AsyncWatcher } from '../models/async-watcher';
+import MultiWorker from '../models/multi-worker';
 
 const props = defineProps({
   pokemonList: { required: true },
@@ -27,43 +28,53 @@ async function simulation() {
   asyncWatcher.run(async (progressCounter) => {
     // 気休めかもしれないけどループの多いところにforEachとかreduceとか使うとコストかかりそうだから一部は泥臭くやる
 
+    let [stepA, stepB] = progressCounter.split(1, 10);
+    stepA.set(1);
+
     // 固定のポケモンと推論対象を選ぶ
-    let fixedPokemonList = [];
-    let targetPokemonList = [];
-    props.pokemonList.forEach(x => (x.fix ? fixedPokemonList : targetPokemonList).push(x))
+    let fixedPokemonList = props.pokemonList.filter(x => x.fix);
+    let targetPokemonList = props.pokemonList.filter(x => !x.fix);
 
     let rankMax = Math.min(config.teamSimulation.maxRank, targetPokemonList.length);
+    const pickup = 5 - fixedPokemonList.length;
 
     // スコアの高い上位のみをピックアップ
-    targetPokemonList = targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax);
+    targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)));
 
     // 組み合わせを列挙
-    const pickup = 5 - fixedPokemonList.length;
-    let combination = new Array(pickup).fill(0).map((_, i) => i);
-    let combinationLimit = new Array(pickup).fill(0).map((_, i) => rankMax + i - pickup + 1);
-    let combinationList = [];
-    while(true) {
-      let aboutScore = 0;
-      for(let index of combination) {
-        aboutScore += targetPokemonList[index].score
+    let combinationWorkerParameterList = new Array(config.workerNum).fill(0).map(x => ({
+      sum: 0,
+      topList: [],
+    }));
+    for(let i = 0; i <= rankMax - pickup; i++) {
+      let combinationSize = 1;
+      for(let j = 1; j <= pickup - 1; j++) {
+        combinationSize *= rankMax - i - j;
+        combinationSize /= j;
       }
 
-      combinationList.push({ combination: [...combination], aboutScore })
-
-      let upIndex = pickup;
-      for(let i = pickup - 1; i >= 0; i--) {
-        combination[i]++;
-        if(combination[i] >= combinationLimit[i]) {
-          upIndex = i;
-        } else {
-          break;
+      let min = null;
+      for(let combinationWorkerParameter of combinationWorkerParameterList) {
+        if(min == null || combinationWorkerParameter.sum < min.sum) {
+          min = combinationWorkerParameter;
         }
       }
-      if (upIndex == 0) break;
-      for(let i = upIndex; i < pickup; i++) {
-        combination[i] = combination[i - 1] + 1;
-      }
+      min.sum += combinationSize;
+      min.topList.push(i);
     }
+
+    const multiWorker = new MultiWorker(TeamSimulator, config.workerNum)
+    let combinationList = (await multiWorker.call(
+      stepA,
+      (i) => ({
+        type: 'combination',
+        rankMax,
+        pickup,
+        pattern: combinationWorkerParameterList[i].sum,
+        topList: combinationWorkerParameterList[i].topList,
+        targetPokemonList,
+      }),
+    )).flat(1);
 
     // 概算エナジーの高い順にソート
     combinationList.sort((a, b) => b.aboutScore - a.aboutScore)
@@ -72,58 +83,37 @@ async function simulation() {
       workerCombinationListList[i % config.workerNum].push(combinationList[i])
     }
 
-    let promiseList = [];
     let bestResult = [];
-    let workerResultList = []
-    let workerProgressList = []
-    for (let i = 0; i < config.workerNum; i++) {
-      workerResultList.push([])
-      workerProgressList.push(0)
-
-      promiseList.push(new Promise((resolve, reject) => {
-        const worker = new TeamSimulator();
-        workerList.push(worker);
-
-        worker.onmessage = ({ data: { status, body } }) => {
-          if (status == 'error') {
-            reject(body);
-            workerList = workerList.filter(x => x !== worker);
-            worker.terminate();
-          }
-
-          if (status == 'progress' || status == 'success') {
-            workerResultList[i] = body.bestResult;
-            workerProgressList[i] = body.progress;
-
-            bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, config.teamSimulation.resultNum);
-            if (bestResult.length >= config.teamSimulation.resultNum) {
-              for(let worker of workerList) {
-                worker.postMessage({
-                  type: 'border',
-                  border: bestResult.at(-1).score
-                })
-              }
-            }
-          }
-          if (status == 'success') {
-            resolve()
-            workerList = workerList.filter(x => x !== worker);
-            worker.terminate();
-          }
-          progressCounter.set(workerProgressList.reduce((a, x) => a + x, 0) / workerProgressList.length)
-        }
-
-        worker.postMessage({
-          type: 'launch',
-          fixedPokemonList: JSON.stringify(fixedPokemonList),
-          targetPokemonList: JSON.stringify(targetPokemonList),
+    let workerResultList = new Array(config.workerNum).fill(0).map(() => []);
+    await multiWorker.call(
+      stepB,
+      (i) => {
+        return {
+          type: 'simulate',
+          fixedPokemonList: JSON.parse(JSON.stringify(fixedPokemonList)),
+          targetPokemonList: JSON.parse(JSON.stringify(targetPokemonList)),
           config: JSON.parse(JSON.stringify(config)),
           combinationList: workerCombinationListList[i],
-        })
-      }))
-    }
+        }
+      },
+      (i, body, workerList) => {
+        workerResultList[i] = body.bestResult;
 
-    await Promise.all(promiseList)
+        bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, config.teamSimulation.resultNum);
+        if (bestResult.length >= config.teamSimulation.resultNum) {
+          for(let worker of workerList) {
+            worker.postMessage({
+              type: 'border',
+              border: bestResult.at(-1).score
+            })
+          }
+        }
+
+        return body.progress;
+      }
+    );
+
+    // await Promise.all(promiseList)
 
     simulationResultList.value = bestResult;
   })
@@ -173,183 +163,182 @@ onBeforeUnmount(() => {
         <button @click="simulation">シミュレーション実行</button>
 
         <div class="flex-row-start-center gap-10px">
-          <label><input type="checkbox" v-model="config.simulation.result.detail">エナジー内訳</label>
-          <label><input type="checkbox" v-model="config.simulation.result.food">食材情報</label>
+          <label><input type="checkbox" v-model="config.teamSimulation.result.detail">エナジー内訳</label>
+          <label><input type="checkbox" v-model="config.teamSimulation.result.food">食材情報</label>
         </div>
 
-        <AsyncWatcherArea class="flex-column-start-start w-100 gap-5px simulation-result" :asyncWatcher="asyncWatcher">
-          <table v-for="result in simulationResultList">
-            <tr>
-              <th></th>
-              <td v-for="pokemon in result.pokemonList">
-                {{ pokemon.name }}<template v-if="pokemon.bagOverOperation">(いつ育)</template>
-              </td>
-              <td>合計</td>
-              <td v-if="config.simulation.result.food">余り食材</td>
-            </tr>
+        <AsyncWatcherArea class="flex-column-start-start w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
+          <template v-for="(result, i) in simulationResultList">
+            <ToggleArea :open="i == 0" class="w-100">
+              <template #headerText>{{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }}</template>
 
-            <tr>
-              <th>Lv</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ pokemon.lv }}</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+              <table>
+                <tr>
+                  <th></th>
+                  <td v-for="pokemon in result.pokemonList">
+                    {{ pokemon.name }}<template v-if="pokemon.bagOverOperation">(いつ育)</template>
+                  </td>
+                  <td>合計</td>
+                  <td v-if="config.teamSimulation.result.food">余り食材</td>
+                </tr>
 
-            <tr>
-              <th>食材</th>
-              <td v-for="pokemon in result.pokemonList">
-                <div class="flex-row-center-center">
-                  <img v-for="food in pokemon.foodList" :src="Food.map[food].img" >
-                </div>
-              </td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>Lv</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ pokemon.lv }}</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>スキル</th>
-              <td v-for="pokemon in result.pokemonList" class="w-100px">
-                {{ pokemon.skillName }}
-                <small>(Lv{{ pokemon.fixedSkillLv }})</small>
-              </td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>食材</th>
+                  <td v-for="pokemon in result.pokemonList">
+                    <div class="flex-row-center-center">
+                      <img v-for="food in pokemon.foodList" :src="Food.map[food].img" >
+                    </div>
+                  </td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>サブスキル</th>
-              <td v-for="pokemon in result.pokemonList">
-                <div class="sub-skill-list">
-                  <div v-for="(subSkill, i) in pokemon.subSkillList"
-                    class="sub-skill"
-                    :class="[
-                      `sub-skill-${SubSkill.map[subSkill].rarity}`,
-                      {
-                        short: config.pokemonList.subSkillShort,
-                        disabled: i >= pokemon.enableSubSkillList.length,
-                      }
-                    ]"
-                  >{{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}</div>
-                </div>
-              </td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>スキル</th>
+                  <td v-for="pokemon in result.pokemonList" class="w-100px">
+                    {{ pokemon.skillName }}
+                    <small>(Lv{{ pokemon.fixedSkillLv }})</small>
+                  </td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>せいかく</th>
-              <td v-for="pokemon in result.pokemonList"><NatureInfo :nature="pokemon.nature" /></td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>サブスキル</th>
+                  <td v-for="pokemon in result.pokemonList">
+                    <div class="sub-skill-list">
+                      <div v-for="(subSkill, i) in pokemon.subSkillList"
+                        class="sub-skill"
+                        :class="[
+                          `sub-skill-${SubSkill.map[subSkill].rarity}`,
+                          {
+                            short: config.pokemonList.subSkillShort,
+                            disabled: i >= pokemon.enableSubSkillList.length,
+                          }
+                        ]"
+                      >{{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}</div>
+                    </div>
+                  </td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>おてスピ短縮</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>せいかく</th>
+                  <td v-for="pokemon in result.pokemonList"><NatureInfo :nature="pokemon.nature" /></td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>げんき回復/日</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.healEffect).toLocaleString() }}</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>おてスピ短縮</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr v-if="config.simulation.result.detail">
-              <th>手伝い/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round((pokemon.dayHelpNum + pokemon.nightHelpNum) * 7).toLocaleString() }}</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>げんき回復/日</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.healEffect).toLocaleString() }}</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr v-if="config.simulation.result.detail">
-              <th>いつ育/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryHelpNum * 7).toLocaleString() }}</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr v-if="config.teamSimulation.result.detail">
+                  <th>手伝い/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round((pokemon.dayHelpNum + pokemon.nightHelpNum) * 7).toLocaleString() }}</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr v-if="config.simulation.result.detail">
-              <th>食材確率</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ (pokemon.foodRate * 100).toFixed(1) }}%</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr v-if="config.teamSimulation.result.detail">
+                  <th>いつ育/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryHelpNum * 7).toLocaleString() }}</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>きのみE/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryEnergyPerDay * 7).toLocaleString() }}</td>
-              <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.berryEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr v-if="config.teamSimulation.result.detail">
+                  <th>食材確率</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ (pokemon.foodRate * 100).toFixed(1) }}%</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>スキルE/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillEnergyPerDay * 7).toLocaleString() }}</td>
-              <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.skillEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>きのみE/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryEnergyPerDay * 7).toLocaleString() }}</td>
+                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.berryEnergyPerDay, 0) * 7).toLocaleString() }}</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>ゆめのかけら/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.shard * 7).toLocaleString() }}</td>
-              <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.shard, 0) * 7).toLocaleString() }}</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>スキルE/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillEnergyPerDay * 7).toLocaleString() }}</td>
+                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.skillEnergyPerDay, 0) * 7).toLocaleString() }}</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr v-if="config.simulation.result.detail">
-              <th>スキル回数/週</th>
-              <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
-              <td>-</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>ゆめのかけら/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.shard * 7).toLocaleString() }}</td>
+                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.shard, 0) * 7).toLocaleString() }}</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr v-for="food in Food.list" v-if="config.simulation.result.food">
-              <th><img :src="food.img"></th>
-              <td v-for="pokemon in result.pokemonList" class="number">
-                <template v-if="pokemon[food.name]">{{ Math.round(pokemon[food.name] * 7).toLocaleString() }}</template>
-              </td>
-              <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</td>
-              <td class="number">{{ Math.round(result.remainFoodNum[food.name]).toLocaleString() }}</td>
-            </tr>
+                <tr v-if="config.teamSimulation.result.detail">
+                  <th>スキル回数/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
+                  <td>-</td>
+                  <td v-if="config.teamSimulation.result.food">-</td>
+                </tr>
 
-            <tr>
-              <th>料理</th>
-              <td colspan="7">
-                <div v-for="day in 7">
-                  {{ result.cookingList.slice(day * 3 - 3, day * 3).map(x => x.cooking.name).join(' / ') }}
-                </div>
-              </td>
-            </tr>
+                <tr v-for="food in Food.list" v-if="config.teamSimulation.result.food">
+                  <th><img :src="food.img"></th>
+                  <td v-for="pokemon in result.pokemonList" class="number">
+                    <template v-if="pokemon[food.name]">{{ Math.round(pokemon[food.name] * 7).toLocaleString() }}</template>
+                  </td>
+                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</td>
+                  <td class="number">{{ Math.round(result.remainFoodNum[food.name]).toLocaleString() }}</td>
+                </tr>
 
-            <tr>
-              <th>料理エナジー</th>
-              <td colspan="7" class="number">
-                {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
-              </td>
-            </tr>
+                <tr>
+                  <th>料理</th>
+                  <td colspan="7">
+                    <div v-for="day in 7">
+                      {{ result.cookingList.slice(day * 3 - 3, day * 3).map(x => x.cooking.name).join(' / ') }}
+                    </div>
+                  </td>
+                </tr>
 
-            <tr>
-              <th>総エナジー/週<br><small>(FB込)</small></th>
-              <td colspan="7" class="number">
-                {{ Math.round(result.energy).toLocaleString() }}
-              </td>
-            </tr>
+                <tr>
+                  <th>料理エナジー</th>
+                  <td colspan="7" class="number">
+                    {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
+                  </td>
+                </tr>
 
-            <tr>
-              <th>せいかく</th>
-              <td v-for="pokemon in result.pokemonList">{{ pokemon.score.toFixed(0) }}</td>
-              <td>{{ result.pokemonList.reduce((a, x) => a + x.score, 0).toFixed(0) * 7 }}</td>
-              <td v-if="config.simulation.result.food">-</td>
-            </tr>
+                <tr>
+                  <th>総エナジー/週<br><small>(FB込)</small></th>
+                  <td colspan="7" class="number">
+                    {{ Math.round(result.energy).toLocaleString() }}
+                  </td>
+                </tr>
 
-            <tr>
-              <th>スコア</th>
-              <td colspan="7" class="number">{{ Math.round(result.score).toLocaleString() }}</td>
-            </tr>
-          </table>
+                <tr>
+                  <th>スコア</th>
+                  <td colspan="7" class="number">{{ Math.round(result.score).toLocaleString() }}</td>
+                </tr>
+              </table>
+            </ToggleArea>
+          </template>
         </AsyncWatcherArea>
       </div>
     </template>
@@ -386,8 +375,8 @@ onBeforeUnmount(() => {
   }
 
   .simulation-result {
-    flex: 1 1 0;
-    overflow: auto;
+    flex: 1 1 100px;
+    // overflow: auto;
 
     table {
       border-collapse: collapse;

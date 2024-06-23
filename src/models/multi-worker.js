@@ -42,6 +42,7 @@ class MultiWorker {
   async call(
     progressCounter,
     parameterFunction,
+    progressCallback = null,
   ) {
     let promiseList = [];
     let workerProgressList = []
@@ -58,6 +59,9 @@ class MultiWorker {
             reject(body);
           }
           if (status == 'progress') {
+            if (progressCallback) {
+              body = progressCallback(i, body, this.clusterList)
+            }
             workerProgressList[i] = body;
           }
           if (status == 'success') {

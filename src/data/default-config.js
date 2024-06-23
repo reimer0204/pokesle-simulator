@@ -24,6 +24,7 @@ const defaultConfig = {
 
   pokemonList: {
     selectDetail: false,
+    selectEnergy: false,
     baseInfo: true,
     subSkillShort: true,
     foodInfo: false,
@@ -69,16 +70,16 @@ const defaultConfig = {
     potSize: 57,
     bagOverOperation: true,
     researchRankMax: true,
-
-    result: {
-      detail: false,
-      food: false,
-    },
   },
 
   teamSimulation: {
     maxRank: 30,
     resultNum: 10,
+
+    result: {
+      detail: false,
+      food: false,
+    },
   },
 
   foodDefaultNum: {},

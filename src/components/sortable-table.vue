@@ -17,6 +17,10 @@ if(props.config) {
   }
 }
 
+watch(() => props.columnList, () => {
+  sortInfo.value = sortInfo.value.filter(sort => columnMap.value[sort.key] !== undefined);
+})
+
 const columnMap = computed(() => {
   let result = {};
   for(let column of props.columnList) {
@@ -46,7 +50,7 @@ const sortedDataList = computed(() => {
   let minmax = {};
   for(let data of result) {
     for(let sort of sortInfo.value) {
-      if(columnMap.value[sort.key].type == Number) {
+      if(columnMap.value[sort.key]?.type == Number) {
         minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
         minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
         minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)

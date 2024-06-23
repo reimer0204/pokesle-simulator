@@ -91,6 +91,8 @@ async function createPokemonList(setConfig = false) {
 // 設定が変わる度に再計算する
 watch(config.simulation, () => createPokemonList(true), { immediate: true })
 
+watch(PokemonBox.watch, () => createPokemonList())
+
 const columnList = computed(() => {
   let result = [
     { key: 'edit', name: '', type: String },
@@ -106,14 +108,15 @@ const columnList = computed(() => {
 
   if (config.simulation.selectInfo) {
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    result.push(
-      { key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true },
-    )
+    result.push({ key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true })
     for(let lv of lvList) {
-      result.push(
-        { key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true },
-      )
+      result.push({ key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true })
+      
+      if (config.pokemonList.selectEnergy) {
+        result.push({ key: `evaluate_energy_${lv}`, name: `エナジー\n(${lv})`, template: 'evaluate_energy', lv, percent: true })
+      }
     }
+
   }
 
   if (config.pokemonList.baseInfo) {
@@ -165,8 +168,6 @@ const columnList = computed(() => {
 
 async function showEditPopup(pokemon) {
   if(await Popup.show(EditPokemonPopup, { index: pokemon.index })) {
-    createPokemonList()
-
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
     }
@@ -175,8 +176,6 @@ async function showEditPopup(pokemon) {
 
 async function addPokemon() {
   if(await Popup.show(EditPokemonPopup)) {
-    createPokemonList()
-
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
     }
@@ -185,8 +184,6 @@ async function addPokemon() {
 
 async function showTsvPopup() {
   if(await Popup.show(PokemonBoxTsvPopup)) {
-    createPokemonList()
-
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
     }
@@ -194,9 +191,7 @@ async function showTsvPopup() {
 }
 
 async function showGoogleSpreadsheetPopup() {
-  if(await Popup.show(GoogleSpreadsheetPopup)) {
-    createPokemonList()
-  }
+  await Popup.show(GoogleSpreadsheetPopup)
 }
 
 async function simulationTeam() {
@@ -206,7 +201,6 @@ async function simulationTeam() {
 function deletePokemon(index) {
   if (confirm(`${PokemonBox.list[index].name}(Lv${PokemonBox.list[index].lv})を削除します。よろしいですか？`)) {
     PokemonBox.delete(index);
-    createPokemonList()
   }
 }
 
@@ -229,6 +223,7 @@ function showSelectDetail(pokemon, after, lv) {
     <div class="flex-row-start-center gap-10px">
       <label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label>
       <label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選情報</label>
+      <label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選エナジー表示</label>
       <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label>
       <label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label>
       <label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label>
@@ -324,6 +319,28 @@ function showSelectDetail(pokemon, after, lv) {
               </template>
               <template v-else>
                 <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              </template>
+            </div>
+          </template>
+
+          <template #evaluate_energy="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</div>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
+              <template v-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
+                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
+                </div>
+              </template>
+              <template v-else>
+                <div class="text-align-right">
+                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
+                </div>
               </template>
             </div>
           </template>

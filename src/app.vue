@@ -72,8 +72,10 @@ onMounted(() => {
   }
 
   main {
+    position: relative;
     flex: 1 1 0;
     padding: 10px;
+    z-index: 1;
   }
 }
 </style>

@@ -398,7 +398,7 @@ class PokemonSimulator {
                 [0, 0, 2, 3, 5],
                 [0, 1, 3, 4, 6],
                 [0, 1, 3, 4, 6],
-              ][pokemon.fixedSkillLv - 1][helpBoostCount]
+              ][pokemon.fixedSkillLv - 1][helpBoostCount - 1]
             }
             helpCount *= pokemon.skillEffectRate;
 

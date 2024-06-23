@@ -108,6 +108,7 @@ addEventListener('message', (event) => {
               let item = {
                 name: after,
                 score: evaluateResult,
+                energy: energyPerDay,
               };
               pokemon.evaluateResult[lv][after] = item
               if (pokemon.evaluateResult[lv].best.score <= item.score) {
@@ -124,8 +125,10 @@ addEventListener('message', (event) => {
           }
           
           pokemon.evaluate_max = pokemon.evaluateResult.max.best.score;
+          pokemon.evaluate_energy_max = pokemon.evaluateResult.max.best.energy;
           for(let lv of lvList) {
             pokemon[`evaluate_${lv}`] = pokemon.evaluateResult[lv].best.score;
+            pokemon[`evaluate_energy_${lv}`] = pokemon.evaluateResult[lv].best.energy;
           }
         }
       }

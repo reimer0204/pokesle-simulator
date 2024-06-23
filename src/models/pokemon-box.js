@@ -5,11 +5,9 @@ import SubSkill from '../data/sub-skill';
 import config from './config';
 
 class PokemonBox {
-
-  config = {
-    tsvColumns: {}
-  };
-  _list = [];  // ポケモン一覧
+  static _time = null;
+  static _list = [];  // ポケモン一覧
+  static watch = ref(0);
 
   static get list() {
     return [...this._list];
@@ -18,6 +16,7 @@ class PokemonBox {
   static load() {
     try {
       let obj = JSON.parse(localStorage.getItem('pokemonBox'))
+      this._time = obj.time ? new Date(obj.time) : new Date(),
       this._list = obj.list ?? [];
     } catch(e) {
       this._list = [];
@@ -41,6 +40,7 @@ class PokemonBox {
         foodList: pokemon.foodList,
         subSkillList: pokemon.subSkillList,
         nature: pokemon.nature,
+        shiny: pokemon.shiny,
       })
     } else if (0 <= index && index < this._list.length) {
       this._list[index] = pokemon;
@@ -52,7 +52,7 @@ class PokemonBox {
     if (index != null && 0 <= index + move && index + move < this._list.length) {
       let [item] = this._list.splice(index, 1);
       this._list.splice(index + move, 0, item)
-      // this.save();
+      this.save();
     }
   }
 
@@ -63,10 +63,13 @@ class PokemonBox {
     }
   }
 
-  static save() {
+  static save(time = null) {
+    this._time = time ? new Date(time) : new Date();
     localStorage.setItem('pokemonBox', JSON.stringify({
+      time: this._time.toISOString(),
       list: this._list,
     }))
+    this.watch.value = +new Date();
   }
 
   static import(text) {
@@ -124,25 +127,32 @@ class PokemonBox {
       const form = new FormData();
       form.append('json', JSON.stringify({
         sheet: config.pokemonBox.gs.sheet,
-        pokemonList: this.list.map(pokemon => [
-          pokemon.name,
-          pokemon.lv,
-          pokemon.bag,
-          pokemon.skillLv,
-          ...[...pokemon.foodList, '', '', ''].slice(0, 3),
-          ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
-          pokemon.nature,
-          pokemon.shiny ? 1 : null,
-        ]),
+        pokemonList: [
+          [this._time.toISOString(), ...new Array(13).fill('')],
+          ...this.list.map(pokemon => [
+            pokemon.name,
+            pokemon.lv,
+            pokemon.bag,
+            pokemon.skillLv,
+            ...[...pokemon.foodList, '', '', ''].slice(0, 3),
+            ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
+            pokemon.nature,
+            pokemon.shiny ? 1 : null,
+          ])
+        ],
       }))
   
       await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
     })
   }
 
-  static async importGoogleSpreadsheet() {
+  static async importGoogleSpreadsheet(auto = false) {
+    if (!config.pokemonBox.gs.url) return;
+
     const response = await fetch(`${config.pokemonBox.gs.url}?sheet=${encodeURIComponent(config.pokemonBox.gs.sheet)}`);
     let rowList = await response.json();
+
+    let [time] = rowList.shift();
 
     let newList = rowList.map(row => {
       let boxPokemon = {
@@ -177,11 +187,22 @@ class PokemonBox {
       return boxPokemon;
     }).filter(x => x != null)
 
-    if (confirm(`今のボックス情報をクリアし、新しく${newList.length}件のポケモンをインポートします。よろしいですか？`)) {
-      this._list = newList;
-      this.save();
+    if (auto) {
+      if(new Date(time) > this._time) {
+        if (confirm(`スプレッドシートに新しいデータがあります。${newList.length}件のポケモンをインポートします。よろしいですか？`)) {
+          this._list = newList;
+          this.save(time);
+  
+          return true;
+        }
+      }
+    } else {
+      if (confirm(`今のボックス情報をクリアし、新しく${newList.length}件のポケモンをインポートします。よろしいですか？`)) {
+        this._list = newList;
+        this.save(time);
 
-      return true;
+        return true;
+      }
     }
   }
 }
