@@ -43,12 +43,12 @@ async function save() {
 
     <DangerAlert v-if="!config.initSetting">
       ツールを使用するには初回設定が必要です。<br>
-      まずは「睡眠時間」と「日中タップ回数」をご自身のものに修正してください。<br>
+      まずは「基本設定」の「睡眠時間」と「日中タップ回数」をご自身のものに修正してください。<br>
       他の項目は気になる方だけ修正してください。
     </DangerAlert>
 
-    <div class="group">
-      <h2>基本設定</h2>
+    <ToggleArea open>
+      <template #headerText>基本設定</template>
 
       <SettingList>
         <div>
@@ -61,11 +61,12 @@ async function save() {
           <div><input type="number" step="1" v-model="editConfig.checkFreq"> 回</div>
         </div>
       </SettingList>
+    </ToggleArea>
 
-      <h2>厳選設定</h2>
+    <ToggleArea :open="config.initSetting">
+      <template #headerText>厳選設定</template>
 
       <SettingList>
-
         <div>
           <label>きのみ評価</label>
           <div>
@@ -164,11 +165,12 @@ async function save() {
           </div>
         </div>
       </SettingList>
+    </ToggleArea>
 
-      <h2>げんきシミュレーション設定</h2>
+    <ToggleArea :open="config.initSetting">
+      <template #headerText>げんきシミュレーション設定</template>
 
       <SettingList>
-
         <div>
           <label>チェック率</label>
           <div>
@@ -191,11 +193,12 @@ async function save() {
           </div>
         </div>
       </SettingList>
+    </ToggleArea>
 
-      <h2>その他設定</h2>
+    <ToggleArea :open="config.initSetting">
+      <template #headerText>その他設定</template>
 
       <SettingList>
-
         <div>
           <label>スレッド数</label>
           <div>
@@ -204,7 +207,7 @@ async function save() {
           </div>
         </div>
       </SettingList>
-    </div>
+    </ToggleArea>
 
     <DangerAlert>
       この設定を反映すると、あなたの睡眠時間やタップ頻度に応じたヒーラーの期待値やポケモンの厳選条件の期待値を計算します。<br>
@@ -232,6 +235,10 @@ async function save() {
   .list {
     display: grid;
     grid-template-columns: max-content 1fr;
+  }
+  
+  .toggle-area {
+    width: 100%;
   }
 
   .group {
