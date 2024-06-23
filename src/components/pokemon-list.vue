@@ -234,7 +234,7 @@ function showSelectDetail(pokemon, after, lv) {
     <AsyncWatcherArea :asyncWatcher="asyncWatcher">
       <div class="scroll">
         <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" config="pokemonList"
-          :fixColumn="config.pokemonList.fixScore ? 8 : 2"
+          :fixColumn="config.pokemonList.fixScore ? 9 : 3"
         >
 
           <template #edit="{ data }">

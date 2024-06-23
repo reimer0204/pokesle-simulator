@@ -262,12 +262,12 @@ onMounted(() => {
       <div>所持数</div>
       <div></div>
       <!-- <input type="number" ref="bagInput" v-model="pokemon.bag" @keypress.enter="skillLvInput.focus()"/> -->
-      <input type="number" v-model="pokemon.bag" placeholder="省略可"/>
+      <input type="number" v-model="pokemon.bag" :placeholder="basePokemon ? (basePokemon.bag + (basePokemon.evolveLv - 1) * 5) : '省略可'"/>
 
       <div>スキルLv</div>
       <div></div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
-      <input type="number" v-model="pokemon.skillLv" placeholder="省略可"/>
+      <input type="number" v-model="pokemon.skillLv" :placeholder="basePokemon ? basePokemon.evolveLv : '省略可'"/>
 
       <div>色違い</div>
       <div></div>

@@ -65,13 +65,13 @@ const sortedDataList = computed(() => {
       let color;
       if(columnMap.value[sort.key].type == Number) {
         let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
-        color = `hsl(${rate * 120}deg 90% 80% / 0.2)`
+        color = `hsl(${rate * 120}deg 90% 95%)`
       } else {
         let text = String(data[sort.key] ?? '');
         color = sringColorMap.get(text)
         if (color == null) {
           let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
-          color = `hsl(${code}deg 90% 80% / 0.2)`
+          color = `hsl(${code}deg 90% 95%)`
           sringColorMap.set(text, color)
         }
       }
