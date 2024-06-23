@@ -1,12 +1,15 @@
 <script setup>
-import SelectTablePickupPopup from '../components/select-table-pickup-popup.vue';
+import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
 import SettingList from '../components/setting-list.vue';
 import SortableTable from '../components/sortable-table.vue';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
+import SubSkill from '../data/sub-skill.js';
 import config from '../models/config.js';
 import EvaluateTable from '../models/evaluate-table.js';
+import MultiWorker from '../models/multi-worker.js';
 import Popup from '../models/popup/popup.js';
+import EvaluateTableWorker from '../worker/evaluate-table-worker.js?worker';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 let lv = ref(lvList[0])
@@ -44,12 +47,64 @@ let columnList = computed(() => {
   ]
 })
 
-function showDetail(pokemon, p) {
-  Popup.show(SelectTablePickupPopup, {
-    name: pokemon.name,
-    foodIndexList: pokemon.foodIndexList,
-    p,
-    lv: lv.value,
+async function showDetail(pokemon, p) {
+  
+  asyncWatcher.run(async (progressCounter) => {
+
+    const evaluateTable = EvaluateTable.load();
+
+    function combination(r, n, s = 0) {
+      if (n == 0) return [[]];
+      let result = [];
+
+      for(let i = s; i < r - n + 1; i++) {
+        for(let subList of combination(r, n - 1, i + 1)) {
+          result.push([i, ...subList])
+        }
+      }
+
+      return result;
+    }
+
+    const multiWorker = new MultiWorker(EvaluateTableWorker, 1)
+
+    // サブスキルの組み合わせを列挙
+    const subSkillNum = lv.value < 10 ? 0 : lv.value < 25 ? 1 : lv.value < 50 ? 2 : lv.value < 75 ? 3 : lv.value < 100 ? 4 : 5;
+    let subSkillCombinationMap = {};
+    for(const indexes of combination(SubSkill.list.length, subSkillNum)) {
+      let subSkillList = indexes.map(i => SubSkill.list[i].name);
+      if (config.selectEvaluate.silverSeedUse) {
+        subSkillList = SubSkill.useSilverSeed(subSkillList)
+      }
+      let subSkillKey = subSkillList.sort().join('/');
+      subSkillCombinationMap[subSkillKey] = (subSkillCombinationMap[subSkillKey] ?? 0) + 1;
+    }
+
+    let result = (await multiWorker.call(
+      progressCounter,
+      () => {
+        return {
+          lv: lv.value,
+          config: JSON.parse(JSON.stringify(config)),
+          pokemonList: [Pokemon.map[pokemon.name]],
+          foodCombinationList: [pokemon.foodIndexList],
+          subSkillCombinationMap,
+          scoreForHealerEvaluate: evaluateTable.scoreForHealerEvaluate[lv],
+          scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv],
+        }
+      }
+    ))[0].result[pokemon.name][pokemon.foodIndexList][p].eachResult
+    
+    console.log(result);
+
+    Popup.show(SelectTableDetailPopup, {
+      name: pokemon.name,
+      lv: lv.value,
+      foodIndexList: pokemon.foodList.map(f => Math.max(Pokemon.map[pokemon.name].foodList.findIndex(f2 => f2.name == f)), 0),
+      subSkillList: result.enableSubSkillList,
+      nature: result.nature,
+      percentile: false,
+    })
   })
 }
 

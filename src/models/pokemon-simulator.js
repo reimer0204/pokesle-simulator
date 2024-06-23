@@ -546,7 +546,7 @@ class PokemonSimulator {
       foodList,
       subSkillList,
       nature,
-      true,
+      this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
       PokemonSimulator.MODE_SELECT,
     )
 
@@ -576,7 +576,7 @@ class PokemonSimulator {
       result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
     }
     if (subSkillList.includes('リサーチEXPボーナス')) {
-      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
+      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
     }
 
     return result;

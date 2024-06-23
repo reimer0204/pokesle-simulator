@@ -86,6 +86,7 @@ const defaultConfig = {
 
   // 厳選関連
   selectEvaluate: {
+    berryMatchAll: true,    // 食材/スキルタイプ
     shardEnergyRate: 120,   // エナジー/ゆめのかけら
     shardEnergy: 30,        // ゆめのかけらをエナジーに換算する
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)

@@ -19,7 +19,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SelectTableDetailPopup: typeof import('./src/components/select-table-detail-popup.vue')['default']
-    SelectTablePickupPopup: typeof import('./src/components/select-table-pickup-popup.vue')['default']
     SettingList: typeof import('./src/components/setting-list.vue')['default']
     SimulationTeamPopup: typeof import('./src/components/simulation-team-popup.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']

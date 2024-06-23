@@ -67,6 +67,15 @@ async function save() {
       <SettingList>
 
         <div>
+          <label>きのみ評価</label>
+          <div>
+            <label class="flex-row-start-center">
+              <input type="checkbox" v-model="editConfig.selectEvaluate.berryMatchAll">食材/スキルタイプも<br>好物前提で計算
+            </label>
+            <small>食材タイプやスキルタイプに<br>きのみエナジーを期待しない<br>場合は外してください。</small>
+          </div>
+        </div>
+        <div>
           <label>食材評価</label>
           <div>
             <div><input type="number" v-model="editConfig.selectEvaluate.foodEnergyRate" step="1"> %</div>

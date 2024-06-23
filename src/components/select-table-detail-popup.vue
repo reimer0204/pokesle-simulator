@@ -20,6 +20,7 @@ const props = defineProps({
   foodIndexList: { type: Array, required: true },
   subSkillList: { type: Array, required: true },
   nature: { type: Object, required: true },
+  percentile: { type: Boolean, default: true },
 })
 
 const evaluateTable = EvaluateTable.load();
@@ -83,7 +84,7 @@ const percentilePosition = computed(() => {
 
     <h2>エナジー期待値：{{ Math.round(result.energyPerDay).toLocaleString() }}</h2>
 
-    <ToggleArea class="mt-10px" open>
+    <ToggleArea class="mt-10px" :open="props.percentile">
       <template #headerText>パーセンタイル</template>
 
       <table>
@@ -237,10 +238,10 @@ const percentilePosition = computed(() => {
         <tr>
           <th>きのみエナジー</th>
           <td>
-            ({{ (result.normalHelpNum).toFixed(2) }} × (100% - {{ (result.fixedFoodRate * 100).toFixed(1) }}%) + {{ (result.berryHelpNum).toFixed(2) }}) ※通常手伝い×きのみ率＋いつ育<br>
-            × max({{ Berry.map[result.base.berry].energy }} + {{ result.lv }} - 1, {{ Berry.map[result.base.berry].energy }} × 102.5% ^ ({{ result.lv }} - 1))<br>
+            max({{ Berry.map[result.base.berry].energy }} + {{ result.lv }} - 1, {{ Berry.map[result.base.berry].energy }} × 102.5% ^ ({{ result.lv }} - 1))<br>
             × {{ result.berryNum }} ※きのみの数<br>
-            × 2 ※好物前提のため2倍<br>
+            <template v-if="config.selectEvaluate.berryMatchAll || result.specialty == 'きのみ'">× 2 ※好物前提のため2倍<br></template>
+            × ({{ (result.normalHelpNum).toFixed(2) }} × (100% - {{ (result.fixedFoodRate * 100).toFixed(1) }}%) + {{ (result.berryHelpNum).toFixed(2) }}) ※通常手伝い×きのみ率＋いつ育<br>
             ＝ {{ result.berryEnergyPerDay.toFixed(1) }}
           </td>
         </tr>
@@ -393,11 +394,23 @@ const percentilePosition = computed(() => {
           </td>
         </tr>
         <tr>
-          <th colspan="2">総計</th>
+          <th colspan="2">小計</th>
           <td>
             {{ result.berryEnergyPerDay.toFixed(1) }}
             + {{ result.foodEnergyPerDay.toFixed(1) }}
             + {{ result.skillEnergyPerDay.toFixed(1) }}<br>
+            ＝ {{ (result.berryEnergyPerDay + result.foodEnergyPerDay + result.skillEnergyPerDay).toFixed(0) }}<br>
+          </td>
+        </tr>
+        <tr>
+          <th colspan="2">総計</th>
+          <td>
+            ({{ result.berryEnergyPerDay.toFixed(1) }}
+            + {{ result.foodEnergyPerDay.toFixed(1) }}
+            + {{ result.skillEnergyPerDay.toFixed(1) }})<br>
+            <template v-if="result.enableSubSkillList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template>
+            <template v-if="result.enableSubSkillList.includes('ゆめのかけらボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}%) ※ゆめのかけらボーナス<br></template>
+            <template v-if="result.enableSubSkillList.includes('リサーチEXPボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}% ÷ 2) ※リサーチEXPボーナス<br></template>
             ＝ {{ result.energyPerDay.toFixed(0) }}<br>
           </td>
         </tr>

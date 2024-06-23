@@ -204,6 +204,7 @@ function deletePokemon(index) {
   }
 }
 
+// 厳選詳細ポップアップを表示
 function showSelectDetail(pokemon, after, lv) {
   Popup.show(SelectTableDetailPopup, {
     name: after,
