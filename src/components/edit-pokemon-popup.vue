@@ -1,11 +1,17 @@
 <script setup>
-import PopupBase from './popup-base.vue';
-import Pokemon from '../data/pokemon';
 import Food from '../data/food';
-import SubSkill from '../data/sub-skill';
 import Nature from '../data/nature';
-import convertRomaji from '../models/utils/convert-romaji';
+import Pokemon from '../data/pokemon';
+import SubSkill from '../data/sub-skill';
+import { AsyncWatcher } from '../models/async-watcher';
+import config from '../models/config';
+import EvaluateTable from '../models/evaluate-table';
+import MultiWorker from '../models/multi-worker';
 import PokemonBox from '../models/pokemon-box';
+import convertRomaji from '../models/utils/convert-romaji';
+import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+import AsyncWatcherArea from './async-watcher-area.vue';
+import PopupBase from './popup-base.vue';
 
 const props = defineProps({
   index: { type: Number }
@@ -46,6 +52,10 @@ let assist = reactive({
   nature: null,
 });
 
+const pokemonFoodABC = computed(() => {
+  return pokemon.foodList.map(f => String.fromCharCode(65 + Math.max(basePokemon.value?.foodList.findIndex(x => x.name == f) ?? 0, 0))).join('');
+})
+
 // 編集ならデフォルト値を設定
 if (props.index != null) {
   pokemon = reactive(JSON.parse(JSON.stringify(PokemonBox.list[props.index])))
@@ -54,7 +64,7 @@ if (props.index != null) {
   assist.lv = pokemon.lv;
   assist.bag = pokemon.bag;
   assist.skillLv = pokemon.skillLv;
-  assist.foodABC = pokemon.foodList.map(f => String.fromCharCode(65 + Math.max(basePokemon.value.foodList.findIndex(x => x.name == f), 0))).join('')
+  assist.foodABC = pokemonFoodABC.value;
   assist.subSkillList = [...pokemon.subSkillList]
   assist.nature = pokemon.nature
 }
@@ -102,7 +112,7 @@ function convertSubSkill(index) {
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
   let regexp = new RegExp(name.split('').join('.*'))
 
-  let match = SubSkill.listForInput.find(x => regexp.test(x.katakana))
+  let match = SubSkill.listForInput.find(x => regexp.test(x.katakana) || x.name == name)
   if (match) {
     pokemon.subSkillList[index] = match.name;
   }
@@ -137,26 +147,7 @@ function save(requireContinue) {
     PokemonBox.post(sanitizedPokemon)
 
     if (requireContinue) {
-      pokemon.name = null;
-      pokemon.lv = null;
-      pokemon.bag = null;
-      pokemon.skillLv = null;
-      pokemon.foodList = ['', '', ''];
-      pokemon.subSkillList = [null, null, null, null, null];
-      pokemon.nature = null;
-      pokemon.shiny = false;
-
-      assist.name = '';
-      assist.lv = null;
-      assist.bag = null;
-      assist.skillLv = null;
-      assist.foodABC = '';
-      assist.subSkillList = ['', '', '', '', ''];
-      assist.nature = '';
-      assist.shiny = false;
-
-      nameInput.value.focus();
-
+      reset();
       $emit('input', true)
 
     } else {
@@ -175,14 +166,105 @@ function deletePokemon() {
   }
 }
 
+let multiWorker = new MultiWorker(PokemonListSimulator, 1)
+let selectAsyncWatcher = AsyncWatcher.init();
+let multiWorkerConfig = (async () => {
+  await multiWorker.call(
+    null,
+    () => ({ type: 'config', config: JSON.parse(JSON.stringify(config)) })
+  )
+})()
+let selectResult = ref(null);
+
+let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()]
+
+watch(pokemon, async () => {
+
+  try {
+    PokemonBox.check(pokemon)
+    selectAsyncWatcher.run(async (progressCounter) => {
+      await multiWorkerConfig;
+    
+      selectResult.value = (await multiWorker.call(
+        progressCounter,
+        () => {
+          return {
+            type: 'basic',
+            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
+            evaluateTable: EvaluateTable.load(),
+          }
+        }
+      )).flat(1)[0];
+
+      // console.log(selectResult.value);
+    })
+  } catch(e) {
+    selectResult.value = null;
+    // console.log(e);
+    // ignore
+  }
+
+}, {
+  immediate: true,
+})
+
+// 表示時に名前入力欄にフォーカスをあわせる
 onMounted(() => {
   nameInput.value.focus();
 })
 
+function reset() {
+  pokemon.name = null;
+  pokemon.lv = null;
+  pokemon.bag = null;
+  pokemon.skillLv = null;
+  pokemon.foodList = ['', '', ''];
+  pokemon.subSkillList = [null, null, null, null, null];
+  pokemon.nature = null;
+  pokemon.shiny = false;
+
+  assist.name = '';
+  assist.lv = null;
+  assist.bag = null;
+  assist.skillLv = null;
+  assist.foodABC = '';
+  assist.subSkillList = ['', '', '', '', ''];
+  assist.nature = '';
+  assist.shiny = false;
+
+  nameInput.value.focus();
+}
+
+function onEsc() {
+  if(Object.values(pokemon).flat(1).some(v => v != null && v != '')) {
+    reset();
+  } else {
+    $emit('close')
+  }
+}
+
+function shareX() {
+  let maxRate = null;
+  if (selectResult.value?.evaluateResult?.max) {
+    maxRate = Math.max(...Object.values(selectResult.value.evaluateResult?.max).map(x => x.rate));
+  }
+
+  let text = [
+    `ポケモンスリープで「${pokemon.name ?? '?'}」を捕まえました！`,
+    `食材: ${pokemonFoodABC.value}`,
+    `サブスキル: ${pokemon.subSkillList.map(x => SubSkill.map[x]?.short ?? '?').join('/')}`,
+    `せいかく: ${pokemon.nature ?? '?'}`,
+    `厳選度: ${ maxRate != null ? (maxRate * 100).toFixed(1) : '?' }%`,
+    `https://reimer0204.github.io/pokesle-simulator/`,
+    `#ポケスリ #ポケモンスリープ`,
+  ].join('\n');
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`)
+}
+
 </script>
 
 <template>
-  <PopupBase class="edit-pokemon-popup" @close="$emit('close')">
+  <PopupBase class="edit-pokemon-popup" @close="$emit('close')" @keydown.esc.stop="onEsc">
     <template #headerText>ポケモン編集</template>
 
     <BaseAlert>
@@ -202,7 +284,7 @@ onMounted(() => {
         type="text" ref="nameInput" v-model="assist.name" @keypress.enter="lvInput.focus()"
         placeholder="ローマ字/ひらがな/カタカナ"
       />
-      <select v-model="pokemon.name">
+      <select v-model="pokemon.name" class="w-200px">
         <option v-for="pokemon in Pokemon.list" :value="pokemon.name">{{ pokemon.name }}</option>
       </select>
 
@@ -225,11 +307,14 @@ onMounted(() => {
             <template v-else>-</template>
           </div>
         </div>
-        <template v-for="i in 3">
-          <select v-model="pokemon.foodList[i - 1]">
-            <option v-for="food in foodSelectList[i - 1]" :value="food">{{ food }}</option>
+        <div class="flex-row-start-center gap-5px">
+          <select v-for="i in 3" v-model="pokemon.foodList[i - 1]" class="w-140px">
+            <option v-for="food in foodSelectList[i - 1]" :value="food">
+              <img :src="Food.map[food].img">
+              {{ food }}
+            </option>
           </select>
-        </template>
+        </div>
       </div>
 
       <template v-for="(lv, i) in [10, 25, 50, 75, 100]">
@@ -273,13 +358,46 @@ onMounted(() => {
       <div></div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <label><input type="checkbox" v-model="pokemon.shiny" />色違い</label>
-
     </div>
 
+    <ToggleArea class="mt-20px" open>
+      <template #headerText>厳選情報</template>
+      
+      <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
+        <table v-if="selectResult">
+          <thead>
+            <tr>
+              <th></th>
+              <th v-for="lv in selectLvList" class="text-align-right">
+                <template v-if="lv == 'max'">最大</template>
+                <template v-else>Lv{{ lv }}</template>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="after in selectResult.afterList">
+              <th>{{ after }}</th>
+              <td v-for="lv in selectLvList"
+                :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
+                class="text-align-right"
+              >
+                {{ (selectResult.evaluateResult?.[lv]?.[after].score * 100).toFixed(1) }}%
+              </td>
+              <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
+              >
+                {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
+              </th> -->
+            </tr>
+          </tbody>
+        </table>
+        <div v-else>せいかくまで入力すると表示されます</div>
+      </AsyncWatcherArea>
+    </ToggleArea>
 
     <div class="flex-row-start-center gap-10px mt-10px">
       <button v-if="props.index != null" class="important" @click="deletePokemon">削除</button>
       <div class="flex-110"></div>
+      <div class="x" @click="shareX"><img src="../img/x.svg"></div>
       <button @click="save(true)" :disabled="saveDisabled" v-if="props.index == null">保存して続けて登録</button>
       <button @click="save(false)" :disabled="saveDisabled">保存</button>
     </div>
@@ -317,6 +435,42 @@ onMounted(() => {
     select {
       width: 150px;
     }
+  }
+
+  .select-area {
+    table {
+      border-collapse: collapse;
+      width: 100%;
+
+      thead {
+        tr {
+          background-color: rgb(54, 73, 150);
+          color: #FFF;
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px #CCC solid;
+        }
+      }
+
+      th, td {
+        padding: 3px 5px;
+
+        &.best {
+          font-weight: bold;
+        }
+      }
+    }
+  }
+
+  .x {
+    background-color: #000;
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+    border-radius: 50%;
   }
 
 }

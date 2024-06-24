@@ -24,6 +24,18 @@ class PokemonBox {
     return this._list;
   }
 
+  static check(pokemon) {
+    if (Pokemon.map[pokemon.name] == null) throw '知らないポケモン';
+    if (!(0 < pokemon.lv)) throw '知らないレベル';
+    if (pokemon.foodList.some(food => Food.map[food] == null)) throw '知らない食材';
+    if (pokemon.foodList.length != 3) throw '食材が3つじゃない';
+    if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null)) throw '知らないサブスキル';
+    if (pokemon.subSkillList.length != 5) throw 'サブスキルが5つじゃない';
+    if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
+
+    return true;
+  }
+
   static post(pokemon, index = null) {
     if (Pokemon.map[pokemon.name] == null) throw '知らないポケモン';
     if (!(0 < pokemon.lv)) throw '知らないレベル';

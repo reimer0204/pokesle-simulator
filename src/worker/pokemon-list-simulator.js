@@ -89,25 +89,25 @@ addEventListener('message', (event) => {
               let { energyPerDay } = selectEvaluate
               
               let evaluateResult;
+              let rate;
+              let ratio;
               let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')].percentile;
-              if (config.simulation.selectType == 0) {
-                let percentileUpper = Math.min(Math.max(percentileList.findIndex(x => x >= energyPerDay), 0), 100);
-                let percentileLower = percentileList[percentileUpper] == energyPerDay ? percentileUpper
-                  : Math.max(percentileUpper - 1, 0);
+              let percentileUpper = Math.min(Math.max(percentileList.findIndex(x => x >= energyPerDay), 0), 100);
+              let percentileLower = percentileList[percentileUpper] == energyPerDay ? percentileUpper
+                : Math.max(percentileUpper - 1, 0);
 
-                if (percentileUpper == percentileLower) {
-                  evaluateResult = percentileUpper / 100
-                } else {
-                  evaluateResult = ((energyPerDay - percentileList[percentileLower]) / (percentileList[percentileUpper] - percentileList[percentileLower]) + percentileLower) / 100
-                }
+              if (percentileUpper == percentileLower) {
+                rate = percentileUpper / 100
+              } else {
+                rate = ((energyPerDay - percentileList[percentileLower]) / (percentileList[percentileUpper] - percentileList[percentileLower]) + percentileLower) / 100
               }
-              if (config.simulation.selectType == 1) {
-                evaluateResult = energyPerDay / percentileList[config.simulation.selectBorder]
-              }
+              ratio = energyPerDay / percentileList[config.simulation.selectBorder]
 
               let item = {
                 name: after,
-                score: evaluateResult,
+                rate,
+                ratio,
+                score: config.simulation.selectType == 0 ? rate : ratio,
                 energy: energyPerDay,
               };
               pokemon.evaluateResult[lv][after] = item

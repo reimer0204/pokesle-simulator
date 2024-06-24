@@ -68,7 +68,7 @@ class MultiWorker {
             workerProgressList[i] = 1;
             resolve(body)
           }
-          progressCounter.set(workerProgressList.reduce((a, x) => a + x, 0) / workerProgressList.length)
+          progressCounter?.set(workerProgressList.reduce((a, x) => a + x, 0) / workerProgressList.length)
 
           if(status == 'error' || status == 'success') {
             this.rejectList = this.rejectList.filter(r => r != reject)
@@ -81,7 +81,7 @@ class MultiWorker {
     }
     let result = await Promise.all(promiseList)
     
-    progressCounter.set(1)
+    progressCounter?.set(1)
 
     return result;
   }
