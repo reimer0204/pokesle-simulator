@@ -2,6 +2,8 @@ import GenkiSimulator from "../worker/genki-simulator?worker";
 
 export default class HelpRate {
 
+  static VERSION = null;
+
   healEffectParameter = [];
 
   static getHealEffect(data, p, config) {

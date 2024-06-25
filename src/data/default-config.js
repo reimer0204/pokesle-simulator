@@ -9,6 +9,10 @@ const defaultConfig = {
 
   // 初期設定が完了しているか
   initSetting: false,
+  version: {
+    helpRate: null,
+    evaluateTable: null,
+  },
 
   // シミュレーション設定
   healEffectParameter: [0.891, 1.02, 4, 1, -2.304, 1, 0.00156],

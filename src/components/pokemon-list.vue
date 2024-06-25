@@ -270,10 +270,11 @@ function showSelectDetail(pokemon, after, lv) {
                 class="food"
                 :class="{
                   disabled: i >= data.enableFoodList.length,
+                  error: Pokemon.map[data.name].foodMap[food]?.numList[i] == null,
                 }"
               >
                 <img :src="Food.map[food].img" />
-                <div class="num">{{ Pokemon.map[data.name].foodMap[food].numList[i] }}</div>
+                <div class="num">{{ Pokemon.map[data.name].foodMap[food]?.numList[i] }}</div>
               </div>
             </div>
           </template>
@@ -392,6 +393,10 @@ function showSelectDetail(pokemon, after, lv) {
       background-color: #FFF;
       border-radius: 3px;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    &.error {
+      background-color: red;
     }
 
     img {

@@ -22,6 +22,11 @@
       シフト押しながらクリックすると2条件でソートできます。
     </p>
 
+    <h3>不具合見つけたんだけど</h3>
+    <p>
+      <a href="https://x.com/harezora_lueur" target="_blank">@harezora_lueur</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。
+    </p>
+
     <h2>仕様関連</h2>
 
 

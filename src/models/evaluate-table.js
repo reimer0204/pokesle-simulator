@@ -8,6 +8,8 @@ import MultiWorker from "./multi-worker";
 
 export default class EvaluateTable {
 
+  static VERSION = 20240625;
+
   static load() {
     try {
       return JSON.parse(localStorage.getItem('evaluateTable'))

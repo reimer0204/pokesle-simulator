@@ -26,6 +26,8 @@ async function save() {
 
     await EvaluateTable.simulation(editConfig, tableCounter);
     editConfig.initSetting = true;
+    editConfig.version.helpRate = HelpRate.VERSION;
+    editConfig.version.evaluateTable = EvaluateTable.VERSION;
 
     config.save(editConfig);
 
@@ -46,6 +48,16 @@ async function save() {
       まずは「基本設定」の「睡眠時間」と「日中タップ回数」をご自身のものに修正してください。<br>
       他の項目は気になる方だけ修正してください。
     </DangerAlert>
+
+    <template v-else>
+      <DangerAlert v-if="config.version.helpRate != HelpRate.VERSION">
+        げんき計算のアルゴリズムが変更されています。時間のある時に再計算の実行をお願いします。
+      </DangerAlert>
+      <DangerAlert v-if="config.version.evaluateTable != EvaluateTable.VERSION">
+        ポケモン情報、もしくは厳選計算アルゴリズムが修正されています。時間のある時に再計算の実行をお願いします。
+      </DangerAlert>
+    </template>
+
 
     <ToggleArea open>
       <template #headerText>基本設定</template>

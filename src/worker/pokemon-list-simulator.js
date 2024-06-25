@@ -91,7 +91,7 @@ addEventListener('message', (event) => {
               let evaluateResult;
               let rate;
               let ratio;
-              let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')].percentile;
+              let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')]?.percentile ?? [];
               let percentileUpper = Math.min(Math.max(percentileList.findIndex(x => x >= energyPerDay), 0), 100);
               let percentileLower = percentileList[percentileUpper] == energyPerDay ? percentileUpper
                 : Math.max(percentileUpper - 1, 0);

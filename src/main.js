@@ -16,9 +16,8 @@ import SelectTablePage from './pages/select-table.vue'
 import SettingPage from './pages/setting.vue'
 import CachePage from './pages/cache.vue'
 import FaqPage from './pages/faq.vue'
+import HistoryPage from './pages/history.vue'
 import PokemonBox from './models/pokemon-box';
-// import IndexPage from './pages/index.vue'
-// import IndexPage from './pages/index.vue'
 app.use(createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -27,6 +26,7 @@ app.use(createRouter({
     { path: '/setting', component: SettingPage },
     { path: '/cache', component: CachePage },
     { path: '/faq', component: FaqPage },
+    { path: '/history', component: HistoryPage },
   ]
 }))
 
