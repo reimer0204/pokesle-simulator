@@ -189,7 +189,7 @@ class PokemonBox {
         ],
         nature: row[12],
         shiny: !!row[13],
-        fix: row[14],
+        fix: row[14] || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
