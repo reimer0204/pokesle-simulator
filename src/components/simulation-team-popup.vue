@@ -29,11 +29,10 @@ async function simulation() {
     // 気休めかもしれないけどループの多いところにforEachとかreduceとか使うとコストかかりそうだから一部は泥臭くやる
 
     let [stepA, stepB] = progressCounter.split(1, 10);
-    stepA.set(1);
 
     // 固定のポケモンと推論対象を選ぶ
-    let fixedPokemonList = props.pokemonList.filter(x => x.fix);
-    let targetPokemonList = props.pokemonList.filter(x => !x.fix);
+    let fixedPokemonList = props.pokemonList.filter(x => x.fix == 1);
+    let targetPokemonList = props.pokemonList.filter(x => x.fix == null);
 
     let rankMax = Math.min(config.teamSimulation.maxRank, targetPokemonList.length);
     const pickup = 5 - fixedPokemonList.length;
