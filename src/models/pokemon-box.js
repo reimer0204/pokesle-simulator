@@ -43,6 +43,8 @@ class PokemonBox {
     if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null)) throw '知らない食材';
     if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
 
+    pokemon = JSON.parse(JSON.stringify(pokemon));
+
     if (index == null) {
       this._list.push({
         name: pokemon.name,
@@ -135,12 +137,12 @@ class PokemonBox {
   }
   
   static async exportGoogleSpreadsheet() {
-    asyncWatcher.run(async () => {
+    // asyncWatcher.run(async () => {
       const form = new FormData();
       form.append('json', JSON.stringify({
         sheet: config.pokemonBox.gs.sheet,
         pokemonList: [
-          [this._time.toISOString(), ...new Array(13).fill('')],
+          [this._time.toISOString(), ...new Array(14).fill('')],
           ...this.list.map(pokemon => [
             pokemon.name,
             pokemon.lv,
@@ -150,12 +152,13 @@ class PokemonBox {
             ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
             pokemon.nature,
             pokemon.shiny ? 1 : null,
+            pokemon.fix,
           ])
         ],
       }))
   
       await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
-    })
+    // })
   }
 
   static async importGoogleSpreadsheet(auto = false) {
@@ -186,6 +189,7 @@ class PokemonBox {
         ],
         nature: row[12],
         shiny: !!row[13],
+        fix: row[14],
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

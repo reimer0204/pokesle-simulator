@@ -5,11 +5,7 @@ import mergeObject from "./utils/merge-object";
 let config = reactive({
   ...defaultConfig,
   clone() {
-    let result = {};
-    for(const key of Object.keys(defaultConfig)) {
-      result[key] = this[key];
-    }
-    return result;
+    return JSON.parse(JSON.stringify(this));
   },
   save(newConfig) {
     if (newConfig) {
