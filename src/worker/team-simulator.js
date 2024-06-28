@@ -10,7 +10,7 @@ self.addEventListener('message', async (event) => {
   try {
     if (type == 'combination') {
       const { rankMax, pickup, topList, targetPokemonList, pattern } = event.data
-      
+
       // 組み合わせを列挙
       let combinationList = [];
       let count = 0;
@@ -19,8 +19,10 @@ self.addEventListener('message', async (event) => {
         let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
         combinationLoop: while(true) {
           let aboutScore = 0;
-          for(let index of combination) {
-            aboutScore += targetPokemonList[index].score
+          if (targetPokemonList) {
+            for(let index of combination) {
+              aboutScore += targetPokemonList[index].score
+            }
           }
 
           combinationList.push({ combination: [...combination], aboutScore })
@@ -62,14 +64,20 @@ self.addEventListener('message', async (event) => {
     }
 
     if (type == 'simulate') {
+      borderScore = 0;
       let { fixedPokemonList, targetPokemonList, combinationList, config } = body;
 
       // 料理チャンス結果計算用キャッシュ
       let cookingChangeCache = new Map();
 
       // 料理を良い順にソートしておく
-      let targetCookingList = Cooking.list.filter(c => c.type == config.simulation.cookingType)
-        .sort((a, b) => b.addEnergy - a.addEnergy)
+      let cookingListMap = {
+        'カレー': Cooking.list.filter(c => c.type == 'カレー').sort((a, b) => b.addEnergy - a.addEnergy),
+        'サラダ': Cooking.list.filter(c => c.type == 'サラダ').sort((a, b) => b.addEnergy - a.addEnergy),
+        'デザート': Cooking.list.filter(c => c.type == 'デザート').sort((a, b) => b.addEnergy - a.addEnergy),
+      }
+      let targetCookingList = config.simulation.cookingType ? cookingListMap[config.simulation.cookingType]
+        : Cooking.list.sort((a, b) => b.addEnergy - a.addEnergy);
 
       // シミュレーター用意
       let simulator = new PokemonSimulator(config);
@@ -80,9 +88,10 @@ self.addEventListener('message', async (event) => {
 
       let bestResult = [];
       let count = 0;
+      let dayLength = config.teamSimulation.day != null ? 1 : 7;
 
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
-        aboutScore *= 7;
+        aboutScore *= dayLength;
 
         if (aboutScore < borderScore) {
           // console.log('break', aboutScore, borderScore);
@@ -105,6 +114,7 @@ self.addEventListener('message', async (event) => {
         let addShard = 0;
         let typeSetMap = {};
         let noDuplicateCheck = new Set();
+        let resultOption = {};
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0;
@@ -123,12 +133,12 @@ self.addEventListener('message', async (event) => {
           }
         }
 
+        // 個々の評価
         let totalOtherHealEffect = 0;
         for(let pokemon of pokemonList) {
           simulator.calcStatus(pokemon, helpBonusCount);
           totalOtherHealEffect += pokemon.otherHealEffect;
         }
-
         for(let pokemon of pokemonList) {
           simulator.calcHelp(
             pokemon,
@@ -145,124 +155,235 @@ self.addEventListener('message', async (event) => {
           addShard += pokemon.shard;
 
           for(let food of Food.list) {
-            foodNum[food.name] += (pokemon[food.name] ?? 0) * 7;
+            foodNum[food.name] += pokemon[food.name] ?? 0;
           }
 
-          // 1週間分の料理パワーアップ、料理チャンスを総計しておく
-          let skillNum = Math.floor(pokemon.skillEnergyPerDay / pokemon.skillName == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) * 7;
+          // 料理パワーアップを発動回数に応じて振り分けておく
+          let skillNum = Math.floor(pokemon.skillEnergyPerDay / pokemon.skillName == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) * dayLength;
           for(let i = 0; i < skillNum; i++) {
-            cookingPowerUpEffectList[Math.floor(i / skillNum * 21)] += pokemon.cookingPowerUpEffect
+            cookingPowerUpEffectList[Math.floor(i / skillNum * 3 * dayLength)] += pokemon.cookingPowerUpEffect
           }
-          totalCookingChanceEffect += pokemon.cookingChanceEffect * 7;
+
+          // 料理チャンスの効果量を加算
+          totalCookingChanceEffect += pokemon.cookingChanceEffect;
         }
 
-        // 日給エナジーは28回評価される(月曜のエナジーは7回評価、火曜は6回評価…される)
-        energy *= 7;
 
-        // 料理
-        // 食材の総数と平均エナジー計算
-        let averageFoodEnergy = 0;
-        let sumFoodCount = 0;
-        for(const food of Food.list) {
-          averageFoodEnergy += food.energy * foodNum[food.name];
-          sumFoodCount += foodNum[food.name];
-        }
-        averageFoodEnergy /= sumFoodCount;
-        averageFoodEnergy = averageFoodEnergy || 0;
+        if (config.teamSimulation.sundayPrepare) {
+        // 日曜準備用評価
 
-        // なべのサイズ、食材が足りていて、エナジーが最も高い料理を21回分計算
-        // 最終エナジーを評価する場合は日曜優先で良い料理を作成、そうでなければ月曜から作成
-        const selectedCookingList = [];
-        let cookingCount = 0;
-        let remainFoodNum = { ...foodNum };
-        for(let week = 0; week < 7; week++) {
-          for(let i = 0; i < 3; i++) {
-            let potSize = Math.round(
-              (
-                (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
-                + cookingPowerUpEffectList[cookingCount]
-              ) * (config.simulation.campTicket ? 1.5 : 1)
+          // 日曜に稼ぐゆめのかけらを評価
+          energy *= (100 + config.simulation.fieldBonus) / 100;
+          let sundayShard = energy / config.selectEvaluate.shardEnergyRate
+            * (
+              1
+              + shardBonusCount * 0.06
+              + (config.simulation.researchRankMax ? (1 + researchExpBonusCount * 0.06) * 0.5 : 0)
             );
+            + addShard;
 
-            // いい料理を検索
-            let bestCooking = null;
-            for(let cooking of targetCookingList) {
-              if(cooking.foodNum <= potSize && cooking.foodList.every(({ name, num }) => remainFoodNum[name] >= num)
-              ) {
-                bestCooking = { cooking, week, potSize, sunday: week == 6, index: week * 3 + i };
+          // チェックする料理タイプ
+          let cookingTypeList = config.simulation.cookingType ? [config.simulation.cookingType] : ['カレー', 'サラダ', 'デザート'];
+
+          score = 1;
+          let eachTypeResult = []
+
+          for(let cookingType of cookingTypeList) {
+            let cookingList = []
+            let remainFoodNum = { ...foodNum };
+            let targetCookingList = cookingListMap[cookingType];
+
+            let eachScore = sundayShard * config.simulation.shardToEnergy;
+
+            cookingSearch: for(let week = 0; week < 7; week++) {
+              let potSize = Math.round(
+                (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
+                * (config.simulation.campTicket ? 1.5 : 1)
+              );
+
+              for(let i = 0; i < 3; i++) {
+
+                // いい料理を検索
+                let bestCooking = targetCookingList.find(cooking => cooking.foodNum <= potSize && cooking.foodList.every(({ name, num }) => remainFoodNum[name] >= num))
+
+                if (bestCooking.energy == 0) break cookingSearch;
+                cookingList.push(bestCooking)
+
+                // 料理のスコアを加算、月曜は7倍で評価
+                eachScore += bestCooking.energy
+                  * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1]
+                  * (100 + config.simulation.fieldBonus) / 100
+                  * (7 - week)
 
                 // 食材を減らす
-                for(const { name, num } of cooking.foodList) {
+                for(const { name, num } of bestCooking.foodList) {
                   remainFoodNum[name] -= num;
                 }
-                break;
+
+                // きのみ担当で稼げる食材を加算
+                for(let foodName in config.teamSimulation.sundayPrepare.foodNum) {
+                  remainFoodNum[foodName] += config.teamSimulation.sundayPrepare.foodNum[foodName] / 21;
+                }
               }
             }
 
-            selectedCookingList.push(bestCooking);
-            cookingCount++;
+            score *= eachScore;
+
+            eachTypeResult.push({
+              cookingList,
+              remainFoodNum,
+            })
           }
-        }
+          score **= 1 / cookingTypeList.length;
 
-        // 料理チャンスによる倍率を計算
-        let chanceWeekEffect = cookingChangeCache.get(totalCookingChanceEffect)
-        if (chanceWeekEffect == null) {
-          chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect)
-          cookingChangeCache.set(totalCookingChanceEffect, chanceWeekEffect)
-        }
-
-        // 最終的に余った食材の平均パワーを計算
-        let remainFoodList = Object.entries(remainFoodNum).map(([name, num]) => ({ name, num, energy: Food.map[name].energy })).sort((a, b) => b.energy - a.energy);
-        let cookingList = new Array(21);
-        for(const { cooking, potSize, sunday, week, index } of selectedCookingList) {
-          let potRemain = potSize - cooking.foodCount;
-
-          // 余った食材を詰める
-          let addFoodPower = 0;
-          while(potRemain > 0 && remainFoodList.length) {
-            const num = Math.min(potRemain, remainFoodList[0].num);
-            potRemain -= num;
-            remainFoodList[0].num -= num;
-            addFoodPower += remainFoodList[0].energy * num;
-            if (remainFoodList[0].num <= 0) remainFoodList.shift();
+          resultOption = {
+            eachTypeResult,
           }
 
-          const cookingEnergy =
-            (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1] + addFoodPower)
-            * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
-            * config.simulation.cookingWeight;
+        } else {
 
-          cookingList[index] = {
-            cooking,
-            energy: cookingEnergy,
-          };
+          // ここまでの計算結果は日給なのでそれぞれ7倍する
+          if (config.teamSimulation.day == null) {
+            energy   *= 7;
+            addShard *= 7;
+            totalCookingChanceEffect *= 7;
+            for(let food of Food.list) {
+              foodNum[food.name] *= 7;
+            }
+          }
 
-          // 月曜にいい料理が揃うとは限らないので一律1～7倍の平均の4倍で評価
-          energy += cookingEnergy;
-        }
-        // remainFoodNum = Object.fromEntries(remainFoodList.map(({ name, num }) => [name, num]));
+          // 料理
+          // 食材の総数と平均エナジー計算
+          let averageFoodEnergy = 0;
+          let sumFoodCount = 0;
+          for(const food of Food.list) {
+            averageFoodEnergy += food.energy * foodNum[food.name];
+            sumFoodCount += foodNum[food.name];
+          }
+          averageFoodEnergy /= sumFoodCount;
+          averageFoodEnergy = averageFoodEnergy || 0;
 
-        // フィールドボーナスをかける
-        energy *= (100 + config.simulation.fieldBonus) / 100;
+          // なべのサイズ、食材が足りていて、エナジーが最も高い料理を21回分計算
+          // 最終エナジーを評価する場合は日曜優先で良い料理を作成、そうでなければ月曜から作成
+          const selectedCookingList = [];
+          let cookingCount = 0;
+          let remainFoodNum = { ...foodNum };
+          let cookingList = new Array(21);
+          if (config.simulation.cookingWeight > 0) {
 
-        if (isNaN(energy)) {
-          console.error({
-            pokemonList,
-            fieldBonus: config.simulation.fieldBonus, 
+            let weekList = config.teamSimulation.day != null ? [config.teamSimulation.day] : [0, 1, 2, 3, 4, 5, 6]
+
+            for(let week of weekList) {
+              for(let i = 0; i < 3; i++) {
+                let potSize = Math.round(
+                  (
+                    (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
+                    + cookingPowerUpEffectList[cookingCount]
+                  ) * (config.simulation.campTicket ? 1.5 : 1)
+                );
+
+                // いい料理を検索
+                let bestCooking = null;
+                for(let cooking of targetCookingList) {
+                  if(cooking.foodNum <= potSize && cooking.foodList.every(({ name, num }) => remainFoodNum[name] >= num)
+                  ) {
+                    bestCooking = { cooking, week, potSize, sunday: week == 6, index: week * 3 + i };
+
+                    // 食材を減らす
+                    for(const { name, num } of cooking.foodList) {
+                      remainFoodNum[name] -= num;
+                    }
+                    break;
+                  }
+                }
+
+                selectedCookingList.push(bestCooking);
+                cookingCount++;
+              }
+            }
+
+            // 料理チャンスによる倍率を計算
+            let chanceWeekEffect = cookingChangeCache.get(totalCookingChanceEffect)
+            if (chanceWeekEffect == null) {
+              chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect)
+              cookingChangeCache.set(totalCookingChanceEffect, chanceWeekEffect)
+            }
+
+            // 最終的に余った食材の平均パワーを計算
+            let remainFoodList = Object.entries(remainFoodNum).map(([name, num]) => ({ name, num, energy: Food.map[name].energy })).sort((a, b) => b.energy - a.energy);
+            for(const { cooking, potSize, sunday, week, index } of selectedCookingList) {
+              let potRemain = potSize - cooking.foodCount;
+
+              if (config.teamSimulation.day == null) {
+
+                // 余った食材を詰める
+                let addFoodPower = 0;
+                while(potRemain > 0 && remainFoodList.length) {
+                  const num = Math.min(potRemain, remainFoodList[0].num);
+                  potRemain -= num;
+                  remainFoodList[0].num -= num;
+                  addFoodPower += remainFoodList[0].energy * num;
+                  if (remainFoodList[0].num <= 0) remainFoodList.shift();
+                }
+
+                const cookingEnergy =
+                  (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1] + addFoodPower)
+                  * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
+                  * config.simulation.cookingWeight;
+
+                cookingList[index] = {
+                  cooking,
+                  energy: cookingEnergy,
+                };
+
+                energy += cookingEnergy;
+
+              } else {
+                // TODO: 本当は料理チャンスはもうちょっと正しい計算がありそう
+                const cookingEnergy =
+                  (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1])
+                  * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
+                  * config.simulation.cookingWeight;
+
+                cookingList[index] = {
+                  cooking,
+                  energy: cookingEnergy,
+                };
+
+                energy += cookingEnergy;
+
+              }
+            }
+          }
+          // remainFoodNum = Object.fromEntries(remainFoodList.map(({ name, num }) => [name, num]));
+
+          // フィールドボーナスをかける
+          energy *= (100 + config.simulation.fieldBonus) / 100;
+
+          if (isNaN(energy)) {
+            console.error({
+              pokemonList,
+              fieldBonus: config.simulation.fieldBonus,
+              cookingList,
+            });
+            throw '計算ロジックに誤りが見つかりました';
+          }
+
+          // スコアリングがゆめのかけらならエナジーをゆめのかけらに変換する計算をする
+          score = energy;
+          score += (
+            energy * (
+              shardBonusCount * 0.06
+              + (config.simulation.researchRankMax ? (1 + researchExpBonusCount * 0.06) * 0.5 : 0)
+            )
+            + addShard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
+          ) * config.simulation.shardWeight / 100;
+
+          resultOption = {
             cookingList,
-          });
-          throw '計算ロジックに誤りが見つかりました';
+            remainFoodNum,
+          }
         }
-
-        // スコアリングがゆめのかけらならエナジーをゆめのかけらに変換する計算をする
-        score = energy;
-        score += (
-          energy * (
-            shardBonusCount * 0.06
-            + (config.simulation.researchRankMax ? (1 + researchExpBonusCount * 0.06) * 0.5 : 0)
-          )
-          + addShard
-        ) * config.simulation.shardWeight / 100;
 
         if (borderScore < score) {
           bestResult.push(JSON.parse(JSON.stringify({
@@ -272,9 +393,8 @@ self.addEventListener('message', async (event) => {
             addShard,
             // baseScoreList: pokemonList.map(pokemon => (pokemon['きのみ期待値/日'] + pokemon['自己完結スキル期待値/日']) * helpBonus + pokemon['手伝期待値/回'] * otesapo / 5),
             pokemonList,
-            cookingList,
             foodNum,
-            remainFoodNum,
+            ...resultOption,
           })));
           bestResult = bestResult.sort((a, b) => b.score - a.score).slice(0, 10);
 

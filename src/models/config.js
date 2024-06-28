@@ -12,9 +12,13 @@ let config = reactive({
       mergeObject(this, newConfig)
     }
 
-    localStorage.setItem('config', JSON.stringify({
-      ...this,
-    }));
+    try {
+      localStorage.setItem('config', JSON.stringify({
+        ...this,
+      }));
+    } catch(e) {
+      // ignore
+    }
   },
 });
 
