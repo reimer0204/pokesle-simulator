@@ -66,6 +66,7 @@ const defaultConfig = {
     cookingRecipeLv: 55,
     cookingWeight: 1,
     shardWeight: 30,
+    foodGetRate: 50,
     campTicket: false,
     eventBonusType: null,
     eventBonusTypeFood: 1,

@@ -450,10 +450,16 @@ class PokemonSimulator {
               let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
               let foodEnergy = 0;
               for(let food of Food.list) {
-                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
                 foodEnergy += food.energy
-                  * (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
-                  * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
+                  * (
+                    (
+                      (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
+                      * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
+                      - 1
+                    ) * this.config.simulation.foodGetRate / 100
+                    + 1
+                  )
                   * this.config.simulation.cookingWeight
               }
 
@@ -464,7 +470,7 @@ class PokemonSimulator {
             if (!this.config.simulation.sundayPrepare) {
               let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
               for(let food of Food.list) {
-                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
               }
             }
           } else if (mode == PokemonSimulator.MODE_SELECT) {

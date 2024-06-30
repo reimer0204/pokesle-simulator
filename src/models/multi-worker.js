@@ -43,12 +43,14 @@ class MultiWorker {
     progressCounter,
     parameterFunction,
     progressCallback = null,
+    threadNum = null,
   ) {
     let promiseList = [];
     let workerProgressList = []
-    for (let i = 0; i < this.clusterList.length; i++) {
+    threadNum ??= this.clusterList.length
+    for (let i = 0; i < threadNum; i++) {
       let cluster = this.clusterList[i];
-      let parameter = parameterFunction(i, this.clusterList.length);
+      let parameter = parameterFunction(i, threadNum);
       workerProgressList.push(0)
 
       promiseList.push(new Promise((resolve, reject) => {

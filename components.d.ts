@@ -22,7 +22,7 @@ declare module 'vue' {
     SelectTableDetailPopup: typeof import('./src/components/select-table-detail-popup.vue')['default']
     SettingList: typeof import('./src/components/setting-list.vue')['default']
     SimulationDailyTeamPopup: typeof import('./src/components/simulation-daily-team-popup.vue')['default']
-    SimulationTeamPopup: typeof import('./src/components/simulation-team-popup.vue')['default']
+    SimulationDailyWeekTeamPopup: typeof import('./src/components/simulation-daily-week-team-popup.vue')['default']
     SimulationWeeklyTeamPopup: typeof import('./src/components/simulation-weekly-team-popup.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']
     SubSkillLabel: typeof import('./src/components/sub-skill-label.vue')['default']

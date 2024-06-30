@@ -16,19 +16,24 @@ import PokemonBox from '../models/pokemon-box';
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
 
-const sundayPrepare = ref(true);
-const nextSundayPrepare = ref(true);
+const simulationResult = ref({
+  cookingTypeList: [],
+})
+// const cookingType = ref('')
+const cookingType = ref(config.simulation.cookingType)
+const targetDay = ref(-1)
+const beforeEnergy = ref(0);
 
-const simulationResultList = ref([])
-const cookingType = ref('')
-
-let workerList = [];
-
+// ワーカー準備
 const multiWorker = new MultiWorker(TeamSimulator, config.workerNum)
 const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
 onBeforeUnmount(() => {
   multiWorker.close();
   pokemonMultiWorker.close();
+})
+
+const isValidConfig = computed(() => {
+  return cookingType.value != '' || targetDay.value == -1
 })
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
@@ -82,7 +87,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   )).flat(1);
 }
 
-async function configSimulation(config, progressCounter) {
+async function configSimulation(config, progressCounter, fixIgnore = false) {
   let [stepA, stepB, stepC] = progressCounter.split(1, 3, 8);
 
   config = JSON.parse(JSON.stringify(config))
@@ -90,7 +95,7 @@ async function configSimulation(config, progressCounter) {
   let pokemonList = await pokemonAboutScoreSimulation(config, stepA)
 
   // 固定のポケモンと推論対象を選ぶ
-  const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.fix == 1)));
+  const fixedPokemonList = fixIgnore ? [] : JSON.parse(JSON.stringify(pokemonList.filter(x => x.fix == 1)));
   let targetPokemonList = pokemonList.filter(x => x.fix == null);
 
   const rankMax = Math.min(config.teamSimulation.maxRank, targetPokemonList.length);
@@ -99,7 +104,7 @@ async function configSimulation(config, progressCounter) {
   // スコアの高い上位のみをピックアップ
   targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)));
 
-  console.log(targetPokemonList);
+
 
   // 組み合わせを列挙
   let combinationList = await (async () => {
@@ -172,26 +177,28 @@ async function configSimulation(config, progressCounter) {
     }
   );
 
-  console.log(bestResult);
+  // console.log(bestResult);
 
   return bestResult;
 }
 
 async function simulation() {
+
   asyncWatcher.run(async (progressCounter) => {
+    let result = {
+      targetDay: targetDay.value,
+    };
 
-    let [berryProgresssCounter, foodProgressCounter, dailyProgressCounter] = progressCounter.split(
-      1,
-      1,
-      (cookingType.value ? 1 : 3) * (nextSundayPrepare.value ? 6 : 7)
-    );
+    if (targetDay.value == -1) {
+      // 日曜準備
+      let [berryProgresssCounter, foodProgressCounter] = progressCounter.split(1, 1);
 
-    let foodNum = { ...config.foodDefaultNum };
+      result.cookingTypeList = cookingType.value ? [cookingType.value] : ['カレー', 'サラダ', 'デザート'];
 
-    if (sundayPrepare.value) {
       // まずは食材以外が優秀なメンバーでチームを計算
       let bestSundayResult = await configSimulation({
         ...config,
+        foodDefaultNum: {},
         simulation: {
           ...config.simulation,
           cookingWeight: 0,
@@ -200,11 +207,12 @@ async function simulation() {
         teamSimulation: {
           ...config.teamSimulation,
           resultNum: 1,
+          day: 0,
         },
       }, berryProgresssCounter);
 
       // それを補う食材タイプの計算
-      let foodTeam = await configSimulation({
+      let bestResult = await configSimulation({
         ...config,
         simulation: {
           ...config.simulation,
@@ -218,82 +226,52 @@ async function simulation() {
           resultNum: 1,
           sundayPrepare: bestSundayResult,
         },
-      }, foodProgressCounter)
+      }, foodProgressCounter, true)
+      // foodTeam.score = foodTeam.skillShard * config.selectEvaluate.shardEnergyRate * config.simulation.shardWeight / 100 / 7
 
-      foodNum = foodTeam.foodNum;
-
-    }
-
-    let cookingTypeList = cookingType.value ? [cookingType.value] : ['カレー', 'サラダ', 'デザート'];
-
-    let splittedDailyProgressCounterList = dailyProgressCounter.split(...cookingTypeList.map(() => 1))
-    let dayLength = nextSundayPrepare.value ? 6 : 7;
-
-    for(let ci = 0; ci < cookingTypeList.length; ci++) {
-      console.log(splittedDailyProgressCounterList, ci);
-      let cookingType = cookingTypeList[ci];
-      let progressCounterList = splittedDailyProgressCounterList[ci].split(...new Array(dayLength).fill(1))
-
-      let remainFoodNum = { ...foodNum };
-
-      for(let day = 0; day < dayLength; day++) {
-
-        // それを補う食材タイプの計算
-        let dailyTeam = await configSimulation({
-          ...config,
-          foodDefaultNum: remainFoodNum,
-          simulation: {
-            ...config.simulation,
-            cookingWeight: config.simulation.cookingWeight,
-            sundayPrepare: true,
-            cookingType,
-            shardToEnergy: config.selectEvaluate.shardEnergyRate / (7 - day),
-          },
-          teamSimulation: {
-            ...config.teamSimulation,
-            resultNum: 1,
-            day,
-          },
-        }, progressCounterList[day])
-
-        remainFoodNum = dailyTeam.remainFoodNum;
+      result = {
+        ...result,
+        ...bestResult,
+        energyTeam: bestSundayResult,
       }
+
+    } else {
+      let bestResult = await configSimulation({
+        ...config,
+        simulation: {
+          ...config.simulation,
+          sundayPrepare: true,
+          cookingType: cookingType.value,
+          shardToEnergy: config.selectEvaluate.shardEnergyRate / (7 - targetDay.value),
+        },
+        teamSimulation: {
+          ...config.teamSimulation,
+          resultNum: 1,
+          day: targetDay.value,
+          beforeEnergy: beforeEnergy.value,
+        },
+      }, progressCounter)
+      
+      result = { ...result, ...bestResult }
     }
 
-
-    // それを補う食材タイプの計算
-    // let dailyTeam = await configSimulation({
-    //   ...config,
-    //   simulation: {
-    //     ...config.simulation,
-    //     cookingWeight: config.simulation.cookingWeight * 7,
-    //     sundayPrepare: true,
-    //     cookingType: cookingType.value || null,
-    //     shardToEnergy: config.selectEvaluate.shardEnergyRate / 7,
-    //   },
-    //   teamSimulation: {
-    //     ...config.teamSimulation,
-    //     resultNum: 1,
-    //     sundayPrepare: bestSundayResult,
-    //   },
-    // }, foodProgressCounter)
-
+    simulationResult.value = result;
   })
-
 }
-
-onBeforeUnmount(() => {
-  workerList.forEach(w => w.terminal())
-})
 
 </script>
 
 <template>
   <PopupBase @close="$emit('close')">
-    <template #headerText>チームシミュレーション</template>
+    <template #headerText>日替わりチームシミュレーション</template>
 
     <template #bodyWrapper>
       <div class="flex-column-start-start flex-110 p-20px gap-5px">
+      
+        <BaseAlert>
+          ベータ版です。月曜以降は概ね合ってそうですが、特に日曜の準備は最善ではないと思われます。
+        </BaseAlert>
+
         <SettingList class="align-self-stretch">
           <div>
             <label>対象</label>
@@ -306,11 +284,8 @@ onBeforeUnmount(() => {
           </div>
 
           <div>
-            <label>日曜準備</label>
-            <div>
-              <InputCheckbox v-model="sundayPrepare">日曜は準備に充てる</InputCheckbox>
-              <InputCheckbox v-model="nextSundayPrepare">来週の日曜も準備に充てる</InputCheckbox>
-            </div>
+            <label>現在のエナジー</label>
+            <div><input type="number" v-model="beforeEnergy"></div>
           </div>
 
           <div>
@@ -325,6 +300,24 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
+          <div>
+            <label>対象</label>
+            <div>
+              <select :value="targetDay" @input="targetDay = Number($event.target.value)">
+                <option value="-1">日曜(準備)</option>
+                <option value="0">月曜</option>
+                <option value="1">火曜</option>
+                <option value="2">水曜</option>
+                <option value="3">木曜</option>
+                <option value="4">金曜</option>
+                <option value="5">土曜</option>
+                <option value="6">日曜</option>
+              </select>
+            </div>
+          </div>
+        </SettingList>
+        
+        <SettingList class="align-self-stretch">
           <div class="flex-110 w-100 flex-column-start-stretch">
             <label>所持食材</label>
             <div>
@@ -342,188 +335,651 @@ onBeforeUnmount(() => {
           </div>
         </SettingList>
 
-        <button @click="simulation">シミュレーション実行</button>
+        <button @click="simulation" :disabled="!isValidConfig">シミュレーション実行</button>
 
         <div class="flex-row-start-center gap-10px">
-          <label><input type="checkbox" v-model="config.teamSimulation.result.detail">エナジー内訳</label>
           <label><input type="checkbox" v-model="config.teamSimulation.result.food">食材情報</label>
+          <label><input type="checkbox" v-model="config.teamSimulation.result.detail">詳細</label>
         </div>
 
         <AsyncWatcherArea class="flex-column-start-start w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
-          {{ simulationResultList }}
-          <!--
-          <template v-for="(result, i) in simulationResultList">
-            <ToggleArea :open="i == 0" class="w-100">
-              <template #headerText>{{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }}</template>
-
+          <template v-if="simulationResult.targetDay == null">
+            シミュレーション実行ボタンを押してください
+          </template>
+          <template v-else-if="simulationResult.targetDay == -1">
+            <ToggleArea open class="w-100">
+              <template #headerText>食材収集チーム</template>
               <table>
-                <tr>
-                  <th></th>
-                  <td v-for="pokemon in result.pokemonList">
-                    {{ pokemon.name }}<template v-if="pokemon.bagOverOperation">(いつ育)</template>
-                  </td>
-                  <td>合計</td>
-                  <td v-if="config.teamSimulation.result.food">余り食材</td>
-                </tr>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th v-for="i in 5">{{ i }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="white-space-nowrap">名前</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon.name }}</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>Lv</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon?.lv }}</td>
+                    <td></td>
+                  </tr>
+                  
+                  <tr>
+                    <th>食材</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">
+                      <div class="flex-row-center-center" v-if="pokemon">
+                        <img v-for="food in pokemon.foodList" :src="Food.map[food].img" class="ml-0 mr-0">
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
 
-                <tr>
-                  <th>Lv</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ pokemon.lv }}</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
+                  <tr>
+                    <th>サブスキル</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">
+                      <div class="flex-row flex-wrap gap-3px" v-if="pokemon">
+                        <SubSkillLabel v-for="subSkill in pokemon.subSkillList" :subSkill="subSkill" short />
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>せいかく</th>
+                    <td v-for="pokemon in simulationResult.pokemonList"><NatureInfo v-if="pokemon" :nature="pokemon.nature" /></td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>おてスピ短縮</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>げんき回復</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.healEffect).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>きのみ</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>スキル</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  
+                  <template v-if="config.teamSimulation.result.food">
+                    <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                      <th><img :src="food.img"></th>
+                      <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                        <template v-if="pokemon[food.name] ?? 0">{{ (pokemon[food.name] ?? 0).toFixed(1) }}</template>
+                      </td>
+                      <td class="white-space-nowrap">
+                        {{ simulationResult.defaultFoodNum?.[food.name].toFixed(1) }}
+                        <span v-if="simulationResult.addFoodNum?.[food.name]" class="plus"> + {{ simulationResult.addFoodNum?.[food.name].toFixed(1) }}</span>
+                        <!--
+                        {{ simulationResult.defaultFoodNum?.[food.name].toFixed(1) }}
+                        = {{ team.foodNum?.[food.name].toFixed(1) }}
+                        -->
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </ToggleArea>
+            
+            <ToggleArea class="w-100">
+              <template #headerText>月曜以降チーム(料理比重0%の最良チーム)</template>
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th v-for="i in 5">{{ i }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="white-space-nowrap">名前</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList">{{ pokemon.name }}</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>Lv</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList">{{ pokemon?.lv }}</td>
+                    <td></td>
+                  </tr>
+                  
+                  <tr>
+                    <th>食材</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList">
+                      <div class="flex-row-center-center" v-if="pokemon">
+                        <img v-for="food in pokemon.foodList" :src="Food.map[food].img" class="ml-0 mr-0">
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
 
-                <tr>
-                  <th>食材</th>
-                  <td v-for="pokemon in result.pokemonList">
-                    <div class="flex-row-center-center">
-                      <img v-for="food in pokemon.foodList" :src="Food.map[food].img" >
-                    </div>
-                  </td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
+                  <tr>
+                    <th>サブスキル</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList">
+                      <div class="flex-row flex-wrap gap-3px" v-if="pokemon">
+                        <SubSkillLabel v-for="subSkill in pokemon.subSkillList" :subSkill="subSkill" short />
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>せいかく</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList"><NatureInfo v-if="pokemon" :nature="pokemon.nature" /></td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>おてスピ短縮</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>げんき回復</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.healEffect).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>きのみ</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList" class="text-align-right">
+                      {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                    </td>
+                    <td class="text-align-right">
+                      {{ Math.round(simulationResult.energyTeam.pokemonList.reduce((a, pokemon) => a + pokemon.berryEnergyPerDay, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>スキル</th>
+                    <td v-for="pokemon in simulationResult.energyTeam.pokemonList" class="text-align-right">
+                      {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
+                    </td>
+                    <td class="text-align-right">
+                      {{ Math.round(simulationResult.energyTeam.pokemonList.reduce((a, pokemon) => a + pokemon.skillEnergyPerDay, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  
+                  <template v-if="config.teamSimulation.result.food">
+                    <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                      <th><img :src="food.img"></th>
+                      <td v-for="pokemon in simulationResult.energyTeam.pokemonList" class="text-align-right">
+                        <template v-if="pokemon[food.name] ?? 0">{{ (pokemon[food.name] ?? 0).toFixed(1) }}</template>
+                      </td>
+                      <td class="white-space-nowrap">
+                        {{ simulationResult.energyTeam.defaultFoodNum?.[food.name].toFixed(1) }}
+                        <span v-if="simulationResult.energyTeam.addFoodNum?.[food.name]" class="plus"> + {{ simulationResult.energyTeam.addFoodNum?.[food.name].toFixed(1) }}</span>
+                        <!--
+                        {{ simulationResult.defaultFoodNum?.[food.name].toFixed(1) }}
+                        = {{ team.foodNum?.[food.name].toFixed(1) }}
+                        -->
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </ToggleArea>
+            
+            <template v-for="cookingType in simulationResult.cookingTypeList">
+              <ToggleArea class="w-100">
+                <template #headerText>料理シミュレーション({{ cookingType }})</template>
 
-                <tr>
-                  <th>スキル</th>
-                  <td v-for="pokemon in result.pokemonList" class="w-100px">
-                    {{ pokemon.skillName }}
-                    <small>(Lv{{ pokemon.fixedSkillLv }})</small>
-                  </td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
+                <table class="mt-10px">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th v-for="i in 21">{{ i }}食目</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>料理</th>
+                      <td v-for="cooking in simulationResult.eachTypeResult[cookingType].cookingList">{{ cooking.name }}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <th>料理</th>
+                      <td v-for="cooking in simulationResult.eachTypeResult[cookingType].cookingList" class="number">{{ Math.round(cooking.energy).toLocaleString() }}</td>
+                      <td class="number">{{ Math.round(simulationResult.eachTypeResult[cookingType].cookingList.reduce((a, cooking) => a + cooking.energy, 0)).toLocaleString() }}</td>
+                    </tr>
+                    <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                      <th><img :src="food.img"></th>
+                      
+                      <td v-for="cooking in simulationResult.eachTypeResult[cookingType].cookingList">
+                        {{ cooking.beforeFoodNum[food.name].toFixed(1) }}
+                        <span v-if="cooking.useFoodNum?.[food.name]" class="minus"><br>- {{ cooking.useFoodNum?.[food.name].toFixed(1) }}</span>
+                        <span v-if="simulationResult.energyTeam.foodNum?.[food.name]" class="plus"><br>+ {{ (simulationResult.energyTeam.foodNum?.[food.name] / 3).toFixed(1) }}</span>
+                      </td>
 
-                <tr>
-                  <th>サブスキル</th>
-                  <td v-for="pokemon in result.pokemonList">
-                    <div class="sub-skill-list">
-                      <div v-for="(subSkill, i) in pokemon.subSkillList"
-                        class="sub-skill"
-                        :class="[
-                          `sub-skill-${SubSkill.map[subSkill].rarity}`,
-                          {
-                            short: config.pokemonList.subSkillShort,
-                            disabled: i >= pokemon.enableSubSkillList.length,
-                          }
-                        ]"
-                      >{{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}</div>
-                    </div>
-                  </td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
+                      <td>
+                        {{ simulationResult.eachTypeResult[cookingType].remainFoodNum[food.name].toFixed(1) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ToggleArea>
+            </template>
+          </template>
 
-                <tr>
-                  <th>せいかく</th>
-                  <td v-for="pokemon in result.pokemonList"><NatureInfo :nature="pokemon.nature" /></td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
+          <template v-else-if="simulationResult.targetDay >= 0">
+            <ToggleArea open class="w-100">
+              <template #headerText>チーム</template>
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                    <th v-for="i in 5">{{ i }}</th>
+                    <th>合計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th class="vertical" :rowspan="7">編成</th>
+                    <th class="white-space-nowrap">名前</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon.name }}</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>Lv</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon?.lv }}</td>
+                    <td></td>
+                  </tr>
+                  
+                  <tr>
+                    <th>食材</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">
+                      <div class="flex-row-center-center" v-if="pokemon">
+                        <img v-for="food in pokemon.foodList" :src="Food.map[food].img" class="ml-0 mr-0">
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
 
-                <tr>
-                  <th>おてスピ短縮</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr>
-                  <th>げんき回復/日</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.healEffect).toLocaleString() }}</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr v-if="config.teamSimulation.result.detail">
-                  <th>手伝い/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round((pokemon.dayHelpNum + pokemon.nightHelpNum) * 7).toLocaleString() }}</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr v-if="config.teamSimulation.result.detail">
-                  <th>いつ育/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryHelpNum * 7).toLocaleString() }}</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr v-if="config.teamSimulation.result.detail">
-                  <th>食材確率</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ (pokemon.foodRate * 100).toFixed(1) }}%</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr>
-                  <th>きのみE/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryEnergyPerDay * 7).toLocaleString() }}</td>
-                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.berryEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr>
-                  <th>スキルE/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillEnergyPerDay * 7).toLocaleString() }}</td>
-                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.skillEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr>
-                  <th>ゆめのかけら/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.shard * 7).toLocaleString() }}</td>
-                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.shard, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr v-if="config.teamSimulation.result.detail">
-                  <th>スキル回数/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
-                  <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
-                </tr>
-
-                <tr v-for="food in Food.list" v-if="config.teamSimulation.result.food">
-                  <th><img :src="food.img"></th>
-                  <td v-for="pokemon in result.pokemonList" class="number">
-                    <template v-if="pokemon[food.name]">{{ Math.round(pokemon[food.name] * 7).toLocaleString() }}</template>
-                  </td>
-                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</td>
-                  <td class="number">{{ Math.round(result.remainFoodNum[food.name]).toLocaleString() }}</td>
-                </tr>
-
-                <tr>
-                  <th>料理</th>
-                  <td colspan="7">
-                    <div v-for="day in 7">
-                      {{ result.cookingList.slice(day * 3 - 3, day * 3).map(x => x.cooking.name).join(' / ') }}
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <th>料理エナジー</th>
-                  <td colspan="7" class="number">
-                    {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
-                  </td>
-                </tr>
-
-                <tr>
-                  <th>総エナジー/週<br><small>(FB込)</small></th>
-                  <td colspan="7" class="number">
-                    {{ Math.round(result.energy).toLocaleString() }}
-                  </td>
-                </tr>
-
-                <tr>
-                  <th>スコア</th>
-                  <td colspan="7" class="number">{{ Math.round(result.score).toLocaleString() }}</td>
-                </tr>
+                  <tr>
+                    <th>サブスキル</th>
+                    <td v-for="pokemon in simulationResult.pokemonList">
+                      <div class="flex-row flex-wrap gap-3px" v-if="pokemon">
+                        <SubSkillLabel v-for="subSkill in pokemon.subSkillList" :subSkill="subSkill" short />
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>せいかく</th>
+                    <td v-for="pokemon in simulationResult.pokemonList"><NatureInfo v-if="pokemon" :nature="pokemon.nature" /></td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>おてスピ短縮</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>げんき回復</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.healEffect).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <th>きのみ</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                    </td>
+                    <td class="text-align-right">
+                      {{ Math.round(simulationResult.pokemonList.reduce((a, pokemon) => a + pokemon.berryEnergyPerDay, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>スキル</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td class="text-align-right">
+                      {{ Math.round(simulationResult.pokemonList.reduce((a, pokemon) => a + pokemon.skillEnergyPerDay, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th colspan="2">料理</th>
+                    <td colspan="5">
+                      {{ simulationResult.cookingList.map(x => x.cooking.name).join(' / ') }}
+                    </td>
+                    <td class="text-align-right">
+                      {{ Math.round(simulationResult.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th rowspan="2">エナジー</th>
+                    <th>エナジー</th>
+                    <td colspan="6" class="text-align-right">
+                      {{ Math.round(simulationResult.rawEnergy).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>FB込み</th>
+                    <td colspan="6" class="text-align-right">
+                      {{ Math.round(simulationResult.energy).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th rowspan="3">ゆめのかけら</th>
+                    <th>エナジー</th>
+                    <td colspan="6" class="text-align-right">{{ Math.round(simulationResult.energyShard).toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <th>ボーナス</th>
+                    <td colspan="6" class="text-align-right">{{ Math.round(simulationResult.bonusShard).toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <th>スキル</th>
+                    <td colspan="6" class="text-align-right">{{ Math.round(simulationResult.skillShard).toLocaleString() }}</td>
+                  </tr>
+                  <tr>
+                    <th colspan="2">スコア</th>
+                    <td colspan="6" class="text-align-right">{{ Math.round(simulationResult.score).toLocaleString() }}</td>
+                  </tr>
+                  
+                  <template v-if="config.teamSimulation.result.food">
+                    <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                      <th class="vertical" :rowspan="Food.list.length" v-if="i == 0">食材</th>
+                      <th><img :src="food.img"></th>
+                      <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                        <template v-if="pokemon[food.name] ?? 0">{{ (pokemon[food.name] ?? 0).toFixed(1) }}</template>
+                      </td>
+                      <td class="white-space-nowrap">
+                        {{ simulationResult.defaultFoodNum?.[food.name].toFixed(1) }}
+                        <span v-if="simulationResult.addFoodNum?.[food.name]" class="plus"> + {{ simulationResult.addFoodNum?.[food.name].toFixed(1) }}</span>
+                        <span v-if="simulationResult.useFoodNum?.[food.name]" class="minus"> - {{ simulationResult.useFoodNum?.[food.name].toFixed(1) }}</span>
+                        = {{ simulationResult.foodNum?.[food.name].toFixed(1) }}
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
               </table>
             </ToggleArea>
           </template>
-          -->
+          <!--
+          <template v-for="(cookingType, i) in simulationResult.cookingTypeList">
+            <ToggleArea open class="w-100">
+              <template #headerText>{{ cookingType }}: {{ Math.round(simulationResult[cookingType].score).toLocaleString() }}</template>
+
+              <div class="scroller">
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th></th>
+                      <th v-if="simulationResult.sundayPrepare">日</th>
+                      <th>月</th>
+                      <th>火</th>
+                      <th>水</th>
+                      <th>木</th>
+                      <th>金</th>
+                      <th>土</th>
+                      <th>日</th>
+                      <th>累計</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-for="i in [0, 1, 2, 3, 4]">
+                      <tr>
+                        <th :rowspan="config.teamSimulation.result.detail ? 9 : 5">{{ i + 1 }}</th>
+                        <th class="white-space-nowrap">名前</th>
+                        <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon?.name }}</td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <th>Lv</th>
+                        <td v-for="pokemon in simulationResult.pokemonList">{{ pokemon?.lv }}</td>
+                        <td></td>
+                      </tr>
+                      
+                      <tr>
+                        <th>食材</th>
+                        <td v-for="pokemon in simulationResult.pokemonList">
+                          <div class="flex-row-center-center" v-if="pokemon">
+                            <img v-for="food in pokemon.foodList" :src="Food.map[food].img" >
+                          </div>
+                        </td>
+                        <td></td>
+                      </tr>
+
+                      <tr>
+                        <th>サブスキル</th>
+                        <td v-for="pokemon in simulationResult.pokemonList">
+                          <div class="flex-row flex-wrap gap-3px" v-if="pokemon">
+                            <SubSkillLabel v-for="subSkill in pokemon.subSkillList" :subSkill="subSkill" short />
+                          </div>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <th>せいかく</th>
+                        <td v-for="pokemon in simulationResult.pokemonList"><NatureInfo v-if="pokemon" :nature="pokemon.nature" /></td>
+                        <td></td>
+                      </tr>
+                      <tr v-if="config.teamSimulation.result.detail">
+                        <th>おてスピ短縮</th>
+                        <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                          <template v-if="pokemon">
+                            {{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%
+                          </template>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr v-if="config.teamSimulation.result.detail">
+                        <th>げんき回復</th>
+                        <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                          <template v-if="pokemon">
+                            {{ Math.round(pokemon.healEffect).toLocaleString() }}
+                          </template>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr v-if="config.teamSimulation.result.detail">
+                        <th>きのみ</th>
+                        <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                          <template v-if="pokemon">
+                            {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                          </template>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr v-if="config.teamSimulation.result.detail">
+                        <th>スキル</th>
+                        <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                          <template v-if="pokemon">
+                            {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
+                          </template>
+                        </td>
+                        <td></td>
+                      </tr>
+                    </template>
+
+                    <template v-if="config.teamSimulation.result.food">
+                      <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                        <th class="vertical" :rowspan="Food.list.length" v-if="i == 0">食材</th>
+                        <th><img :src="food.img"></th>
+                        <td v-for="pokemon in simulationResult.pokemonList">
+                          {{ team.defaultFoodNum?.[food.name].toFixed(1) }}
+                          <span v-if="team.addFoodNum?.[food.name]" class="plus"> + {{ team.addFoodNum?.[food.name].toFixed(1) }}</span>
+                          <span v-if="team.useFoodNum?.[food.name]" class="minus"> - {{ team.useFoodNum?.[food.name].toFixed(1) }}</span>
+                          = {{ team.foodNum?.[food.name].toFixed(1) }}
+                        </td>
+                        <td>
+                        </td>
+                      </tr>
+                    </template>
+
+                    <tr v-for="(name, i) in ['朝', '昼', '晩']">
+                      <th v-if="i == 0" class="vertical" rowspan="3">料理</th>
+                      <th>{{ name }}</th>
+                      <td v-for="pokemon in simulationResult.pokemonList">
+                        <template v-if="team.cookingList?.[i]">
+                          {{ team.cookingList?.[i]?.cooking?.name }}({{ Math.round(team.cookingList?.[i]?.energy).toLocaleString() }})
+                        </template>
+                      </td>
+                      <td></td>
+                    </tr>
+
+                    <tr>
+                      <th class="vertical" rowspan="6">エナジー</th>
+                      <th>きのみ合計</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        <template v-if="i > 0">
+                          {{ Math.round(team.pokemonList.reduce((a, x) => a + (x.berryEnergyPerDay ?? 0), 0)).toLocaleString() }}
+                        </template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                          a + team.pokemonList.reduce((a, x) => a + (x.berryEnergyPerDay ?? 0), 0), 0
+                        )).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>スキル合計</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        <template v-if="i > 0">
+                          {{ Math.round(team.pokemonList.reduce((a, x) => a + (x.skillEnergyPerDay ?? 0), 0)).toLocaleString() }}
+                        </template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                          a + team.pokemonList.reduce((a, x) => a + (x.skillEnergyPerDay ?? 0), 0), 0
+                        )).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>料理合計</th>
+                      <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                        <template v-if="team.cookingList">
+                          {{ Math.round(team.cookingList.reduce((a, x) => a + (x.energy ?? 0), 0)).toLocaleString() }}
+                        </template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                          a + (team.cookingList?.reduce((a, x) => a + x.energy, 0) ?? 0), 0
+                        )).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>エナジー</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        <template v-if="i > 0">{{ Math.round(team.rawEnergy).toLocaleString() }}</template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                          a + (team.rawEnergy ?? 0), 0
+                        )).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>エナジー<small>(FB込)</small></th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        <template v-if="i > 0">{{ Math.round(team.energy).toLocaleString() }}</template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                          a + (team.energy ?? 0), 0
+                        )).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>累計エナジー</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        <template v-if="i > 0">{{ Math.round(team.beforeEnergy + team.energy).toLocaleString() }}</template>
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => a + (team.beforeEnergy ?? 0) + (team.energy ?? 0), 0)).toLocaleString() }}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <th class="vertical" rowspan="3">ゆめのかけら</th>
+                      <th>エナジー</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        {{ Math.round(team.energyShard).toLocaleString() }}
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => a + (team.energyShard ?? 0), 0)).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>ボーナス</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        {{ Math.round(team.bonusShard).toLocaleString() }}
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => a + (team.bonusShard ?? 0), 0)).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>スキル</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        {{ Math.round(team.skillShard).toLocaleString() }}
+                      </td>
+                      <td class="text-align-right">
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => a + (team.skillShard ?? 0), 0)).toLocaleString() }}
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <th colspan="2">判定スコア</th>
+                      <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
+                        {{ Math.round(team.score).toLocaleString() }}
+                      </td>
+                      <td class="text-align-right">
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </ToggleArea>
+          </template> 
+        -->
         </AsyncWatcherArea>
       </div>
     </template>
@@ -536,7 +992,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
 
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   height: calc(100% - 100px);
 
 
@@ -559,6 +1015,12 @@ onBeforeUnmount(() => {
     height: 500px;
   }
 
+  .scroller {
+    width: 100%;
+    max-height: 500px;
+    overflow-x: auto;
+  }
+
   .simulation-result {
     flex: 1 1 100px;
     // overflow: auto;
@@ -566,57 +1028,45 @@ onBeforeUnmount(() => {
     table {
       border-collapse: collapse;
 
-      th {
-        font-weight: bold;
-      }
       th, td {
         border: 1px #000 solid;
         vertical-align: middle;
         padding: 2px 3px;
+
+        &.vertical {
+          writing-mode: vertical-rl;
+        }
+      }
+      th {
+        font-weight: bold;
+        white-space: nowrap;
+        background: rgb(54, 73, 150);
+        color: #FFF;
+        border: 1px #FFF solid;
+      }
+
+      .plus {
+        color: #d40063;
+      }
+
+      .minus {
+        color: #000f9b;
       }
 
       img {
+        flex: 0 0 auto;
         width: 24px;
         line-height: 1;
         vertical-align: middle;
+        background-color: #FFF;
+        border-radius: 5px;
+        margin: 0 auto;
       }
 
       .number {
         text-align: right;
       }
 
-      .sub-skill-list {
-        width: 105px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2px 5px;
-      }
-      .sub-skill {
-        display: flex;
-        justify-content: center;
-        width: 11.5em;
-        padding: 2px 0px;
-        white-space: nowrap;
-        overflow: hidden;
-
-        font-size: 10px;
-        font-weight: bold;
-        border-radius: 3px;
-
-        &.short {
-          width: 50px;
-          padding: 2px 0;
-        }
-
-        &.disabled {
-          opacity: 0.5;
-          font-weight: normal;
-        }
-
-        &.sub-skill-1 { background-color: #F8F8F8; border: 1px #AAA solid; color: #333; }
-        &.sub-skill-2 { background-color: #E0F0FF; border: 1px #9BD solid; color: #333; }
-        &.sub-skill-3 { background-color: #FFF4D0; border: 1px #B97 solid; color: #422; }
-      }
     }
   }
 }

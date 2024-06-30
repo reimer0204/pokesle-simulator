@@ -178,14 +178,12 @@ onBeforeUnmount(() => {
                     {{ pokemon.name }}<template v-if="pokemon.bagOverOperation">(いつ育)</template>
                   </td>
                   <td>合計</td>
-                  <td v-if="config.teamSimulation.result.food">余り食材</td>
                 </tr>
 
                 <tr>
                   <th>Lv</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ pokemon.lv }}</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
@@ -196,7 +194,6 @@ onBeforeUnmount(() => {
                     </div>
                   </td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
@@ -206,7 +203,6 @@ onBeforeUnmount(() => {
                     <small>(Lv{{ pokemon.fixedSkillLv }})</small>
                   </td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
@@ -226,77 +222,66 @@ onBeforeUnmount(() => {
                     </div>
                   </td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>せいかく</th>
                   <td v-for="pokemon in result.pokemonList"><NatureInfo :nature="pokemon.nature" /></td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>おてスピ短縮</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>げんき回復/日</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.healEffect).toLocaleString() }}</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr v-if="config.teamSimulation.result.detail">
                   <th>手伝い/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round((pokemon.dayHelpNum + pokemon.nightHelpNum) * 7).toLocaleString() }}</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr v-if="config.teamSimulation.result.detail">
                   <th>いつ育/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryHelpNum * 7).toLocaleString() }}</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr v-if="config.teamSimulation.result.detail">
                   <th>食材確率</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ (pokemon.foodRate * 100).toFixed(1) }}%</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>きのみE/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.berryEnergyPerDay * 7).toLocaleString() }}</td>
                   <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.berryEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>スキルE/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillEnergyPerDay * 7).toLocaleString() }}</td>
                   <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.skillEnergyPerDay, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr>
                   <th>ゆめのかけら/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.shard * 7).toLocaleString() }}</td>
                   <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.shard, 0) * 7).toLocaleString() }}</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr v-if="config.teamSimulation.result.detail">
                   <th>スキル回数/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
                   <td>-</td>
-                  <td v-if="config.teamSimulation.result.food">-</td>
                 </tr>
 
                 <tr v-for="food in Food.list" v-if="config.teamSimulation.result.food">
@@ -304,36 +289,71 @@ onBeforeUnmount(() => {
                   <td v-for="pokemon in result.pokemonList" class="number">
                     <template v-if="pokemon[food.name]">{{ Math.round(pokemon[food.name] * 7).toLocaleString() }}</template>
                   </td>
-                  <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</td>
-                  <td class="number">{{ Math.round(result.remainFoodNum[food.name]).toLocaleString() }}</td>
+                  <td>
+                    {{ Math.round(result.defaultFoodNum[food.name] ?? 0).toLocaleString() }}
+                    <span class="plus"> + {{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</span>
+                    <span v-if="result.useFoodNum[food.name]" class="minus"> - {{ Math.round(result.useFoodNum[food.name] ?? 0).toLocaleString() }}</span>
+                    = {{ Math.round(result.foodNum[food.name]).toLocaleString() }}
+                  </td>
                 </tr>
 
                 <tr>
                   <th>料理</th>
-                  <td colspan="7">
-                    <div v-for="day in 7">
-                      {{ result.cookingList.slice(day * 3 - 3, day * 3).map(x => x.cooking.name).join(' / ') }}
-                    </div>
+                  <td colspan="6">
+                    {{
+                      Object.entries(result.cookingList.reduce((a, x) => (a[x.cooking.name] = (a[x.cooking.name] ?? 0) + 1, a), {}))
+                      .sort(([aName, aNum], [bName, bNum]) => bNum - aNum)
+                      .map(([name, num]) => `${name}x${num}`)
+                      .join(' / ')
+                    }}
                   </td>
                 </tr>
 
                 <tr>
                   <th>料理エナジー</th>
-                  <td colspan="7" class="number">
+                  <td colspan="6" class="number">
                     {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
                   </td>
                 </tr>
 
                 <tr>
-                  <th>総エナジー/週<br><small>(FB込)</small></th>
-                  <td colspan="7" class="number">
+                  <th>エナジー/日<br><small>(FB込)</small></th>
+                  <td colspan="6" class="number">
+                    {{ Math.round(result.energy / 28).toLocaleString() }}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>最終エナジー</th>
+                  <td colspan="6" class="number">
+                    {{ Math.round(result.energy / 4).toLocaleString() }}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>累計エナジー</th>
+                  <td colspan="6" class="number">
                     {{ Math.round(result.energy).toLocaleString() }}
                   </td>
                 </tr>
 
                 <tr>
+                  <th>ゆめのかけら<br><small>(エナジー)</small></th>
+                  <td colspan="6" class="number">
+                    {{ Math.round((result.energyShard * 4)).toLocaleString() }}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>ゆめのかけら<br><small>(ボーナス)</small></th>
+                  <td colspan="6" class="number">
+                    {{ Math.round(result.bonusShard * 4).toLocaleString() }}
+                  </td>
+                </tr>
+
+                <tr>
                   <th>スコア</th>
-                  <td colspan="7" class="number">{{ Math.round(result.score).toLocaleString() }}</td>
+                  <td colspan="6" class="number">{{ Math.round(result.score).toLocaleString() }}</td>
                 </tr>
               </table>
             </ToggleArea>
@@ -350,7 +370,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
 
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   height: calc(100% - 100px);
 
 
@@ -388,11 +408,29 @@ onBeforeUnmount(() => {
         vertical-align: middle;
         padding: 2px 3px;
       }
+      th {
+        font-weight: bold;
+        white-space: nowrap;
+        background: rgb(54, 73, 150);
+        color: #FFF;
+        border: 1px #FFF solid;
+      }
 
       img {
         width: 24px;
         line-height: 1;
         vertical-align: middle;
+        background-color: #FFF;
+        border-radius: 5px;
+        margin: 0 auto;
+      }
+
+      .plus {
+        color: #d40063;
+      }
+
+      .minus {
+        color: #000f9b;
       }
 
       .number {
