@@ -24,12 +24,12 @@ class PokemonSimulator {
     this.mode = mode;
     this.helpRateCache = new Map();
 
-    this.fixedPotSize = 
+    this.fixedPotSize =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.potMax
       : Math.round(this.config.simulation.potSize * (this.config.simulation.campTicket ? 1.5 : 1))
 
     // 今週の料理タイプのリスト
-    this.cookingList = 
+    this.cookingList =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.list
       : Cooking.list.filter(cooking => cooking.type == this.config.simulation.cookingType);
 
@@ -94,7 +94,7 @@ class PokemonSimulator {
         name: food.name,
         num,
         energy: food.energy * num
-          * food.bestTypeRate[this.config.simulation.cookingType]
+          * (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
           * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1],
       });
     }
@@ -135,6 +135,7 @@ class PokemonSimulator {
       result.berry.energy * (1.025 ** (result.lv - 1))
     )
     * (berryMatch ? 2 : 1)
+    * (this.config.simulation.berryWeight ?? 1)
 
     // 食材確率
     result.fixedFoodRate = result.foodRate
@@ -151,10 +152,10 @@ class PokemonSimulator {
     // 食材エナジー/手伝い
     result.foodEnergyPerHelp = result.enableFoodList.reduce((a, x) => a + x.energy, 0)
       / result.enableFoodList.length;
-    
-      if (this.mode != PokemonSimulator.MODE_SELECT) {
-        result.foodEnergyPerHelp *= this.config.simulation.cookingWeight;
-      }
+
+    if (this.mode != PokemonSimulator.MODE_SELECT) {
+      result.foodEnergyPerHelp *= this.config.simulation.cookingWeight;
+    }
 
     // 食材/手伝い
     result.foodPerHelp = {}
@@ -203,7 +204,7 @@ class PokemonSimulator {
         + (subSkillList.includes('スキル確率アップM') ? 0.36 : 0)
       )
       * (nature?.good == 'メインスキル発生確率' ? 1.2 : nature?.weak == 'メインスキル発生確率' ? 0.8 : 1)
-    
+
     if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.eventBonusType == result.type) {
       result.fixedSkillRate *= this.config.simulation.eventBonusTypeSkillRate;
     }
@@ -444,19 +445,42 @@ class PokemonSimulator {
           break;
 
         case '食材ゲットS':
-          if (mode == PokemonSimulator.MODE_SELECT) {
-            energy = Food.list.reduce((a, food) => 
+          if (mode == PokemonSimulator.MODE_ABOUT) {
+            if (!this.config.simulation.sundayPrepare) {
+              let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
+              let foodEnergy = 0;
+              for(let food of Food.list) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+                foodEnergy += food.energy
+                  * (
+                    (
+                      (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
+                      * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
+                      - 1
+                    ) * this.config.simulation.foodGetRate / 100
+                    + 1
+                  )
+                  * this.config.simulation.cookingWeight
+              }
+
+              energy = foodEnergy / Food.list.length * effect * pokemon.skillEffectRate;
+            }
+
+          } else if (mode == PokemonSimulator.MODE_TEAM) {
+            if (!this.config.simulation.sundayPrepare) {
+              let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
+              for(let food of Food.list) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+              }
+            }
+          } else if (mode == PokemonSimulator.MODE_SELECT) {
+            energy = Food.list.reduce((a, food) =>
               a + food.energy * (
                 (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.foodEnergyRate / 100 + 1
               )
               , 0
             ) / Food.list.length * effect * pokemon.skillEffectRate;
 
-          } else {
-            let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
-            for(let food of Food.list) {
-              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
-            }
           }
           break;
 
@@ -472,24 +496,28 @@ class PokemonSimulator {
 
         case '料理パワーアップS':
           if (mode == PokemonSimulator.MODE_ABOUT) {
-            // 拡張後と拡張前で出来る料理の差を計算
-            let afterPotSize = Math.round(
-              (this.config.simulation.potSize + skill.effect[pokemon.fixedSkillLv - 1])
-              * (this.config.simulation.campTicket ? 1.5 : 1)
-            );
+            if (!this.config.simulation.sundayPrepare) {
+              // 拡張後と拡張前で出来る料理の差を計算
+              let afterPotSize = Math.round(
+                (this.config.simulation.potSize + skill.effect[pokemon.fixedSkillLv - 1])
+                * (this.config.simulation.campTicket ? 1.5 : 1)
+              );
 
-            let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
-              .map(cooking => ({
-                ...cooking,
-                lastEnergy: cooking.energy * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1] + (afterPotSize - cooking.foodNum) * Food.maxEnergy,
-              }))
-              .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+              let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
+                .map(cooking => ({
+                  ...cooking,
+                  lastEnergy: cooking.energy * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1] + (afterPotSize - cooking.foodNum) * Food.maxEnergy,
+                }))
+                .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 
-            energy = (afterBestCooking.lastEnergy - this.defaultBestCooking.lastEnergy) * pokemon.skillEffectRate;
+              energy = (afterBestCooking.lastEnergy - this.defaultBestCooking.lastEnergy) * pokemon.skillEffectRate * this.config.simulation.cookingWeight;
+            }
 
           } else if (mode == PokemonSimulator.MODE_TEAM) {
-            // 効果量だけ記憶しておく
-            pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
+            if (!this.config.simulation.sundayPrepare) {
+              // 効果量だけ記憶しておく
+              pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
+            }
 
           } else if (mode == PokemonSimulator.MODE_SELECT) {
             // 通常なべサイズから最大料理
@@ -500,14 +528,18 @@ class PokemonSimulator {
 
         case '料理チャンスS':
           if (mode == PokemonSimulator.MODE_ABOUT) {
-            // チームシミュレーションの際は後で正確に評価、そうでなければ概算評価する
-            if (pokemon.skillPerDay) {
-              let totalEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate * 7;
-              energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * this.defaultBestCooking.lastEnergy / pokemon.skillPerDay
+            if (!this.config.simulation.sundayPrepare) {
+              // チームシミュレーションの際は後で正確に評価、そうでなければ概算評価する
+              if (pokemon.skillPerDay) {
+                let totalEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate * 7;
+                energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * this.defaultBestCooking.lastEnergy / pokemon.skillPerDay * this.config.simulation.cookingWeight
+              }
             }
           } else if (mode == PokemonSimulator.MODE_TEAM) {
-            // 効果量だけ記憶しておく
-            pokemon.cookingChanceEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate;
+            if (!this.config.simulation.sundayPrepare) {
+              // 効果量だけ記憶しておく
+              pokemon.cookingChanceEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate;
+            }
 
           } else if (mode == PokemonSimulator.MODE_SELECT) {
             let totalEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate * 7;

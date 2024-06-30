@@ -38,7 +38,7 @@ addEventListener('message', (event) => {
       const pokemon = simulator.memberToInfo(pokemonList[i]);
       pokemon.index = i + startIndex;
       
-      if (config.simulation.selectInfo) {
+      if (config.simulation.selectInfo && evaluateTable) {
         pokemon.evaluateResult = {};
         pokemon.foodIndexList = pokemon.foodList.map(foodName => pokemon.base.foodList.findIndex(baseFood => baseFood.name == foodName))
         if (!pokemon.foodIndexList.includes(-1)) {
@@ -263,7 +263,7 @@ addEventListener('message', (event) => {
       pokemon.score = (pokemon.energyPerDay + pokemon.supportEnergyPerDay) * (100 + config.simulation.fieldBonus) / 100;
       pokemon.score += (
         pokemon.score * (config.simulation.researchRankMax ? 0.5 : 0)
-        + pokemon.shard * config.selectEvaluate.shardEnergyRate / 4
+        + pokemon.shard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
       ) * config.simulation.shardWeight / 100;
       pokemon.score += pokemon.supportScorePerDay
     }

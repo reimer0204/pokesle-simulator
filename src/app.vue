@@ -5,6 +5,9 @@ import AsyncWatcherArea from './components/async-watcher-area.vue';
 import EvaluateTable from './models/evaluate-table';
 import HelpRate from './models/help-rate';
 
+let browserSupportError = ref(null);
+if(window.localStorage == null) browserSupportError.value = 'LocalStorageに対応していません。最新のブラウザを使用するか、ブラウザの設定を確認してください。'
+
 const route = useRoute()
 const router = useRouter()
 
@@ -27,7 +30,7 @@ const requireRefresh = computed(() => {
   } else {
     if(config.version.evaluateTable != EvaluateTable.VERSION) {
       result.cache = true;
-    } 
+    }
   }
   return result;
 })
@@ -36,6 +39,7 @@ const requireRefresh = computed(() => {
 
 <template>
   <AsyncWatcherArea class="app" :asyncWatcher="asyncWatcher">
+
     <header>
       <h1>ポケスリシミュ</h1>
       <router-link to="/" v-if="config.initSetting">ボックス</router-link>
@@ -48,11 +52,13 @@ const requireRefresh = computed(() => {
       <router-link to="/history" v-if="config.initSetting">更新履歴</router-link>
     </header>
     <main>
-      <router-view />
+      <template v-if="browserSupportError == null">
+        <router-view />
+      </template>
+      <template v-else>
+        {{ browserSupportError }}
+      </template>
     </main>
-    <footer>
-
-    </footer>
 
     <popup-area />
   </AsyncWatcherArea>

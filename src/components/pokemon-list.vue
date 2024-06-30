@@ -1,6 +1,7 @@
 <script setup>
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
-import SimulationTeamPopup from '../components/simulation-team-popup.vue';
+import SimulationWeeklyTeamPopup from './simulation-weekly-team-popup.vue';
+import SimulationDailyTeamPopup from './simulation-daily-team-popup.vue';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
 import SubSkill from '../data/sub-skill.js';
@@ -35,14 +36,14 @@ async function createPokemonList(setConfig = false) {
     let clonedConfig = JSON.parse(JSON.stringify(config))
 
     let [setConfigProgress, stepA, stepB] = progressCounter.split(setConfig ? 1 : 0, 1, 2, 1)
-    
+
     if (setConfig) {
       await multiWorker.call(
         setConfigProgress,
         () => ({ type: 'config', config: clonedConfig })
       )
     }
-    
+
     let pokemonList = PokemonBox.list;
 
     pokemonList = (await multiWorker.call(
@@ -71,7 +72,7 @@ async function createPokemonList(setConfig = false) {
     healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
 
     simulatedPokemonList.value = (await multiWorker.call(
-      stepB, 
+      stepB,
       (i) => {
         return {
           type: 'assist',
@@ -111,7 +112,7 @@ const columnList = computed(() => {
     result.push({ key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true })
     for(let lv of lvList) {
       result.push({ key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true })
-      
+
       if (config.pokemonList.selectEnergy) {
         result.push({ key: `evaluate_energy_${lv}`, name: `エナジー\n(${lv})`, template: 'evaluate_energy', lv, percent: true })
       }
@@ -204,8 +205,13 @@ async function showGoogleSpreadsheetPopup() {
   await Popup.show(GoogleSpreadsheetPopup)
 }
 
-async function simulationTeam() {
-  Popup.show(SimulationTeamPopup, { pokemonList: simulatedPokemonList.value })
+async function simulationWeeklyTeam() {
+  Popup.show(SimulationWeeklyTeamPopup, { pokemonList: simulatedPokemonList.value })
+}
+
+
+async function simulationDailyTeam() {
+  Popup.show(SimulationDailyTeamPopup)
 }
 
 function deletePokemon(index) {
@@ -375,7 +381,8 @@ function showSelectDetail(pokemon, after, lv) {
 
     <div class="flex-row-start-center gap-5px">
       <button @click="addPokemon">新規追加</button>
-      <button @click="simulationTeam">週間編成シミュレーション</button>
+      <button @click="simulationWeeklyTeam">週間チームシミュレーション</button>
+      <button @click="simulationDailyTeam">日替わりチームシミュレーション</button>
       <button @click="showGoogleSpreadsheetPopup" class="ml-auto">Googleスプレッドシート連携</button>
       <button @click="showTsvPopup">TSVインポート/エクスポート</button>
     </div>

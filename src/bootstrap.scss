@@ -26,6 +26,7 @@
     align-self: $alignItems !important;
   }
 }
+.flex-wrap { flex-wrap: wrap; }
 
 .w-100    { width: 100% !important; }
 .minw-100 { min-width: 100% !important; }
@@ -61,7 +62,10 @@ $i: 1;
   @else if $i < 100 { $i: $i + 5; }
   @else if $i < 500 { $i: $i + 10; }
 }
-.ml-auto { margin-left: auto; }
+.ml-auto { margin-left: auto !important; }
+.mr-auto { margin-right: auto !important; }
+.ml-0 { margin-left: 0px !important; }
+.mr-0 { margin-right: 0px !important; }
 
 .flex-110 { flex: 1 1 0 !important }
 .flex-100 { flex: 0 1 0 !important }
@@ -73,3 +77,5 @@ $i: 1;
 .text-align-left { text-align: left !important; }
 .text-align-center { text-align: center !important; }
 .text-align-right { text-align: right !important; }
+
+.white-space-nowrap { white-space: nowrap !important; }
