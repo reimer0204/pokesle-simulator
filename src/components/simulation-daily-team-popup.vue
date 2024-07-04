@@ -21,7 +21,8 @@ const simulationResult = ref({
 })
 // const cookingType = ref('')
 const cookingType = ref(config.simulation.cookingType)
-const targetDay = ref(-1)
+
+const targetDay = ref(new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay())
 const beforeEnergy = ref(0);
 
 // ワーカー準備
