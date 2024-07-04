@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
                 <HelpButton class="ml-5px" title="スコア" markdown="
                   スコアは1週間でリサーチに使われるエナジーの総和＋エナジー換算したゆめのかけら×ゆめのかけら評価度です。
                   つまり、1日分＋2日分＋…＋7日分のエナジーになるので、ゆめのかけらを稼がない場合は最終エナジーの4倍がスコアになります。
-                  だいたいこの値の1%ほどがゆめのかけらになります。
+                  だいたいこの値の0.8%ほど、もしくはリサランカンスト時は1.2%ほどがゆめのかけらになります。
                 " />
               </template>
 
@@ -347,14 +347,14 @@ onBeforeUnmount(() => {
                 <tr>
                   <th>ゆめのかけら<br><small>(エナジー)</small></th>
                   <td colspan="6" class="number">
-                    {{ Math.round((result.energyShard * 4)).toLocaleString() }}
+                    {{ Math.round((result.energyShard)).toLocaleString() }}
                   </td>
                 </tr>
 
                 <tr>
                   <th>ゆめのかけら<br><small>(ボーナス)</small></th>
                   <td colspan="6" class="number">
-                    {{ Math.round(result.bonusShard * 4).toLocaleString() }}
+                    {{ Math.round(result.bonusShard).toLocaleString() }}
                   </td>
                 </tr>
 
