@@ -12,6 +12,8 @@ declare module 'vue' {
     DangerAlert: typeof import('./src/components/alert/danger-alert.vue')['default']
     EditPokemonPopup: typeof import('./src/components/edit-pokemon-popup.vue')['default']
     GoogleSpreadsheetPopup: typeof import('./src/components/google-spreadsheet-popup.vue')['default']
+    HelpButton: typeof import('./src/components/help/help-button.vue')['default']
+    HelpPopup: typeof import('./src/components/help/help-popup.vue')['default']
     InputCheckbox: typeof import('./src/components/form/input-checkbox.vue')['default']
     NatureInfo: typeof import('./src/components/nature-info.vue')['default']
     PokemonBoxTsvPopup: typeof import('./src/components/pokemon-box-tsv-popup.vue')['default']

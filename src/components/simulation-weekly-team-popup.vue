@@ -169,7 +169,14 @@ onBeforeUnmount(() => {
         <AsyncWatcherArea class="flex-column-start-start w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
           <template v-for="(result, i) in simulationResultList">
             <ToggleArea :open="i == 0" class="w-100">
-              <template #headerText>{{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }}</template>
+              <template #headerText>
+                {{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy / 4).toLocaleString() }})
+                <HelpButton class="ml-5px" title="スコア" markdown="
+                  スコアは1週間でリサーチに使われるエナジーの総和＋エナジー換算したゆめのかけら×ゆめのかけら評価度です。
+                  つまり、1日分＋2日分＋…＋7日分のエナジーになるので、ゆめのかけらを稼がない場合は最終エナジーの4倍がスコアになります。
+                  だいたいこの値の1%ほどがゆめのかけらになります。
+                " />
+              </template>
 
               <table>
                 <tr>
