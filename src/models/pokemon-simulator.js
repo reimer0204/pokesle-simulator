@@ -404,7 +404,7 @@ class PokemonSimulator {
             helpCount *= pokemon.skillEffectRate;
 
             for(let subPokemon of pokemonList) {
-              pokemon.berryEnergyPerDay += subPokemon.berryEnergyPerHelp * helpCount * subPokemon.fixedFoodRate;
+              pokemon.berryEnergyPerDay += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.fixedFoodRate);
               for(let foodName in subPokemon.foodPerHelp) {
                 pokemon[foodName] = (pokemon[foodName] ?? 0) + subPokemon.foodPerHelp[foodName] * helpCount * subPokemon.fixedFoodRate;
               }
