@@ -53,6 +53,7 @@ class Food {
 Food.list = list;
 Food.map = map;
 Food.maxEnergy = Math.max(...list.map(x => x.energy))
+Food.averageEnergy = Food.list.reduce((a, x) => a + x.energy, 0) / Food.list.length;
 
 for(let cooking of Cooking.list) {
 

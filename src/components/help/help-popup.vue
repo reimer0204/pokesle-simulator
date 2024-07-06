@@ -25,11 +25,16 @@ let html = computed(() => {
 .help-popup {
   max-width: 770px;
 
-  main {
+  :deep(main) {
     white-space: pre-wrap;
 
     h1, h2, h3 {
       font-weight: bold;
+    }
+
+    h1 {
+      font-size: 20px;
+      border-bottom: 2px #CCC solid;
     }
     
   }

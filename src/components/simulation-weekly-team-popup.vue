@@ -127,7 +127,7 @@ onBeforeUnmount(() => {
 
 <template>
   <PopupBase @close="$emit('close')">
-    <template #headerText>チームシミュレーション</template>
+    <template #headerText>週間チームシミュレーション</template>
 
     <template #bodyWrapper>
       <div class="flex-column-start-start flex-110 p-20px gap-5px">

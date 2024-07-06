@@ -110,6 +110,7 @@ self.addEventListener('message', async (event) => {
         let shardBonusCount = 0;
         let researchExpBonusCount = 0;
         let cookingPowerUpEffectList = new Array(21).fill(0);
+        let totalCookingPowerUpEffect = 0;
         let totalCookingChanceEffect = 0;
         let defaultFoodNum = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])), ...config.foodDefaultNum };
         let foodNum = { ...defaultFoodNum };
@@ -169,13 +170,14 @@ self.addEventListener('message', async (event) => {
           for(let i = 0; i < skillNum; i++) {
             cookingPowerUpEffectList[Math.floor(i / skillNum * 3 * dayLength)] += pokemon.cookingPowerUpEffect
           }
+          totalCookingPowerUpEffect += pokemon.cookingPowerUpEffect * skillNum;
 
           // 料理チャンスの効果量を加算
           totalCookingChanceEffect += pokemon.cookingChanceEffect;
         }
 
-
         if (config.teamSimulation.sundayPrepare) {
+
           // 日曜準備用評価
           for(let food of Food.list) {
             foodNum[food.name] += addFoodNum[food.name];
@@ -193,11 +195,12 @@ self.addEventListener('message', async (event) => {
             let targetCookingList = cookingListMap[cookingType];
 
             let eachEnergy = 0;
+            let firstCooking = true;
 
             cookingSearch: for(let week = 0; week < 7; week++) {
               let potSize = Math.round(
                 (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
-                * (config.simulation.campTicket ? 1.5 : 1)
+                * ((config.teamSimulation.campTicket ?? config.simulation.campTicket) ? 1.5 : 1)
               );
 
               for(let i = 0; i < 3; i++) {
@@ -223,11 +226,15 @@ self.addEventListener('message', async (event) => {
                 })
 
                 // 料理のスコアを加算、月曜は7倍で評価
-                eachEnergy += bestCooking.energy
-                  * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1]
+                eachEnergy += (
+                    bestCooking.energy
+                    * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1]
+                    + (firstCooking ? Food.averageEnergy * totalCookingPowerUpEffect : 0)
+                  )
                   * (100 + config.simulation.fieldBonus) / 100
                   * (7 - week)
 
+                firstCooking = false;
 
                 // きのみ担当で稼げる食材を加算
                 for(let foodName in config.teamSimulation.sundayPrepare.foodNum) {

@@ -2,6 +2,7 @@
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import SimulationWeeklyTeamPopup from './simulation-weekly-team-popup.vue';
 import SimulationDailyTeamPopup from './simulation-daily-team-popup.vue';
+import SimulationPrepareTeamPopup from './simulation-prepare-team-popup.vue';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
 import SubSkill from '../data/sub-skill.js';
@@ -214,6 +215,10 @@ async function simulationDailyTeam() {
   Popup.show(SimulationDailyTeamPopup)
 }
 
+async function simulationPrepareTeam() {
+  Popup.show(SimulationPrepareTeamPopup)
+}
+
 function deletePokemon(index) {
   if (confirm(`${PokemonBox.list[index].name}(Lv${PokemonBox.list[index].lv})を削除します。よろしいですか？`)) {
     PokemonBox.delete(index);
@@ -380,9 +385,10 @@ function showSelectDetail(pokemon, after, lv) {
     </AsyncWatcherArea>
 
     <div class="flex-row-start-center gap-5px">
-      <button @click="addPokemon">新規追加</button>
-      <button @click="simulationWeeklyTeam">週間チームシミュレーション</button>
-      <button @click="simulationDailyTeam">日替わりチームシミュレーション</button>
+      <button @click="addPokemon">ポケモン新規追加</button>
+      <button @click="simulationWeeklyTeam">週間PTシミュ</button>
+      <button @click="simulationDailyTeam">日別PTシミュ</button>
+      <button @click="simulationPrepareTeam">準備シミュ</button>
       <button @click="showGoogleSpreadsheetPopup" class="ml-auto">Googleスプレッドシート連携</button>
       <button @click="showTsvPopup">TSVインポート/エクスポート</button>
     </div>

@@ -264,14 +264,10 @@ async function simulation() {
 
 <template>
   <PopupBase @close="$emit('close')">
-    <template #headerText>日替わりチームシミュレーション</template>
+    <template #headerText>日別チームシミュレーション</template>
 
     <template #bodyWrapper>
       <div class="flex-column-start-start flex-110 p-20px gap-5px">
-      
-        <BaseAlert>
-          ベータ版です。月曜以降は概ね合ってそうですが、特に日曜の準備は最善ではないと思われます。
-        </BaseAlert>
 
         <SettingList class="align-self-stretch">
           <div>
@@ -293,7 +289,6 @@ async function simulation() {
             <label>料理</label>
             <div>
               <select v-model="cookingType">
-                <option value="">未定</option>
                 <option value="カレー">カレー</option>
                 <option value="サラダ">サラダ</option>
                 <option value="デザート">デザート</option>
@@ -305,7 +300,6 @@ async function simulation() {
             <label>対象</label>
             <div>
               <select :value="targetDay" @input="targetDay = Number($event.target.value)">
-                <option value="-1">日曜(準備)</option>
                 <option value="0">月曜</option>
                 <option value="1">火曜</option>
                 <option value="2">水曜</option>

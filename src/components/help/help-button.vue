@@ -16,28 +16,18 @@ function showPopup() {
 </script>
 
 <template>
-  <div class="help-button" @click.stop="showPopup">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
-      <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
-      <path d="M80 160c0-35.3 28.7-64 64-64h32c35.3 0 64 28.7 64 64v3.6c0 21.8-11.1 42.1-29.4 53.8l-42.2 27.1c-25.2 16.2-40.4 44.1-40.4 74V320c0 17.7 14.3 32 32 32s32-14.3 32-32v-1.4c0-8.2 4.2-15.8 11-20.2l42.2-27.1c36.6-23.6 58.8-64.1 58.8-107.7V160c0-70.7-57.3-128-128-128H144C73.3 32 16 89.3 16 160c0 17.7 14.3 32 32 32s32-14.3 32-32zm80 320a40 40 0 1 0 0-80 40 40 0 1 0 0 80z" fill="#FFF"/>
-    </svg>
-  </div>
+  <svg class="help-button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" @click.stop="showPopup" fill="currentColor">
+    <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
+    <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3h58.3c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24V250.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1H222.6c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" />
+  </svg>
 </template>
 
 <style lang="scss" scoped>
 .help-button {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   width: 1em;
   height: 1em;
-  border-radius: 50%;
-  background-color: #0008;
-  color: #FFF;
-
-  svg {
-    width: 0.7em;
-    height: 0.7em;
-  }
+  min-width: 14px;
+  min-height: 14px;
+  color: #0008;
 }
 </style>

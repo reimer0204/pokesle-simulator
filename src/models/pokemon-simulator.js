@@ -499,7 +499,7 @@ class PokemonSimulator {
             if (!this.config.simulation.sundayPrepare) {
               // 拡張後と拡張前で出来る料理の差を計算
               let afterPotSize = Math.round(
-                (this.config.simulation.potSize + skill.effect[pokemon.fixedSkillLv - 1])
+                (this.config.simulation.potSize + effect)
                 * (this.config.simulation.campTicket ? 1.5 : 1)
               );
 
@@ -511,13 +511,13 @@ class PokemonSimulator {
                 .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 
               energy = (afterBestCooking.lastEnergy - this.defaultBestCooking.lastEnergy) * pokemon.skillEffectRate * this.config.simulation.cookingWeight;
+            } else {
+              energy = Food.averageEnergy * effect * pokemon.skillEffectRate
             }
 
           } else if (mode == PokemonSimulator.MODE_TEAM) {
-            if (!this.config.simulation.sundayPrepare) {
-              // 効果量だけ記憶しておく
-              pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
-            }
+            // 効果量だけ記憶しておく
+            pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
 
           } else if (mode == PokemonSimulator.MODE_SELECT) {
             // 通常なべサイズから最大料理
