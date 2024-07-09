@@ -1,5 +1,5 @@
 <script setup>
-import SubSkill from '../data/sub-skill';
+import SubSkill from '../../data/sub-skill';
 
 const props = defineProps({
   subSkill: { required: true },
@@ -21,7 +21,7 @@ const subSkill = computed(() => SubSkill.map[props.subSkill]);
     ]"
   >
     {{ props.short ? subSkill.short : subSkill.name }}
-    <img v-if="props.silverSeed" src="../img/sub-skill-seed.png" />
+    <img v-if="props.silverSeed" src="../../img/sub-skill-seed.png" />
   </div>
 </template>
 

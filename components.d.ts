@@ -15,7 +15,9 @@ declare module 'vue' {
     HelpButton: typeof import('./src/components/help/help-button.vue')['default']
     HelpPopup: typeof import('./src/components/help/help-popup.vue')['default']
     InputCheckbox: typeof import('./src/components/form/input-checkbox.vue')['default']
-    NatureInfo: typeof import('./src/components/nature-info.vue')['default']
+    LvLabel: typeof import('./src/components/status/lv-label.vue')['default']
+    NameLabel: typeof import('./src/components/status/name-label.vue')['default']
+    NatureInfo: typeof import('./src/components/status/nature-info.vue')['default']
     PokemonBoxTsvPopup: typeof import('./src/components/pokemon-box-tsv-popup.vue')['default']
     PokemonList: typeof import('./src/components/pokemon-list.vue')['default']
     PopupBase: typeof import('./src/components/popup-base.vue')['default']
@@ -28,7 +30,7 @@ declare module 'vue' {
     SimulationPrepareTeamPopup: typeof import('./src/components/simulation-prepare-team-popup.vue')['default']
     SimulationWeeklyTeamPopup: typeof import('./src/components/simulation-weekly-team-popup.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']
-    SubSkillLabel: typeof import('./src/components/sub-skill-label.vue')['default']
+    SubSkillLabel: typeof import('./src/components/status/sub-skill-label.vue')['default']
     ToggleArea: typeof import('./src/components/design/toggle-area.vue')['default']
   }
 }

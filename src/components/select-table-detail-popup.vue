@@ -1,12 +1,11 @@
 <script setup>
 import Pokemon from '../data/pokemon';
 import SubSkill from '../data/sub-skill';
-import SubSkillLabel from './sub-skill-label.vue';
 import config from '../models/config';
 import EvaluateTable from '../models/evaluate-table';
 import MultiWorker from '../models/multi-worker';
 import PopupBase from './popup-base.vue';
-import NatureInfo from './nature-info.vue';
+import NatureInfo from './status/nature-info.vue';
 import Berry from '../data/berry';
 import Food from '../data/food';
 import Cooking from '../data/cooking';
