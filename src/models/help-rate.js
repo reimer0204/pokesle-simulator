@@ -2,7 +2,7 @@ import GenkiSimulator from "../worker/genki-simulator?worker";
 
 export default class HelpRate {
 
-  static VERSION = null;
+  static VERSION = 20240709;
 
   healEffectParameter = [];
 

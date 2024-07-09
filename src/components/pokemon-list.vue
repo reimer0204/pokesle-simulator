@@ -15,7 +15,7 @@ import Popup from '../models/popup/popup.js';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 import AsyncWatcherArea from './async-watcher-area.vue';
 import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
-import NatureInfo from './nature-info.vue';
+import NatureInfo from './status/nature-info.vue';
 import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
 import SelectTableDetailPopup from './select-table-detail-popup.vue';
 import SortableTable from './sortable-table.vue';
@@ -287,8 +287,12 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #name="{ data }">
             <div :class="{ shiny: data.shiny }">
-              {{ data.name }}<template v-if="data.bagOverOperation">(いつ育)</template>
+              <NameLabel :pokemon="data" /><template v-if="data.bagOverOperation">(いつ育)</template>
             </div>
+          </template>
+
+          <template #lv="{ data }">
+            <LvLabel :pokemon="data" />
           </template>
 
           <template #foodList="{ data }">

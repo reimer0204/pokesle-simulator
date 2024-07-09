@@ -93,9 +93,35 @@ import PokemonList from '../components/pokemon-list.vue';
       </div>
 
       <div>
+        <label>いつ育運用</label>
+        <div>
+          <label><input type="checkbox" v-model="config.simulation.bagOverOperation">する</label>
+          <small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small>
+        </div>
+      </div>
+
+      <div>
+        <label>育成仮定設定</label>
+        <div>
+          <div><input type="number" class="w-80px" v-model="config.simulation.fixLv"> Lv</div>
+          <label><input type="checkbox" v-model="config.simulation.fixEvolve">進化後</label>
+        </div>
+      </div>
+
+      <div>
         <label>なべの大きさ</label>
         <div>
           <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
+        </div>
+      </div>
+
+      <div>
+        <label>食材ゲット採用率</label>
+        <div>
+          <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
+          <small>
+            食材の何%を<br>料理に使えるか
+          </small>
         </div>
       </div>
 
@@ -116,24 +142,6 @@ import PokemonList from '../components/pokemon-list.vue';
         <div>
           <label><input type="checkbox" v-model="config.simulation.researchRankMax">カンスト</label>
           <small class="w-100px">リサボをゆめのかけらとして評価するか</small>
-        </div>
-      </div>
-
-      <div>
-        <label>いつ育運用</label>
-        <div>
-          <label><input type="checkbox" v-model="config.simulation.bagOverOperation">する</label>
-          <small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small>
-        </div>
-      </div>
-
-      <div>
-        <label>食材ゲット採用率</label>
-        <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
-          <small>
-            食材の何%を<br>料理に使えるか
-          </small>
         </div>
       </div>
 

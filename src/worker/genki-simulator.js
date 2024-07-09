@@ -68,8 +68,8 @@ self.addEventListener('message', async (event) => {
               let duration = (
                 afterGenki > 80 ? speed * 0.45 :
                 afterGenki > 60 ? speed * 0.52 :
-                afterGenki > 40 ? speed * 0.62 :
-                afterGenki > 20 ? speed * 0.71 :
+                afterGenki > 40 ? speed * 0.58 :
+                afterGenki >  0 ? speed * 0.66 :
                 speed
               );
 
@@ -110,8 +110,8 @@ self.addEventListener('message', async (event) => {
               nextHelpAt = Math.max(beforeHelpAt + (
                 genki > 80 ? speed * 0.45 :
                 genki > 60 ? speed * 0.52 :
-                genki > 40 ? speed * 0.62 :
-                genki > 20 ? speed * 0.71 :
+                genki > 40 ? speed * 0.58 :
+                genki >  0 ? speed * 0.66 :
                 speed
               ), time);
             }
@@ -200,8 +200,8 @@ self.addEventListener('message', async (event) => {
                 beforeHelpAt + (
                   genki > 80 ? speed * 0.45 :
                   genki > 60 ? speed * 0.52 :
-                  genki > 40 ? speed * 0.62 :
-                  genki > 20 ? speed * 0.71 :
+                  genki > 40 ? speed * 0.58 :
+                  genki >  0 ? speed * 0.66 :
                   speed
                 )
               );

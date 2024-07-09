@@ -8,7 +8,7 @@ import MultiWorker from '../models/multi-worker';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 import TeamSimulator from '../worker/team-simulator?worker';
 import AsyncWatcherArea from './async-watcher-area.vue';
-import NatureInfo from './nature-info.vue';
+import NatureInfo from './status/nature-info.vue';
 import PopupBase from './popup-base.vue';
 import SettingList from './setting-list.vue';
 import PokemonBox from '../models/pokemon-box';
@@ -378,12 +378,12 @@ async function simulation() {
                   <tbody>
                     <tr>
                       <th class="white-space-nowrap">名前</th>
-                      <td v-for="pokemon in team.pokemonList">{{ pokemon.name }}</td>
+                      <td v-for="pokemon in team.pokemonList"><NameLabel :pokemon="pokemon" /></td>
                       <td></td>
                     </tr>
                     <tr>
                       <th>Lv</th>
-                      <td v-for="pokemon in team.pokemonList">{{ pokemon?.lv }}</td>
+                      <td v-for="pokemon in team.pokemonList"><LvLabel :pokemon="pokemon" /></td>
                       <td></td>
                     </tr>
                     

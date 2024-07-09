@@ -56,6 +56,7 @@ class PokemonSimulator {
     pokemon = {
       ...base,
       ...pokemon,
+      fixLv: this.config.simulation.fixLv ? Math.max(this.config.simulation.fixLv, pokemon.lv) : pokemon.lv,
       base,
       berry: Berry.map[base.berry],
       berryName: base.berry,
@@ -66,11 +67,11 @@ class PokemonSimulator {
 
     // 有効なサブスキル計算
     let enableSubSkillList = [];
-    if (pokemon.lv >=  10) enableSubSkillList.push(pokemon.subSkillList[0]);
-    if (pokemon.lv >=  25) enableSubSkillList.push(pokemon.subSkillList[1]);
-    if (pokemon.lv >=  50) enableSubSkillList.push(pokemon.subSkillList[2]);
-    if (pokemon.lv >=  75) enableSubSkillList.push(pokemon.subSkillList[3]);
-    if (pokemon.lv >= 100) enableSubSkillList.push(pokemon.subSkillList[4]);
+    if (pokemon.fixLv >=  10) enableSubSkillList.push(pokemon.subSkillList[0]);
+    if (pokemon.fixLv >=  25) enableSubSkillList.push(pokemon.subSkillList[1]);
+    if (pokemon.fixLv >=  50) enableSubSkillList.push(pokemon.subSkillList[2]);
+    if (pokemon.fixLv >=  75) enableSubSkillList.push(pokemon.subSkillList[3]);
+    if (pokemon.fixLv >= 100) enableSubSkillList.push(pokemon.subSkillList[4]);
 
     // サブスキルのレベルアップ計算
     pokemon.nextSubSkillList = pokemon.subSkillList.map(subSkill => {
@@ -84,7 +85,7 @@ class PokemonSimulator {
 
     // 有効な食材計算
     let enableFoodList = [];
-    for(let i = 0; i < (pokemon.lv < 30 ? 1 : pokemon.lv < 60 ? 2 : 3); i++) {
+    for(let i = 0; i < (pokemon.fixLv < 30 ? 1 : pokemon.fixLv < 60 ? 2 : 3); i++) {
       let food = Food.map[pokemon.foodList[i]];
       let num = base.foodList.find(baseFood => baseFood.name == food.name).numList[i];
       if (this.config.simulation.eventBonusType == base.type) {
@@ -114,6 +115,7 @@ class PokemonSimulator {
 
   // おてスピや所持数、各種確率等の基本的な計算
   calcParameter(result, foodList, subSkillList, nature, berryMatch) {
+    if (result.fixLv == null) result.fixLv = result.lv
 
     result.cookingPowerUpEffect = 0;
     result.cookingChanceEffect = 0;
@@ -131,8 +133,8 @@ class PokemonSimulator {
     // きのみエナジー/手伝い
     result.berryEnergyPerHelp = result.berryNum
     * Math.max(
-      result.berry.energy + result.lv - 1,
-      result.berry.energy * (1.025 ** (result.lv - 1))
+      result.berry.energy + result.fixLv - 1,
+      result.berry.energy * (1.025 ** (result.fixLv - 1))
     )
     * (berryMatch ? 2 : 1)
     * (this.config.simulation.berryWeight ?? 1)
@@ -237,7 +239,7 @@ class PokemonSimulator {
     // おてつだいスピード計算
     pokemon.speed = Math.floor(
       pokemon.help
-      * (1 - (pokemon.lv - 1) * 0.002)
+      * (1 - (pokemon.fixLv - 1) * 0.002)
       * (1 - pokemon.speedBonus)
       * (pokemon.nature?.good == '手伝いスピード' ? 0.9 : pokemon.nature?.weak == '手伝いスピード' ? 1.1 : 1)
       / (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket ? 1.2 : 1)

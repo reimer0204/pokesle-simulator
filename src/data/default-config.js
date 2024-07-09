@@ -75,6 +75,9 @@ const defaultConfig = {
     potSize: 57,
     bagOverOperation: true,
     researchRankMax: true,
+
+    fixLv: null,
+    fixEvolve: null,
   },
 
   teamSimulation: {

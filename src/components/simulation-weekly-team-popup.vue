@@ -8,7 +8,7 @@ import PokemonBox from '../models/pokemon-box';
 import PopupBase from './popup-base.vue';
 import SettingList from './setting-list.vue';
 import TeamSimulator from '../worker/team-simulator?worker';
-import NatureInfo from './nature-info.vue';
+import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './async-watcher-area.vue';
 import { AsyncWatcher } from '../models/async-watcher';
 import MultiWorker from '../models/multi-worker';
@@ -182,14 +182,14 @@ onBeforeUnmount(() => {
                 <tr>
                   <th></th>
                   <td v-for="pokemon in result.pokemonList">
-                    {{ pokemon.name }}<template v-if="pokemon.bagOverOperation">(いつ育)</template>
+                    <NameLabel :pokemon="pokemon" /><template v-if="pokemon.bagOverOperation">(いつ育)</template>
                   </td>
                   <td>合計</td>
                 </tr>
 
                 <tr>
                   <th>Lv</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ pokemon.lv }}</td>
+                  <td v-for="pokemon in result.pokemonList" class="number"><LvLabel :pokemon="pokemon" /></td>
                   <td>-</td>
                 </tr>
 

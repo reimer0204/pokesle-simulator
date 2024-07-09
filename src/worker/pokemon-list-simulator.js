@@ -33,6 +33,21 @@ addEventListener('message', (event) => {
 
     let result = [];
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+
+    if (config.simulation.fixEvolve) {
+      pokemonList = pokemonList.flatMap(pokemon => {
+        let base = Pokemon.map[pokemon.name];
+        if (base) {
+          return base.afterList.map(after => ({
+            ...pokemon,
+            beforeName: pokemon.name != after ? pokemon.name : null,
+            name: after,
+          }))
+        } else {
+          return [];
+        }
+      })
+    }
   
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo(pokemonList[i]);
