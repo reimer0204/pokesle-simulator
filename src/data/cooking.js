@@ -68,9 +68,9 @@ const list = [
 			{ name: 'げきからハーブ', num: 8 },]
 	},
 	{
-		type: 'カレー', name: 'ニンジャカレー', rate: 1.25, foodList: [
-			{ name: 'ワカクサ大豆', num: 15 },
-			{ name: 'ふといながねぎ', num: 9 },
+		type: 'カレー', name: 'ニンジャカレー', rate: 1.48, foodList: [
+			{ name: 'ワカクサ大豆', num: 24 },
+			{ name: 'ふといながねぎ', num: 12 },
 			{ name: 'マメミート', num: 9 },
 			{ name: 'あじわいキノコ', num: 5 },]
 	},
@@ -118,9 +118,9 @@ const list = [
 			{ name: 'マメミート', num: 6 },]
 	},
 	{
-		type: 'サラダ', name: 'うるおいとうふサラダ', rate: 1.11, foodList: [
-			{ name: 'ワカクサ大豆', num: 10 },
-			{ name: 'あんみんトマト', num: 6 },]
+		type: 'サラダ', name: 'うるおいとうふサラダ', rate: 1.25, foodList: [
+			{ name: 'ワカクサ大豆', num: 15 },
+			{ name: 'あんみんトマト', num: 9 },]
 	},
 	{
 		type: 'サラダ', name: 'ねっぷうとうふサラダ', rate: 1.11, foodList: [
@@ -187,9 +187,9 @@ const list = [
 			{ name: 'ピュアなオイル', num: 8 },]
 	},
 	{
-		type: 'サラダ', name: 'ニンジャサラダ', rate: 1.35, foodList: [
+		type: 'サラダ', name: 'ニンジャサラダ', rate: 1.48, foodList: [
 			{ name: 'あったかジンジャー', num: 11 },
-			{ name: 'ワカクサ大豆', num: 15 },
+			{ name: 'ワカクサ大豆', num: 19 },
 			{ name: 'あじわいキノコ', num: 12 },
 			{ name: 'ふといながねぎ', num: 15 },]
 	},
@@ -250,10 +250,10 @@ const list = [
 			{ name: 'リラックスカカオ', num: 8 },]
 	},
 	{
-		type: 'デザート', name: 'ちからもちソイドーナツ', rate: 1.17, foodList: [
-			{ name: 'ワカクサ大豆', num: 6 },
+		type: 'デザート', name: 'ちからもちソイドーナッツ', rate: 1.35, foodList: [
+			{ name: 'ワカクサ大豆', num: 16 },
 			{ name: 'リラックスカカオ', num: 7 },
-			{ name: 'ピュアなオイル', num: 9 },]
+			{ name: 'ピュアなオイル', num: 12 },]
 	},
 	{
 		type: 'デザート', name: 'あまいかおりチョコケーキ', rate: 1.17, foodList: [
@@ -282,7 +282,7 @@ const list = [
 			{ name: 'あったかジンジャー', num: 12 },]
 	},
 	{
-		type: 'デザート', name: 'ネロリ博士のヒーリングティー', rate: 1.25, foodList: [
+		type: 'デザート', name: 'ネロリのデトックスティー', rate: 1.25, foodList: [
 			{ name: 'とくせんリンゴ', num: 15 },
 			{ name: 'あったかジンジャー', num: 11 },
 			{ name: 'あじわいキノコ', num: 9 },]
