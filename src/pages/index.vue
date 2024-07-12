@@ -79,6 +79,7 @@ import PokemonList from '../components/pokemon-list.vue';
         <div class="flex-column-start-start gap-5px">
           <select :value="config.simulation.eventBonusType" @input="config.simulation.eventBonusType = $event.target.value || null">
             <option value="">-</option>
+            <option value="all">全員</option>
             <option v-for="berry in Berry.list" :value="berry.type">{{ berry.type }}</option>
           </select>
           <div style="display: grid; grid-template-columns: max-content max-content max-content; align-items: center; gap: 0 5px;">

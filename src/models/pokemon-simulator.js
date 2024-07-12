@@ -63,6 +63,7 @@ class PokemonSimulator {
       skill: Skill.map[base.skill],
       skillName: base.skill,
       // ...FOOD_EMPTY_MAP,
+      eventBonus: this.config.simulation.eventBonusType == 'all' || this.config.simulation.eventBonusType == base.type,
     };
 
     // 有効なサブスキル計算
@@ -88,7 +89,7 @@ class PokemonSimulator {
     for(let i = 0; i < (pokemon.fixLv < 30 ? 1 : pokemon.fixLv < 60 ? 2 : 3); i++) {
       let food = Food.map[pokemon.foodList[i]];
       let num = base.foodList.find(baseFood => baseFood.name == food.name).numList[i];
-      if (this.config.simulation.eventBonusType == base.type) {
+      if (pokemon.eventBonus) {
         num += this.config.simulation.eventBonusTypeFood;
       }
       enableFoodList.push({
@@ -192,7 +193,7 @@ class PokemonSimulator {
       + (subSkillList.includes('スキルレベルアップS') ? 1 : 0)
       + (subSkillList.includes('スキルレベルアップM') ? 2 : 0)
     )
-    if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.eventBonusType == result.type) {
+    if (this.mode != PokemonSimulator.MODE_SELECT && result.eventBonus) {
       result.fixedSkillLv += this.config.simulation.eventBonusTypeSkillLv;
     }
     if (result.fixedSkillLv < 1) result.fixedSkillLv = 1;
@@ -207,7 +208,7 @@ class PokemonSimulator {
       )
       * (nature?.good == 'メインスキル発生確率' ? 1.2 : nature?.weak == 'メインスキル発生確率' ? 0.8 : 1)
 
-    if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.eventBonusType == result.type) {
+    if (this.mode != PokemonSimulator.MODE_SELECT && result.eventBonus) {
       result.fixedSkillRate *= this.config.simulation.eventBonusTypeSkillRate;
     }
 
