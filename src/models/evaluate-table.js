@@ -8,7 +8,7 @@ import MultiWorker from "./multi-worker";
 
 export default class EvaluateTable {
 
-  static VERSION = 20240711;
+  static VERSION = 20240716;
 
   static load() {
     try {
