@@ -80,6 +80,7 @@ self.addEventListener('message', async (event) => {
         : Cooking.list.sort((a, b) => b.addEnergy - a.addEnergy);
 
       // シミュレーター用意
+      await PokemonSimulator.isReady;
       let simulator = new PokemonSimulator(config);
 
       // 対象のポケモンをすべてシミュレーターの初期化にかけておく
@@ -141,16 +142,23 @@ self.addEventListener('message', async (event) => {
         }
 
         // 個々の評価
-        let totalOtherHealEffect = 0;
+        let totalOtherMorningHealEffect = 0;
+        let totalOtherDayHealEffect = 0;
+        // await Promise.all(pokemonList.map(async pokemon => {
+        //   await simulator.calcStatus(pokemon, helpBonusCount);
+        //   totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
+        //   totalOtherDayHealEffect += pokemon.otherDayHealEffect;
+        // }))
         for(let pokemon of pokemonList) {
           simulator.calcStatus(pokemon, helpBonusCount);
-          totalOtherHealEffect += pokemon.otherHealEffect;
+          totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
+          totalOtherDayHealEffect += pokemon.otherDayHealEffect;
         }
         for(let pokemon of pokemonList) {
           simulator.calcHelp(
             pokemon,
-            totalOtherHealEffect,
-            PokemonSimulator.MODE_TEAM,
+            totalOtherMorningHealEffect,
+            totalOtherDayHealEffect,
             {
               pokemonList: pokemonList,
               helpBoostCount: typeSetMap[pokemon.type].size,

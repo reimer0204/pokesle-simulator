@@ -10,10 +10,11 @@ let simulator;
 let evaluateSimulator;
 let config;
 
-addEventListener('message', (event) => {
+addEventListener('message', async (event) => {
   let type = event.data.type;
 
   if (type == 'config') {
+    await PokemonSimulator.isReady;
     config = event.data.config;
     simulator = new PokemonSimulator(config);
     evaluateSimulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT);
@@ -91,7 +92,7 @@ addEventListener('message', (event) => {
   
                 let subSkillList = SubSkill.useSilverSeed(pokemon.subSkillList).slice(0, subSkillNum);
                 
-                let selectEvaluate = evaluateSimulator.selectEvaluate(
+                let selectEvaluate = await evaluateSimulator.selectEvaluate(
                   afterPokemon, lv, 
                   foodList.slice(0, foodNum), 
                   subSkillList,
@@ -176,7 +177,7 @@ addEventListener('message', (event) => {
       simulator.calcHelp(
         pokemon,
         0,
-        PokemonSimulator.MODE_ABOUT,
+        0,
       )
 
       pokemon.tmpScore = pokemon.energyPerDay * (100 + config.simulation.fieldBonus) / 100;
@@ -184,7 +185,6 @@ addEventListener('message', (event) => {
         pokemon.tmpScore * (config.simulation.researchRankMax ? 0.5 : 0)
         + pokemon.shard * config.selectEvaluate.shardEnergyRate / 4
       ) * config.simulation.shardWeight / 100;
-      
     }
     
     postMessage({
@@ -204,7 +204,7 @@ addEventListener('message', (event) => {
     let helpRateCache = new Map();
 
     // 他メンバーに影響を与える要素について計算
-    for(let pokemon of pokemonList) {
+    await Promise.all(pokemonList.map(async pokemon => {
       pokemon.supportScorePerDay = 0;
       pokemon.supportEnergyPerDay = 0;
   
@@ -232,28 +232,26 @@ addEventListener('message', (event) => {
       }
 
       // げんき回復系評価
-      if (pokemon.otherHealEffect > 0) {
+      if (pokemon.otherMorningHealEffect > 0 || pokemon.otherDayHealEffect > 0) {
 
-        let healedAddEnergyList = [];
-        for(let subPokemon of healCheckTarget) {
-          if (subPokemon.index == pokemon.index) continue;
+        let healedAddEnergyList = await Promise.all(healCheckTarget.map(async subPokemon => {
+          if (subPokemon.index == pokemon.index) return 0;
 
-          let totalHealEffect = subPokemon.healEffect
-            + pokemon.otherHealEffect * (subPokemon.nature?.good == 'げんき回復量' ? 1.2 : subPokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
-          let helpRate = helpRateCache.get(totalHealEffect);
+          let totalMorningHealEffect = subPokemon.morningHealEffect + pokemon.otherMorningHealEffect * subPokemon.natureGenkiMultiplier;
+          let totalDayHealEffect = subPokemon.dayHealEffect + pokemon.otherDayHealEffect * subPokemon.natureGenkiMultiplier;
+          let cacheKey = `${subPokemon.morningHealGenki.toFixed(8)}_${totalMorningHealEffect.toFixed(8)}_${totalDayHealEffect.toFixed(8)}`
+          let helpRate = helpRateCache.get(cacheKey);
           if(helpRate == null) {
-            helpRate = {
-              day: HelpRate.getHelpRate(totalHealEffect, config.dayHelpParameter),
-              night: HelpRate.getHelpRate(totalHealEffect, config.nightHelpParameter),
-            }
-            helpRateCache.set(totalHealEffect, helpRate)
+            helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, config)
+            helpRateCache.set(cacheKey, helpRate)
           }
 
           let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
           let healedAddEnergy = subPokemon.tmpScore * ((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1);
-          healedAddEnergyList.push(healedAddEnergy);
-        }
+          return healedAddEnergy;
+        }));
+
         pokemon.supportScorePerDay += healedAddEnergyList.sort((a, b) => b - a).slice(0, 4).reduce((a, x) => a + x, 0);
       }
   
@@ -279,7 +277,7 @@ addEventListener('message', (event) => {
         + pokemon.shard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
       ) * config.simulation.shardWeight / 100;
       pokemon.score += pokemon.supportScorePerDay
-    }
+    }))
 
     postMessage({
       status: 'success',

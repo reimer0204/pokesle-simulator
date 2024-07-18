@@ -94,8 +94,6 @@ async function showDetail(pokemon, p) {
         }
       }
     ))[0].result[pokemon.name][pokemon.foodIndexList][p].eachResult
-    
-    console.log(result);
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,

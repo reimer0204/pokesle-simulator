@@ -22,6 +22,7 @@ class PokemonSimulator {
   constructor(config, mode) {
     this.config = config;
     this.mode = mode;
+    this.helpEffectCache = new Map();
     this.helpRateCache = new Map();
 
     this.fixedPotSize =
@@ -44,10 +45,11 @@ class PokemonSimulator {
 
       this.calcStatusCache = new Map();
 
-    this.defaultHelpRate = {
-      day: HelpRate.getHelpRate(0, this.config.dayHelpParameter),
-      night: HelpRate.getHelpRate(0, this.config.nightHelpParameter),
-    }
+    this.defaultHelpRate = HelpRate.getHelpRate(Math.min(config.sleepTime / 8.5, 1) * 100, 0, 0, this.config)
+  }
+
+  static get isReady() {
+    return HelpRate.isReady;
   }
 
   memberToInfo(pokemon) {
@@ -213,11 +215,11 @@ class PokemonSimulator {
     }
 
     // 天井を考慮したスキル確率
-    let ceil = result.specialty == 'スキル' ? 40 * 3600 / result.help : 78;
+    result.skillCeil = result.specialty == 'スキル' ? 40 * 3600 / result.help : 78;
     result.ceilSkillRate =
       result.fixedSkillRate > 0
-      ? result.fixedSkillRate / (1 - Math.pow(1 - result.fixedSkillRate, ceil))
-      : 1 / ceil;
+      ? result.fixedSkillRate / (1 - Math.pow(1 - result.fixedSkillRate, result.skillCeil))
+      : 1 / result.skillCeil;
 
     // ゆびをふるの場合は全ての効果量を1/スキル数で評価
     result.skillEffectRate = result.skill.name == 'ゆびをふる' ? (1 / Skill.metronomeTarget.length) : 1;
@@ -228,7 +230,7 @@ class PokemonSimulator {
     return result;
   }
 
-  calcStatus(pokemon, helpBonus) {
+  calcStatus(pokemon, helpBonus, genkiHealBonus = 0) {
 
     // おてつだい速度短縮量計算
     pokemon.speedBonus = 0;
@@ -263,13 +265,26 @@ class PokemonSimulator {
       baseDayHelpNum += dayRemainTime / pokemon.speed;
     }
     pokemon.baseDayHelpNum = baseDayHelpNum;
+    
+    // 性格のげんき回復係数
+    pokemon.natureGenkiMultiplier = (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)
+
+    // 起床時の回復量
+    pokemon.morningHealGenki = Math.min(
+      Math.min(this.config.sleepTime / 8.5, 1) * 100
+      * pokemon.natureGenkiMultiplier
+      * (1 + genkiHealBonus * 0.14)
+      , 100
+    )
 
     // げんき回復系スキル
-    let selfHealEffect = 0;
-    let otherHealEffect = 0;
+    let selfMorningHealEffect = 0;
+    let selfDayHealEffect = 0;
+    let otherMorningHealEffect = 0;
+    let otherDayHealEffect = 0;
     if (pokemon.fixedBag > 0) {
       let healSkillList = pokemon.skill.name == 'げんきチャージS' || pokemon.skill.name == 'げんきエールS' || pokemon.skill.name == 'げんきオールS' ? [pokemon.skill] :
-      pokemon.skill.name == 'ゆびをふる' ? [Skill.map['げんきチャージS'], Skill.map['げんきエールS'], Skill.map['げんきオールS']] :
+        pokemon.skill.name == 'ゆびをふる' ? [Skill.map['げんきチャージS'], Skill.map['げんきエールS'], Skill.map['げんきオールS']] :
         []
 
       let effectSum = 0;
@@ -279,50 +294,60 @@ class PokemonSimulator {
         effectSum += effect
         effectMap[skill.name] = effect;
       }
-      let fixedEffectSum = effectSum * (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)
+      let fixedEffectSum = effectSum * pokemon.natureGenkiMultiplier
       if (pokemon.skill.name == 'ゆびをふる') {
         fixedEffectSum = fixedEffectSum / healSkillList.length * healSkillList.length / Skill.metronomeTarget.length;
       }
 
-      let thisHealEffect = HelpRate.getHealEffect({
-        p: pokemon.fixedSkillRate,
-        speed: pokemon.speed,
-        bagSize: pokemon.fixedBag,
-        baseDayHelpNum: baseDayHelpNum,
-        effect: fixedEffectSum,
-      }, this.config.healEffectParameter, this.config);
+      let cacheKey = fixedEffectSum ? `${pokemon.morningHealGenki.toFixed(8)}_${pokemon.fixedSkillRate.toFixed(8)}_${pokemon.speed.toFixed(8)}_${pokemon.bagFullHelpNum.toFixed(8)}_${pokemon.skillCeil.toFixed(8)}_${fixedEffectSum.toFixed(8)}` : ``
+      let cache = this.helpEffectCache.get(cacheKey);
+      if(cache == null) {
+        cache = fixedEffectSum ? HelpRate.getHealEffect(pokemon, fixedEffectSum, this.config) : [0, 0];
+        this.helpEffectCache.set(cacheKey, cache)
+      }
+      let [morningHealEffect, dayHealEffect] = cache;
+      // let [morningHealEffect, dayHealEffect] = [0, 0];
 
       for(let skill of healSkillList) {
         if (skill.name == 'げんきチャージS') {
-          selfHealEffect += thisHealEffect * effectMap[skill.name] / effectSum;
+          selfMorningHealEffect += morningHealEffect * effectMap[skill.name] / effectSum;
+          selfDayHealEffect += dayHealEffect * effectMap[skill.name] / effectSum;
         } else {
-          otherHealEffect += thisHealEffect * effectMap[skill.name] / effectSum;
+          otherMorningHealEffect += morningHealEffect * effectMap[skill.name] / effectSum;
+          otherDayHealEffect += dayHealEffect * effectMap[skill.name] / effectSum;
         }
       }
     }
-    pokemon.selfHealEffect = selfHealEffect / (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
-    pokemon.otherHealEffect = otherHealEffect / (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
+    pokemon.selfMorningHealEffect = selfMorningHealEffect / pokemon.natureGenkiMultiplier;
+    pokemon.selfDayHealEffect = selfDayHealEffect / pokemon.natureGenkiMultiplier;
+    pokemon.otherMorningHealEffect = otherMorningHealEffect / pokemon.natureGenkiMultiplier;
+    pokemon.otherDayHealEffect = otherDayHealEffect / pokemon.natureGenkiMultiplier;
 
     return pokemon
   }
 
-  calcHelp(pokemon, otherHealEffect, mode, modeOption = {}) {
+  async calcHelp(pokemon, otherMorningHealEffect, otherDayHealEffect, modeOption = {}) {
     let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
 
-    let totalHealEffect = (pokemon.selfHealEffect + otherHealEffect) * (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1);
+    let totalMorningHealEffect = (pokemon.selfMorningHealEffect + otherMorningHealEffect) * pokemon.natureGenkiMultiplier;
+    let totalDayHealEffect = (pokemon.selfDayHealEffect + otherDayHealEffect) * pokemon.natureGenkiMultiplier;
 
-    let helpRate = this.helpRateCache.get(totalHealEffect);
+    let cacheKey = `${pokemon.morningHealGenki.toFixed(8)}_${totalMorningHealEffect.toFixed(8)}_${totalDayHealEffect.toFixed(8)}`
+    let helpRate = this.helpRateCache.get(cacheKey);
     if(helpRate == null) {
-      helpRate = {
-        day: HelpRate.getHelpRate(totalHealEffect, this.config.dayHelpParameter),
-        night: HelpRate.getHelpRate(totalHealEffect, this.config.nightHelpParameter),
-      }
-      this.helpRateCache.set(totalHealEffect, helpRate)
+      helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, this.config)
+      this.helpRateCache.set(cacheKey, helpRate)
     }
-    pokemon.healEffect = totalHealEffect;
+
+    pokemon.morningHealEffect = totalMorningHealEffect
+    pokemon.dayHealEffect = totalDayHealEffect
+    pokemon.healEffect = totalMorningHealEffect + totalDayHealEffect
 
     pokemon.dayHelpNum   = (24 - this.config.sleepTime) * 3600 / pokemon.speed * helpRate.day;
     pokemon.nightHelpNum =       this.config.sleepTime  * 3600 / pokemon.speed * helpRate.night;
+
+    pokemon.dayHelpRate = helpRate.day
+    pokemon.nightHelpRate = helpRate.night
     pokemon.averageHelpRate = (pokemon.dayHelpNum + pokemon.nightHelpNum) / (24 * 3600 / pokemon.speed)
 
     // 日中の通常手伝い回数(いつ育以外)
@@ -384,10 +409,10 @@ class PokemonSimulator {
         case 'おてつだいサポートS':
         case 'おてつだいブースト':
 
-          if (mode == PokemonSimulator.MODE_ABOUT) {
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
             // あとで概算値計算
 
-          } else if (mode == PokemonSimulator.MODE_TEAM) {
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // チームが分かっている時はここで獲得エナジーと食材の期待値計算
             let helpCount;
             if (skill.name == 'おてつだいサポートS') {
@@ -413,23 +438,22 @@ class PokemonSimulator {
               }
             }
 
-          } else if (mode == PokemonSimulator.MODE_SELECT) {
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             energy = scoreForSupportEvaluate * effect * (skill.name == 'おてつだいブースト' ? 5 : 1) * pokemon.skillEffectRate;
           }
           break;
 
         case 'げんきエールS':
         case 'げんきオールS':
-          if (mode == PokemonSimulator.MODE_SELECT) {
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
             // げんき回復量は事前に総合的に計算しているので、ゆびをふるの場合は1回だけ評価
             if (pokemon.skill.name != 'ゆびをふる' || (pokemon.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')) {
-              let helpRate = this.helpRateCache.get(otherHealEffect);
+
+              let cacheKey = `${pokemon.morningHealGenki.toFixed(8)}_${otherMorningHealEffect.toFixed(8)}_${otherDayHealEffect.toFixed(8)}`
+              let helpRate = this.helpRateCache.get(cacheKey);
               if(helpRate == null) {
-                helpRate = {
-                  day: HelpRate.getHelpRate(otherHealEffect, this.config.dayHelpParameter),
-                  night: HelpRate.getHelpRate(otherHealEffect, this.config.nightHelpParameter),
-                }
-                this.helpRateCache.set(otherHealEffect, helpRate)
+                helpRate = HelpRate.getHelpRate(Math.min(this.config.sleepTime / 8.5, 1) * 100, otherMorningHealEffect, otherDayHealEffect, this.config)
+                this.helpRateCache.set(cacheKey, helpRate)
               }
 
               // 一番つよいポケモンが4匹いるとして、それらのげんきオールによる増分を効果とする
@@ -448,7 +472,7 @@ class PokemonSimulator {
           break;
 
         case '食材ゲットS':
-          if (mode == PokemonSimulator.MODE_ABOUT) {
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
             if (!this.config.simulation.sundayPrepare) {
               let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
               let foodEnergy = 0;
@@ -469,14 +493,14 @@ class PokemonSimulator {
               energy = foodEnergy / Food.list.length * effect * pokemon.skillEffectRate;
             }
 
-          } else if (mode == PokemonSimulator.MODE_TEAM) {
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             if (!this.config.simulation.sundayPrepare) {
               let num = effect / Food.list.length * pokemon.skillPerDay * pokemon.skillEffectRate;
               for(let food of Food.list) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
               }
             }
-          } else if (mode == PokemonSimulator.MODE_SELECT) {
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             energy = Food.list.reduce((a, food) =>
               a + food.energy * (
                 (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.foodEnergyRate / 100 + 1
@@ -489,7 +513,7 @@ class PokemonSimulator {
 
         case 'ゆめのかけらゲットS':
         case 'ゆめのかけらゲットS(ランダム)':
-          if (mode == PokemonSimulator.MODE_SELECT) {
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
             energy = effect * this.config.selectEvaluate.shardEnergy * pokemon.skillEffectRate;
 
           } else {
@@ -498,7 +522,7 @@ class PokemonSimulator {
           break;
 
         case '料理パワーアップS':
-          if (mode == PokemonSimulator.MODE_ABOUT) {
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
             if (!this.config.simulation.sundayPrepare) {
               // 拡張後と拡張前で出来る料理の差を計算
               let afterPotSize = Math.round(
@@ -518,11 +542,11 @@ class PokemonSimulator {
               energy = Food.averageEnergy * effect * pokemon.skillEffectRate
             }
 
-          } else if (mode == PokemonSimulator.MODE_TEAM) {
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // 効果量だけ記憶しておく
             pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
 
-          } else if (mode == PokemonSimulator.MODE_SELECT) {
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             // 通常なべサイズから最大料理
             energy = effect * Cooking.cookingPowerUpEnergy * pokemon.skillEffectRate;
 
@@ -530,7 +554,7 @@ class PokemonSimulator {
           break;
 
         case '料理チャンスS':
-          if (mode == PokemonSimulator.MODE_ABOUT) {
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
             if (!this.config.simulation.sundayPrepare) {
               // チームシミュレーションの際は後で正確に評価、そうでなければ概算評価する
               if (pokemon.skillPerDay) {
@@ -538,13 +562,13 @@ class PokemonSimulator {
                 energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * this.defaultBestCooking.lastEnergy / pokemon.skillPerDay * this.config.simulation.cookingWeight
               }
             }
-          } else if (mode == PokemonSimulator.MODE_TEAM) {
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             if (!this.config.simulation.sundayPrepare) {
               // 効果量だけ記憶しておく
               pokemon.cookingChanceEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate;
             }
 
-          } else if (mode == PokemonSimulator.MODE_SELECT) {
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             let totalEffect = effect / 100 * pokemon.skillPerDay * pokemon.skillEffectRate * 7;
             energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * Cooking.maxEnergy / pokemon.skillPerDay;
           }
@@ -582,19 +606,17 @@ class PokemonSimulator {
       subSkillList,
       nature,
       this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
-      PokemonSimulator.MODE_SELECT,
     )
 
     this.calcStatus(
       result,
       subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
-      PokemonSimulator.MODE_SELECT,
     )
 
     this.calcHelp(
       result,
-      result.otherHealEffect || (result.selfHealEffect ? 0 : this.config.selectEvaluate.healer),
-      PokemonSimulator.MODE_SELECT,
+      result.otherMorningHealEffect,
+      result.otherDayHealEffect || (result.selfDayHealEffect ? 0 : this.config.selectEvaluate.healer / 100),
       {
         scoreForHealerEvaluate,
         scoreForSupportEvaluate,
