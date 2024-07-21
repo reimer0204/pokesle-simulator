@@ -1,0 +1,16 @@
+{
+  "name": "examination",
+  "version": "1.0.0",
+  "description": "",
+  "main": "genki-infer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^4.20.0",
+    "@tensorflow/tfjs-node-gpu": "^4.20.0",
+    "nodemon": "^3.1.4"
+  }
+}

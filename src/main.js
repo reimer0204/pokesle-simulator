@@ -12,9 +12,8 @@ app.use(Popup);
 
 import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
-import SelectTablePage from './pages/select-table.vue'
+import DataPage from './pages/data.vue'
 import SettingPage from './pages/setting.vue'
-import CachePage from './pages/cache.vue'
 import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
 import PokemonBox from './models/pokemon-box';
@@ -22,9 +21,8 @@ app.use(createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: IndexPage },
-    { path: '/select-table', component: SelectTablePage },
+    { path: '/data', component: DataPage },
     { path: '/setting', component: SettingPage },
-    { path: '/cache', component: CachePage },
     { path: '/faq', component: FaqPage },
     { path: '/history', component: HistoryPage },
   ]

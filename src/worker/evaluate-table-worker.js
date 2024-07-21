@@ -25,6 +25,7 @@ self.addEventListener('message', async (event) => {
 
   let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
+  await PokemonSimulator.isReady
   const simulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT)
 
   let scoreForHealerEvaluateList = [];
@@ -49,39 +50,44 @@ self.addEventListener('message', async (event) => {
       if (foodList.includes(null)) continue;
 
       let scoreList = [];
+      let promiseList = []
 
       for(const subSkillCombination in subSkillCombinationMap) {
         let subSkillWeight = subSkillCombinationMap[subSkillCombination];
         let subSkillList = subSkillCombination.split('/')
 
         for(let nature of natureList) {
-          let natureWeight = nature == null ? 5 : 1;
+          promiseList.push((async () => {
+            let natureWeight = nature == null ? 5 : 1;
 
-          let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
-            scoreForHealerEvaluate, scoreForSupportEvaluate,
-          );
-          if (isNaN(eachResult.energyPerDay)) {
-            console.log(eachResult);
-            throw '計算エラーが発生しました。'
-          }
-
-          scoreList.push(...new Array(subSkillWeight * natureWeight).fill({
-            score: eachResult.energyPerDay,
-            baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
-            pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
-            subSkillList,
-            eachResult,
-            // nature,
-          }));
-
-          if(++count % 1000 == 0) {
-            postMessage({
-              status: 'progress',
-              body: count / countMax,
-            })
-          }
+            let eachResult = await simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
+              scoreForHealerEvaluate, scoreForSupportEvaluate,
+            );
+            if (isNaN(eachResult.energyPerDay)) {
+              console.log(eachResult);
+              throw '計算エラーが発生しました。'
+            }
+  
+            scoreList.push(...new Array(subSkillWeight * natureWeight).fill({
+              score: eachResult.energyPerDay,
+              baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
+              pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
+              subSkillList,
+              eachResult,
+              // nature,
+            }));
+  
+            if(++count % 1000 == 0) {
+              postMessage({
+                status: 'progress',
+                body: count / countMax,
+              })
+            }
+          })())
         }
       }
+      await Promise.all(promiseList);
+      
       scoreList.sort((a, b) => a.score - b.score)
       let percentile = [];
       let eachResultList = [];

@@ -26,6 +26,7 @@ const simulationResultList = ref([])
 let workerList = [];
 async function simulation() {
   asyncWatcher.run(async (progressCounter) => {
+    let startAt = performance.now();
     // 気休めかもしれないけどループの多いところにforEachとかreduceとか使うとコストかかりそうだから一部は泥臭くやる
 
     let [stepA, stepB] = progressCounter.split(1, 10);
@@ -115,6 +116,8 @@ async function simulation() {
     // await Promise.all(promiseList)
 
     simulationResultList.value = bestResult;
+
+    console.log(performance.now() - startAt);
   })
 
 }

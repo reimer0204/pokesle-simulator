@@ -25,12 +25,8 @@ onMounted(() => {
 
 const requireRefresh = computed(() => {
   let result = {};
-  if(config.version.helpRate != HelpRate.VERSION) {
+  if(config.version.evaluateTable != EvaluateTable.VERSION) {
     result.setting = true;
-  } else {
-    if(config.version.evaluateTable != EvaluateTable.VERSION) {
-      result.cache = true;
-    }
   }
   return result;
 })
@@ -43,11 +39,9 @@ const requireRefresh = computed(() => {
     <header>
       <h1>ポケスリシミュ</h1>
       <router-link to="/" v-if="config.initSetting">ボックス</router-link>
-      <!-- <router-link to="/cooking">料理</router-link> -->
-      <!-- <router-link to="/food">食材</router-link> -->
-      <router-link to="/select-table">厳選テーブル</router-link>
+      <router-link to="/data">データ</router-link>
       <router-link to="/setting">設定<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
-      <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link>
+      <!-- <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link> -->
       <router-link to="/faq" v-if="config.initSetting">FAQ</router-link>
       <router-link to="/history" v-if="config.initSetting">更新履歴</router-link>
     </header>

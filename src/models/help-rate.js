@@ -1,12 +1,40 @@
+import * as tf from '@tensorflow/tfjs';
 import GenkiSimulator from "../worker/genki-simulator?worker";
+tf.setBackend('cpu');
 
-export default class HelpRate {
+class HelpRate {
 
   static VERSION = 20240709;
 
   healEffectParameter = [];
 
-  static getHealEffect(data, p, config) {
+  static _x2yModel = null;
+  static _y2zModel = null;
+
+  static async init() {
+    this.isReady = (async () => {
+      [this.x2yModel, this.y2zModel] = await Promise.all([
+        tf.loadLayersModel(`${location.protocol}//${location.host}/pokesle-simulator/tf/x2y/model.json`),
+        tf.loadLayersModel(`${location.protocol}//${location.host}/pokesle-simulator/tf/y2z/model.json`),
+      ])
+    })()
+  }
+
+  static getHealEffect(pokemon, effect, config) {
+    return this.x2yModel.predict(tf.tensor2d([
+      [
+        config.sleepTime / 8.5, 
+        Math.min(config.sleepTime, 8.5) / 8.5,
+        config.checkFreq / 10,
+        pokemon.morningHealGenki / 100,
+        pokemon.fixedSkillRate,
+        pokemon.speed / 3000,
+        effect / 30,
+        pokemon.bagFullHelpNum / 20,
+        pokemon.skillCeil / 88
+      ]
+    ])).dataSync();
+
     // 天井補正したスキル確率
     let baseP = Math.pow(data.p > 0 ? data.p / (1 - Math.pow(1 - data.p, 40 * 3600 / data.speed)) : 1 / (40 * 3600 / data.speed), p[0]);
 
@@ -24,7 +52,23 @@ export default class HelpRate {
 
     return result;
   }
-  static getHelpRate(healEffect, p) {
+  static getHelpRate(morningHealGenki, morningTotalEffect, dayTotalEffect, config) {
+    let [day, night] = this.y2zModel.predict(tf.tensor2d([
+      [
+        config.sleepTime / 8.5, 
+        Math.min(config.sleepTime, 8.5) / 8.5,
+        config.checkFreq / 10,
+        morningHealGenki / 100,
+        morningTotalEffect, 
+        dayTotalEffect
+      ]
+    ])).dataSync();
+
+    if (day < 1) day = 1;
+    if (night < 1) night = 1;
+
+    return { day, night }
+
     return ((Math.tanh(healEffect * p[0] + p[1]) + 1) / 2) ** p[2] * p[3] + p[4]
   }
 
@@ -165,3 +209,7 @@ export default class HelpRate {
   }
 
 }
+
+HelpRate.init()
+
+export default HelpRate
