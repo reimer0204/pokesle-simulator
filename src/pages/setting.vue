@@ -21,7 +21,7 @@ async function save() {
 
     await EvaluateTable.simulation(editConfig, progressCounter);
     editConfig.initSetting = true;
-    editConfig.version.helpRate = HelpRate.VERSION;
+    // editConfig.version.helpRate = HelpRate.VERSION;
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
 
     config.save(editConfig);
@@ -45,9 +45,6 @@ async function save() {
     </DangerAlert>
 
     <template v-else>
-      <DangerAlert v-if="config.version.helpRate != HelpRate.VERSION">
-        げんき計算のアルゴリズムが変更されています。時間のある時に再計算の実行をお願いします。
-      </DangerAlert>
       <DangerAlert v-if="config.version.evaluateTable != EvaluateTable.VERSION">
         ポケモン情報、もしくは厳選計算アルゴリズムが修正されています。時間のある時に再計算の実行をお願いします。
       </DangerAlert>
@@ -94,6 +91,19 @@ async function save() {
           </div>
         </div>
         <div>
+          <label>食材ゲット評価</label>
+          <div>
+            <div><input type="number" v-model="editConfig.selectEvaluate.foodGetRate" step="1"> %</div>
+            <small>
+              0%:基礎エナジー<br>
+              100%:最良料理×最大レシピLv<br>
+              <HelpButton title="食材ゲット評価値の設定について" markdown="
+                食材ゲットで手に入る食材を全て料理に使用するのは大抵の場合難しいため、食材評価より低い数値を設定します。
+              " />
+            </small>
+          </div>
+        </div>
+        <div>
           <label>エナジー/ゆめのかけら</label>
           <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergyRate" step="1"></div>
           <small>ゆめのかけら1個を得る<br>のに必要なエナジー</small>
@@ -129,10 +139,11 @@ async function save() {
           </small>
         </div>
         <div>
-          <label>げんき系スキル評価用厳選ライン</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.supportBorder" step="1"> %</div>
-          <small>
-            げんき系スキルの評価時に<br>使用する他ポケモンの厳選度
+          <label>サポートスキル評価用</label>
+          <div>厳選ライン：<input type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportBorder" step="1"> %</div>
+          <div>上位：<input type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportRankNum" step="1"> %</div>
+          <small class="w-120px">
+            サポートスキル評価時に参照する他ポケモンの厳選度と上位何%を使用するか
           </small>
         </div>
         <div>
@@ -186,34 +197,6 @@ async function save() {
               </template>
             </div>
             <small>未入力の場合は進化回数に応じたスキルレベルで計算します(例:ライチュウなら3)</small>
-          </div>
-        </div>
-      </SettingList>
-    </ToggleArea>
-
-    <ToggleArea :open="config.initSetting">
-      <template #headerText>げんきシミュレーション設定</template>
-
-      <SettingList>
-        <div>
-          <label>チェック率</label>
-          <div>
-            <input type="number" step="1" v-model="editConfig.genkiSimulation.pickupRate" min="1" max="100"> %
-            <small>
-              100%だと用意した全ケースでシミュレーションします。<br>
-              大抵10%程度あれば十分使えるシミュレーション結果になります。
-            </small>
-          </div>
-        </div>
-
-        <div>
-          <label>ループ回数</label>
-          <div>
-            <input type="number" step="1" v-model="editConfig.genkiSimulation.loopNum" min="100" max="10000"> 日
-            <small>
-              1ケースごとに何日分までシミュレーションを行うかを指定します。<br>
-              デフォルトは1000ですが、気になる方は増やしてください。
-            </small>
           </div>
         </div>
       </SettingList>

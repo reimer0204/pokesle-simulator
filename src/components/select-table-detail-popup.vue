@@ -335,7 +335,7 @@ const percentilePosition = computed(() => {
               <template v-if="skill.name == '食材ゲットS'">
                 (<br>
                 <template v-for="(food, i) in Food.list">
-                  {{ i ? '+ ' : '' }}{{ food.energy }} × (({{ (food.bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.foodEnergyRate }}% + 100%) ※{{ food.name }}<br>
+                  {{ i ? '+ ' : '' }}{{ food.energy }} × (({{ (food.bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.foodGetRate }}% + 100%) ※{{ food.name }}<br>
                 </template>
                 )<br>
                 ÷ {{ Food.list.length }}<br>
@@ -348,7 +348,7 @@ const percentilePosition = computed(() => {
               </template>
               
               <template v-if="skill.name == 'おてつだいサポートS' || skill.name == 'おてつだいブースト'">
-                {{ result.scoreForSupportEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位33%のおてつだいあたりのエナジーの平均値<br>
+                {{ result.scoreForSupportEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のおてつだいあたりのエナジーの平均値<br>
                 × {{ skill.effect[result.fixedSkillLv - 1] }}<template v-if="skill.name == 'おてつだいブースト'"> × 5</template><br>
                 <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
@@ -359,7 +359,7 @@ const percentilePosition = computed(() => {
                   起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>
                   日中：{{ (result.otherDayHealEffect * 100).toFixed(1) }}<br>
                   <br>
-                  {{ result.scoreForHealerEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位33%のげんき補正なしエナジーの平均値<br>
+                  {{ result.scoreForHealerEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のげんき補正なしエナジーの平均値<br>
                   × (<br>
                   &emsp;({{ (result.healerHelpRate.day * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (result.healerHelpRate.night * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーありのおてつだい倍率<br>
                   &emsp;÷ ({{ (result.defaultHelpRate.day * 100).toFixed(1) }}% * (24 - {{ config.sleepTime }}) + {{ (result.defaultHelpRate.night * 100).toFixed(1) }}% * {{ config.sleepTime }}) ※ヒーラーなしのおてつだい倍率<br>
@@ -379,9 +379,11 @@ const percentilePosition = computed(() => {
               </template>
 
               <template v-if="skill.name == '料理パワーアップS'">
-                {{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × {{ skill.effect[result.fixedSkillLv - 1] }}
-                ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は全料理内最大料理と{{ Cooking.potMax }}以下の最大料理のエナジー差を食材数で割った値<br>
-                <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
+                (<br>
+                &emsp;{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × {{ skill.effect[result.fixedSkillLv - 1] }} × {{ Math.min(result.skillPerDay / (result.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1), Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[result.fixedSkillLv - 1]) * 3).toFixed(2) }} ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は最良エナジーと{{ Cooking.potMax }}以下の最良エナジー差を食材数で割った値<br>
+                &emsp;+ {{ Food.averageEnergy.toFixed(1) }} × {{ skill.effect[result.fixedSkillLv - 1] }} × {{ Math.max(result.skillPerDay / (result.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) - Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[result.fixedSkillLv - 1]) * 3, 0).toFixed(2) }}<br>
+                )<br>
+                ÷ {{ result.skillPerDay.toFixed(2) }}<br>
               </template>
 
               <template v-if="skill.name == '料理チャンスS'">

@@ -73,9 +73,11 @@ for(let cooking of Cooking.list) {
   cooking.addEnergy = cooking.energy - cooking.rawEnergy
   cooking.maxAddEnergy = cooking.maxEnergy - cooking.rawEnergy
 }
+Cooking.maxFoodNum = Math.max(...Cooking.list.map(x => x.foodNum));
 Cooking.maxEnergy = Math.max(...Cooking.list.map(x => x.maxEnergy));
 
 Food.averageMaxCookedEnergy = Food.list.reduce((a, f) => a + f.energy * f.bestRate * Cooking.maxRecipeBonus, 0) / Food.list.length;
+
 
 Cooking.cookingPowerUpEnergy = 0;
 for(let type of ['カレー', 'サラダ', 'デザート']) {
@@ -85,9 +87,15 @@ for(let type of ['カレー', 'サラダ', 'デザート']) {
   let normalPotMaxCooking = normalPotCookableList.sort((a, b) => b.maxEnergy - a.maxEnergy)[0]
   let allPotMaxCooking    = typeCookingList.sort(      (a, b) => b.maxEnergy - a.maxEnergy)[0]
 
-  Cooking.cookingPowerUpEnergy = Math.max(Cooking.cookingPowerUpEnergy,
-    (allPotMaxCooking.maxEnergy - normalPotMaxCooking.maxEnergy) / (allPotMaxCooking.foodNum - normalPotMaxCooking.foodNum)
-  )
+  if (allPotMaxCooking.name != normalPotMaxCooking.name) {
+    let addVolume = (allPotMaxCooking.maxEnergy - normalPotMaxCooking.maxEnergy) / (allPotMaxCooking.foodNum - normalPotMaxCooking.foodNum);
+    Cooking.cookingPowerUpEnergy = Math.max(Cooking.cookingPowerUpEnergy, addVolume)
+  }
+  
+  for(let food of Food.list) {
+    food[`bestTypeRate_${type}`] = food.bestTypeRate[type]
+    food[`maxEnergy_${type}`] = food.energy * food.bestTypeRate[type] * Cooking.maxRecipeBonus;
+  }
 }
 
 export default Food;

@@ -503,7 +503,7 @@ class PokemonSimulator {
           } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             energy = Food.list.reduce((a, food) =>
               a + food.energy * (
-                (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.foodEnergyRate / 100 + 1
+                (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.foodGetRate / 100 + 1
               )
               , 0
             ) / Food.list.length * effect * pokemon.skillEffectRate;
@@ -547,8 +547,13 @@ class PokemonSimulator {
             pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
 
           } else if (this.mode == PokemonSimulator.MODE_SELECT) {
+            let limit = Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / effect) * 3
+
             // 通常なべサイズから最大料理
-            energy = effect * Cooking.cookingPowerUpEnergy * pokemon.skillEffectRate;
+            energy = (
+              effect * Cooking.cookingPowerUpEnergy * Math.min(pokemon.skillPerDay * pokemon.skillEffectRate, limit)
+              + effect * Food.averageEnergy * Math.max(pokemon.skillPerDay * pokemon.skillEffectRate - limit, 0)
+            ) / pokemon.skillPerDay;
 
           }
           break;
@@ -611,6 +616,7 @@ class PokemonSimulator {
     this.calcStatus(
       result,
       subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
+      subSkillList.includes('げんき回復ボーナス') ? 1 : 0,
     )
 
     this.calcHelp(

@@ -21,11 +21,6 @@ const defaultConfig = {
   genkiSimulationDiffAverage: null,
   genkiSimulationDiffMax: null,
 
-  genkiSimulation: {
-    pickupRate: 10,
-    loopNum: 1000,
-  },
-
   pokemonList: {
     selectDetail: false,
     selectEnergy: false,
@@ -66,7 +61,7 @@ const defaultConfig = {
     cookingRecipeLv: 55,
     cookingWeight: 1,
     shardWeight: 30,
-    foodGetRate: 50,
+    foodGetRate: 30,
     campTicket: false,
     eventBonusType: null,
     eventBonusTypeFood: 1,
@@ -100,9 +95,10 @@ const defaultConfig = {
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
     silverSeedUse: true,    // 銀種前提で厳選するか
     foodEnergyRate: 70,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-    foodGetRate: 20,        // 食材ゲットの評価レート
+    foodGetRate: 30,        // 食材ゲットの評価レート
     helpBonus: 20,          // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
     supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
+    supportRankNum: 20,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     healer: 50,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
     levelList: {
       10: false,

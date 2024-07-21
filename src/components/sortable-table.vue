@@ -29,15 +29,29 @@ const columnMap = computed(() => {
   return result;
 })
 
+const convertedDataList = computed(() => {
+  return props.dataList.map(data => {
+    let newData = { ...data };
+
+    for(let column of props.columnList) {
+      if (column.convert) {
+        newData[column.key] = column.convert(newData);
+      }
+    }
+
+    return newData;
+  })
+})
+
 // ソートしたデータ
 const sortedDataList = computed(() => {
   if (!sortInfo.value?.length) {
     sortColors.value = [];
-    return props.dataList;
+    return convertedDataList.value;
   }
 
   // ソート
-  let result = props.dataList.toSorted((a, b) => {
+  let result = convertedDataList.value.toSorted((a, b) => {
     for(let sort of sortInfo.value) {
       if ((a[sort.key] || 0) > (b[sort.key] || 0)) return sort.direction;
       if ((a[sort.key] || 0) < (b[sort.key] || 0)) return -sort.direction;
@@ -176,7 +190,7 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
             backgroundColor: sortColors[j]?.[column.key],
           }"
         >
-          <slot :name="column.template ?? column.key" v-bind="{ data, column }">
+          <slot :name="column.template ?? column.key" v-bind="{ data, column, value: data[column.key] }">
             <template v-if="column.percent">
               {{ data[column.key] != null ? `${(data[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
             </template>
@@ -263,8 +277,7 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
     display: flex;
     justify-content: left;
     align-items: center;
-    border: 1px #FFF solid;
-    border-bottom-color: #CCC;
+    border-bottom: 1px #CCC solid;
   }
 }
 </style>

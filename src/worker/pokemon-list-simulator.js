@@ -172,6 +172,7 @@ addEventListener('message', async (event) => {
       simulator.calcStatus(
         pokemon,
         pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0,
+        pokemon.enableSubSkillList.includes('げんき回復ボーナス') ? 1 : 0,
       )
 
       simulator.calcHelp(

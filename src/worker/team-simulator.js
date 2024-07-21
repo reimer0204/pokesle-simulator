@@ -108,6 +108,7 @@ self.addEventListener('message', async (event) => {
         let score = 0;
         let energy = 0;
         let helpBonusCount = 0;
+        let genkiBonusCount = 0;
         let shardBonusCount = 0;
         let researchExpBonusCount = 0;
         let cookingPowerUpEffectList = new Array(21).fill(0);
@@ -126,6 +127,7 @@ self.addEventListener('message', async (event) => {
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0;
+          genkiBonusCount += pokemon.enableSubSkillList.includes('げんき回復ボーナス') ? 1 : 0;
           shardBonusCount += pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? 1 : 0;
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? 1 : 0;
 
@@ -150,7 +152,7 @@ self.addEventListener('message', async (event) => {
         //   totalOtherDayHealEffect += pokemon.otherDayHealEffect;
         // }))
         for(let pokemon of pokemonList) {
-          simulator.calcStatus(pokemon, helpBonusCount);
+          simulator.calcStatus(pokemon, helpBonusCount, genkiBonusCount);
           totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
           totalOtherDayHealEffect += pokemon.otherDayHealEffect;
         }
