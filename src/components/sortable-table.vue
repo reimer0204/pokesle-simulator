@@ -7,6 +7,7 @@ const props = defineProps({
   config: { type: String, default: null },
   fixColumn: { type: Number, default: 0 },
 })
+const emits = defineEmits(['clickRow'])
 
 const sortInfo = ref([]);
 const sortColors = ref([])
@@ -76,8 +77,9 @@ const sortedDataList = computed(() => {
   for(let data of result) {
     let colors = {};
     for(let sort of sortInfo.value) {
+      if (columnMap.value[sort.key] == null) continue;
       let color;
-      if(columnMap.value[sort.key].type == Number) {
+      if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
         let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
         color = `hsl(${rate * 120}deg 90% 95%)`
       } else {
@@ -169,10 +171,12 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
           :class="{'fix-column': i < props.fixColumn}"
           :style="{ left: i < props.fixColumn ? columnLeftList[i] : null }"
         >
-          <div>
-            <template v-if="column.img"><img :src="column.img"></template>
-            <template v-else>{{ column.name }}</template>
-          </div>
+          <slot :name="`header.${column.template ?? column.key}`" v-bind="{ column }">
+            <div>
+              <template v-if="column.img"><img :src="column.img"></template>
+              <template v-else>{{ column.name }}</template>
+            </div>
+          </slot>
           <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
             <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
             <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
@@ -189,6 +193,7 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
             left: columnLeftList[i],
             backgroundColor: sortColors[j]?.[column.key],
           }"
+          @click="emits('clickRow', data)"
         >
           <slot :name="column.template ?? column.key" v-bind="{ data, column, value: data[column.key] }">
             <template v-if="column.percent">
@@ -278,6 +283,10 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
     justify-content: left;
     align-items: center;
     border-bottom: 1px #CCC solid;
+
+    &:has(~ :hover), &:hover, &:hover ~ td {
+      background-color: rgb(235, 245, 255);
+    }
   }
 }
 </style>

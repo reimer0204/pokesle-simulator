@@ -1,18 +1,17 @@
 <script setup>
 import { onBeforeUnmount } from 'vue';
+import Berry from '../data/berry';
 import Food from '../data/food';
-import SubSkill from '../data/sub-skill';
 import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
 import MultiWorker from '../models/multi-worker';
+import PokemonBox from '../models/pokemon-box';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 import TeamSimulator from '../worker/team-simulator?worker';
-import AsyncWatcherArea from './async-watcher-area.vue';
 import NatureInfo from './status/nature-info.vue';
-import PopupBase from './popup-base.vue';
-import SettingList from './setting-list.vue';
-import PokemonBox from '../models/pokemon-box';
-import Berry from '../data/berry';
+import AsyncWatcherArea from './util/async-watcher-area.vue';
+import PopupBase from './util/popup-base.vue';
+import SettingList from './util/setting-list.vue';
 
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);

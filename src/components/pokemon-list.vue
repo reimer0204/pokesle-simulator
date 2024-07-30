@@ -1,8 +1,5 @@
 <script setup>
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
-import SimulationWeeklyTeamPopup from './simulation-weekly-team-popup.vue';
-import SimulationDailyTeamPopup from './simulation-daily-team-popup.vue';
-import SimulationPrepareTeamPopup from './simulation-prepare-team-popup.vue';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
 import SubSkill from '../data/sub-skill.js';
@@ -13,12 +10,15 @@ import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box';
 import Popup from '../models/popup/popup.js';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import AsyncWatcherArea from './async-watcher-area.vue';
 import GoogleSpreadsheetPopup from './google-spreadsheet-popup.vue';
-import NatureInfo from './status/nature-info.vue';
 import PokemonBoxTsvPopup from './pokemon-box-tsv-popup.vue';
 import SelectTableDetailPopup from './select-table-detail-popup.vue';
+import SimulationDailyTeamPopup from './simulation-daily-team-popup.vue';
+import SimulationPrepareTeamPopup from './simulation-prepare-team-popup.vue';
+import SimulationWeeklyTeamPopup from './simulation-weekly-team-popup.vue';
 import SortableTable from './sortable-table.vue';
+import NatureInfo from './status/nature-info.vue';
+import AsyncWatcherArea from './util/async-watcher-area.vue';
 
 let evaluateTable = EvaluateTable.load();
 

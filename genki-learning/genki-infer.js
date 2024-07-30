@@ -1,6 +1,6 @@
 const LOOP_NUM = 10000;
 
-module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize) {
+module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit) {
   
   let dayTime = 86400 - sleepTime * 3600;
   let checkDuration = dayTime / (checkFreq - 1);
@@ -15,7 +15,7 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
 
 
   let genki = 100;          // げんき
-  let skillHit = false;     // スキル発動可能状態か
+  let skillStock = 0;     // スキル発動可能状態か
   let skillNoHitCount = 0;  // 天井カウント
   let bag = 0;              // かばん
   let checkCount = 0;       // 今日のチェックした回数
@@ -97,9 +97,9 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
 
 
       // スキル発動していた時の処理
-      if (skillHit) {
-        genki = Math.min(genki + effect, 150);
-        skillHit = false;
+      if (skillStock > 0) {
+        genki = Math.min(genki + effect * skillStock, 150);
+        skillStock = 0;
 
         if(day) {
           totalSkillNum++;
@@ -135,14 +135,14 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
         helpQueue.shift();
 
         // まだスキル発動していなければガチャ
-        if (!skillHit) {
+        if (skillStock < stockLimit) {
           if (Math.random() < p) {
-            skillHit = true;
+            skillStock++;
             skillNoHitCount = 0;
           } else {
             skillNoHitCount++;
             if (skillNoHitCount >= skillCeil) {
-              skillHit = true;
+              skillStock++;
               skillNoHitCount = 0;
             }
           }

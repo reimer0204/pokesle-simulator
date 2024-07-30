@@ -1,4 +1,5 @@
 import SortableTable from "../components/sortable-table.vue";
+import Cooking from "./cooking";
 import Food from './food'
 
 const defaultConfig = {
@@ -73,11 +74,14 @@ const defaultConfig = {
 
     fixLv: null,
     fixEvolve: null,
+
+    enableCooking: {},
   },
 
   teamSimulation: {
     maxRank: 30,
     resultNum: 10,
+    cookingNum: 3,
 
     result: {
       detail: false,
@@ -125,6 +129,7 @@ const defaultConfig = {
       'ゆめのかけらゲットS(ランダム)': 7,
       'ゆびをふる': 6,
     },
+    pokemonSleepTime: 500,
   },
 
 
@@ -147,6 +152,9 @@ const defaultConfig = {
 
 for(let food of Food.list) {
   defaultConfig.foodDefaultNum[food.name] = 0;
+}
+for(let cooking of Cooking.list) {
+  defaultConfig.simulation.enableCooking[cooking.name] = true;
 }
 
 export default defaultConfig

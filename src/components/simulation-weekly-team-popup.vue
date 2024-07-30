@@ -1,17 +1,15 @@
 <script setup>
 import { onBeforeUnmount } from 'vue';
 import Food from '../data/food';
-import Pokemon from '../data/pokemon';
 import SubSkill from '../data/sub-skill';
+import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
-import PokemonBox from '../models/pokemon-box';
-import PopupBase from './popup-base.vue';
-import SettingList from './setting-list.vue';
+import MultiWorker from '../models/multi-worker';
 import TeamSimulator from '../worker/team-simulator?worker';
 import NatureInfo from './status/nature-info.vue';
-import AsyncWatcherArea from './async-watcher-area.vue';
-import { AsyncWatcher } from '../models/async-watcher';
-import MultiWorker from '../models/multi-worker';
+import AsyncWatcherArea from './util/async-watcher-area.vue';
+import PopupBase from './util/popup-base.vue';
+import SettingList from './util/setting-list.vue';
 
 const props = defineProps({
   pokemonList: { required: true },
@@ -117,7 +115,7 @@ async function simulation() {
 
     simulationResultList.value = bestResult;
 
-    console.log(performance.now() - startAt);
+    // console.log(performance.now() - startAt);
   })
 
 }

@@ -1,7 +1,7 @@
 <script setup>
 import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
-import SettingList from '../components/setting-list.vue';
 import SortableTable from '../components/sortable-table.vue';
+import SettingList from '../components/util/setting-list.vue';
 import Berry from '../data/berry.js';
 import Cooking from '../data/cooking.js';
 import Food from '../data/food.js';

@@ -1,5 +1,5 @@
 <script setup>
-import PopupBase from '../popup-base.vue';
+import PopupBase from '../util/popup-base.vue';
 import { marked } from 'marked'
 
 // そのうちmarkdownとしてちゃんと処理する

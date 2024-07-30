@@ -31,7 +31,8 @@ class HelpRate {
         pokemon.speed / 3000,
         effect / 30,
         pokemon.bagFullHelpNum / 20,
-        pokemon.skillCeil / 88
+        pokemon.skillCeil / 88,
+        pokemon.specialty == 'スキル' ? 1 : 0.5,
       ]
     ])).dataSync();
 

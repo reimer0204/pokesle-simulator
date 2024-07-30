@@ -37,6 +37,7 @@ import Popup from './popup.js'
     .popup {
       min-height: 100%;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       pointer-events: none;

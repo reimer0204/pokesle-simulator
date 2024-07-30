@@ -1,11 +1,8 @@
 <script setup>
-import SettingList from '../components/setting-list.vue'
-
+import SettingList from '../components/util/setting-list.vue';
+import Skill from '../data/skill';
 import config from '../models/config';
-import HelpRate from '../models/help-rate';
 import EvaluateTable from '../models/evaluate-table';
-
-import Skill from '../data/skill'
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
@@ -181,6 +178,12 @@ async function save() {
             <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[75]">75</label>
             <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[100]">100</label>
             <small>どのLv時点の評価で厳選するか設定します。<br>100Lvは組合せが多く計算が重いのと、100Lvに強い<br>サブスキルがあっても育成が大変なため省略推奨です。</small>
+          </div>
+        </div>
+        <div>
+          <label>おやすみリボン</label>
+          <div>
+            <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.pokemonSleepTime"> 時間</div>
           </div>
         </div>
         <div class="flex-110 w-100 flex-column-start-stretch">

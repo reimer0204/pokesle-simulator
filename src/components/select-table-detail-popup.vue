@@ -1,17 +1,16 @@
 <script setup>
+import Berry from '../data/berry';
+import Cooking from '../data/cooking';
+import Food from '../data/food';
 import Pokemon from '../data/pokemon';
+import Skill from '../data/skill';
 import SubSkill from '../data/sub-skill';
 import config from '../models/config';
 import EvaluateTable from '../models/evaluate-table';
-import MultiWorker from '../models/multi-worker';
-import PopupBase from './popup-base.vue';
-import NatureInfo from './status/nature-info.vue';
-import Berry from '../data/berry';
-import Food from '../data/food';
-import Cooking from '../data/cooking';
-import Skill from '../data/skill';
 import HelpRate from '../models/help-rate';
 import PokemonSimulator from '../models/pokemon-simulator';
+import NatureInfo from './status/nature-info.vue';
+import PopupBase from './util/popup-base.vue';
 
 const props = defineProps({
   name: { type: String, required: true },
