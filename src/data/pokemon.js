@@ -155,7 +155,7 @@ let list = [
 let map =  list.reduce((a, x) => (a[x.name] = x, a), {});
 
 // 進化段階を計算
-list.filter(x => x.before == null).forEach(x => x.evolveLv = 1)
+list.filter(x => x.before == null).forEach(x => (x.evolveLv = 1, x.remainEvolveLv = 0))
 list.filter(x => map[x.before] && !x.evolveLv).forEach(x => x.evolveLv = map[x.before].evolveLv + 1)
 list.filter(x => map[x.before] && !x.evolveLv).forEach(x => x.evolveLv = map[x.before].evolveLv + 1)
 
@@ -168,6 +168,7 @@ for(let pokemon of list) {
   pokemon.afterList = [];
   let targetList = [pokemon.name];
 
+  let nestLv = 0;
   while(targetList.length) {
     let newTarget = [];
     for(let target of targetList) {
@@ -177,9 +178,11 @@ for(let pokemon of list) {
         newTarget.push(...afterList);
       } else {
         pokemon.afterList.push(target)
+        pokemon.remainEvolveLv = nestLv;
       }
     }
     targetList = newTarget;
+    nestLv++;
   }
 }
 

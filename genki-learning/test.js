@@ -50,41 +50,65 @@ const genkiInfer = require('./genki-infer.js');
   const x2y = await tf.loadLayersModel('file://./x2y/model.json');
   const y2z = await tf.loadLayersModel('file://./y2z/model.json');
 
-  async function prototype2(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize) {
-    let [inferMorningTotalEffect, inferDayTotalEffect] = await x2y.predict(tf.tensor2d([
-      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 88]
+  async function prototype2(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit) {
+    let [inferMorningEffect, inferDayEffect] = await x2y.predict(tf.tensor2d([
+      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 88, stockLimit / 2]
     ])).data();
     const [dayHelpRate, nightHelpRate] = await y2z.predict(tf.tensor2d([
-      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, inferMorningTotalEffect, inferDayTotalEffect]
+      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, inferMorningEffect, inferDayEffect]
     ])).data();
 
     // console.log(inferMorningTotalEffect, inferDayTotalEffect, dayHelpRate, nightHelpRate);
+    inferMorningEffect *= 100;
+    inferDayEffect *= 100;
 
-    return { dayHelpRate, nightHelpRate }
+    return { inferMorningEffect, inferDayEffect, dayHelpRate, nightHelpRate }
   }
 
   const CHECK_NUM = 100;
   let map1 = {};
   let map2 = {};
   let diffAverage = 0;
-  for(let i = 0; i < 100; i++) {
-    // let sleepTime = Math.random() * 12;
-    // let checkFreq = Math.floor(Math.random() * 18) + 2;
-    let sleepTime = 8.5;
+  
+  let sleepTime = Math.floor(Math.random() * 21) / 4 + 5;
+  let checkFreq = Math.floor(Math.random() * 18) + 2;
+  let morningHealGenki = Math.min(sleepTime, 8.5) / 8.5 * 100 * (Math.random() * 0.6 + 0.8)
+  let p = Math.random() * 0.2;
+  let speed = Math.floor(Math.random() * 3000) + 1000;
+  let effect = Math.floor(Math.random() * 31);
+  let bagSize = Math.floor(Math.random() * 30) + 5;
+  // let stockLimit = Math.floor(Math.random() * 2) + 1;
+
+  for(let i = 0; i < 1; i++) {
+    let sleepTime = 5;
     let checkFreq = 10;
-    let morningHealGenki = 80;
-    let p = Math.random() * 0.1;
-    let speed = Math.floor(Math.random() * 3000) + 1000;
-    let effect = Math.floor(Math.random() * 31);
-    let bagSize = Math.floor(Math.random() * 30) + 5;
-    let skillCeil = Math.ceil(144000 / speed);
-    let {morningTotalEffect, dayTotalEffect, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize);
+    let morningHealGenki = 80
+    let p = 0.0838;
+    let speed = 2400;
+    let effect = 18;
+    let bagSize = 28;
+    let stockLimit = i + 1;
+    let skillCeil = Math.random() < 0.1 ? 88 : Math.min(Math.ceil(144000 / speed), 88);
+
+    let {morningEffect, dayEffect, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
     
+    function diff(a, b) {
+      console.log(`${`    ${a.toFixed(4)}`.slice(-8)} => ${`    ${b.toFixed(4)}`.slice(-8)} (${`    ${(b - a).toFixed(4)}`.slice(-8)})`);
+    }
+
     async function check(f, countMap) {
-      let { dayHelpRate: dayHelpRate2, nightHelpRate: nightHelpRate2 } = await f(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize);
+      let { inferMorningEffect, inferDayEffect, dayHelpRate: dayHelpRate2, nightHelpRate: nightHelpRate2 } = await f(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
 
       let dayDiff = dayHelpRate2 - dayHelpRate;
       let nightDiff = nightHelpRate2 - nightHelpRate;
+
+      // if (Math.abs(nightDiff) > 0.3) {
+      //   console.log(
+      //     { sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit },
+      //     { morningEffect, dayEffect, dayHelpRate, nightHelpRate },
+      //     { inferMorningEffect, inferDayEffect, dayHelpRate2, nightHelpRate2 }
+      //   );
+      // }
 
       if (countMap.dayAbs == null || countMap.dayAbs < Math.abs(dayDiff)) {
         countMap.dayAbs = Math.abs(dayDiff);
@@ -95,13 +119,22 @@ const genkiInfer = require('./genki-infer.js');
       if (countMap.nightAbs == null || countMap.nightAbs < Math.abs(nightDiff)) {
         countMap.nightAbs = Math.abs(nightDiff);
       }
+
+      // if (Math.abs(dayDiff) > 0.1 || Math.abs(nightDiff) > 0.1) {
+        diff(morningEffect, inferMorningEffect)
+        diff(dayEffect, inferDayEffect)
+        diff(dayHelpRate, dayHelpRate2)
+        diff(nightHelpRate, nightHelpRate2)
+        // console.log({ sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit });
+      // }
+
       countMap.nightDiffAverage ??= 0;
       countMap.nightDiffAverage += (nightDiff ** 2) / CHECK_NUM;
     }
 
-    await check(prototype1, map1);
+    // await check(prototype1, map1);
     await check(prototype2, map2);
   }
-  console.log(map1);
+  // console.log(map1);
   console.log(map2);
 })()

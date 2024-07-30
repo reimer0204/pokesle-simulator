@@ -7,10 +7,10 @@ import config from '../models/config';
 import MultiWorker from '../models/multi-worker';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 import TeamSimulator from '../worker/team-simulator?worker';
-import AsyncWatcherArea from './async-watcher-area.vue';
+import AsyncWatcherArea from './util/async-watcher-area.vue';
 import NatureInfo from './status/nature-info.vue';
-import PopupBase from './popup-base.vue';
-import SettingList from './setting-list.vue';
+import PopupBase from './util/popup-base.vue';
+import SettingList from './util/setting-list.vue';
 import PokemonBox from '../models/pokemon-box';
 
 const asyncWatcher = AsyncWatcher.init();
@@ -310,6 +310,16 @@ async function simulation() {
               </select>
             </div>
           </div>
+
+          <div>
+            <label>料理</label>
+            <div>
+              <div><input type="number" v-model="config.teamSimulation.cookingNum" class="w-50px"> 食分</div>
+              <small>
+                翌朝の料理分も集めておきたい場合は4にしてください
+              </small>
+            </div>
+          </div>
         </SettingList>
         
         <SettingList class="align-self-stretch">
@@ -356,7 +366,7 @@ async function simulation() {
                 </thead>
                 <tbody>
                   <tr>
-                    <th class="vertical" :rowspan="7">編成</th>
+                    <th class="vertical" :rowspan="config.teamSimulation.result.detail ? 11 : 7">編成</th>
                     <th class="white-space-nowrap">名前</th>
                     <td v-for="pokemon in simulationResult.pokemonList"><NameLabel :pokemon="pokemon" /></td>
                     <td></td>
@@ -404,7 +414,25 @@ async function simulation() {
                     <th>げんき回復</th>
                     <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
                       <template v-if="pokemon">
-                        {{ Math.round(pokemon.healEffect).toLocaleString() }}
+                        {{ Math.round(pokemon.healEffect * 100).toLocaleString() }}
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>日中手伝い倍率</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.dayHelpRate * 100).toLocaleString() }}%
+                      </template>
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr v-if="config.teamSimulation.result.detail">
+                    <th>夜間手伝い倍率</th>
+                    <td v-for="pokemon in simulationResult.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ Math.round(pokemon.nightHelpRate * 100).toLocaleString() }}%
                       </template>
                     </td>
                     <td></td>

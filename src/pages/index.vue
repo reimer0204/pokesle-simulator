@@ -2,8 +2,11 @@
 import config from '../models/config.js';
 import Field from '../data/field.js';
 import Berry from '../data/berry.js';
-import SettingList from '../components/setting-list.vue';
+import SettingList from '../components/util/setting-list.vue';
 import PokemonList from '../components/pokemon-list.vue';
+import DetailSettingPopup from '../components/detail-setting-popup.vue';
+import Popup from '../models/popup/popup.js';
+import CookingSettingPopup from '../components/cooking-setting-popup.vue';
 
 </script>
 
@@ -40,14 +43,11 @@ import PokemonList from '../components/pokemon-list.vue';
               </select>
             </template>
           </div>
-        </div>
-      </div>
-
-
-      <div>
-        <label>フィールド<br>ボーナス</label>
-        <div>
-          <input type="number" class="w-80px" v-model="config.simulation.fieldBonus" step="5">
+          
+          <div class="flex-row-start-center gap-5px">
+            <label>フィールドボーナス</label>
+            <input type="number" class="w-80px" v-model="config.simulation.fieldBonus" step="5">
+          </div>
         </div>
       </div>
 
@@ -110,43 +110,6 @@ import PokemonList from '../components/pokemon-list.vue';
       </div>
 
       <div>
-        <label>なべの大きさ</label>
-        <div>
-          <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
-        </div>
-      </div>
-
-      <div>
-        <label>食材ゲット採用率</label>
-        <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
-          <small>
-            食材の何%を<br>料理に使えるか
-          </small>
-        </div>
-      </div>
-
-      <div>
-        <label>ゆめのかけら評価</label>
-        <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1"> %</div>
-          <small>
-            0%:エナジーだけで評価<br>
-            100%:ゆめのかけらで評価<br>
-            50%:どっちもほどほど
-          </small>
-        </div>
-      </div>
-
-      <div>
-        <label>リサーチランク</label>
-        <div>
-          <label><input type="checkbox" v-model="config.simulation.researchRankMax">カンスト</label>
-          <small class="w-100px">リサボをゆめのかけらとして評価するか</small>
-        </div>
-      </div>
-
-      <div>
         <label>厳選設定</label>
         <div>
           <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
@@ -156,12 +119,21 @@ import PokemonList from '../components/pokemon-list.vue';
           <div v-if="config.simulation.selectType == 1">
             <input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %
           </div>
-          <small>
+          <small class="w-120px">
             パーセンタイル:厳選度<br>
             目標スコア比:指定パーセンタイルの個体とのスコア比
           </small>
         </div>
       </div>
+
+      <div>
+        <label>その他設定</label>
+        <div class="flex-column gap-5px">
+          <div><button @click="Popup.show(CookingSettingPopup)">料理設定</button></div>
+          <div><button @click="Popup.show(DetailSettingPopup)">詳細設定</button></div>
+        </div>
+      </div>
+      
     </SettingList>
 
     <PokemonList @update="load()"></PokemonList>

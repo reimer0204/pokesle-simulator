@@ -1,11 +1,9 @@
 <script setup>
-import Food from '../data/food';
 import Pokemon from '../data/pokemon';
-import SubSkill from '../data/sub-skill';
 import config from '../models/config';
 import PokemonBox from '../models/pokemon-box';
-import PopupBase from './popup-base.vue';
-import SettingList from './setting-list.vue';
+import PopupBase from './util/popup-base.vue';
+import SettingList from './util/setting-list.vue';
 
 const $emit = defineEmits(['close']);
 

@@ -1,7 +1,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
 import config from './models/config';
-import AsyncWatcherArea from './components/async-watcher-area.vue';
+import AsyncWatcherArea from './components/util/async-watcher-area.vue';
 import EvaluateTable from './models/evaluate-table';
 import HelpRate from './models/help-rate';
 

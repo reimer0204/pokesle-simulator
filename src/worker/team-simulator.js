@@ -72,12 +72,13 @@ self.addEventListener('message', async (event) => {
 
       // 料理を良い順にソートしておく
       let cookingListMap = {
-        'カレー': Cooking.list.filter(c => c.type == 'カレー').sort((a, b) => b.addEnergy - a.addEnergy),
-        'サラダ': Cooking.list.filter(c => c.type == 'サラダ').sort((a, b) => b.addEnergy - a.addEnergy),
-        'デザート': Cooking.list.filter(c => c.type == 'デザート').sort((a, b) => b.addEnergy - a.addEnergy),
+        'カレー': Cooking.list.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'サラダ': Cooking.list.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'デザート': Cooking.list.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
       }
-      let targetCookingList = config.simulation.cookingType ? cookingListMap[config.simulation.cookingType]
-        : Cooking.list.sort((a, b) => b.addEnergy - a.addEnergy);
+      let targetCookingList = config.simulation.cookingType
+        ? cookingListMap[config.simulation.cookingType]
+        : Cooking.list.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.addEnergy - a.addEnergy);
 
       // シミュレーター用意
       await PokemonSimulator.isReady;
@@ -124,11 +125,13 @@ self.addEventListener('message', async (event) => {
         let typeSetMap = {};
         let noDuplicateCheck = new Set();
         let resultOption = {};
+        let legendNum = 0;
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0;
           genkiBonusCount += pokemon.enableSubSkillList.includes('げんき回復ボーナス') ? 1 : 0;
           shardBonusCount += pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? 1 : 0;
+          legendNum += pokemon.legend;
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? 1 : 0;
 
 
@@ -141,6 +144,11 @@ self.addEventListener('message', async (event) => {
           } else {
             continue combinationLoop;
           }
+        }
+
+        // 伝説は2匹以上入れられない
+        if (legendNum >= 2) {
+          continue;
         }
 
         // 個々の評価
@@ -304,36 +312,43 @@ self.addEventListener('message', async (event) => {
           let cookingList = [];
           if (config.simulation.cookingWeight > 0) {
 
-            let weekList = config.teamSimulation.day != null ? [config.teamSimulation.day] : [0, 1, 2, 3, 4, 5, 6]
-
-            for(let week of weekList) {
-              for(let i = 0; i < 3; i++) {
-                let potSize = Math.round(
-                  (
-                    (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
-                    + cookingPowerUpEffectList[cookingCount]
-                  ) * (config.simulation.campTicket ? 1.5 : 1)
-                );
-
-                // いい料理を検索
-                let bestCooking = null;
-                for(let cooking of targetCookingList) {
-                  if(cooking.foodNum <= potSize && cooking.foodList.every(({ name, num }) => foodNum[name] >= num)
-                  ) {
-                    bestCooking = { cooking, week, potSize, sunday: week == 6, index: week * 3 + i };
-
-                    // 食材を減らす
-                    for(const { name, num } of cooking.foodList) {
-                      foodNum[name] -= num;
-                      useFoodNum[name] += num;
-                    }
-                    break;
-                  }
-                }
-
-                selectedCookingList.push(bestCooking);
-                cookingCount++;
+            let cookingTimingList = [];
+            if (config.teamSimulation.day != null) {
+              for(let i = 0; i < config.teamSimulation.cookingNum ?? 3; i++) {
+                cookingTimingList.push({ week: (config.teamSimulation.day + Math.floor(i / 3)) % 7, i: i % 3 });
               }
+            } else {
+              for(let i = 0; i < 21; i++) {
+                cookingTimingList.push({ week: Math.floor(i / 3), i: i % 3 });
+              }
+            }
+            
+            for(let { week, i } of cookingTimingList) {
+              let potSize = Math.round(
+                (
+                  (week == 6 ? config.simulation.potSize * 2 : config.simulation.potSize)
+                  + cookingPowerUpEffectList[cookingCount]
+                ) * (config.simulation.campTicket ? 1.5 : 1)
+              );
+
+              // いい料理を検索
+              let bestCooking = null;
+              for(let cooking of targetCookingList) {
+                if(cooking.foodNum <= potSize && cooking.foodList.every(({ name, num }) => foodNum[name] >= num)
+                ) {
+                  bestCooking = { cooking, week, potSize, sunday: week == 6, index: week * 3 + i };
+
+                  // 食材を減らす
+                  for(const { name, num } of cooking.foodList) {
+                    foodNum[name] -= num;
+                    useFoodNum[name] += num;
+                  }
+                  break;
+                }
+              }
+
+              selectedCookingList.push(bestCooking);
+              cookingCount++;
             }
 
             // 料理チャンスによる倍率を計算

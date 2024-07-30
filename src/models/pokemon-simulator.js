@@ -32,7 +32,19 @@ class PokemonSimulator {
     // 今週の料理タイプのリスト
     this.cookingList =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.list
-      : Cooking.list.filter(cooking => cooking.type == this.config.simulation.cookingType);
+      : Cooking.list.filter(c => c.type == this.config.simulation.cookingType && (config.simulation.enableCooking[c.name] || c.foodNum == 0));
+    
+    // 有効な料理に対しての食材のエナジー評価
+    this.foodEnergyMap = {};
+    for(const food of Food.list) this.foodEnergyMap[food.name] = food.energy;
+    for(const cooking of this.cookingList) {
+      for(const cookingFood of cooking.foodList) {
+        this.foodEnergyMap[cookingFood.name] = Math.max(
+          this.foodEnergyMap[cookingFood.name],
+          Food.map[cookingFood.name].energy * cooking.rate * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
+        )
+      }
+    }
 
     // 現状の鍋のサイズでできる一番いい料理
     this.defaultBestCooking = this.cookingList
@@ -97,9 +109,7 @@ class PokemonSimulator {
       enableFoodList.push({
         name: food.name,
         num,
-        energy: food.energy * num
-          * (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
-          * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1],
+        energy: this.foodEnergyMap[food.name] * num,
       });
     }
 
@@ -128,6 +138,7 @@ class PokemonSimulator {
     result.enableSubSkillList = subSkillList;
     result.nature = nature;
     result.natureName = nature?.name,
+    result.sleepTime ??= 0;
 
     // きのみの個数
     result.berryNum = (result.specialty == 'きのみ' ? 2 : 1)
@@ -181,7 +192,11 @@ class PokemonSimulator {
       + (subSkillList.includes('最大所持数アップS') ? 6 : 0)
       + (subSkillList.includes('最大所持数アップM') ? 12 : 0)
       + (subSkillList.includes('最大所持数アップL') ? 18 : 0)
-    )
+    );
+    if (result.sleepTime >=  200) result.fixedBag += 1;
+    if (result.sleepTime >=  500) result.fixedBag += 2;
+    if (result.sleepTime >= 1000) result.fixedBag += 3;
+    if (result.sleepTime >= 2000) result.fixedBag += 2;
 
     // いつ育到達は所持数がいっぱい＋4回(キュー消化分)以降
     result.bagFullHelpNum = Math.max(result.fixedBag / (
@@ -247,6 +262,10 @@ class PokemonSimulator {
       * (pokemon.nature?.good == '手伝いスピード' ? 0.9 : pokemon.nature?.weak == '手伝いスピード' ? 1.1 : 1)
       / (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket ? 1.2 : 1)
     );
+    if (pokemon.remainEvolveLv == 1 && pokemon.sleepTime >=  500) pokemon.speed *= 0.95
+    if (pokemon.remainEvolveLv == 1 && pokemon.sleepTime >= 2000) pokemon.speed *= 0.88
+    if (pokemon.remainEvolveLv == 2 && pokemon.sleepTime >=  500) pokemon.speed *= 0.89
+    if (pokemon.remainEvolveLv == 2 && pokemon.sleepTime >= 2000) pokemon.speed *= 0.75
 
     // 日中の基本手伝い回数(げんき回復なし)
     let baseDayHelpNum = 0;
@@ -384,9 +403,25 @@ class PokemonSimulator {
 
     // スキル発動回数の期待値を計算(チェックごとの確率の総和)
     if (pokemon.fixedBag > 0) {
-      pokemon.skillPerDay =
-        (1 - (1 - pokemon.ceilSkillRate) ** Math.min(pokemon.dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum)) * (this.config.checkFreq - 1)
-        + (1 - (1 - pokemon.ceilSkillRate) ** Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum))
+      let daySkillableNum = Math.min(pokemon.dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum);
+      let nightSkillableNum = Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum);
+        
+      if (pokemon.specialty == 'スキル') {
+        let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
+        let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
+        let dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0
+        let nightNoHit = (1 - pokemon.ceilSkillRate) ** nightSkillableNum;
+        let nightOneHit = nightSkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (nightSkillableNum - 1) * pokemon.ceilSkillRate * nightSkillableNum : 0;
+        let nightTwoHit = nightSkillableNum >= 2 ? 1 - nightNoHit - nightOneHit : 0
+
+        pokemon.skillPerDay =
+          (dayOneHit + dayTwoHit * 2) * (this.config.checkFreq - 1)
+          + nightOneHit + nightTwoHit * 2
+      } else {
+        pokemon.skillPerDay =
+          (1 - (1 - pokemon.ceilSkillRate) ** daySkillableNum) * (this.config.checkFreq - 1)
+          + (1 - (1 - pokemon.ceilSkillRate) ** Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum))
+      }
     } else {
       pokemon.skillPerDay = 0;
     }
@@ -478,14 +513,10 @@ class PokemonSimulator {
               let foodEnergy = 0;
               for(let food of Food.list) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
-                foodEnergy += food.energy
-                  * (
-                    (
-                      (this.config.simulation.cookingType ? food.bestTypeRate[this.config.simulation.cookingType] : food.bestRate)
-                      * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
-                      - 1
-                    ) * this.config.simulation.foodGetRate / 100
-                    + 1
+                foodEnergy += 
+                  (
+                    this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
+                    + food.energy * (100 - this.config.simulation.foodGetRate) / 100
                   )
                   * this.config.simulation.cookingWeight
               }
@@ -606,6 +637,7 @@ class PokemonSimulator {
         berry: Berry.map[basePokemon.berry],
         skill: Skill.map[basePokemon.skill],
         skillLv: this.config.selectEvaluate.skillLevel[basePokemon.skill],
+        sleepTime: this.config.selectEvaluate.pokemonSleepTime,
       },
       foodList,
       subSkillList,

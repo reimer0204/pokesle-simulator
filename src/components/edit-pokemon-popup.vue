@@ -10,8 +10,8 @@ import MultiWorker from '../models/multi-worker';
 import PokemonBox from '../models/pokemon-box';
 import convertRomaji from '../models/utils/convert-romaji';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import AsyncWatcherArea from './async-watcher-area.vue';
-import PopupBase from './popup-base.vue';
+import AsyncWatcherArea from './util/async-watcher-area.vue';
+import PopupBase from './util/popup-base.vue';
 
 const props = defineProps({
   index: { type: Number }
@@ -354,6 +354,12 @@ function shareX() {
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <input type="number" v-model="pokemon.skillLv" :placeholder="basePokemon ? basePokemon.evolveLv : '省略可'"/>
 
+      <div>睡眠時間</div>
+      <div></div>
+      <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
+      <input type="number" v-model="pokemon.sleepTime" placeholder="省略可"/>
+
+    
       <div>色違い</div>
       <div></div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
