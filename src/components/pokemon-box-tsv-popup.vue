@@ -33,6 +33,8 @@ function exportList() {
     }
     if(config.pokemonBox.tsv.nature) arr[config.pokemonBox.tsv.nature - 1] = pokemon.nature;
     if(config.pokemonBox.tsv.shiny) arr[config.pokemonBox.tsv.shiny - 1] = pokemon.shiny ? 1 : '';
+    if(config.pokemonBox.tsv.fix) arr[config.pokemonBox.tsv.fix - 1] = pokemon.fix;
+    if(config.pokemonBox.tsv.sleepTime) arr[config.pokemonBox.tsv.sleepTime - 1] = pokemon.sleepTime;
 
     return arr.join('\t');
   }).join('\n')
@@ -71,6 +73,8 @@ function importList() {
       <div><label>サブスキル5</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[4]" placeholder="なし"></div>
       <div><label>せいかく</label><input type="number" v-model="config.pokemonBox.tsv.nature" placeholder="なし"></div>
       <div><label>色違い</label><input type="number" v-model="config.pokemonBox.tsv.shiny" placeholder="なし"></div>
+      <div><label>固定</label><input type="number" v-model="config.pokemonBox.tsv.fix" placeholder="なし"></div>
+      <div><label>睡眠時間</label><input type="number" v-model="config.pokemonBox.tsv.sleepTime" placeholder="なし"></div>
     </SettingList>
 
     <div class="flex-row gap-10px mt-10px">

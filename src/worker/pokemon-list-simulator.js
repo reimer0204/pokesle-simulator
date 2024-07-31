@@ -16,7 +16,7 @@ addEventListener('message', async (event) => {
   if (type == 'config') {
     await PokemonSimulator.isReady;
     config = event.data.config;
-    simulator = new PokemonSimulator(config);
+    simulator = new PokemonSimulator(config, PokemonSimulator.MODE_ABOUT);
     evaluateSimulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT);
     
     postMessage({
@@ -243,13 +243,13 @@ addEventListener('message', async (event) => {
           let cacheKey = `${subPokemon.morningHealGenki.toFixed(8)}_${totalMorningHealEffect.toFixed(8)}_${totalDayHealEffect.toFixed(8)}`
           let helpRate = helpRateCache.get(cacheKey);
           if(helpRate == null) {
-            helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, config)
+            helpRate = HelpRate.getHelpRate(subPokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, config)
             helpRateCache.set(cacheKey, helpRate)
           }
 
           let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
-          let healedAddEnergy = subPokemon.tmpScore * ((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1);
+          let healedAddEnergy = subPokemon.tmpScore * Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
           return healedAddEnergy;
         }));
 

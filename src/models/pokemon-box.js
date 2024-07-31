@@ -106,6 +106,8 @@ class PokemonBox {
         ],
         nature: cells[config.pokemonBox.tsv.nature],
         shiny: !!cells[config.pokemonBox.tsv.shiny],
+        fix: cells[config.pokemonBox.tsv.fix],
+        sleepTime: cells[config.pokemonBox.tsv.sleepTime],
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
@@ -142,7 +144,7 @@ class PokemonBox {
       form.append('json', JSON.stringify({
         sheet: config.pokemonBox.gs.sheet,
         pokemonList: [
-          [this._time.toISOString(), ...new Array(14).fill('')],
+          [this._time.toISOString(), ...new Array(15).fill('')],
           ...this.list.map(pokemon => [
             pokemon.name,
             pokemon.lv,
@@ -153,6 +155,7 @@ class PokemonBox {
             pokemon.nature,
             pokemon.shiny ? 1 : null,
             pokemon.fix,
+            pokemon.sleepTime,
           ])
         ],
       }))
@@ -190,6 +193,7 @@ class PokemonBox {
         nature: row[12],
         shiny: !!row[13],
         fix: row[14] || null,
+        sleepTime: Number(row[15]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

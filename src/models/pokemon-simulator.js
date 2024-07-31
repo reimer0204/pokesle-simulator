@@ -20,6 +20,8 @@ class PokemonSimulator {
   static MODE_SELECT = 3;
 
   constructor(config, mode) {
+    if (!mode) throw 'モードが指定されていません'
+
     this.config = config;
     this.mode = mode;
     this.helpEffectCache = new Map();
