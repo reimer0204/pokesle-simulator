@@ -82,7 +82,7 @@ self.addEventListener('message', async (event) => {
 
       // シミュレーター用意
       await PokemonSimulator.isReady;
-      let simulator = new PokemonSimulator(config);
+      let simulator = new PokemonSimulator(config, PokemonSimulator.MODE_TEAM);
 
       // 対象のポケモンをすべてシミュレーターの初期化にかけておく
       for(let pokemon of fixedPokemonList) simulator.memberToInfo(pokemon);
