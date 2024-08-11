@@ -10,11 +10,14 @@ export default class EvaluateTable {
 
   static VERSION = 20240730;
 
-  static load() {
+  static load(config) {
+    if (config.version.evaluateTable != this.VERSION) {
+      return null
+    }
     try {
       return JSON.parse(localStorage.getItem('evaluateTable'))
     } catch(e) {
-      return null;
+      return null
     }
   }
 

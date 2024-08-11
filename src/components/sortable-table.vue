@@ -65,7 +65,7 @@ const sortedDataList = computed(() => {
   let minmax = {};
   for(let data of result) {
     for(let sort of sortInfo.value) {
-      if(columnMap.value[sort.key]?.type == Number) {
+      if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key].percent) {
         minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
         minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
         minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)

@@ -21,7 +21,7 @@ const props = defineProps({
   percentile: { type: Boolean, default: true },
 })
 
-const evaluateTable = EvaluateTable.load();
+const evaluateTable = EvaluateTable.load(config);
 const $emit = defineEmits(['close']);
 
 const foodIndexList = computed(() => {
@@ -43,7 +43,7 @@ const basePokemon = computed(() => Pokemon.map[props.name]);
 const result = computed(() => {
   if (simulator.value == null) return null;
 
-  const evaluateTable = EvaluateTable.load();
+  const evaluateTable = EvaluateTable.load(config);
   const lv = props.lv;
 
   // サブスキルの組み合わせを列挙

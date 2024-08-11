@@ -17,7 +17,7 @@ let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable
 let lv = ref(lvList.at(-1))
 let step = ref(5);
 
-let evaluateTable = EvaluateTable.load();
+let evaluateTable = EvaluateTable.load(config);
 let evaluateTablePokemonList = computed(() => {
   let result = [];
   for(let pokemonName in evaluateTable) {
@@ -53,7 +53,7 @@ async function showDetail(pokemon, p) {
   
   asyncWatcher.run(async (progressCounter) => {
 
-    const evaluateTable = EvaluateTable.load();
+    const evaluateTable = EvaluateTable.load(config);
 
     function combination(r, n, s = 0) {
       if (n == 0) return [[]];

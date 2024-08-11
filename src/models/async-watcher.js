@@ -6,6 +6,7 @@ class AsyncWatcher {
   constructor() {
     this.executingCount = 0;
     this.progressCounter = new ProgressCounter();
+    this.resolveList = [];
   }
 
   static init() {
@@ -18,6 +19,13 @@ class AsyncWatcher {
 
   get progress() {
     return this.progressCounter.progress;
+  }
+
+  get wait() {
+    if (this.executingCount == 0) return;
+    return new Promise((resolve) => {
+      this.resolveList.push(resolve)
+    })
   }
 
   async run(promise) {
@@ -34,6 +42,10 @@ class AsyncWatcher {
       throw e;
     } finally {
       this.executingCount--;
+      if (this.executingCount == 0) {
+        this.resolveList.forEach(x => x());
+        this.resolveList = []
+      }
     }
   }
 

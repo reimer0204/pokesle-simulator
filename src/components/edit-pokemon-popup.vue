@@ -14,7 +14,9 @@ import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 
 const props = defineProps({
-  index: { type: Number }
+  index: { type: Number },
+  evaluateTable: {},
+  simulatedPokemonList: {},
 })
 
 const $emit = defineEmits(['close', 'input']);
@@ -191,10 +193,28 @@ watch(pokemon, async () => {
           return {
             type: 'basic',
             pokemonList: [JSON.parse(JSON.stringify(pokemon))],
-            evaluateTable: EvaluateTable.load(),
+            evaluateTable: EvaluateTable.load(config),
           }
         }
       )).flat(1)[0];
+      
+      selectResult.value.box = {};
+      for(let selectLv of selectLvList) {
+        selectResult.value.box[selectLv] = {};
+        for(let after of selectResult.value.afterList) {
+          let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
+
+          let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+          let sameFoodList = targetList
+            .filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
+            .map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+
+          selectResult.value.box[selectLv][after] = {
+            same: sameList.length ? Math.max(...sameList) : null,
+            food: sameFoodList.length ? Math.max(...sameFoodList) : null,
+          }
+        }
+      }
 
       // console.log(selectResult.value);
     })
@@ -373,6 +393,7 @@ function shareX() {
         <table v-if="selectResult">
           <thead>
             <tr>
+              <th>最終進化</th>
               <th></th>
               <th v-for="lv in selectLvList" class="text-align-right">
                 <template v-if="lv == 'max'">最大</template>
@@ -381,19 +402,41 @@ function shareX() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="after in selectResult.afterList">
-              <th>{{ after }}</th>
-              <td v-for="lv in selectLvList"
-                :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
-                class="text-align-right"
-              >
-                {{ (selectResult.evaluateResult?.[lv]?.[after].score * 100).toFixed(1) }}%
-              </td>
-              <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
-              >
-                {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
-              </th> -->
-            </tr>
+            <template v-for="after in selectResult.afterList">
+              <tr>
+                <th rowspan="3">{{ after }}</th>
+                <th>本個体</th>
+                <td v-for="lv in selectLvList"
+                  :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
+                  class="text-align-right"
+                >
+                  <template v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after].score)">-</template>
+                  <template v-else>{{ (selectResult.evaluateResult?.[lv]?.[after].score * 100).toFixed(1) }}%</template>
+                </td>
+                <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
+                >
+                  {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
+                </th> -->
+              </tr>
+              <tr>
+                <th>同種族</th>
+                <td v-for="lv in selectLvList" class="text-align-right">
+                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].same)">-</template>
+                  <template v-else>{{ (selectResult.box?.[lv]?.[after].same * 100).toFixed(1) }}%</template>
+                </td>
+              </tr>
+              <tr>
+                <th>同種族同食材</th>
+                <td v-for="lv in selectLvList" class="text-align-right">
+                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].food)">-</template>
+                  <template v-else>{{ (selectResult.box?.[lv]?.[after].food * 100).toFixed(1) }}%</template>
+                </td>
+                <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
+                >
+                  {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
+                </th> -->
+              </tr>
+            </template>
           </tbody>
         </table>
         <div v-else>せいかくまで入力すると表示されます</div>

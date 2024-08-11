@@ -20,7 +20,7 @@ import SortableTable from './sortable-table.vue';
 import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 
-let evaluateTable = EvaluateTable.load();
+let evaluateTable = EvaluateTable.load(config);
 
 const simulatedPokemonList = ref([])
 const asyncWatcher = AsyncWatcher.init();
@@ -169,7 +169,8 @@ const columnList = computed(() => {
 })
 
 async function showEditPopup(pokemon) {
-  if(await Popup.show(EditPokemonPopup, { index: pokemon.index })) {
+  await asyncWatcher.wait;
+  if(await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
     }
@@ -177,7 +178,8 @@ async function showEditPopup(pokemon) {
 }
 
 async function addPokemon() {
-  if(await Popup.show(EditPokemonPopup)) {
+  await asyncWatcher.wait;
+  if(await Popup.show(EditPokemonPopup, { evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
     }
@@ -342,17 +344,27 @@ function showSelectDetail(pokemon, after, lv) {
             <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
               <template v-for="after in data.afterList">
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].score)">-</template>
+                  <template v-else>{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
+                </div>
               </template>
             </div>
             <div v-else style="width: 6em; font-size: 80%;">
               <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
-              <template v-if="column.lv != 'max'">
-                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+
+              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.score)">
+                -
+              </template>
+              <template v-else-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
+                  {{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%
+                </div>
               </template>
               <template v-else>
                 <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
               </template>
+
             </div>
           </template>
 
@@ -360,12 +372,17 @@ function showSelectDetail(pokemon, after, lv) {
             <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
               <template v-for="after in data.afterList">
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].energy)">-</template>
+                  <template v-else>{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</template>
+                </div>
               </template>
             </div>
             <div v-else style="width: 6em; font-size: 80%;">
               <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
-              <template v-if="column.lv != 'max'">
+
+              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.energy)">-</template>
+              <template v-else-if="column.lv != 'max'">
                 <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
                   {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
                 </div>
@@ -375,6 +392,7 @@ function showSelectDetail(pokemon, after, lv) {
                   {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
                 </div>
               </template>
+
             </div>
           </template>
 
