@@ -6,9 +6,12 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
   let checkDuration = dayTime / (checkFreq - 1);
 
   let totalSkillNum = 0;
-  let totalMorningEffect = 0;
   let totalMorningSkillNum = 0;
-  let totalEffect = 0;
+
+  let totalEffect1 = 0;
+  let totalEffect2 = 0;
+  let totalEffect3 = 0;
+
   let totalGenkiAtSleep = 0;
   let dayHelpNum = 0;
   let nightHelpNum = 0;
@@ -98,18 +101,91 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
 
       // スキル発動していた時の処理
       if (skillStock > 0) {
-        genki = Math.min(genki + effect * skillStock, 150);
-        skillStock = 0;
+        let thisEffect = Math.min(genki + effect * skillStock, 150) - genki;
+        if (thisEffect < 0) throw `${genki}`
 
         if(day) {
           totalSkillNum++;
-          totalEffect += effect;
+
+          if (thisEffect > 0) {
+          
+            let now = time / 86400 - day;
+            let nowGenkiKeepTime = genki * 10 / 1440;
+            let supplyTime = thisEffect * 10 / 1440;
+            let remainTime = 1 - now;
+            let nightTime = sleepTime / 24;
+
+            let reduceAt = now + nowGenkiKeepTime;
+            let lastAt = reduceAt + supplyTime;
+            let nightAt = 1 - nightTime;
+
+            // トータル回復量
+            // if (true) {
+            //   totalEffect += thisEffect * remainTime;
+            //   totalNightEffect += thisEffect * nightTime;
+            // }
+            if (true) {
+              let totalEffect = thisEffect * Math.min(remainTime, nowGenkiKeepTime);
+              if (reduceAt < 1) {
+                totalEffect += thisEffect * supplyTime / 2;
+
+                if(lastAt > 1) {
+                  let over = lastAt - 1
+                  totalEffect -= thisEffect * over * over / supplyTime / 2;
+                }
+              }
+
+              let totalNightEffect = 0;
+              if (reduceAt > nightAt) {
+                totalNightEffect += thisEffect * Math.min(reduceAt - nightAt, nightTime);
+              }
+
+              if (lastAt > nightAt && reduceAt < 1) {
+                let enableSupplyTime = Math.min(lastAt - nightAt, supplyTime)
+                
+                totalNightEffect += thisEffect * enableSupplyTime * enableSupplyTime / supplyTime / 2;
+                
+                if (lastAt > 1) {
+                  let over = lastAt - 1;
+                  totalNightEffect -= thisEffect * over * over / supplyTime / 2;
+                }
+              }
+
+              totalEffect2 += totalEffect - totalNightEffect;
+              totalEffect3 += totalNightEffect;
+            }
+            // if (true) {
+            //   totalEffect += thisEffect * Math.min(remainTime, nowGenkiKeepTime);
+            //   totalEffect += thisEffect * supplyTime / 2;
+
+            //   if (reduceAt > nightAt) {
+            //     totalNightEffect += thisEffect * Math.min(reduceAt - nightAt, nightTime);
+            //   }
+            //   if (lastAt > nightAt && reduceAt < 1) {
+            //     let enableSupplyTime = Math.min(lastAt - nightAt, supplyTime)
+                
+            //     totalNightEffect += thisEffect * enableSupplyTime * enableSupplyTime / supplyTime / 2;
+                
+            //     if (lastAt > 1) {
+            //       let over = lastAt - 1;
+            //       totalNightEffect -= thisEffect * over * over / supplyTime / 2;
+            //     }
+            //   }
+            // }
+            // totalEffect += thisEffect * remainTime;
+            // totalNightEffect += thisEffect * nightTime;
+            // totalEffect2 += thisEffect * remainTime;
+            // totalEffect3 += thisEffect * nightTime;
+          }
 
           if (checkCount % checkFreq == 0) {
             totalMorningSkillNum++;
-            totalMorningEffect += effect;
+            totalEffect1 += thisEffect;
+            // if (totalEffect < 0) console.log(totalEffect)
           }
         }
+        genki = Math.min(genki + thisEffect, 150);
+        skillStock = 0;
       }
 
       // 次回タップ時間を計算
@@ -188,8 +264,9 @@ module.exports = function genkiInfer(sleepTime, checkFreq, morningHealGenki, p, 
   // });
 
   return {
-    morningEffect: totalMorningEffect / LOOP_NUM,
-    dayEffect: totalEffect / LOOP_NUM - totalMorningEffect / LOOP_NUM,
+    totalEffect1: totalEffect1 / LOOP_NUM,
+    totalEffect2: totalEffect2 / LOOP_NUM,
+    totalEffect3: totalEffect3 / LOOP_NUM,
     dayHelpRate: dayHelpNum / LOOP_NUM / ((24 - sleepTime) * 3600 / speed),
     nightHelpRate: nightHelpNum / LOOP_NUM / ((sleepTime) * 3600 / speed),
   }

@@ -6,28 +6,43 @@ const fs = require('fs/promises');
 const readline = require('readline');
 
 const DATA = 1000000;
-const EPOCHS1 = 100;
-const EPOCHS2 = 100;
+const EPOCHS1 = 800;
+const EPOCHS2 = 300;
 // const EPOCHS = 10;
 
 (async () => {
   
   const x2y = tf.sequential();
   // xToy.add(tf.layers.dense({units: 20, inputShape: [7]}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu', inputShape: [10]}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 2}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu', inputShape: [10]}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  // x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
+  // x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 3}));
   x2y.compile({optimizer: 'adam', loss: 'meanSquaredError'});
   
   const y2z = tf.sequential();
-  y2z.add(tf.layers.dense({units: 20, inputShape: [6]}));
-  y2z.add(tf.layers.dense({units: 20, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 20, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 20, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu', inputShape: [7]}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
+  // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
+  // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
+  // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
+  // y2z.add(tf.layers.dense({units: 20, activation: 'relu'}));
   y2z.add(tf.layers.dense({units: 2}));
   y2z.compile({optimizer: 'adam', loss: 'meanSquaredError'});
 
@@ -43,13 +58,13 @@ const EPOCHS2 = 100;
       rl.on('line', (line) => {
         if (line.trim().length && xDataSet.length < DATA) {
           let values = line.trim().split(',').map(Number)
-          let [sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, morningEffect, dayEffect, dayHelpRate, nightHelpRate] = values;
+          let [sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate] = values;
               //  sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, morningEffect, dayEffect, dayHelpRate, nightHelpRate
           // console.log(stockLimit);
-          if (values.every(Number.isFinite) && 3.0 <= sleepTime && sleepTime <= 10.0) {
-            xDataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 88, stockLimit / 2])
-            yDataSet.push([morningEffect / 100, dayEffect / 100])
-            y2DataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, morningEffect / 100, dayEffect / 100])
+          if (values.every(Number.isFinite)) {
+            xDataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 78, stockLimit / 2])
+            yDataSet.push([totalEffect1 / 30, totalEffect2 / 30, totalEffect3 / 30])
+            y2DataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, totalEffect1 / 30, totalEffect2 / 30, totalEffect3 / 30])
             zDataSet.push([dayHelpRate, nightHelpRate])
 
             // console.log(sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, morningEffect / 100, dayEffect / 100, dayHelpRate, nightHelpRate);
@@ -85,12 +100,12 @@ const EPOCHS2 = 100;
   //   let effect = Math.floor(Math.random() * 31);
   //   let bagSize = Math.floor(Math.random() * 30) + 5;
   //   let stockLimit = Math.floor(Math.random() * 2) + 1;
-  //   let skillCeil = Math.random() < 0.1 ? 88 : Math.min(Math.ceil(144000 / speed), 88);
+  //   let skillCeil = Math.random() < 0.1 ? 78 : Math.min(Math.ceil(144000 / speed), 78);
 
   //   let {morningEffect, dayEffect, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
 
   //   let [inferMorningEffect, inferDayEffect] = await x2y.predict(tf.tensor2d([
-  //     [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 88, stockLimit / 2]
+  //     [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 78, stockLimit / 2]
   //   ])).data();
   //   inferMorningEffect *= 100;
   //   inferDayEffect *= 100;

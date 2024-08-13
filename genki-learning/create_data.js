@@ -5,11 +5,16 @@ const genkiInfer = require('./genki-infer.js');
 const fs = require('fs/promises');
 const numCPUs = 4;//availableParallelism();
 
-const NUM = 1000000;
+const NUM = 10000;
 // const NUM = 5000;
+const RESET = true;
 
 (async () => {
+
   if (cluster.isPrimary) {
+    if (RESET) {
+      await fs.writeFile('data.csv', '', { encoding: 'utf-8', flag: 'w' });
+    }
   
     // Fork workers.
     let count = 0;
@@ -49,19 +54,22 @@ const NUM = 1000000;
     let LOOP = Math.ceil(NUM / numCPUs);
     
     for(let i = 0; i < LOOP; i++) {
-      let sleepTime = Math.random() * 5 + 5;
+      let skellTokui = Math.random() < 0.7;
+      let sleepTime = Math.random() * 7 + 3;
       let checkFreq = Math.floor(Math.random() * 18) + 2;
       let morningHealGenki = Math.min(sleepTime, 8.5) / 8.5 * 100 * (Math.random() * 0.6 + 0.8)
       let p = Math.random() * 0.2;
       let speed = Math.floor(Math.random() * 3000) + 1000;
       let effect = Math.floor(Math.random() * 31);
       let bagSize = Math.floor(Math.random() * 30) + 5;
-      let stockLimit = Math.floor(Math.random() * 2) + 1;
-      let skillCeil = Math.random() < 0.1 ? 88 : Math.min(Math.ceil(144000 / speed), 88);
+      let stockLimit = skellTokui ? 2 : 1;
+      let skillCeil = skellTokui ? 78 : Math.min(Math.ceil(144000 / speed), 78);
+      // let stockLimit = 1;
+      // let skillCeil = Math.min(Math.ceil(144000 / speed), 78);
   
-      let {morningEffect, dayEffect, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
+      let {totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
 
-      buffer += [sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, morningEffect, dayEffect, dayHelpRate, nightHelpRate].join(',') + '\n'
+      buffer += [sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate].join(',') + '\n'
       count++;
       if (buffer.length > 10000) {
         process.send({ count, buffer });
