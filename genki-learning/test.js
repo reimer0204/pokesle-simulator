@@ -42,7 +42,9 @@ class Diff {
     console.log(`maxAbs = ${this.abs}`);
     for(let diff of this.diffList) {
       console.log(`${`    ${diff.x.toFixed(4)}`.slice(-8)} => ${`    ${diff.y.toFixed(4)}`.slice(-8)} (${`    ${(diff.y - diff.x).toFixed(4)}`.slice(-8)})`);
-      console.log(diff.option);
+      if (diff.option) {
+        console.log(diff.option);
+      }
     }
 
   }
@@ -88,7 +90,7 @@ class Diff {
     let result = Math.pow(totalEffect * healEffectParameter[3] + healEffectParameter[4], healEffectParameter[5]) + healEffectParameter[6]
 
     return {
-      dayHelpRate: ((Math.tanh(result * dayHelpParameter[0] + dayHelpParameter[1]) + 1) / 2) ** dayHelpParameter[2] * dayHelpParameter[3] + dayHelpParameter[4], 
+      dayHelpRate: ((Math.tanh(result * dayHelpParameter[0] + dayHelpParameter[1]) + 1) / 2) ** dayHelpParameter[2] * dayHelpParameter[3] + dayHelpParameter[4],
       nightHelpRate: ((Math.tanh(result * nightHelpParameter[0] + nightHelpParameter[1]) + 1) / 2) ** nightHelpParameter[2] * nightHelpParameter[3] + nightHelpParameter[4]
     }
   }
@@ -106,8 +108,8 @@ class Diff {
 
     // console.log(inferMorningTotalEffect, inferDayTotalEffect, dayHelpRate, nightHelpRate);
     totalEffect1 *= 30
-    totalEffect2 *= 30
-    totalEffect3 *= 30
+    totalEffect2 = Math.pow(totalEffect2, 1 / 0.5) * 50
+    totalEffect3 = Math.pow(totalEffect3, 1 / 0.5) * 50
     // dayEffect *= 30;
     // nightEffect *= 30;
 
@@ -118,7 +120,7 @@ class Diff {
   let map1 = {};
   let map2 = {};
   let diffAverage = 0;
-  
+
   let sleepTime = Math.floor(Math.random() * 21) / 4 + 5;
   let checkFreq = Math.floor(Math.random() * 18) + 2;
   let morningHealGenki = Math.min(sleepTime, 8.5) / 8.5 * 100 * (Math.random() * 0.6 + 0.8)
@@ -154,7 +156,7 @@ class Diff {
     // let bagSize = 28;
     // let stockLimit = 2;
     // let skillCeil = Math.min(Math.ceil(144000 / speed), 78);
-    
+
     let skellTokui = Math.random() < 0.7;
     let sleepTime = Math.random() * 7 + 3;
     let checkFreq = Math.floor(Math.random() * 18) + 2;
@@ -164,14 +166,14 @@ class Diff {
     let effect = Math.floor(Math.random() * 31);
     let bagSize = Math.floor(Math.random() * 30) + 5;
     let stockLimit = skellTokui ? 2 : 1;
-    let skillCeil = skellTokui ? 78 : Math.min(Math.ceil(144000 / speed), 78);
+    let skillCeil = skellTokui ? Math.min(Math.ceil(144000 / speed), 78) : 78;
     // let stockLimit = 1;
     // let skillCeil = Math.min(Math.ceil(144000 / speed), 78);
 
     let {totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate} = genkiInfer(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
     // console.log(totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate);
     // continue;
-    
+
     function diff(a, b) {
       console.log(`${`    ${a.toFixed(4)}`.slice(-8)} => ${`    ${b.toFixed(4)}`.slice(-8)} (${`    ${(b - a).toFixed(4)}`.slice(-8)})`);
     }
@@ -183,9 +185,9 @@ class Diff {
         totalEffect3: inferTotalEffect3,
         // nightEffect: inferNightEffect,
         dayHelpRate: inferDayHelpRate, nightHelpRate: inferNightHelpRate
-      } = 
+      } =
         await f(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
-        
+
       effect1diff.add(totalEffect1, inferTotalEffect1)
       effect2diff.add(totalEffect2, inferTotalEffect2)
       effect3diff.add(totalEffect3, inferTotalEffect3)
@@ -199,7 +201,7 @@ class Diff {
       //   console.log(
       //     { sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit },
       //   );
-        
+
       //   diff(dayEffect, inferDayEffect)
       //   diff(nightEffect, inferNightEffect)
       //   diff(dayHelpRate, inferDayHelpRate)

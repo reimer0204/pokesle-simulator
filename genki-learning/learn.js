@@ -6,38 +6,31 @@ const fs = require('fs/promises');
 const readline = require('readline');
 
 const DATA = 1000000;
-const EPOCHS1 = 800;
-const EPOCHS2 = 300;
+const EPOCHS1 = 100;
+const EPOCHS2 = 100;
 // const EPOCHS = 10;
 
 (async () => {
-  
+
   const x2y = tf.sequential();
   // xToy.add(tf.layers.dense({units: 20, inputShape: [7]}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu', inputShape: [10]}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
-  x2y.add(tf.layers.dense({units: 300, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu', inputShape: [10]}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu'}));
+  x2y.add(tf.layers.dense({units: 60, activation: 'relu'}));
   // x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
   // x2y.add(tf.layers.dense({units: 40, activation: 'relu'}));
   x2y.add(tf.layers.dense({units: 3}));
   x2y.compile({optimizer: 'adam', loss: 'meanSquaredError'});
-  
+
   const y2z = tf.sequential();
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu', inputShape: [7]}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
-  y2z.add(tf.layers.dense({units: 100, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 30, activation: 'relu', inputShape: [7]}));
+  y2z.add(tf.layers.dense({units: 30, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 30, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 30, activation: 'relu'}));
+  y2z.add(tf.layers.dense({units: 30, activation: 'relu'}));
   // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
   // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
   // y2z.add(tf.layers.dense({units: 80, activation: 'relu'}));
@@ -59,12 +52,16 @@ const EPOCHS2 = 300;
         if (line.trim().length && xDataSet.length < DATA) {
           let values = line.trim().split(',').map(Number)
           let [sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate] = values;
-              //  sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, morningEffect, dayEffect, dayHelpRate, nightHelpRate
+          // sleepTime, checkFreq, morningHealGenki, p, speed, effect, bagSize, skillCeil, stockLimit, morningEffect, dayEffect, dayHelpRate, nightHelpRate
           // console.log(stockLimit);
           if (values.every(Number.isFinite)) {
+            totalEffect1 = totalEffect1 / 30
+            totalEffect2 = Math.pow(totalEffect2 / 50, 0.5)
+            totalEffect3 = Math.pow(totalEffect3 / 50, 0.5)
+
             xDataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 78, stockLimit / 2])
-            yDataSet.push([totalEffect1 / 30, totalEffect2 / 30, totalEffect3 / 30])
-            y2DataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, totalEffect1 / 30, totalEffect2 / 30, totalEffect3 / 30])
+            yDataSet.push([totalEffect1, totalEffect2, totalEffect3])
+            y2DataSet.push([sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, totalEffect1, totalEffect2, totalEffect3])
             zDataSet.push([dayHelpRate, nightHelpRate])
 
             // console.log(sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, morningEffect / 100, dayEffect / 100, dayHelpRate, nightHelpRate);
@@ -87,10 +84,10 @@ const EPOCHS2 = 300;
 
   await x2y.fit(xs, ys, { epochs: EPOCHS1 });
   await x2y.save('file://./x2y')
-  
-  // await y2z.fit(y2s, zs, { epochs: EPOCHS2 });
-  // await y2z.save('file://./y2z')
-  
+
+  await y2z.fit(y2s, zs, { epochs: EPOCHS2 });
+  await y2z.save('file://./y2z')
+
   // for(let i = 0; i < 10; i++) {
   //   let sleepTime = Math.floor(Math.random() * 48 + 1) / 4;
   //   let checkFreq = Math.floor(Math.random() * 18) + 2;
