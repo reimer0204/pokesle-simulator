@@ -4,7 +4,8 @@ import SubSkill from '../../data/sub-skill';
 const props = defineProps({
   subSkill: { required: true },
   short: { type: Boolean, default: false },
-  silverSeed: { type: Boolean, default: false }
+  silverSeed: { type: Boolean, default: false },
+  fix: { type: Boolean, default: false },
 })
 
 const subSkill = computed(() => SubSkill.map[props.subSkill]);
@@ -17,6 +18,7 @@ const subSkill = computed(() => SubSkill.map[props.subSkill]);
       `sub-skill-${subSkill.rarity}`,
       {
         short: props.short,
+        fix: props.fix,
       }
     ]"
   >
@@ -51,6 +53,10 @@ const subSkill = computed(() => SubSkill.map[props.subSkill]);
   &.sub-skill-1 { background-color: #F8F8F8; border: 1px #AAA solid; color: #333; }
   &.sub-skill-2 { background-color: #E0F0FF; border: 1px #9BD solid; color: #333; }
   &.sub-skill-3 { background-color: #FFF4D0; border: 1px #B97 solid; color: #422; }
+
+  &.fix {
+    color: #F00;
+  }
 
   img {
     position: absolute;

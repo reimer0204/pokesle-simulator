@@ -11,7 +11,6 @@ const defaultConfig = {
   // 初期設定が完了しているか
   initSetting: false,
   version: {
-    helpRate: null,
     evaluateTable: null,
   },
 
@@ -72,8 +71,12 @@ const defaultConfig = {
     bagOverOperation: true,
     researchRankMax: true,
 
+    fix: false,
     fixLv: null,
     fixEvolve: null,
+    fixSubSkillSeed: false,
+    fixSkillSeed: false,
+    fixBorder: 80,
 
     enableCooking: {},
   },
@@ -146,7 +149,7 @@ const defaultConfig = {
   workerNum: 4,
 
   sortableTable: {
-    pokemonList: [],
+    pokemonList2: { sort: [], hiddenColumn: [] },
   },
 }
 

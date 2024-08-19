@@ -34,6 +34,12 @@
       color: #666;
       font-size: 80%;
       font-weight: bold;
+
+      &:has(input[type="checkbox"]) {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+      }
     }
 
     // &:nth-child(2n+1) {

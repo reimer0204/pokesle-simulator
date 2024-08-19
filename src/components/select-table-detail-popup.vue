@@ -206,13 +206,11 @@ const percentilePosition = computed(() => {
           <tr>
             <th>げんき回復量</th>
             <td>
-              (<br>
-              &emsp;{{ ((result.selfMorningHealEffect || result.otherMorningHealEffect || 0) * 100).toFixed(1) }} ※起床時回復量<br>
-              &emsp;+ {{ ((result.selfDayHealEffect || result.otherDayHealEffect || config.selectEvaluate.healer / 100) * 100).toFixed(1) }} ※日中回復量<br>
-              )<br>
-              <template v-if="result.nature?.good == 'げんき回復量'">× 120% ※せいかく</template>
-              <template v-if="result.nature?.weak == 'げんき回復量'">× 88% ※せいかく</template>
-              ＝ {{ (result.healEffect * 100).toFixed(1) }}
+              {{ ((result.selfMorningHealEffect || result.otherMorningHealEffect || 0)).toFixed(1) }} ※有効なげんき回復量(増分の面積)<br>
+              <template v-if="result.nature?.good == 'げんき回復量'">× 120% ※せいかく<br></template>
+              <template v-else-if="result.nature?.weak == 'げんき回復量'">× 88% ※せいかく<br></template>
+              <template v-else>× 100% ※せいかく<br></template>
+              ＝ {{ (result.healEffect).toFixed(1) }}
             </td>
           </tr>
           <tr>

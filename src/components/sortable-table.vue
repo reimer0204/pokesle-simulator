@@ -1,22 +1,16 @@
 <script setup>
-import config from '../models/config';
-
 const props = defineProps({
   dataList: { type: Array },
   columnList: { type: Array, default: () => [] },
-  config: { type: String, default: null },
   fixColumn: { type: Number, default: 0 },
+  setting: { type: Object, default: () => ({}) },
 })
-const emits = defineEmits(['clickRow'])
+const emits = defineEmits(['clickRow', 'update:setting'])
 
-const sortInfo = ref([]);
+const sortInfo = ref(props.setting?.sort ?? []);
 const sortColors = ref([])
-
-if(props.config) {
-  if (Array.isArray(config.sortableTable?.[props.config])) {
-    sortInfo.value = config.sortableTable?.[props.config];
-  }
-}
+const editMode = ref(false);
+const hiddenColumn = reactive(new Set(props.setting?.hiddenColumn ?? []));
 
 watch(() => props.columnList, () => {
   sortInfo.value = sortInfo.value.filter(sort => columnMap.value[sort.key] !== undefined);
@@ -46,54 +40,62 @@ const convertedDataList = computed(() => {
 
 // ソートしたデータ
 const sortedDataList = computed(() => {
+  let result;
+
   if (!sortInfo.value?.length) {
     sortColors.value = [];
-    return convertedDataList.value;
-  }
+    result = convertedDataList.value;
 
-  // ソート
-  let result = convertedDataList.value.toSorted((a, b) => {
-    for(let sort of sortInfo.value) {
-      if ((a[sort.key] || 0) > (b[sort.key] || 0)) return sort.direction;
-      if ((a[sort.key] || 0) < (b[sort.key] || 0)) return -sort.direction;
-    }
-    return 0;
-  });
+  } else {
 
-  // 
-  sortColors.value = []
-  let minmax = {};
-  for(let data of result) {
-    for(let sort of sortInfo.value) {
-      if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key].percent) {
-        minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
-        minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
-        minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)
+    // ソート
+    result = convertedDataList.value.toSorted((a, b) => {
+      for(let sort of sortInfo.value) {
+        if ((a[sort.key] || 0) > (b[sort.key] || 0)) return sort.direction;
+        if ((a[sort.key] || 0) < (b[sort.key] || 0)) return -sort.direction;
       }
-    }
-  }
-  
-  let sringColorMap = new Map();
-  for(let data of result) {
-    let colors = {};
-    for(let sort of sortInfo.value) {
-      if (columnMap.value[sort.key] == null) continue;
-      let color;
-      if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
-        let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
-        color = `hsl(${rate * 120}deg 90% 95%)`
-      } else {
-        let text = String(data[sort.key] ?? '');
-        color = sringColorMap.get(text)
-        if (color == null) {
-          let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
-          color = `hsl(${code}deg 90% 95%)`
-          sringColorMap.set(text, color)
+      return 0;
+    });
+
+    //
+    sortColors.value = []
+    let minmax = {};
+    for(let data of result) {
+      for(let sort of sortInfo.value) {
+        if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key].percent) {
+          minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
+          minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
+          minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)
         }
       }
-      colors[sort.key] = color;
     }
-    sortColors.value.push(colors)
+
+    let sringColorMap = new Map();
+    for(let data of result) {
+      let colors = {};
+      for(let sort of sortInfo.value) {
+        if (columnMap.value[sort.key] == null) continue;
+        let color;
+        if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
+          let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
+          color = `hsl(${rate * 120}deg 90% 95%)`
+        } else {
+          let text = String(data[sort.key] ?? '');
+          color = sringColorMap.get(text)
+          if (color == null) {
+            let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
+            color = `hsl(${code}deg 90% 95%)`
+            sringColorMap.set(text, color)
+          }
+        }
+        colors[sort.key] = color;
+      }
+      sortColors.value.push(colors)
+    }
+  }
+
+  if (editMode.value) {
+    result = result.slice(0, 10);
   }
 
   return result;
@@ -126,31 +128,38 @@ function setSort(event, key) {
     else sortInfo.value = [];
   }
 
-  if(props.config) {
-    config.sortableTable[props.config] = sortInfo.value
-  }
+  emits('update:setting', {
+    sort: sortInfo.value,
+    hiddenColumn: [...hiddenColumn],
+  })
 }
 
 function clearSort(key) {
   sortInfo.value = sortInfo.value.filter(x => x.key != key);
-  if(props.config) {
-    config.sortableTable[props.config] = sortInfo.value
-  }
+
+  emits('update:setting', {
+    sort: sortInfo.value,
+    hiddenColumn: [...hiddenColumn],
+  })
 }
 
 const columnLeftList = ref([]);
 const thList = ref([])
 function getColumnLeft() {
-  let newColumnLeftList = [];
-  let sum = 0;
-  for(let e of thList.value) {
-    newColumnLeftList.push(`${sum}px`);
-    let { width, left, right } = e.getBoundingClientRect()
-    sum += right - left;
-  }
+  try {
+    let newColumnLeftList = [];
+    let sum = 0;
+    for(let e of thList.value) {
+      newColumnLeftList.push(`${sum}px`);
+      let { width, left, right } = e.getBoundingClientRect()
+      sum += right - left;
+    }
 
-  if (newColumnLeftList.length != columnLeftList.value.length || newColumnLeftList.some((x, i) => x != columnLeftList.value[i])) {
-    columnLeftList.value = newColumnLeftList;
+    if (newColumnLeftList.length != columnLeftList.value.length || newColumnLeftList.some((x, i) => x != columnLeftList.value[i])) {
+      columnLeftList.value = newColumnLeftList;
+    }
+  } catch(e) {
+    // ignore
   }
 }
 
@@ -158,18 +167,41 @@ onMounted(getColumnLeft)
 onUpdated(getColumnLeft)
 
 const enableColumnList = computed(() => {
-  return props.columnList;
+  let columnList = props.columnList;
+
+  if (!editMode.value) {
+    columnList = columnList.filter(column => {
+      return !hiddenColumn.has(column.key)
+    })
+  }
+
+  return columnList;
 })
 const enableColumnListLength = computed(() => enableColumnList.value.length)
+
+function toggleHiddenColumn(key) {
+  if(hiddenColumn.has(key)) {
+    hiddenColumn.delete(key)
+  } else if (enableColumnList.value.length) {
+    hiddenColumn.add(key)
+  }
+
+  emits('update:setting', {
+    sort: sortInfo.value,
+    hiddenColumn: [...hiddenColumn],
+  })
+}
+
 </script>
 
 <template>
   <table class="sortable-table">
     <thead>
       <tr>
-        <th v-for="(column, i) in columnList" ref="thList"
-          :class="{'fix-column': i < props.fixColumn}"
+        <th v-for="(column, i) in enableColumnList" ref="thList"
+          :class="{'fix-column': i < props.fixColumn, hidden: editMode && hiddenColumn.has(column.key)}"
           :style="{ left: i < props.fixColumn ? columnLeftList[i] : null }"
+          @contextmenu.prevent.stop="editMode = !editMode"
         >
           <slot :name="`header.${column.template ?? column.key}`" v-bind="{ column }">
             <div>
@@ -177,17 +209,26 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
               <template v-else>{{ column.name }}</template>
             </div>
           </slot>
-          <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
-            <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
-            <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
-          </svg>
+
+          <template v-if="editMode">
+            <svg viewBox="0 0 100 100" width="14" @click="toggleHiddenColumn(column.key)">
+              <path d="M10,50L90,50" stroke="#FFF" stroke-width="20" />
+              <path d="M50,10L50,90" stroke="#FFF" stroke-width="20" v-if="hiddenColumn.has(column.key)" />
+            </svg>
+          </template>
+          <template v-else>
+            <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
+              <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
+              <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
+            </svg>
+          </template>
         </th>
       </tr>
     </thead>
 
     <tbody>
       <tr v-for="(data, j) in sortedDataList">
-        <td v-for="(column, i) in columnList"
+        <td v-for="(column, i) in enableColumnList"
           :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
           :style="{
             left: columnLeftList[i],
@@ -240,14 +281,23 @@ const enableColumnListLength = computed(() => enableColumnList.value.length)
     position: sticky;
     top: 0;
     z-index: 1;
+    user-select: none;
 
     &.fix-column {
       z-index: 2;
     }
 
+    &.hidden {
+      opacity: 0.5;
+    }
+
     img {
       max-width: 2em;
       max-height: 2em;
+    }
+
+    svg:hover {
+      background-color: #FFF4;
     }
   }
 

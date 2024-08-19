@@ -257,7 +257,7 @@ function showSelectDetail(pokemon, after, lv) {
 
     <AsyncWatcherArea :asyncWatcher="asyncWatcher">
       <div class="scroll">
-        <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" config="pokemonList"
+        <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
           :fixColumn="config.pokemonList.fixScore ? 9 : 3"
         >
 
@@ -313,27 +313,11 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #skillLv="{ data }">
-            <div class="flex-row-center-center skill-lv" :class="{ 'skill-lv-auto': data.skillLv == null }">
-              {{ data.skillLv ?? Pokemon.map[data.name].evolveLv }}
-            </div>
+            <SkillLvLabel :pokemon="data" />
           </template>
 
           <template #subSkillList="{ data }">
-            <div class="sub-skill-list">
-              <div v-for="(subSkill, i) in data.subSkillList"
-                class="sub-skill"
-                :class="[
-                  `sub-skill-${SubSkill.map[subSkill].rarity}`,
-                  {
-                    short: config.pokemonList.subSkillShort,
-                    disabled: i >= data.enableSubSkillList.length,
-                  }
-                ]"
-              >
-                {{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}
-                <img v-if="subSkill != data.nextSubSkillList[i]" src="../img/sub-skill-seed.png" />
-              </div>
-            </div>
+            <SubSkillLabelList class="sub-skill-list" :pokemon="data" />
           </template>
 
           <template #natureName="{ data }">

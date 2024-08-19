@@ -99,21 +99,25 @@ class Diff {
   const y2z = await tf.loadLayersModel('file://./y2z/model.json');
 
   async function prototype2(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit) {
-    let [totalEffect1, totalEffect2, totalEffect3] = await x2y.predict(tf.tensor2d([
+    let [totalEffect2, totalEffect3] = await x2y.predict(tf.tensor2d([
       [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, p, speed / 3000, effect / 30, bagSize / 20, skillCeil / 78, stockLimit / 2]
     ])).data();
+
+    totalEffect2 = Math.pow(totalEffect2, 1 / 0.5)
+    totalEffect3 = Math.pow(totalEffect3, 1 / 0.5)
+
     const [dayHelpRate, nightHelpRate] = await y2z.predict(tf.tensor2d([
-      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, totalEffect1, totalEffect2, totalEffect3]
+      [sleepTime / 8.5, Math.min(sleepTime, 8.5) / 8.5, checkFreq / 10, morningHealGenki / 100, totalEffect2, totalEffect3]
     ])).data();
 
     // console.log(inferMorningTotalEffect, inferDayTotalEffect, dayHelpRate, nightHelpRate);
-    totalEffect1 *= 30
-    totalEffect2 = Math.pow(totalEffect2, 1 / 0.5) * 50
-    totalEffect3 = Math.pow(totalEffect3, 1 / 0.5) * 50
+    // totalEffect1 *= 30
+    totalEffect2 = totalEffect2 * 50
+    totalEffect3 = totalEffect3 * 50
     // dayEffect *= 30;
     // nightEffect *= 30;
 
-    return { totalEffect1, totalEffect2, totalEffect3, dayHelpRate, nightHelpRate }
+    return { totalEffect2, totalEffect3, dayHelpRate, nightHelpRate }
   }
 
   const CHECK_NUM = 100;
@@ -130,7 +134,7 @@ class Diff {
   let bagSize = Math.floor(Math.random() * 30) + 5;
   // let stockLimit = Math.floor(Math.random() * 2) + 1;
 
-  let effect1diff = new Diff('effect1', 1);
+  // let effect1diff = new Diff('effect1', 1);
   let effect2diff = new Diff('effect2', 1);
   let effect3diff = new Diff('effect3', 1);
   let rate1 = new Diff('rate1', 0.1);
@@ -179,8 +183,9 @@ class Diff {
     }
 
     async function check(f, countMap) {
+      // let inferTotalEffect1 = 0;
       let {
-        totalEffect1: inferTotalEffect1,
+        // totalEffect1: inferTotalEffect1,
         totalEffect2: inferTotalEffect2,
         totalEffect3: inferTotalEffect3,
         // nightEffect: inferNightEffect,
@@ -188,11 +193,11 @@ class Diff {
       } =
         await f(sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit);
 
-      effect1diff.add(totalEffect1, inferTotalEffect1)
+      // effect1diff.add(totalEffect1, inferTotalEffect1)
       effect2diff.add(totalEffect2, inferTotalEffect2)
       effect3diff.add(totalEffect3, inferTotalEffect3)
-      rate1.add(dayHelpRate, inferDayHelpRate, { inferTotalEffect1, inferTotalEffect2, inferTotalEffect3, sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit })
-      rate2.add(nightHelpRate, inferNightHelpRate, { inferTotalEffect1, inferTotalEffect2, inferTotalEffect3, sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit })
+      rate1.add(dayHelpRate, inferDayHelpRate, { inferTotalEffect2, inferTotalEffect3, sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit })
+      rate2.add(nightHelpRate, inferNightHelpRate, { inferTotalEffect2, inferTotalEffect3, sleepTime, checkFreq, morningHealGenki, p, speed, skillCeil, effect, bagSize, stockLimit })
 
       let dayDiff = inferDayHelpRate - dayHelpRate;
       let nightDiff = inferNightHelpRate - nightHelpRate;
@@ -226,7 +231,7 @@ class Diff {
     await check(prototype2, map2);
   }
 
-  effect1diff.showSummary();
+  // effect1diff.showSummary();
   effect2diff.showSummary();
   effect3diff.showSummary();
   rate1.showSummary();
