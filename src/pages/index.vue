@@ -104,8 +104,14 @@ import CookingSettingPopup from '../components/cooking-setting-popup.vue';
       <div>
         <label>育成仮定設定</label>
         <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.fixLv"> Lv</div>
-          <label><input type="checkbox" v-model="config.simulation.fixEvolve">進化後</label>
+          <div class="flex-row-start-center gap-10px">
+            <label><input type="checkbox" v-model="config.simulation.fix">仮定</label>
+            <div><input type="number" class="w-40px" v-model="config.simulation.fixLv"           :disabled="!config.simulation.fix"> Lv</div>
+          </div>
+          <label><input type="checkbox"            v-model="config.simulation.fixEvolve"       :disabled="!config.simulation.fix">進化後</label>
+          <label><input type="checkbox"            v-model="config.simulation.fixSubSkillSeed" :disabled="!config.simulation.fix">銀種</label>
+          <label><input type="checkbox"            v-model="config.simulation.fixSkillSeed"    :disabled="!config.simulation.fix">金種</label>
+          <div>厳選 <input type="number" class="w-40px" v-model="config.simulation.fixBorder"           :disabled="!config.simulation.fix"> %以上のみ</div>
         </div>
       </div>
 

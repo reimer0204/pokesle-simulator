@@ -21,7 +21,7 @@ class HelpRate {
   }
 
   static getHealEffect(pokemon, effect, config) {
-    return this.x2yModel.predict(tf.tensor2d([
+    let [effect1, effect2] = this.x2yModel.predict(tf.tensor2d([
       [
         config.sleepTime / 8.5, 
         Math.min(config.sleepTime, 8.5) / 8.5,
@@ -36,22 +36,10 @@ class HelpRate {
       ]
     ])).dataSync();
 
-    // 天井補正したスキル確率
-    let baseP = Math.pow(data.p > 0 ? data.p / (1 - Math.pow(1 - data.p, 40 * 3600 / data.speed)) : 1 / (40 * 3600 / data.speed), p[0]);
+    effect1 = effect1 * effect1 * 50;
+    effect2 = effect2 * effect2 * 50;
 
-    // 夜間手伝い回数
-    let nightSkillChanceNum = Math.min(data.bagSize + 4, config.sleepTime * 3600 / data.speed / 0.45);
-
-    let nightSkillP = 1 - Math.pow(1 - baseP, nightSkillChanceNum);
-
-    let totalEffect = (
-      Math.pow((1 - Math.pow(1 - baseP, data.baseDayHelpNum / (config.checkFreq - 1))) * (config.checkFreq - 1), p[1])
-      + Math.pow(nightSkillP, p[2])
-    ) * data.effect;
-
-    let result = Math.pow(totalEffect * p[3] + p[4], p[5]) + p[6]
-
-    return result;
+    return [effect1, effect2];
   }
   static getHelpRate(morningHealGenki, morningTotalEffect, dayTotalEffect, config) {
     let [day, night] = this.y2zModel.predict(tf.tensor2d([
@@ -60,8 +48,8 @@ class HelpRate {
         Math.min(config.sleepTime, 8.5) / 8.5,
         config.checkFreq / 10,
         morningHealGenki / 100,
-        morningTotalEffect, 
-        dayTotalEffect
+        morningTotalEffect / 50,
+        dayTotalEffect / 50
       ]
     ])).dataSync();
 

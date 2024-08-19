@@ -31,8 +31,10 @@ declare module 'vue' {
     SimulationDailyWeekTeamPopup: typeof import('./src/components/simulation-daily-week-team-popup.vue')['default']
     SimulationPrepareTeamPopup: typeof import('./src/components/simulation-prepare-team-popup.vue')['default']
     SimulationWeeklyTeamPopup: typeof import('./src/components/simulation-weekly-team-popup.vue')['default']
+    SkillLvLabel: typeof import('./src/components/status/skill-lv-label.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']
     SubSkillLabel: typeof import('./src/components/status/sub-skill-label.vue')['default']
+    SubSkillLabelList: typeof import('./src/components/status/sub-skill-label-list.vue')['default']
     ToggleArea: typeof import('./src/components/design/toggle-area.vue')['default']
   }
 }

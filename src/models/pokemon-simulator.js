@@ -69,26 +69,46 @@ class PokemonSimulator {
   memberToInfo(pokemon) {
 
     let base = Pokemon.map[pokemon.name];
+    let skill = Skill.map[base.skill];
     pokemon = {
       ...base,
       ...pokemon,
-      fixLv: this.config.simulation.fixLv ? Math.max(this.config.simulation.fixLv, pokemon.lv) : pokemon.lv,
+      fixLv: pokemon.fixable && this.config.simulation.fixLv ? Math.max(this.config.simulation.fixLv, pokemon.lv) : pokemon.lv,
       base,
+      box: pokemon,
       berry: Berry.map[base.berry],
       berryName: base.berry,
-      skill: Skill.map[base.skill],
+      skill,
       skillName: base.skill,
+      skillLv: pokemon.fixable && this.config.simulation.fixSkillSeed ? skill.effect.length : (pokemon.skillLv ?? base.evolveLv),
       // ...FOOD_EMPTY_MAP,
       eventBonus: this.config.simulation.eventBonusType == 'all' || this.config.simulation.eventBonusType == base.type,
     };
 
     // 有効なサブスキル計算
-    let enableSubSkillList = [];
-    if (pokemon.fixLv >=  10) enableSubSkillList.push(pokemon.subSkillList[0]);
-    if (pokemon.fixLv >=  25) enableSubSkillList.push(pokemon.subSkillList[1]);
-    if (pokemon.fixLv >=  50) enableSubSkillList.push(pokemon.subSkillList[2]);
-    if (pokemon.fixLv >=  75) enableSubSkillList.push(pokemon.subSkillList[3]);
-    if (pokemon.fixLv >= 100) enableSubSkillList.push(pokemon.subSkillList[4]);
+    let enableSubSkillLength = 0;
+    if (pokemon.fixLv >=  10) enableSubSkillLength++;
+    if (pokemon.fixLv >=  25) enableSubSkillLength++;
+    if (pokemon.fixLv >=  50) enableSubSkillLength++;
+    if (pokemon.fixLv >=  75) enableSubSkillLength++;
+    if (pokemon.fixLv >= 100) enableSubSkillLength++;
+
+    // 銀種
+    let subSkillList = [...pokemon.subSkillList];
+    if (pokemon.fixable && this.config.simulation.fixSubSkillSeed) {
+      let hit;
+      do {
+        hit = false;
+        subSkillList.slice(0, enableSubSkillLength).forEach((subSkill, i) => {
+          subSkill = SubSkill.map[subSkill];
+          if (subSkill?.next && !subSkillList.includes(subSkill.next)) {
+            hit = true;
+            subSkillList[i] = subSkill?.next;
+          }
+        })
+      } while(hit)
+    }
+    let enableSubSkillList = subSkillList.slice(0, enableSubSkillLength);
 
     // サブスキルのレベルアップ計算
     pokemon.nextSubSkillList = pokemon.subSkillList.map(subSkill => {
@@ -362,7 +382,7 @@ class PokemonSimulator {
 
     pokemon.morningHealEffect = totalMorningHealEffect
     pokemon.dayHealEffect = totalDayHealEffect
-    pokemon.healEffect = totalMorningHealEffect + totalDayHealEffect
+    pokemon.healEffect = totalMorningHealEffect
 
     pokemon.dayHelpNum   = (24 - this.config.sleepTime) * 3600 / pokemon.speed * helpRate.day;
     pokemon.nightHelpNum =       this.config.sleepTime  * 3600 / pokemon.speed * helpRate.night;
