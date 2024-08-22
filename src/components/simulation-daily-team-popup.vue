@@ -12,6 +12,9 @@ import NatureInfo from './status/nature-info.vue';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
 import PokemonBox from '../models/pokemon-box';
+import EvaluateTable from '../models/evaluate-table';
+
+let evaluateTable = EvaluateTable.load(config);
 
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
@@ -56,6 +59,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
         type: 'basic',
         pokemonList: pokemonList.slice(startIndex, endIndex),
         startIndex,
+        evaluateTable,
       }
     }
   )).flat(1);
@@ -178,8 +182,6 @@ async function configSimulation(config, progressCounter, fixIgnore = false) {
     }
   );
 
-  // console.log(bestResult);
-
   return bestResult;
 }
 
@@ -273,11 +275,6 @@ async function simulation() {
           <div>
             <label>対象</label>
             <div>上位 <input type="number" v-model="config.teamSimulation.maxRank"> 匹</div>
-          </div>
-
-          <div>
-            <label>結果</label>
-            <div>上位 <input type="number" v-model="config.teamSimulation.resultNum"> 件まで</div>
           </div>
 
           <div>

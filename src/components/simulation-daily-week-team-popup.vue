@@ -11,6 +11,9 @@ import NatureInfo from './nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
+import EvaluateTable from '../models/evaluate-table';
+
+let evaluateTable = EvaluateTable.load(config);
 
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
@@ -50,6 +53,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
         type: 'basic',
         pokemonList: pokemonList.slice(startIndex, endIndex),
         startIndex,
+        evaluateTable,
       }
     }
   )).flat(1);

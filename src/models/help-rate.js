@@ -56,9 +56,10 @@ class HelpRate {
     if (day < 1) day = 1;
     if (night < 1) night = 1;
 
-    return { day, night }
+    if (day > 1 / 0.45) day = 1 / 0.45;
+    if (night > 1 / 0.45) night = 1 / 0.45;
 
-    return ((Math.tanh(healEffect * p[0] + p[1]) + 1) / 2) ** p[2] * p[3] + p[4]
+    return { day, night }
   }
 
   static async inferParameter(config, progressCounter) {
