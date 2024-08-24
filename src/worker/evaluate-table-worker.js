@@ -50,6 +50,7 @@ self.addEventListener('message', async (event) => {
       if (foodList.includes(null)) continue;
 
       let scoreList = [];
+      let specialtyNumList = [];
       let promiseList = []
 
       for(const subSkillCombination in subSkillCombinationMap) {
@@ -67,15 +68,21 @@ self.addEventListener('message', async (event) => {
               console.log(eachResult);
               throw '計算エラーが発生しました。'
             }
-  
-            scoreList.push(...new Array(subSkillWeight * natureWeight).fill({
+            let fillBase = new Array(subSkillWeight * natureWeight);
+
+            scoreList.push(...fillBase.fill({
               score: eachResult.energyPerDay,
               baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
               pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
-              subSkillList,
-              eachResult,
+              // subSkillList,
+              // eachResult,
               // nature,
             }));
+            let specialtyScore;
+            if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
+            if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
+            if (pokemon.specialty == 'スキル') specialtyScore = eachResult.skillPerDay;
+            specialtyNumList.push(...fillBase.fill(specialtyScore))
   
             if(++count % 1000 == 0) {
               postMessage({
@@ -89,14 +96,18 @@ self.addEventListener('message', async (event) => {
       await Promise.all(promiseList);
       
       scoreList.sort((a, b) => a.score - b.score)
+      specialtyNumList.sort((a, b) => a - b);
       let percentile = [];
-      let eachResultList = [];
+      let specialtyNumList100 = [];
       for(let i = 0; i <= 100; i++) {
         percentile.push(scoreList[Math.round((scoreList.length - 1) * i / 100)]);
-        eachResultList.push(scoreList[Math.round((scoreList.length - 1) * i / 100)])
+        specialtyNumList100.push(specialtyNumList[Math.round((specialtyNumList.length - 1) * i / 100)]);
       }
 
-      result[pokemon.name][foodIndexList.join('')] = percentile
+      result[pokemon.name][foodIndexList.join('')] = {
+        percentile,
+        specialtyNumList: specialtyNumList100,
+      }
 
       scoreForHealerEvaluateList.push(percentile[config.selectEvaluate.supportBorder].baseScore)
       scoreForSupportEvaluateList.push(percentile[config.selectEvaluate.supportBorder].pickupEnergyPerHelp)

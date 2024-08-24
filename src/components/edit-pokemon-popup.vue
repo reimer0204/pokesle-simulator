@@ -203,15 +203,18 @@ watch(pokemon, async () => {
         selectResult.value.box[selectLv] = {};
         for(let after of selectResult.value.afterList) {
           let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
+          let sameFoodTargetList = targetList.filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
 
           let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-          let sameFoodList = targetList
-            .filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
-            .map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+          let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
+          let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+          let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
 
           selectResult.value.box[selectLv][after] = {
             same: sameList.length ? Math.max(...sameList) : null,
             food: sameFoodList.length ? Math.max(...sameFoodList) : null,
+            sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
+            foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
           }
         }
       }
@@ -393,8 +396,18 @@ function shareX() {
         <table v-if="selectResult">
           <thead>
             <tr>
+              <th></th>
+              <th></th>
+              <th :colspan="selectLvList.length + 1">総合スコア</th>
+              <th :colspan="selectLvList.length + 1">得意分野</th>
+            </tr>
+            <tr>
               <th>最終進化</th>
               <th></th>
+              <th v-for="lv in selectLvList" class="text-align-right">
+                <template v-if="lv == 'max'">最大</template>
+                <template v-else>Lv{{ lv }}</template>
+              </th>
               <th v-for="lv in selectLvList" class="text-align-right">
                 <template v-if="lv == 'max'">最大</template>
                 <template v-else>Lv{{ lv }}</template>
@@ -413,10 +426,13 @@ function shareX() {
                   <template v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after].score)">-</template>
                   <template v-else>{{ (selectResult.evaluateResult?.[lv]?.[after].score * 100).toFixed(1) }}%</template>
                 </td>
-                <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
+                <td v-for="lv in selectLvList"
+                  :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
+                  class="text-align-right"
                 >
-                  {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
-                </th> -->
+                  <template v-if="isNaN(selectResult.evaluateSpecialty?.[lv]?.[after].score)">-</template>
+                  <template v-else>{{ (selectResult.evaluateSpecialty?.[lv]?.[after].score * 100).toFixed(1) }}%</template>
+                </td>
               </tr>
               <tr>
                 <th>同種族</th>
@@ -424,17 +440,21 @@ function shareX() {
                   <template v-if="isNaN(selectResult.box?.[lv]?.[after].same)">-</template>
                   <template v-else>{{ (selectResult.box?.[lv]?.[after].same * 100).toFixed(1) }}%</template>
                 </td>
+                <td v-for="lv in selectLvList" class="text-align-right">
+                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].sameSpecialty)">-</template>
+                  <template v-else>{{ (selectResult.box?.[lv]?.[after].sameSpecialty * 100).toFixed(1) }}%</template>
+                </td>
               </tr>
               <tr>
-                <th>同種族同食材</th>
+                <th>同種族<br>同食材</th>
                 <td v-for="lv in selectLvList" class="text-align-right">
                   <template v-if="isNaN(selectResult.box?.[lv]?.[after].food)">-</template>
                   <template v-else>{{ (selectResult.box?.[lv]?.[after].food * 100).toFixed(1) }}%</template>
                 </td>
-                <!-- <th :class="{ best: selectResult.evaluateResult?.[column.lv]?.best.score == selectResult.evaluateResult?.[column.lv]?.[after].score }"
-                >
-                  {{ Math.round(selectResult.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}
-                </th> -->
+                <td v-for="lv in selectLvList" class="text-align-right">
+                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].foodSpecialty)">-</template>
+                  <template v-else>{{ (selectResult.box?.[lv]?.[after].foodSpecialty * 100).toFixed(1) }}%</template>
+                </td>
               </tr>
             </template>
           </tbody>

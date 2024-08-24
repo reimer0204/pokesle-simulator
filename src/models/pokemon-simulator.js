@@ -406,14 +406,13 @@ class PokemonSimulator {
     pokemon.berryHelpNum = Math.max(pokemon.dayHelpNum + pokemon.nightHelpNum - pokemon.normalHelpNum, 0);
 
     // きのみエナジー/日
-    pokemon.berryEnergyPerDay =
-      pokemon.berryEnergyPerHelp * (
-        pokemon.normalHelpNum * (1 - pokemon.fixedFoodRate)
-        + pokemon.berryHelpNum
-      )
+    let berryHelpNum = pokemon.normalHelpNum * (1 - pokemon.fixedFoodRate) + pokemon.berryHelpNum
+    pokemon.berryEnergyPerDay = pokemon.berryEnergyPerHelp * berryHelpNum
+    pokemon.berryNumPerDay = pokemon.berryNum * berryHelpNum;
 
     // 食材エナジー/日
     pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+    pokemon.foodNumPerDay = pokemon.foodNum * pokemon.normalHelpNum * pokemon.fixedFoodRate;
 
     // 食材の個数
     for(let food of Food.list) {

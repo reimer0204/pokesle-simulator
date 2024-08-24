@@ -52,6 +52,7 @@ const defaultConfig = {
 
   simulation: {
     selectInfo: true,
+    specialtySelectInfo: true,
     selectType: 0,
     selectBorder: 90,
     field: 'ワカクサ本島',

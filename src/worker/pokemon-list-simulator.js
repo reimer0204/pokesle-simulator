@@ -39,22 +39,14 @@ addEventListener('message', async (event) => {
       const pokemon = simulator.memberToInfo({...pokemonList[i]});
       pokemon.index = i + startIndex;
 
-      let fixEvolveHit = false;
+      let addPokemonList = []
 
+      // 厳選
       if (evaluateTable) {
-        pokemon.evaluateResult = {};
         pokemon.foodIndexList = pokemon.foodList.map(foodName => pokemon.base.foodList.findIndex(baseFood => baseFood.name == foodName))
         if (!pokemon.foodIndexList.includes(-1)) {
-          pokemon.evaluateResult.max = {
-            best: { name: null, score: 0 },
-          };
-          for(let lv of lvList) {
-            pokemon.evaluateResult[lv] = {
-              best: { name: null, score: 0 },
-            }
-          }
-
-          let addPokemonList = []
+          pokemon.evaluateResult = {};
+          pokemon.evaluateSpecialty = {};
 
           for(let after of pokemon.base.afterList) {
             if (!evaluateTable[after]) {
@@ -62,9 +54,11 @@ addEventListener('message', async (event) => {
             }
 
             let afterPokemon = Pokemon.map[after];
-            pokemon.evaluateResult.max[after] = { name: null, score: 0 }
+            let evaluateMaxScore = 0;
             
             for(let lv of lvList) {
+              if (pokemon.evaluateResult[lv] == null) pokemon.evaluateResult[lv] = {};
+              if (pokemon.evaluateSpecialty[lv] == null) pokemon.evaluateSpecialty[lv] = {};
               
               let foodList = pokemon.foodIndexList.slice(0, lv < 30 ? 1 : lv < 60 ? 2 : 3).map((foodIndex, i) => {
                 const food = Food.map[pokemon.base.foodList[foodIndex].name];
@@ -84,6 +78,7 @@ addEventListener('message', async (event) => {
 
               let subSkillList = SubSkill.useSilverSeed(pokemon.subSkillList).slice(0, subSkillNum);
               
+              // 計算
               let selectEvaluate = await evaluateSimulator.selectEvaluate(
                 afterPokemon, lv, 
                 foodList.slice(0, foodNum), 
@@ -91,89 +86,92 @@ addEventListener('message', async (event) => {
                 pokemon.nature, 
                 evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv]
               )
-              let { energyPerDay } = selectEvaluate
+              let { energyPerDay, berryNumPerDay, foodNumPerDay, skillPerDay } = selectEvaluate
               
-              let rate;
-              let ratio;
-              let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')]?.percentile ?? [];
-              let upperIndex = percentileList.findIndex(x => x >= energyPerDay)
-              if (upperIndex == -1) upperIndex = percentileList.length - 1;
-              let percentileUpper = Math.min(Math.max(upperIndex, 0), 100);
-              let percentileLower = percentileList[percentileUpper] <= energyPerDay ? percentileUpper
-                : Math.max(percentileUpper - 1, 0);
+              let specialtyScore;
+              if (afterPokemon.specialty == 'きのみ') specialtyScore = berryNumPerDay;
+              if (afterPokemon.specialty == '食材')   specialtyScore = foodNumPerDay;
+              if (afterPokemon.specialty == 'スキル') specialtyScore = skillPerDay;
 
-              if (percentileUpper == percentileLower) {
-                rate = percentileUpper / 100
-              } else {
-                rate = ((energyPerDay - percentileList[percentileLower]) / (percentileList[percentileUpper] - percentileList[percentileLower]) + percentileLower) / 100
+              function getRate(list, num) {
+                let max = list.length - 1;
+                let percentileLower = Math.min(Math.max(list.findLastIndex(x => x <= num), 0), max)
+                let percentileUpper = list[percentileLower] >= num ? percentileLower : Math.min(percentileLower + 1, max);
+
+                return percentileUpper == percentileLower ? percentileUpper / max
+                  : ((num - list[percentileLower]) / (list[percentileUpper] - list[percentileLower]) + percentileLower) / max
               }
-              ratio = energyPerDay / percentileList[config.simulation.selectBorder]
 
+              // 総合スコアの厳選状況
+              let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')]?.percentile ?? [];
+              let rate = getRate(percentileList, energyPerDay)
+              let ratio = energyPerDay / percentileList[config.simulation.selectBorder];
               let item = {
                 name: after,
-                rate,
-                ratio,
+                rate, ratio,
                 score: config.simulation.selectType == 0 ? rate : ratio,
                 energy: energyPerDay,
               };
               pokemon.evaluateResult[lv][after] = item
-              if (pokemon.evaluateResult[lv].best.score <= item.score) {
-                pokemon.evaluateResult[lv].best = item;
-              }
-              
-              if (pokemon.evaluateResult.max[after].score <= item.score) {
-                pokemon.evaluateResult.max[after] = item;
-              }
-              if (pokemon.evaluateResult.max.best.score <= item.score) {
-                pokemon.evaluateResult.max.best = item;
-              }
+              evaluateMaxScore = Math.max(evaluateMaxScore, item.score)
+
+              // とくい分野の厳選状況
+              let specialtyNumList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')]?.specialtyNumList ?? [];
+              let specialtyRate = getRate(specialtyNumList, specialtyScore)
+              let specialtyRatio = specialtyScore / specialtyNumList[config.simulation.selectBorder];
+              let specialtyItem = {
+                name: after,
+                rate: specialtyRate, 
+                ratio: specialtyRatio,
+                score: config.simulation.selectType == 0 ? specialtyRate : specialtyRatio,
+                num: specialtyScore,
+              };
+              pokemon.evaluateSpecialty[lv][after] = specialtyItem
             }
 
             // 最終進化想定シミュをする場合、別個体に切り出し
-            if (config.simulation.fix && config.simulation.fixEvolve && pokemon.evaluateResult.max[after].score >= config.simulation.fixBorder / 100) {
+            if (config.simulation.fix && config.simulation.fixEvolve && evaluateMaxScore >= config.simulation.fixBorder / 100) {
               const afterPokemon = simulator.memberToInfo({
                 ...pokemonList[i],
                 beforeName: pokemonList[i].name,
                 name: after,
-                fixable: true,
               });
-              afterPokemon.index = i + startIndex;
               
-              afterPokemon.evaluateResult = {
-                max: {
-                  [after]: pokemon.evaluateResult.max[after],
-                  best: pokemon.evaluateResult.max[after],
-                }
-              };
               for(let lv of lvList) {
                 afterPokemon.evaluateResult[lv] = {
                   [after]: pokemon.evaluateResult[lv][after],
-                  best: pokemon.evaluateResult[lv][after],
+                }
+                afterPokemon.evaluateSpecialty[lv] = {
+                  [after]: pokemon.evaluateSpecialty[lv][after],
                 }
               }
 
-              result.push(afterPokemon)
               addPokemonList.push(afterPokemon)
-              fixEvolveHit = true;
-            }
-          }
-
-          if (!fixEvolveHit) {
-            addPokemonList.push(pokemon);
-          }
-          
-          for(let pokemon of addPokemonList) {
-            pokemon.evaluate_max = pokemon.evaluateResult.max.best.score;
-            pokemon.evaluate_energy_max = pokemon.evaluateResult.max.best.energy;
-            for(let lv of lvList) {
-              pokemon[`evaluate_${lv}`] = pokemon.evaluateResult[lv].best.score;
-              pokemon[`evaluate_energy_${lv}`] = pokemon.evaluateResult[lv].best.energy;
             }
           }
         }
       }
 
-      if (!fixEvolveHit) {
+      if (addPokemonList.length == 0) {
+        addPokemonList.push(pokemon);
+      }
+
+      for(let pokemon of addPokemonList) {
+        pokemon.evaluateResult.max = {};
+        pokemon.evaluateSpecialty.max = {};
+        for(let after of Object.keys(pokemon.evaluateResult[lvList[0]])) {
+          pokemon.evaluateResult.max[after] = lvList.map(lv => pokemon.evaluateResult[lv][after]).sort((a, b) => b.score - a.score)[0];
+          pokemon.evaluateSpecialty.max[after] = lvList.map(lv => pokemon.evaluateSpecialty[lv][after]).sort((a, b) => b.score - a.score)[0];
+        }
+        for(let lv of [...lvList, 'max']) {
+          pokemon.evaluateResult[lv].best = Object.values(pokemon.evaluateResult[lv]).sort((a, b) => b.score - a.score)[0];
+          pokemon[`evaluate_${lv}`] = pokemon.evaluateResult[lv].best.score;
+          pokemon[`evaluate_energy_${lv}`] = pokemon.evaluateResult[lv].best.energy;
+          pokemon.evaluateSpecialty[lv].best = Object.values(pokemon.evaluateSpecialty[lv]).sort((a, b) => b.score - a.score)[0];
+          pokemon[`specialty_percentile_${lv}`] = pokemon.evaluateSpecialty[lv].best.score;
+          pokemon[`specialty_num_${lv}`] = pokemon.evaluateSpecialty[lv].best.num;
+        }
+
         result.push(simulator.memberToInfo({
           ...pokemon,
           fixable: config.simulation.fix && !config.simulation.fixEvolve && pokemon.evaluateResult?.max?.best?.score >= config.simulation.fixBorder / 100,

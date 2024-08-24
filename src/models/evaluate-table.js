@@ -162,11 +162,12 @@ export default class EvaluateTable {
         result[pokemonName][lv] = {};
 
         for(let foodCombination in pokemonEvaluateTable[pokemonName]) {
-          let pokemonResult = pokemonEvaluateTable[pokemonName][foodCombination];
+          let pokemonResult = pokemonEvaluateTable[pokemonName][foodCombination].percentile;
           result[pokemonName][lv][foodCombination] = {
             baseScore: Number(pokemonResult[fixedConfig.selectEvaluate.supportBorder].baseScore.toFixed(3)),
             pickupEnergyPerHelp: Number(pokemonResult[fixedConfig.selectEvaluate.supportBorder].pickupEnergyPerHelp.toFixed(3)),
             percentile: pokemonResult.map(x => Number(x.score.toFixed(3))),
+            specialtyNumList: pokemonEvaluateTable[pokemonName][foodCombination].specialtyNumList.map(x => Number(x.toFixed(3))),
           }
         }
       }
