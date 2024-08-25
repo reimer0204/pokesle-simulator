@@ -136,6 +136,8 @@ addEventListener('message', async (event) => {
                 beforeName: pokemonList[i].name,
                 name: after,
               });
+              afterPokemon.evaluateResult = {};
+              afterPokemon.evaluateSpecialty = {};
               
               for(let lv of lvList) {
                 afterPokemon.evaluateResult[lv] = {
