@@ -159,19 +159,21 @@ addEventListener('message', async (event) => {
       }
 
       for(let pokemon of addPokemonList) {
-        pokemon.evaluateResult.max = {};
-        pokemon.evaluateSpecialty.max = {};
-        for(let after of Object.keys(pokemon.evaluateResult[lvList[0]])) {
-          pokemon.evaluateResult.max[after] = lvList.map(lv => pokemon.evaluateResult[lv][after]).sort((a, b) => b.score - a.score)[0];
-          pokemon.evaluateSpecialty.max[after] = lvList.map(lv => pokemon.evaluateSpecialty[lv][after]).sort((a, b) => b.score - a.score)[0];
-        }
-        for(let lv of [...lvList, 'max']) {
-          pokemon.evaluateResult[lv].best = Object.values(pokemon.evaluateResult[lv]).sort((a, b) => b.score - a.score)[0];
-          pokemon[`evaluate_${lv}`] = pokemon.evaluateResult[lv].best.score;
-          pokemon[`evaluate_energy_${lv}`] = pokemon.evaluateResult[lv].best.energy;
-          pokemon.evaluateSpecialty[lv].best = Object.values(pokemon.evaluateSpecialty[lv]).sort((a, b) => b.score - a.score)[0];
-          pokemon[`specialty_percentile_${lv}`] = pokemon.evaluateSpecialty[lv].best.score;
-          pokemon[`specialty_num_${lv}`] = pokemon.evaluateSpecialty[lv].best.num;
+        if (pokemon.evaluateResult) {
+          pokemon.evaluateResult.max = {};
+          pokemon.evaluateSpecialty.max = {};
+          for(let after of Object.keys(pokemon.evaluateResult[lvList[0]])) {
+            pokemon.evaluateResult.max[after] = lvList.map(lv => pokemon.evaluateResult[lv][after]).sort((a, b) => b.score - a.score)[0];
+            pokemon.evaluateSpecialty.max[after] = lvList.map(lv => pokemon.evaluateSpecialty[lv][after]).sort((a, b) => b.score - a.score)[0];
+          }
+          for(let lv of [...lvList, 'max']) {
+            pokemon.evaluateResult[lv].best = Object.values(pokemon.evaluateResult[lv]).sort((a, b) => b.score - a.score)[0];
+            pokemon[`evaluate_${lv}`] = pokemon.evaluateResult[lv].best.score;
+            pokemon[`evaluate_energy_${lv}`] = pokemon.evaluateResult[lv].best.energy;
+            pokemon.evaluateSpecialty[lv].best = Object.values(pokemon.evaluateSpecialty[lv]).sort((a, b) => b.score - a.score)[0];
+            pokemon[`specialty_percentile_${lv}`] = pokemon.evaluateSpecialty[lv].best.score;
+            pokemon[`specialty_num_${lv}`] = pokemon.evaluateSpecialty[lv].best.num;
+          }
         }
 
         result.push(simulator.memberToInfo({
