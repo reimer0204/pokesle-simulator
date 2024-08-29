@@ -178,7 +178,7 @@ addEventListener('message', async (event) => {
 
         result.push(simulator.memberToInfo({
           ...pokemon,
-          fixable: config.simulation.fix && !config.simulation.fixEvolve && pokemon.evaluateResult?.max?.best?.score >= config.simulation.fixBorder / 100,
+          fixable: config.simulation.fix && (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100,
           index: i + startIndex,
         }))
       }
