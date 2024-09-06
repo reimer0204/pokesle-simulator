@@ -35,7 +35,7 @@ class PokemonSimulator {
     this.cookingList =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.list
       : Cooking.list.filter(c => c.type == this.config.simulation.cookingType && (config.simulation.enableCooking[c.name] || c.foodNum == 0));
-    
+
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};
     for(const food of Food.list) this.foodEnergyMap[food.name] = food.energy;
@@ -306,7 +306,7 @@ class PokemonSimulator {
       baseDayHelpNum += dayRemainTime / pokemon.speed;
     }
     pokemon.baseDayHelpNum = baseDayHelpNum;
-    
+
     // 性格のげんき回復係数
     pokemon.natureGenkiMultiplier = (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)
 
@@ -426,7 +426,7 @@ class PokemonSimulator {
     if (pokemon.fixedBag > 0) {
       let daySkillableNum = Math.min(pokemon.dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum);
       let nightSkillableNum = Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum);
-        
+
       if (pokemon.specialty == 'スキル') {
         let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
         let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
@@ -487,10 +487,11 @@ class PokemonSimulator {
             }
             helpCount *= pokemon.skillEffectRate;
 
+            energy = 0;
             for(let subPokemon of pokemonList) {
-              pokemon.berryEnergyPerDay += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.fixedFoodRate);
+              energy += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.fixedFoodRate);
               for(let foodName in subPokemon.foodPerHelp) {
-                pokemon[foodName] = (pokemon[foodName] ?? 0) + subPokemon.foodPerHelp[foodName] * helpCount * subPokemon.fixedFoodRate;
+                pokemon[foodName] = (pokemon[foodName] ?? 0) + subPokemon.foodPerHelp[foodName] * helpCount * subPokemon.fixedFoodRate * pokemon.skillPerDay;
               }
             }
 
@@ -534,7 +535,7 @@ class PokemonSimulator {
               let foodEnergy = 0;
               for(let food of Food.list) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
-                foodEnergy += 
+                foodEnergy +=
                   (
                     this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
                     + food.energy * (100 - this.config.simulation.foodGetRate) / 100
