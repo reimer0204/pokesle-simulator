@@ -274,7 +274,7 @@ const disabledCookingNum = computed(() => {
       <SettingButton title="フィールド">
         <template #label>
           <div class="inline-flex-row-center">
-            {{ config.simulation.field }}
+            今週：{{ config.simulation.field }}
             <template v-if="config.simulation.field == 'ワカクサ本島'">
               (
                 <template v-if="config.simulation.berryList[0]"><img :src="Berry.map[config.simulation.berryList[0]]?.img"></template><template v-else>?</template>
@@ -282,9 +282,11 @@ const disabledCookingNum = computed(() => {
                 <template v-if="config.simulation.berryList[2]"><img :src="Berry.map[config.simulation.berryList[2]]?.img"></template><template v-else>?</template>
               )
             </template>
-            <div class="ml-5px">
-              FB:{{ config.simulation.fieldBonus }}
-            </div>
+            FB:{{ config.simulation.fieldBonus }}
+
+            {{ config.simulation.cookingType }}<template v-if="config.simulation.cookingWeight != 1">(x{{ config.simulation.cookingWeight }})</template>
+
+            <template v-if="config.simulation.campTicket"> キャンチケ</template>
           </div>
         </template>
 
@@ -328,38 +330,31 @@ const disabledCookingNum = computed(() => {
                 <input type="number" class="w-40px" v-model="config.simulation.fieldBonus" step="1"> %
               </td>
             </tr>
+            
+            <tr>
+              <th>種類</th>
+              <td>
+                <select v-model="config.simulation.cookingType">
+                  <option value="カレー">カレー・シチュー</option>
+                  <option value="サラダ">サラダ</option>
+                  <option value="デザート">デザート・ドリンク</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <th>料理評価倍率</th>
+              <td>
+                <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1"> 倍
+                <div class="w-200px"><small>エナジーを捨ててレシピレベルを育てる場合などはこの値を大きくすると、料理だけ重視したシミュレーションが出来ます</small></div>
+              </td>
+            </tr>
+            
+            <tr>
+              <th>キャンプチケット</th>
+              <td><label><input type="checkbox" v-model="config.simulation.campTicket">使う</label></td>
+            </tr>
           </SettingTable>
         </div>
-
-      </SettingButton>
-      
-      <SettingButton title="料理">
-        <template #label>
-          <div class="inline-flex-row-center">
-            {{ config.simulation.cookingType }}
-            <template v-if="config.simulation.cookingWeight != 1">(x{{ config.simulation.cookingWeight }})</template>
-          </div>
-        </template>
-
-        <SettingTable>
-          <tr>
-            <th>種類</th>
-            <td>
-              <select v-model="config.simulation.cookingType">
-                <option value="カレー">カレー・シチュー</option>
-                <option value="サラダ">サラダ</option>
-                <option value="デザート">デザート・ドリンク</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th>評価倍率</th>
-            <td>
-              <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1"> 倍
-              <div class="w-200px"><small>エナジーを捨ててレシピレベルを育てる場合などはこの値を大きくすると、料理だけ重視したシミュレーションが出来ます</small></div>
-            </td>
-          </tr>
-        </SettingTable>
 
       </SettingButton>
       
