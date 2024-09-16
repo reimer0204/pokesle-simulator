@@ -12,6 +12,8 @@ const defaultConfig = {
   initSetting: false,
   version: {
     evaluateTable: null,
+    evaluateTableSleepTime: null,
+    evaluateTableCheckFreq: null,
   },
 
   // シミュレーション設定
@@ -29,6 +31,7 @@ const defaultConfig = {
     foodInfo: false,
     simulatedInfo: false,
     fixScore: false,
+    pageUnit: 50,
   },
 
   pokemonBox: {

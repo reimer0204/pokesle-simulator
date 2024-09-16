@@ -186,7 +186,7 @@ watch(pokemon, async () => {
     PokemonBox.check(pokemon)
     selectAsyncWatcher.run(async (progressCounter) => {
       await multiWorkerConfig;
-    
+
       selectResult.value = (await multiWorker.call(
         progressCounter,
         () => {
@@ -197,7 +197,7 @@ watch(pokemon, async () => {
           }
         }
       )).flat(1)[0];
-      
+
       selectResult.value.box = {};
       for(let selectLv of selectLvList) {
         selectResult.value.box[selectLv] = {};
@@ -382,7 +382,7 @@ function shareX() {
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <input type="number" v-model="pokemon.sleepTime" placeholder="省略可"/>
 
-    
+
       <div>色違い</div>
       <div></div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
@@ -391,7 +391,7 @@ function shareX() {
 
     <ToggleArea class="mt-20px" open>
       <template #headerText>厳選情報</template>
-      
+
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
         <table v-if="selectResult">
           <thead>
@@ -486,7 +486,7 @@ function shareX() {
 
     header {
       font-weight: bold;
-      background-color: rgb(54, 73, 150);
+      background-color: rgb(66, 85, 158);
       color: #FFF;
       padding: 3px 5px;
     }
@@ -513,7 +513,7 @@ function shareX() {
 
       thead {
         tr {
-          background-color: rgb(54, 73, 150);
+          background-color: rgb(66, 85, 158);
           color: #FFF;
         }
       }

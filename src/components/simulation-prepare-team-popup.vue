@@ -267,7 +267,7 @@ async function simulation() {
 
     <template #bodyWrapper>
       <div class="flex-column-start-start flex-110 p-20px gap-5px">
-      
+
         <BaseAlert>
           ベータ版です。何となくで編成するよりは良い結果だと思いますが、理論値ではないと思います。
         </BaseAlert>
@@ -306,8 +306,8 @@ async function simulation() {
             </div>
           </div>
 
-          
-          
+
+
           <div>
             <label>キャンチケ</label>
             <div>
@@ -334,7 +334,7 @@ async function simulation() {
             </div>
           </div>
         </SettingList>
-        
+
         <SettingList class="align-self-stretch">
           <div class="flex-110 w-100 flex-column-start-stretch">
             <label>所持食材</label>
@@ -389,7 +389,7 @@ async function simulation() {
                       <td v-for="pokemon in team.pokemonList"><LvLabel :pokemon="pokemon" /></td>
                       <td></td>
                     </tr>
-                    
+
                     <tr>
                       <th>食材</th>
                       <td v-for="pokemon in team.pokemonList">
@@ -450,7 +450,7 @@ async function simulation() {
                       </td>
                       <td></td>
                     </tr>
-                    
+
                     <template v-if="config.teamSimulation.result.food">
                       <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
                         <th><img :src="food.img"></th>
@@ -471,7 +471,7 @@ async function simulation() {
                 </table>
               </ToggleArea>
             </template>
-            
+
             <ToggleArea class="w-100">
               <template #headerText>月曜以降チーム(料理以外の最良チーム)</template>
               <table>
@@ -493,7 +493,7 @@ async function simulation() {
                     <td v-for="pokemon in simulationResult.energyTeam.pokemonList">{{ pokemon?.lv }}</td>
                     <td></td>
                   </tr>
-                  
+
                   <tr>
                     <th>食材</th>
                     <td v-for="pokemon in simulationResult.energyTeam.pokemonList">
@@ -554,7 +554,7 @@ async function simulation() {
                       {{ Math.round(simulationResult.energyTeam.pokemonList.reduce((a, pokemon) => a + pokemon.skillEnergyPerDay, 0)).toLocaleString() }}
                     </td>
                   </tr>
-                  
+
                   <template v-if="config.teamSimulation.result.food">
                     <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
                       <th><img :src="food.img"></th>
@@ -574,7 +574,7 @@ async function simulation() {
                 </tbody>
               </table>
             </ToggleArea>
-            
+
             <template v-for="cookingType in simulationResult.cookingTypeList">
               <ToggleArea class="w-100">
                 <template #headerText>料理シミュレーション({{ cookingType }})</template>
@@ -600,7 +600,7 @@ async function simulation() {
                     </tr>
                     <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
                       <th><img :src="food.img"></th>
-                      
+
                       <td v-for="cooking in simulationResult.eachTypeResult[cookingType].cookingList">
                         {{ cooking.beforeFoodNum[food.name].toFixed(1) }}
                         <span v-if="cooking.useFoodNum?.[food.name]" class="minus"><br>- {{ cooking.useFoodNum?.[food.name].toFixed(1) }}</span>
@@ -676,7 +676,7 @@ async function simulation() {
       th {
         font-weight: bold;
         white-space: nowrap;
-        background: rgb(54, 73, 150);
+        background: rgb(66, 85, 158);
         color: #FFF;
         border: 1px #FFF solid;
       }

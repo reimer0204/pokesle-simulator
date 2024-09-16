@@ -95,6 +95,14 @@ async function createPokemonList(setConfig = false) {
 }
 
 // 設定が変わる度に再計算する
+watch(() => config.sleepTime, () => {
+  evaluateTable = EvaluateTable.load(config);
+  createPokemonList(true);
+})
+watch(() => config.checkFreq, () => {
+  evaluateTable = EvaluateTable.load(config);
+  createPokemonList(true);
+})
 watch(config.simulation, () => createPokemonList(true), { immediate: true })
 
 watch(PokemonBox.watch, () => createPokemonList())
@@ -253,350 +261,552 @@ function showSelectDetail(pokemon, after, lv) {
   })
 }
 
+const disabledCookingNum = computed(() => {
+  return Object.values(config.simulation.enableCooking).filter(x => x === false).length;
+})
 
 </script>
 
 <template>
   <div class="page">
 
-    <h2>シミュレーション設定</h2>
-
-    <SettingList>
-
-      <div>
-        <label>フィールド</label>
-        <div class="flex-column-start-start gap-5px" style="width: 210px;">
-          <select v-model="config.simulation.field">
-            <option value="ワカクサ本島">ワカクサ本島</option>
-            <option value="シアンの砂浜">シアンの砂浜</option>
-            <option value="トープ洞窟">トープ洞窟</option>
-            <option value="ウノハナ雪原">ウノハナ雪原</option>
-            <option value="ラピスラズリ湖畔">ラピスラズリ湖畔</option>
-          </select>
-
-          <div v-if="config.simulation.field == 'ワカクサ本島'" class="flex-row-start-center gap-5px">
-            <template v-for="i in 3">
-              <select :value="config.simulation.berryList[i - 1]" @input="config.simulation.berryList[i - 1] = $event.target.value || null">
-                <option value="">-</option>
-                <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}</option>
-              </select>
+    <div class="flex-row-start-start flex-wrap gap-5px">
+      <SettingButton title="フィールド">
+        <template #label>
+          <div class="inline-flex-row-center">
+            {{ config.simulation.field }}
+            <template v-if="config.simulation.field == 'ワカクサ本島'">
+              (
+                <template v-if="config.simulation.berryList[0]"><img :src="Berry.map[config.simulation.berryList[0]]?.img"></template><template v-else>?</template>
+                <template v-if="config.simulation.berryList[1]"><img :src="Berry.map[config.simulation.berryList[1]]?.img"></template><template v-else>?</template>
+                <template v-if="config.simulation.berryList[2]"><img :src="Berry.map[config.simulation.berryList[2]]?.img"></template><template v-else>?</template>
+              )
             </template>
+            <div class="ml-5px">
+              FB:{{ config.simulation.fieldBonus }}
+            </div>
           </div>
-          <div v-else class="flex-row-start-center gap-5px">
-            <template v-for="berry in Field.map[config.simulation.field].berryList">
-              <select disabled>
-                <option value="">{{ berry }}</option>
-              </select>
-            </template>
-          </div>
-          
-          <div class="flex-row-start-center gap-5px">
-            <label>フィールドボーナス</label>
-            <input type="number" class="w-80px" v-model="config.simulation.fieldBonus" step="5">
-          </div>
-        </div>
-      </div>
+        </template>
 
-      <div>
-        <label>料理</label>
-        <div>
-          <select v-model="config.simulation.cookingType">
-            <option value="カレー">カレー・シチュー</option>
-            <option value="サラダ">サラダ</option>
-            <option value="デザート">デザート・ドリンク</option>
-          </select>
-
-          <div class="flex-row-start-center gap-5px mt-5px">
-            <label>倍率</label>
-            <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1">
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label>キャンチケ</label>
-        <div>
-          <label><input type="checkbox" v-model="config.simulation.campTicket">使う</label>
-        </div>
-      </div>
-
-      <div>
-        <label>イベントボーナス</label>
         <div class="flex-column-start-start gap-5px">
-          <select :value="config.simulation.eventBonusType" @input="config.simulation.eventBonusType = $event.target.value || null">
-            <option value="">-</option>
-            <option value="all">全員</option>
-            <option v-for="berry in Berry.list" :value="berry.type">{{ berry.type }}</option>
-          </select>
-          <div style="display: grid; grid-template-columns: max-content max-content max-content; align-items: center; gap: 0 5px;">
-            <label>食材ボーナス</label>
-            <label>スキル倍率</label>
-            <label>スキルレベル</label>
-            <input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood" >
-            <input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillRate" step="0.1" >
-            <input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv" >
-          </div>
+          <SettingTable>
+            <tr>
+              <th>フィールド</th>
+              <td>
+                <select v-model="config.simulation.field">
+                  <option value="ワカクサ本島">ワカクサ本島</option>
+                  <option value="シアンの砂浜">シアンの砂浜</option>
+                  <option value="トープ洞窟">トープ洞窟</option>
+                  <option value="ウノハナ雪原">ウノハナ雪原</option>
+                  <option value="ラピスラズリ湖畔">ラピスラズリ湖畔</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <th>きのみ</th>
+              <td>
+                <div v-if="config.simulation.field == 'ワカクサ本島'" class="flex-row-start-center gap-5px">
+                  <template v-for="i in 3">
+                    <select :value="config.simulation.berryList[i - 1]" @input="config.simulation.berryList[i - 1] = $event.target.value || null">
+                      <option value="">-</option>
+                      <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}</option>
+                    </select>
+                  </template>
+                </div>
+                <div v-else class="flex-row-start-center gap-5px">
+                  <template v-for="berry in Field.map[config.simulation.field].berryList">
+                    <select disabled>
+                      <option value="">{{ berry }}</option>
+                    </select>
+                  </template>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>フィールドボーナス</th>
+              <td>
+                <input type="number" class="w-40px" v-model="config.simulation.fieldBonus" step="1"> %
+              </td>
+            </tr>
+          </SettingTable>
         </div>
-      </div>
 
-      <div>
-        <label>いつ育運用</label>
-        <div>
-          <label><input type="checkbox" v-model="config.simulation.bagOverOperation">する</label>
-          <small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small>
-        </div>
-      </div>
-
-      <div>
-        <label>育成仮定設定</label>
-        <div>
-          <div class="flex-row-start-center gap-10px">
-            <label><input type="checkbox" v-model="config.simulation.fix">仮定</label>
-            <div><input type="number" class="w-40px" v-model="config.simulation.fixLv"           :disabled="!config.simulation.fix"> Lv</div>
-          </div>
-          <label><input type="checkbox"            v-model="config.simulation.fixEvolve"       :disabled="!config.simulation.fix">進化後</label>
-          <label><input type="checkbox"            v-model="config.simulation.fixSubSkillSeed" :disabled="!config.simulation.fix">銀種</label>
-          <label><input type="checkbox"            v-model="config.simulation.fixSkillSeed"    :disabled="!config.simulation.fix">金種</label>
-          <div>厳選 <input type="number" class="w-40px" v-model="config.simulation.fixBorder"           :disabled="!config.simulation.fix"> %以上のみ</div>
-        </div>
-      </div>
-
-      <div>
-        <label>厳選設定</label>
-        <div>
-          <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
-            <option value="0">パーセンタイル</option>
-            <option value="1">目標スコア比</option>
-          </select>
-          <div v-if="config.simulation.selectType == 1">
-            <input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %
-          </div>
-          <small class="w-120px">
-            パーセンタイル:厳選度<br>
-            目標スコア比:指定パーセンタイルの個体とのスコア比
-          </small>
-        </div>
-      </div>
-
-      <div>
-        <label>その他設定</label>
-        <div class="flex-column gap-5px">
-          <div><button @click="Popup.show(CookingSettingPopup)">料理設定</button></div>
-          <div><button @click="Popup.show(DetailSettingPopup)">詳細設定</button></div>
-        </div>
-      </div>
+      </SettingButton>
       
-    </SettingList>
+      <SettingButton title="料理">
+        <template #label>
+          <div class="inline-flex-row-center">
+            {{ config.simulation.cookingType }}
+            <template v-if="config.simulation.cookingWeight != 1">(x{{ config.simulation.cookingWeight }})</template>
+          </div>
+        </template>
 
-    <div class="pokemon-list">
+        <SettingTable>
+          <tr>
+            <th>種類</th>
+            <td>
+              <select v-model="config.simulation.cookingType">
+                <option value="カレー">カレー・シチュー</option>
+                <option value="サラダ">サラダ</option>
+                <option value="デザート">デザート・ドリンク</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>評価倍率</th>
+            <td>
+              <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1"> 倍
+              <div class="w-200px"><small>エナジーを捨ててレシピレベルを育てる場合などはこの値を大きくすると、料理だけ重視したシミュレーションが出来ます</small></div>
+            </td>
+          </tr>
+        </SettingTable>
 
-      <div class="flex-row-start-center gap-10px">
-        <label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label>
-        <label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選情報</label>
-        <label>
-          <input type="checkbox" v-model="config.simulation.specialtySelectInfo" />
-          得意厳選情報
-          <HelpButton title="得意厳選とは" @click.stop markdown="
-            1日に稼げるとくい分野の数値だけに限り評価した値です。きのみ得意の場合はきのみの数、食材得意の場合は食材の数、スキル得意の場合はスキルの発動期待値で評価しています。
-          " />
-        </label>
-        <label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選元値表示</label>
-        <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label>
-        <label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label>
-        <label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label>
-        <label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label>
-        <label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで固定</label>
-      </div>
+      </SettingButton>
+      
+      <SettingButton title="イベントボーナス">
+        <template #label>
+          <div class="inline-flex-row-center">
+            イベントボーナス：<template v-if="config.simulation.eventBonusType == 'all'">全員</template><template v-else>{{ config.simulation.eventBonusType || 'なし' }}</template>
+            <template v-if="config.simulation.eventBonusType">
+              <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
+              <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
+              <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
+            </template>
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr>
+            <th>適用タイプ</th>
+            <td>
+              <select :value="config.simulation.eventBonusType" @input="config.simulation.eventBonusType = $event.target.value || null">
+                <option value="">-</option>
+                <option value="all">全員</option>
+                <option v-for="berry in Berry.list" :value="berry.type">{{ berry.type }}</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>食材</th>
+            <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood" > 個追加</td>
+          </tr>
+          <tr>
+            <th>スキル倍率</th>
+            <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillRate" step="0.1" > 倍</td>
+          </tr>
+          <tr>
+            <th>スキルレベル</th>
+            <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv" > Lv追加</td>
+          </tr>
+        </SettingTable>
+
+      </SettingButton>
+      
+      <SettingButton title="いつ育運用">
+        <template #label>
+          <div class="inline-flex-row-center">
+            いつ育運用: {{ config.simulation.bagOverOperation ? 'する' : 'しない' }}
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr>
+            <th>いつ育育成</th>
+            <td>
+              <label><input type="checkbox" v-model="config.simulation.bagOverOperation">する</label>
+              <div><small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small></div>
+            </td>
+          </tr>
+        </SettingTable>
+      </SettingButton>
+
+      
+      <SettingButton title="育成仮定">
+        <template #label>
+          <div class="inline-flex-row-center">
+            育成仮定: {{ config.simulation.fix ? 'する' : 'しない' }}
+            <template v-if="config.simulation.fix">(
+              厳選{{ config.simulation.fixBorder }}%以上
+              {{ config.simulation.fixLv }}Lv
+              <template v-if="config.simulation.fixEvolve"> 進化 </template>
+              <template v-if="config.simulation.fixSubSkillSeed"> 銀種 </template>
+              <template v-if="config.simulation.fixSkillSeed"> 金種 </template>
+            )</template>
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr>
+            <th>育成仮定</th>
+            <td>
+              <label><input type="checkbox" v-model="config.simulation.fix">する</label>
+            </td>
+          </tr>
+          <tr>
+            <th>仮定条件</th>
+            <td>
+              <div>厳選 <input type="number" class="w-40px" v-model="config.simulation.fixBorder"           :disabled="!config.simulation.fix"> %以上のみ</div>
+              <small>厳選度が指定以上のポケモンのみ仮定します</small>
+            </td>
+          </tr>
+          <tr>
+            <th>Lv</th>
+            <td>
+              <div><input type="number" class="w-40px" v-model="config.simulation.fixLv"           :disabled="!config.simulation.fix"> Lvまで育てたと仮定</div>
+              <small>指定レベル以上のポケモンはそのままでシミュレーションします</small>
+            </td>
+          </tr>
+          <tr>
+            <th>進化</th>
+            <td>
+              <div><label><input type="checkbox"            v-model="config.simulation.fixEvolve"       :disabled="!config.simulation.fix">最終進化にしたと仮定</label></div>
+              <small>イーブイ等、複数の進化先がある場合全てをシミュレーションします</small>
+            </td>
+          </tr>
+          <tr>
+            <th>サブスキルの種</th>
+            <td>
+              <div><label><input type="checkbox"            v-model="config.simulation.fixSubSkillSeed" :disabled="!config.simulation.fix">最大まで与えたものとして仮定</label></div>
+              <small>サブスキルの種を与えたと仮定</small>
+            </td>
+          </tr>
+          <tr>
+            <th>メインスキルの種</th>
+            <td>
+              <div><label><input type="checkbox"            v-model="config.simulation.fixSkillSeed" :disabled="!config.simulation.fix">最大まで与えたものとして仮定</label></div>
+              <small>メインスキルの種を与えたと仮定</small>
+            </td>
+          </tr>
+        </SettingTable>
+        
+      </SettingButton>
+      
+      <SettingButton title="厳選設定">
+        <template #label>
+          <div class="inline-flex-row-center">
+            厳選設定:
+            <template v-if="config.simulation.selectType == 0">パーセンタイル</template>
+            <template v-if="config.simulation.selectType == 1">目標スコア比</template>
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr>
+            <th>厳選設定</th>
+            <td>
+              <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
+                <option value="0">パーセンタイル</option>
+                <option value="1">目標スコア比</option>
+              </select>
+            </td>
+          </tr>
+          <tr v-if="config.simulation.selectType == 1">
+            <th>目標スコア</th>
+            <td>
+              <div><input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %</div>
+              <div class="w-300px">
+                <small>
+                  例えば90%にすると、厳選度90%の個体に対しこの個体が稼ぐエナジーが何%あるか計算します。<br>
+                  パーセンタイルの場合上位80%の時点で理論値と大差なかったり逆にものすごく差がある可能性がありますが、目標スコア比で見るとこの問題が回避できます。
+                </small>
+              </div>
+            </td>
+          </tr>
+        </SettingTable>
+      </SettingButton>
+      
+      <SettingButton @click="Popup.show(CookingSettingPopup)">
+        <template #label>
+          <div class="inline-flex-row-center">
+            料理設定
+            <template v-if="disabledCookingNum">(無効:{{ disabledCookingNum }}種)</template>
+          </div>
+        </template>
+      </SettingButton>
+      
+      <SettingButton title="その他設定">
+        <template #label>
+          <div class="inline-flex-row-center">
+            その他設定
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr>
+            <th>なべの大きさ</th>
+            <td>
+              <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
+            </td>
+          </tr>
+          <tr>
+            <th>食材ゲット採用率</th>
+            <td>
+              <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
+              <small>
+                食材の何%を<br>料理に使えるか
+              </small>
+            </td>
+          </tr>
+          <tr>
+            <th>ゆめのかけら評価</th>
+            <td>
+              <div><input type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1"> %</div>
+              <small>
+                0%:エナジーだけで評価<br>
+                100%:ゆめのかけらで評価<br>
+                50%:どっちもほどほど
+              </small>
+            </td>
+          </tr>
+          <tr>
+            <th>リサーチランク</th>
+            <td>
+              <div><label><input type="checkbox" v-model="config.simulation.researchRankMax">カンスト</label></div>
+              <small class="w-100px">リサボをゆめのかけらとして評価するか</small>
+            </td>
+          </tr>
+          <tr>
+            <th>睡眠時間</th>
+            <td>
+              <input class="w-50px" type="number" step="0.1" v-model="config.sleepTime"> 時間
+              <DangerAlert class="mt-5px">睡眠時間を変更すると厳選情報の再計算が必要です</DangerAlert>
+            </td>
+          </tr>
+          <tr>
+            <th>チェック頻度</th>
+            <td>
+              <input class="w-50px" type="number" step="1" v-model="config.checkFreq"> 回
+              <DangerAlert class="mt-5px">チェック頻度を変更すると厳選情報の再計算が必要です</DangerAlert>
+            </td>
+          </tr>
+        </SettingTable>
+      </SettingButton>
+      
+      <SettingButton title="表示設定">
+        <template #label>
+          <div class="inline-flex-row-center">
+            表示設定
+          </div>
+        </template>
+
+        <SettingTable>
+          <tr><th>サブスキル名省略</th><td><label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label></td></tr>
+          <tr><th>厳選度</th><td><label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選度</label></td></tr>
+          <tr><th>とくい厳選度</th>
+            <td>
+              <label><input type="checkbox" v-model="config.simulation.specialtySelectInfo" />とくい厳選度</label>
+              <div class="w-300px">
+                <small>とくい分野の数値だけに限り評価した値です。<br>きのみ得意の場合はきのみの数、食材得意の場合は食材の数、スキル得意の場合はスキルの発動期待値で評価しています。</small>
+              </div>
+            </td>
+          </tr>
+          <tr><th>厳選エナジー表示</th><td><label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選元値表示</label></td></tr>
+          <tr><th>厳選詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label></td></tr>
+          <tr><th>基礎情報</th><td><label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label></td></tr>
+          <tr><th>食材数</th><td><label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label></td></tr>
+          <tr><th>シミュ詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label></td></tr>
+          <tr><th>スコアまで列固定</th><td><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></td></tr>
+          <tr>
+            <th>1ページ表示件数</th>
+            <td><div><input type="number" class="w-80px" v-model="config.pokemonList.pageUnit"> 件</div></td>
+          </tr>
+        </SettingTable>
+      </SettingButton>
+    </div>
+
+    <div class="pokemon-list mt-10px">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
-        <div class="scroll">
-          <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
-            :fixColumn="config.pokemonList.fixScore ? 9 : 3"
-          >
+        <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
+          :fixColumn="config.pokemonList.fixScore ? 9 : 3"
+          :pager="config.pokemonList.pageUnit"
+          scroll
+        >
 
-            <template #edit="{ data }">
-              <div class="flex-row-start-center gap-3px">
-                <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
-                  <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
-                </svg>
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, -1); createPokemonList()">
+          <template #edit="{ data }">
+            <div class="flex-row-start-center gap-3px">
+              <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
+                <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
+              </svg>
+              <template v-if="(config.sortableTable.pokemonList2.sort.length == 1 && config.sortableTable.pokemonList2.sort[0].key == 'index') || config.sortableTable.pokemonList2.sort.length == 0">
+                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
                   <path d="M0,70 L50,20 L100,70z" fill="#888" />
                 </svg>
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, 1); createPokemonList()">
+                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
                   <path d="M0,30 L50,80 L100,30z" fill="#888" />
                 </svg>
-                <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.index)">
-                  <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
-                </svg>
-                <div title="チームのシミュレーションで固定・除外する設定">
-                  <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
-                  <svg v-if="data.fix == null" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
-                  <svg v-if="data.fix ==    1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
-                  <svg v-if="data.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
+              </template>
+              <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.index)">
+                <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
+              </svg>
+              <div title="チームのシミュレーションで固定・除外する設定">
+                <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
+                <svg v-if="data.fix == null" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
+                <svg v-if="data.fix ==    1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
+                <svg v-if="data.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
+              </div>
+            </div>
+          </template>
+
+          <template #index="{ data }">
+            {{ data.index + 1 }}
+          </template>
+
+          <template #name="{ data }">
+            <div :class="{ shiny: data.shiny }">
+              <NameLabel :pokemon="data" /><template v-if="data.bagOverOperation">(いつ育)</template>
+            </div>
+          </template>
+
+          <template #lv="{ data }">
+            <LvLabel :pokemon="data" />
+          </template>
+
+          <template #foodList="{ data }">
+            <div class="flex-row-center-center gap-2px">
+              <div v-for="(food, i) of data.foodList"
+                class="food"
+                :class="{
+                  disabled: i >= data.enableFoodList.length,
+                  error: Pokemon.map[data.name].foodMap[food]?.numList[i] == null,
+                }"
+              >
+                <img :src="Food.map[food].img" />
+                <div class="num">{{ Pokemon.map[data.name].foodMap[food]?.numList[i] }}</div>
+              </div>
+            </div>
+          </template>
+
+          <template #skillLv="{ data }">
+            <SkillLvLabel :pokemon="data" />
+          </template>
+
+          <template #subSkillList="{ data }">
+            <SubSkillLabelList class="sub-skill-list" :pokemon="data" />
+          </template>
+
+          <template #natureName="{ data }">
+            <NatureInfo :nature="data.nature" />
+          </template>
+
+          <template #evaluate="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].score)">-</template>
+                  <template v-else>{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
                 </div>
-              </div>
-            </template>
-            
-            <template #index="{ data }">
-              {{ data.index + 1 }}
-            </template>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
 
-            <template #name="{ data }">
-              <div :class="{ shiny: data.shiny }">
-                <NameLabel :pokemon="data" /><template v-if="data.bagOverOperation">(いつ育)</template>
-              </div>
-            </template>
-
-            <template #lv="{ data }">
-              <LvLabel :pokemon="data" />
-            </template>
-
-            <template #foodList="{ data }">
-              <div class="flex-row-center-center gap-2px">
-                <div v-for="(food, i) of data.foodList"
-                  class="food"
-                  :class="{
-                    disabled: i >= data.enableFoodList.length,
-                    error: Pokemon.map[data.name].foodMap[food]?.numList[i] == null,
-                  }"
-                >
-                  <img :src="Food.map[food].img" />
-                  <div class="num">{{ Pokemon.map[data.name].foodMap[food]?.numList[i] }}</div>
+              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.score)">
+                -
+              </template>
+              <template v-else-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
+                  {{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%
                 </div>
-              </div>
-            </template>
+              </template>
+              <template v-else>
+                <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              </template>
 
-            <template #skillLv="{ data }">
-              <SkillLvLabel :pokemon="data" />
-            </template>
+            </div>
+          </template>
 
-            <template #subSkillList="{ data }">
-              <SubSkillLabelList class="sub-skill-list" :pokemon="data" />
-            </template>
+          <template #evaluate_energy="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].energy)">-</template>
+                  <template v-else>{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</template>
+                </div>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
 
-            <template #natureName="{ data }">
-              <NatureInfo :nature="data.nature" />
-            </template>
+              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.energy)">-</template>
+              <template v-else-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
+                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
+                </div>
+              </template>
+              <template v-else>
+                <div class="text-align-right">
+                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
+                </div>
+              </template>
 
-            <template #evaluate="{ data, column }">
-              <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-                <template v-for="after in data.afterList">
-                  <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                  <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
-                    <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].score)">-</template>
-                    <template v-else>{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
-                  </div>
-                </template>
-              </div>
-              <div v-else style="width: 6em; font-size: 80%;">
-                <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
+            </div>
+          </template>
 
-                <template v-if="isNaN(data.evaluateResult?.[column.lv].best.score)">
-                  -
-                </template>
-                <template v-else-if="column.lv != 'max'">
-                  <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
-                    {{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
-                </template>
+          <template #specialty="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].score)">-</template>
+                  <template v-else>{{ (data.evaluateSpecialty?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
+                </div>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
 
-              </div>
-            </template>
+              <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.score)">
+                -
+              </template>
+              <template v-else-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
+                  {{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%
+                </div>
+              </template>
+              <template v-else>
+                <div class="text-align-right">{{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%</div>
+              </template>
+            </div>
+          </template>
 
-            <template #evaluate_energy="{ data, column }">
-              <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-                <template v-for="after in data.afterList">
-                  <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                  <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
-                    <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].energy)">-</template>
-                    <template v-else>{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</template>
-                  </div>
-                </template>
-              </div>
-              <div v-else style="width: 6em; font-size: 80%;">
-                <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
+          <template #specialty_num="{ data, column }">
+            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
+              <template v-for="after in data.afterList">
+                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
+                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
+                  <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].num)">-</template>
+                  <template v-else>{{ data.evaluateSpecialty?.[column.lv]?.[after].num.toFixed(1) }}</template>
+                </div>
+              </template>
+            </div>
+            <div v-else style="width: 6em; font-size: 80%;">
+              <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
 
-                <template v-if="isNaN(data.evaluateResult?.[column.lv].best.energy)">-</template>
-                <template v-else-if="column.lv != 'max'">
-                  <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
-                    {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="text-align-right">
-                    {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
-                  </div>
-                </template>
+              <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.num)">-</template>
+              <template v-else-if="column.lv != 'max'">
+                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
+                  {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
+                </div>
+              </template>
+              <template v-else>
+                <div class="text-align-right">
+                  {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
+                </div>
+              </template>
 
-              </div>
-            </template>
+            </div>
+          </template>
 
-            <template #specialty="{ data, column }">
-              <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-                <template v-for="after in data.afterList">
-                  <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
-                  <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
-                    <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].score)">-</template>
-                    <template v-else>{{ (data.evaluateSpecialty?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
-                  </div>
-                </template>
-              </div>
-              <div v-else style="width: 6em; font-size: 80%;">
-                <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
+          <template #afterList="{ data, column }">
+            <div style="width: 12em; font-size: 80%;">
+              {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
+            </div>
+          </template>
 
-                <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.score)">
-                  -
-                </template>
-                <template v-else-if="column.lv != 'max'">
-                  <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
-                    {{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="text-align-right">{{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%</div>
-                </template>
-              </div>
-            </template>
-
-            <template #specialty_num="{ data, column }">
-              <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-                <template v-for="after in data.afterList">
-                  <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
-                  <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
-                    <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].num)">-</template>
-                    <template v-else>{{ data.evaluateSpecialty?.[column.lv]?.[after].num.toFixed(1) }}</template>
-                  </div>
-                </template>
-              </div>
-              <div v-else style="width: 6em; font-size: 80%;">
-                <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
-
-                <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.num)">-</template>
-                <template v-else-if="column.lv != 'max'">
-                  <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
-                    {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="text-align-right">
-                    {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
-                  </div>
-                </template>
-
-              </div>
-            </template>
-
-            <template #afterList="{ data, column }">
-              <div style="width: 12em; font-size: 80%;">
-                {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
-              </div>
-            </template>
-
-          </SortableTable>
-        </div>
+        </SortableTable>
       </AsyncWatcherArea>
 
       <div class="flex-row-start-center gap-5px">
@@ -620,12 +830,21 @@ function showSelectDetail(pokemon, after, lv) {
   flex-direction: column;
   height: 100%;
 
+  .setting-button {
+    img {
+      width: 1.2em;
+      height: 1.2em;
+      line-height: 0;
+      margin: 0;
+    }
+  }
+
   .pokemon-list {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    
+
     label {
       display: inline-flex;
       flex-direction: row;
@@ -756,10 +975,8 @@ function showSelectDetail(pokemon, after, lv) {
       align-items: stretch;
       flex: 1 1 0;
     }
-    .scroll {
+    .sortable-table {
       flex: 1 1 0;
-      overflow: auto;
-      position: relative;
     }
   }
 }

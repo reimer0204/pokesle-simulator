@@ -22,6 +22,8 @@ async function save() {
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
 
     config.save(editConfig);
+    config.version.sleepTime = config.sleepTime
+    config.version.checkFreq = config.checkFreq
 
     result.value = {
       isNew,
@@ -35,18 +37,13 @@ async function save() {
 <template>
   <div class="page">
 
-    <DangerAlert v-if="!config.initSetting">
-      ツールを使用するには初回設定が必要です。<br>
-      まずは「基本設定」の「睡眠時間」と「日中タップ回数」をご自身のものに修正してください。<br>
-      他の項目は気になる方だけ修正してください。
+    <DangerAlert v-if="config.version.evaluateTable == null">
+      この設定を反映すると、あなたの設定に応じた厳選情報を計算します。<br>
+      設定や端末のスペックによりますが、3～10分ほどかかるのでお待ちください。
     </DangerAlert>
-
-    <template v-else>
-      <DangerAlert v-if="config.version.evaluateTable != EvaluateTable.VERSION">
-        ポケモン情報、もしくは厳選計算アルゴリズムが修正されています。時間のある時に再計算の実行をお願いします。
-      </DangerAlert>
-    </template>
-
+    <DangerAlert v-else-if="config.version.evaluateTable != EvaluateTable.VERSION">
+      ポケモン情報、もしくは厳選計算アルゴリズムが修正されています。時間のある時に再計算の実行をお願いします。
+    </DangerAlert>
 
     <ToggleArea open>
       <template #headerText>基本設定</template>
@@ -64,7 +61,7 @@ async function save() {
       </SettingList>
     </ToggleArea>
 
-    <ToggleArea :open="config.initSetting">
+    <ToggleArea open>
       <template #headerText>厳選設定</template>
 
       <SettingList>
@@ -205,7 +202,7 @@ async function save() {
       </SettingList>
     </ToggleArea>
 
-    <ToggleArea :open="config.initSetting">
+    <ToggleArea open>
       <template #headerText>その他設定</template>
 
       <SettingList>
@@ -219,18 +216,10 @@ async function save() {
       </SettingList>
     </ToggleArea>
 
-    <DangerAlert>
-      この設定を反映すると、あなたの睡眠時間やタップ頻度に応じたヒーラーの期待値やポケモンの厳選条件の期待値を計算します。<br>
-      設定や端末のスペックによりますが、3～10分ほどかかるのでお待ちください。
-    </DangerAlert>
-
-    <button @click="save">保存</button>
+    <button @click="save">設定を保存して厳選情報を計算する</button>
 
     <BaseAlert v-if="result">
-      各種分析が完了しました。<br>
-      <template v-if="result.isNew">
-        画面上部からボックスを開き、所持ポケモンを追加してご利用ください。
-      </template>
+      厳選情報の計算が完了しました。ボックス画面から厳選情報を確認できます。
     </BaseAlert>
   </div>
 </template>

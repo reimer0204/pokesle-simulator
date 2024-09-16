@@ -8,24 +8,9 @@ import HelpRate from './models/help-rate';
 let browserSupportError = ref(null);
 if(window.localStorage == null) browserSupportError.value = 'LocalStorageに対応していません。最新のブラウザを使用するか、ブラウザの設定を確認してください。'
 
-const route = useRoute()
-const router = useRouter()
-
-watch(() => route.path, () => {
-  if (!config.initSetting && route.path != '/setting') {
-    router.replace('/setting')
-  }
-})
-
-onMounted(() => {
-  if (!config.initSetting) {
-    router.replace('/setting')
-  }
-})
-
 const requireRefresh = computed(() => {
   let result = {};
-  if(config.version.evaluateTable != EvaluateTable.VERSION) {
+  if(!EvaluateTable.isEnableEvaluateTable(config)) {
     result.setting = true;
   }
   return result;
@@ -38,12 +23,13 @@ const requireRefresh = computed(() => {
 
     <header>
       <h1>ポケスリシミュ</h1>
-      <router-link to="/" v-if="config.initSetting">ボックス</router-link>
+      <router-link to="/">ボックス</router-link>
       <router-link to="/data">データ</router-link>
-      <router-link to="/setting">設定<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
+      <router-link to="/setting">厳選情報生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
+      <router-link to="/evaluate-table">厳選情報確認</router-link>
       <!-- <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link> -->
-      <router-link to="/faq" v-if="config.initSetting">FAQ</router-link>
-      <router-link to="/history" v-if="config.initSetting">更新履歴</router-link>
+      <router-link to="/faq">FAQ</router-link>
+      <router-link to="/history">更新履歴</router-link>
     </header>
     <main>
       <template v-if="browserSupportError == null">
@@ -70,7 +56,7 @@ const requireRefresh = computed(() => {
     justify-content: start;
     align-items: center;
 
-    background-color: rgb(54, 73, 150);
+    background-color: rgb(49, 50, 58);
     color: #FFF;
 
     h1 {

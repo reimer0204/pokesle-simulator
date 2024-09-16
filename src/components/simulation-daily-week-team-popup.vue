@@ -281,7 +281,7 @@ async function simulation() {
             beforeEnergy: energy,
           },
         }, progressCounterList[day])
-        
+
         result[cookingType].teamList.push(dailyTeam)
         result[cookingType].score += dailyTeam.score
 
@@ -319,7 +319,7 @@ async function simulation() {
           null,
           1
         )).flat(1)[0];
-        
+
         remainFoodNum = dailyTeam.foodNum;
         result[cookingType].teamList.push(dailyTeam)
         result[cookingType].score += dailyTeam.score
@@ -329,7 +329,7 @@ async function simulation() {
       let totalEnergy = result[cookingType].teamList.reduce((a, team) => a + (team.beforeEnergy ?? 0) + (team.energy ?? 0), 0);
       let energyShard = result[cookingType].teamList.reduce((a, team) => a + (team.energyShard ?? 0), 0);
       let addShard = result[cookingType].teamList.reduce((a, team) => a + (team.bonusShard ?? 0) + (team.skillShard ?? 0), 0);
-      
+
       result[cookingType].score = totalEnergy
         * (((energyShard + addShard) / energyShard - 1) * config.simulation.shardWeight / 100 + 1)
 
@@ -382,7 +382,7 @@ async function simulation() {
             </div>
           </div>
         </SettingList>
-        
+
         <SettingList class="align-self-stretch">
           <div class="flex-110 w-100 flex-column-start-stretch">
             <label>所持食材</label>
@@ -409,7 +409,7 @@ async function simulation() {
         </div>
 
         <AsyncWatcherArea class="flex-column-start-start w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
-          
+
           <template v-for="(cookingType, i) in simulationResult.cookingTypeList">
             <ToggleArea open class="w-100">
               <template #headerText>{{ cookingType }}: {{ Math.round(simulationResult[cookingType].score).toLocaleString() }}</template>
@@ -444,7 +444,7 @@ async function simulation() {
                         <td v-for="team in simulationResult[cookingType].teamList">{{ team.pokemonList[i]?.lv }}</td>
                         <td></td>
                       </tr>
-                      
+
                       <tr>
                         <th>食材</th>
                         <td v-for="team in simulationResult[cookingType].teamList">
@@ -547,7 +547,7 @@ async function simulation() {
                         </template>
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) =>
                           a + team.pokemonList.reduce((a, x) => a + (x.berryEnergyPerDay ?? 0), 0), 0
                         )).toLocaleString() }}
                       </td>
@@ -560,7 +560,7 @@ async function simulation() {
                         </template>
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) =>
                           a + team.pokemonList.reduce((a, x) => a + (x.skillEnergyPerDay ?? 0), 0), 0
                         )).toLocaleString() }}
                       </td>
@@ -573,7 +573,7 @@ async function simulation() {
                         </template>
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) =>
                           a + (team.cookingList?.reduce((a, x) => a + x.energy, 0) ?? 0), 0
                         )).toLocaleString() }}
                       </td>
@@ -584,7 +584,7 @@ async function simulation() {
                         <template v-if="i > 0">{{ Math.round(team.rawEnergy).toLocaleString() }}</template>
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) =>
                           a + (team.rawEnergy ?? 0), 0
                         )).toLocaleString() }}
                       </td>
@@ -595,7 +595,7 @@ async function simulation() {
                         <template v-if="i > 0">{{ Math.round(team.energy).toLocaleString() }}</template>
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => 
+                        {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) =>
                           a + (team.energy ?? 0), 0
                         )).toLocaleString() }}
                       </td>
@@ -638,7 +638,7 @@ async function simulation() {
                         {{ Math.round(simulationResult[cookingType].teamList.reduce((a, team) => a + (team.skillShard ?? 0), 0)).toLocaleString() }}
                       </td>
                     </tr>
-                    
+
                     <tr>
                       <th colspan="2">判定スコア</th>
                       <td v-for="(team, i) in simulationResult[cookingType].teamList" class="text-align-right">
@@ -651,7 +651,7 @@ async function simulation() {
                 </table>
               </div>
             </ToggleArea>
-          </template> 
+          </template>
         </AsyncWatcherArea>
       </div>
     </template>
@@ -712,7 +712,7 @@ async function simulation() {
       th {
         font-weight: bold;
         white-space: nowrap;
-        background: rgb(54, 73, 150);
+        background: rgb(66, 85, 158);
         color: #FFF;
         border: 1px #FFF solid;
       }

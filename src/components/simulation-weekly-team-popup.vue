@@ -419,7 +419,7 @@ onBeforeUnmount(() => {
       th {
         font-weight: bold;
         white-space: nowrap;
-        background: rgb(54, 73, 150);
+        background: rgb(66, 85, 158);
         color: #FFF;
         border: 1px #FFF solid;
       }

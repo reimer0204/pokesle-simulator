@@ -1,12 +1,10 @@
 <script setup>
 import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
-import SettingList from '../components/util/setting-list.vue';
 import Berry from '../data/berry.js';
 import Cooking from '../data/cooking.js';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
-import SubSkill from '../data/sub-skill.js';
 import config from '../models/config.js';
 import EvaluateTable from '../models/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
@@ -17,70 +15,12 @@ let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable
 let lv = ref(lvList.at(-1))
 let step = ref(5);
 
-let evaluateTable = EvaluateTable.load(config);
-let evaluateTablePokemonList = computed(() => {
-  let result = [];
-  for(let pokemonName in evaluateTable) {
-    let lvInfo = evaluateTable[pokemonName][lv.value];
-    let pokemon = Pokemon.map[pokemonName];
-
-    for(let food in lvInfo) {
-      let percentile = lvInfo[food].percentile;
-
-      result.push({
-        name: pokemonName,
-        foodIndexList: food,
-        foodList: food.split('').map(c => pokemon.foodList[Number(c)].name),
-        ...percentile
-      })
-    }
-  }
-  return result;
-});
-
-let columnList = computed(() => {
-  return [
-    { key: 'name', name: '名前', type: String },
-    { key: 'foodList', name: '食材', type: null },
-    ...new Array(100 / step.value + 1).fill(0).map((_, i) => {
-      let p = i * step.value;
-      return { key: `${p}`, name: `${p}%`, template: 'percentile', p, type: Number, fixed: 0 }
-    })
-  ]
-})
-
 async function showDetail(pokemon, p) {
   
   asyncWatcher.run(async (progressCounter) => {
 
     const evaluateTable = EvaluateTable.load(config);
-
-    function combination(r, n, s = 0) {
-      if (n == 0) return [[]];
-      let result = [];
-
-      for(let i = s; i < r - n + 1; i++) {
-        for(let subList of combination(r, n - 1, i + 1)) {
-          result.push([i, ...subList])
-        }
-      }
-
-      return result;
-    }
-
     const multiWorker = new MultiWorker(EvaluateTableWorker, 1)
-
-    // サブスキルの組み合わせを列挙
-    const subSkillNum = lv.value < 10 ? 0 : lv.value < 25 ? 1 : lv.value < 50 ? 2 : lv.value < 75 ? 3 : lv.value < 100 ? 4 : 5;
-    let subSkillCombinationMap = {};
-    for(const indexes of combination(SubSkill.list.length, subSkillNum)) {
-      let subSkillList = indexes.map(i => SubSkill.list[i].name);
-      if (config.selectEvaluate.silverSeedUse) {
-        subSkillList = SubSkill.useSilverSeed(subSkillList)
-      }
-      let subSkillKey = subSkillList.sort().join('/');
-      subSkillCombinationMap[subSkillKey] = (subSkillCombinationMap[subSkillKey] ?? 0) + 1;
-    }
 
     let result = (await multiWorker.call(
       progressCounter,
@@ -90,12 +30,13 @@ async function showDetail(pokemon, p) {
           config: JSON.parse(JSON.stringify(config)),
           pokemonList: [Pokemon.map[pokemon.name]],
           foodCombinationList: [pokemon.foodIndexList],
-          subSkillCombinationMap,
           scoreForHealerEvaluate: evaluateTable.scoreForHealerEvaluate[lv],
           scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv],
         }
       }
-    ))[0].result[pokemon.name][pokemon.foodIndexList][p].eachResult
+    ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p].eachResult
+    // console.log(result);
+    // return;
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,
@@ -151,12 +92,12 @@ const pokemonList = computed(() => {
         <SortableTable :dataList="Food.list" :columnList="[
           { key: 'name', name: '名前' },
           { key: 'energy', name: '基礎エナジー', type: Number },
-          { key: 'bestTypeRate_カレー', name: 'カレー\n(料理補正)', percent: true, fixed: 0 },
-          { key: 'bestTypeRate_サラダ', name: 'サラダ\n(料理補正)', percent: true, fixed: 0 },
-          { key: 'bestTypeRate_デザート', name: 'デザート\n(料理補正)', percent: true, fixed: 0 },
-          { key: 'maxEnergy_カレー', name: 'カレー\n(補正後エナジー)', type: Number, fixed: 0 },
-          { key: 'maxEnergy_サラダ', name: 'サラダ\n(補正後エナジー)', type: Number, fixed: 0 },
-          { key: 'maxEnergy_デザート', name: 'デザート\n(補正後エナジー)', type: Number, fixed: 0 },
+          { key: 'bestTypeRate_カレー', name: 'カレー\n最大補正', percent: true, fixed: 0 },
+          { key: 'bestTypeRate_サラダ', name: 'サラダ\n最大補正', percent: true, fixed: 0 },
+          { key: 'bestTypeRate_デザート', name: 'デザート\n最大補正', percent: true, fixed: 0 },
+          { key: 'maxEnergy_カレー', name: 'カレー\n最大エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+          { key: 'maxEnergy_サラダ', name: 'サラダ\n最大エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+          { key: 'maxEnergy_デザート', name: 'デザート\n最大エナジー\n(レシピLv込)', type: Number, fixed: 0 },
         ]">
           <template #foodList="{ data }">
             <div>
@@ -209,48 +150,6 @@ const pokemonList = computed(() => {
       </div>
     </ToggleArea>
     
-    <ToggleArea open class="mt-10px">
-      <template #headerText>厳選テーブル</template>
-
-      <SettingList>
-        <div>
-          <label>Lv</label>
-          <select v-model="lv">
-            <option v-for="lv in lvList" :value="lv">{{ lv }}</option>
-          </select>
-        </div>
-        
-        <div>
-          <label>ステップ</label>
-          <select :value="step" @input="step = Number($event.target.value)">
-            <option :value="1">1</option>
-            <option :value="2">2</option>
-            <option :value="5">5</option>
-            <option :value="10">10</option>
-          </select>
-        </div>
-      </SettingList>
-
-      <div class="scroll" style="height: 600px;">
-        <SortableTable :dataList="evaluateTablePokemonList" :columnList="columnList" :fixColumn="2">
-
-          <template #foodList="{ data }">
-            <div class="flex-row-center-center gap-2px">
-              <div v-for="(food, i) of data.foodList" class="food">
-                <img :src="Food.map[food].img" />
-                <div class="num">{{ Pokemon.map[data.name].foodMap[food].numList[i] }}</div>
-              </div>
-            </div>
-          </template>
-
-          <template #percentile="{ data, column }">
-            <div class="text-align-right percentile" @click="showDetail(data, column.p)">{{ Math.round(data[column.p]).toLocaleString() }}</div>
-          </template>
-
-        </SortableTable>
-      </div>
-    </ToggleArea>
-
   </div>
 </template>
 

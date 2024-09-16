@@ -2,16 +2,23 @@ import Nature from "../data/nature";
 import Pokemon from "../data/pokemon";
 import Skill from "../data/skill";
 import SubSkill from "../data/sub-skill";
+import SubSkillCombination from "../data/sub-skill-combination";
 import EvaluateTableWorker from "../worker/evaluate-table-worker?worker";
 import config from "./config";
 import MultiWorker from "./multi-worker";
 
 export default class EvaluateTable {
 
-  static VERSION = 20240903;
+  static VERSION = 20240916;
+
+  static isEnableEvaluateTable(config) {
+    return config.version.evaluateTable == this.VERSION
+      && config.sleepTime == (config.version.sleepTime ?? config.sleepTime)
+      && config.checkFreq == (config.version.checkFreq ?? config.checkFreq)
+  }
 
   static load(config) {
-    if (config.version.evaluateTable != this.VERSION) {
+    if (!this.isEnableEvaluateTable(config)) {
       return null
     }
     try {
@@ -29,9 +36,7 @@ export default class EvaluateTable {
   static getPatternNum(lv) {
     const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
     const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
-    let subSkillCombinationNum = 1;
-    for(let i = 0; i < subSkillNum; i++) subSkillCombinationNum *= SubSkill.list.length - i;
-    for(let i = 0; i < subSkillNum; i++) subSkillCombinationNum /= i + 1;
+    const subSkillCombinationNum = (SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[1]]).length;
 
     return foodNum * subSkillCombinationNum * Nature.list.length;
   }
@@ -69,8 +74,6 @@ export default class EvaluateTable {
     let normalPokemonList = pokemonList.filter(pokemon => !Skill.map[pokemon.skill].team && !Skill.map[pokemon.skill].shard)
     let supportPokemonList = pokemonList.filter(pokemon => Skill.map[pokemon.skill].team ||  Skill.map[pokemon.skill].shard)
 
-    const subSkillCombinationMapCache = new Map();
-
     let result = {
       scoreForHealerEvaluate: {},
       scoreForSupportEvaluate: {},
@@ -78,31 +81,6 @@ export default class EvaluateTable {
     let progressCounterIndex = 0;
     for(let lv of lvList) {
       const foodCombinationList = lv < 30 ? ['0'] : lv < 60 ? [ '00', '01' ] : [ '000', '001', '002', '010', '011', '012' ];
-
-      // サブスキルの組み合わせを列挙
-      const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
-      let subSkillCombinationMap = subSkillCombinationMapCache.get(subSkillNum)
-      if (subSkillCombinationMap == null) {
-        subSkillCombinationMap = {};
-        for(const indexes of combination(SubSkill.list.length, subSkillNum)) {
-          let subSkillList = indexes.map(i => SubSkill.list[i].name);
-          let subSkillSet = new Set(subSkillList);
-
-          if (config.selectEvaluate.silverSeedUse) {
-            if (subSkillSet.has('最大所持数アップM') && !subSkillSet.has('最大所持数アップL')) { subSkillSet.delete('最大所持数アップM'); subSkillSet.add('最大所持数アップL') };
-            if (subSkillSet.has('最大所持数アップS') && !subSkillSet.has('最大所持数アップL')) { subSkillSet.delete('最大所持数アップS'); subSkillSet.add('最大所持数アップL') };
-            if (subSkillSet.has('最大所持数アップS') && !subSkillSet.has('最大所持数アップM')) { subSkillSet.delete('最大所持数アップS'); subSkillSet.add('最大所持数アップM') };
-            if (subSkillSet.has('スキルレベルアップS') && !subSkillSet.has('スキルレベルアップM')) { subSkillSet.delete('スキルレベルアップS'); subSkillSet.add('スキルレベルアップM') };
-            if (subSkillSet.has('スキル確率アップS') && !subSkillSet.has('スキル確率アップM')) { subSkillSet.delete('スキル確率アップS'); subSkillSet.add('スキル確率アップM') };
-            if (subSkillSet.has('食材確率アップS') && !subSkillSet.has('食材確率アップM')) { subSkillSet.delete('食材確率アップS'); subSkillSet.add('食材確率アップM') };
-            if (subSkillSet.has('おてつだいスピードS') && !subSkillSet.has('おてつだいスピードM')) { subSkillSet.delete('おてつだいスピードS'); subSkillSet.add('おてつだいスピードM') };
-          }
-
-          let subSkillKey = [...subSkillSet].sort().join('/');
-          subSkillCombinationMap[subSkillKey] = (subSkillCombinationMap[subSkillKey] ?? 0) + 1;
-        }
-        subSkillCombinationMapCache.get(subSkillNum, subSkillCombinationMap);
-      }
 
       // 
       subProgressCounterList[progressCounterIndex].setName(`Lv${lv}の通常ポケモンの厳選情報を作成しています…`)
@@ -116,7 +94,7 @@ export default class EvaluateTable {
             config: fixedConfig,
             pokemonList: normalPokemonList.slice(i1, i2),
             foodCombinationList,
-            subSkillCombinationMap,
+            // subSkillCombinationList,
             // scoreForHealerEvaluate,
             // scoreForSupportEvaluate,
           }
@@ -147,7 +125,6 @@ export default class EvaluateTable {
             config: fixedConfig,
             pokemonList: supportPokemonList.slice(i1, i2),
             foodCombinationList,
-            subSkillCombinationMap,
             scoreForHealerEvaluate,
             scoreForSupportEvaluate,
           }

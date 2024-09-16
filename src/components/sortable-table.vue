@@ -4,8 +4,26 @@ const props = defineProps({
   columnList: { type: Array, default: () => [] },
   fixColumn: { type: Number, default: 0 },
   setting: { type: Object, default: () => ({}) },
+  pager: { type: Number, default: null },
+  scroll: { type: Boolean, default: false },
 })
 const emits = defineEmits(['clickRow', 'update:setting'])
+
+const page = ref(0);
+const pageMax = computed(() => {
+  if (props.pager == null) return null;
+  return Math.ceil(props.dataList.length / props.pager);
+})
+const pageLinkList = computed(() => {
+  if (props.pager == null) return null;
+
+  let result = [];
+  for(let i = 0; i < pageMax.value; i++) {
+    result.push(i)
+  }
+
+  return result;
+})
 
 const sortInfo = ref(props.setting?.sort ?? []);
 const sortColors = ref([])
@@ -94,8 +112,8 @@ const sortedDataList = computed(() => {
     }
   }
 
-  if (editMode.value) {
-    result = result.slice(0, 10);
+  if (props.pager) {
+    result = result.slice(props.pager * page.value, props.pager * (page.value + 1))
   }
 
   return result;
@@ -195,147 +213,250 @@ function toggleHiddenColumn(key) {
 </script>
 
 <template>
-  <table class="sortable-table">
-    <thead>
-      <tr>
-        <th v-for="(column, i) in enableColumnList" ref="thList"
-          :class="{'fix-column': i < props.fixColumn, hidden: editMode && hiddenColumn.has(column.key)}"
-          :style="{ left: i < props.fixColumn ? columnLeftList[i] : null }"
-          @contextmenu.prevent.stop="editMode = !editMode"
-        >
-          <slot :name="`header.${column.template ?? column.key}`" v-bind="{ column }">
-            <div>
-              <template v-if="column.img"><img :src="column.img"></template>
-              <template v-else>{{ column.name }}</template>
-            </div>
-          </slot>
+  <div class="sortable-table">
+    <div :class="{ scroll: props.scroll }">
+      <table>
+        <thead>
+          <tr>
+            <th v-for="(column, i) in enableColumnList" ref="thList"
+              :class="{'fix-column': i < props.fixColumn, hidden: editMode && hiddenColumn.has(column.key)}"
+              :style="{ left: i < props.fixColumn ? columnLeftList[i] : null }"
+              @contextmenu.prevent.stop="editMode = !editMode"
+            >
+              <slot :name="`header.${column.template ?? column.key}`" v-bind="{ column }">
+                <div>
+                  <template v-if="column.img"><img :src="column.img"></template>
+                  <template v-else>{{ column.name }}</template>
+                </div>
+              </slot>
 
-          <template v-if="editMode">
-            <svg viewBox="0 0 100 100" width="14" @click="toggleHiddenColumn(column.key)">
-              <path d="M10,50L90,50" stroke="#FFF" stroke-width="20" />
-              <path d="M50,10L50,90" stroke="#FFF" stroke-width="20" v-if="hiddenColumn.has(column.key)" />
-            </svg>
-          </template>
-          <template v-else>
-            <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
-              <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
-              <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
-            </svg>
-          </template>
-        </th>
-      </tr>
-    </thead>
+              <template v-if="editMode">
+                <svg viewBox="0 0 100 100" width="14" @click="toggleHiddenColumn(column.key)">
+                  <path d="M10,50L90,50" stroke="#FFF" stroke-width="20" />
+                  <path d="M50,10L50,90" stroke="#FFF" stroke-width="20" v-if="hiddenColumn.has(column.key)" />
+                </svg>
+              </template>
+              <template v-else>
+                <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
+                  <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
+                  <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
+                </svg>
+              </template>
+            </th>
+          </tr>
+        </thead>
 
-    <tbody>
-      <tr v-for="(data, j) in sortedDataList">
-        <td v-for="(column, i) in enableColumnList"
-          :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
-          :style="{
-            left: columnLeftList[i],
-            backgroundColor: sortColors[j]?.[column.key],
-          }"
-          @click="emits('clickRow', data)"
-        >
-          <slot :name="column.template ?? column.key" v-bind="{ data, column, value: data[column.key] }">
-            <template v-if="column.percent">
-              {{ data[column.key] != null ? `${(data[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
-            </template>
-            <template v-else-if="column.fixed != null">
-              {{ data[column.key]?.toFixed(column.fixed) }}
-            </template>
-            <template v-else>
-              {{ data[column.key] }}
-            </template>
-          </slot>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+        <tbody>
+          <tr v-for="(data, j) in sortedDataList">
+            <td v-for="(column, i) in enableColumnList"
+              :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
+              :style="{
+                left: columnLeftList[i],
+                backgroundColor: sortColors[j]?.[column.key],
+              }"
+              @click="emits('clickRow', data)"
+            >
+              <slot :name="column.template ?? column.key" v-bind="{ data, column, value: data[column.key] }">
+                <template v-if="column.percent">
+                  {{ data[column.key] != null ? `${(data[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
+                </template>
+                <template v-else-if="column.fixed != null">
+                  {{ data[column.key]?.toFixed(column.fixed) }}
+                </template>
+                <template v-else>
+                  {{ data[column.key] }}
+                </template>
+              </slot>
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+    <div v-if="pageLinkList != null" class="pager">
+      <div class="move prev" @click="page = Math.max(page - 1, 0)">
+        <svg viewBox="0 0 100 100"><path d="M70,20L40,50L70,80" /></svg> Prev
+      </div>
+
+      <div class="page" v-for="pageLink in pageLinkList" @click="page = pageLink" :class="{ active: page == pageLink }">
+        {{ pageLink + 1 }}
+      </div>
+
+      <div class="move next" @click="page = Math.min(page + 1, pageMax - 1)">
+        Next <svg viewBox="0 0 100 100"><path d="M30,20L60,50L30,80" /></svg>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 
 .sortable-table {
-  position: absolute;
-  display: grid;
-  grid-template-columns: repeat(v-bind(enableColumnListLength), max-content);
-  gap: 0;
-  // white-space: nowrap;
-  // border-collapse: collapse;
+  display: flex;
+  flex-direction: column;
 
-  & > thead, & > tbody {
-    display: contents;
+  .scroll {
+    flex: 1 1 0;
+    overflow: scroll;
+    position: relative;
 
-    & > tr {
+    & > table {
+      position: absolute;
+    }
+  }
+
+  table {
+    display: grid;
+    grid-template-columns: repeat(v-bind(enableColumnListLength), max-content);
+    gap: 0;
+    // white-space: nowrap;
+    // border-collapse: collapse;
+
+    & > thead, & > tbody {
       display: contents;
 
-      & > .fix-column {
-        position: sticky;
-        left: 0;
-        z-index: 1;
-      }
-    }
-  }
+      & > tr {
+        display: contents;
 
-  & > thead > tr > th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    user-select: none;
-
-    &.fix-column {
-      z-index: 2;
-    }
-
-    &.hidden {
-      opacity: 0.5;
-    }
-
-    img {
-      max-width: 2em;
-      max-height: 2em;
-    }
-
-    svg:hover {
-      background-color: #FFF4;
-    }
-  }
-
-  & > thead, & > tbody {
-    & > tr {
-      & > th, & > td {
-        padding: 3px 5px;
-        background-color: #FFF;
-        white-space: pre-line;
-        vertical-align: middle;
-
-        &.number {
-          text-align: right;
-          justify-content: end;;
+        & > .fix-column {
+          position: sticky;
+          left: 0;
+          z-index: 1;
         }
       }
     }
+
+    & > thead > tr > th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      user-select: none;
+
+      &.fix-column {
+        z-index: 2;
+      }
+
+      &.hidden {
+        opacity: 0.5;
+      }
+
+      img {
+        max-width: 2em;
+        max-height: 2em;
+      }
+
+      svg:hover {
+        background-color: #FFF4;
+      }
+    }
+
+    & > thead, & > tbody {
+      & > tr {
+        & > th, & > td {
+          padding: 3px 5px;
+          background-color: #FFF;
+          white-space: pre-line;
+          vertical-align: middle;
+
+          &.number {
+            text-align: right;
+            justify-content: end;;
+          }
+        }
+
+        &:nth-child(odd) > td {
+          background-color: #F8F8F8;
+        }
+      }
+    }
+
+    & > thead  > tr > th {
+      display: flex;
+      gap: 5px;
+      background-color: rgb(66, 85, 158);
+      // background-color: #b6c9f1;
+      border: 1px #FFF solid;
+      color: #FFF;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-bottom: 1px #CCC solid;
+    }
+
+    & > tbody  > tr > td {
+      display: flex;
+      justify-content: left;
+      align-items: center;
+      border-bottom: 1px #CCC solid;
+
+      &:has(~ :hover), &:hover, &:hover ~ td {
+        background-color: rgb(235, 245, 255);
+      }
+    }
   }
 
-  & > thead  > tr > th {
+  .pager {
     display: flex;
-    gap: 5px;
-    background-color: rgb(54, 73, 150);
-    border: 1px #FFF solid;
-    color: #FFF;
     justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
+    gap: 5px;
 
-  & > tbody  > tr > td {
-    display: flex;
-    justify-content: left;
-    align-items: center;
-    border-bottom: 1px #CCC solid;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
 
-    &:has(~ :hover), &:hover, &:hover ~ td {
-      background-color: rgb(235, 245, 255);
+    color: #888;
+    background-color: #FFF;
+    border-top: 1px #CCC solid;
+    padding: 0.5em;
+    user-select: none;
+
+    .page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 2em;
+      height: 2em;
+      border-radius: 50%;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #F8F8F8;
+      }
+
+      &.active {
+        background-color: rgb(70, 91, 177);
+        color: #FFF;
+      }
+    }
+
+    .move {
+      height: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+
+      svg {
+        width: 1em;
+        height: 1em;
+
+        path {
+          stroke-width: 20;
+          stroke: #888;
+          fill: none;
+        }
+      }
+
+      &.prev {
+        margin-right: auto;
+      }
+
+      &.next {
+        margin-left: auto;
+      }
     }
   }
 }

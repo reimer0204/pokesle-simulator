@@ -3,6 +3,10 @@
     display: flex;
     flex-direction: $direction;
   }
+  .inline-flex-#{$direction} {
+    display: inline-flex;
+    flex-direction: $direction;
+  }
 
   @each $justifyContent in start, center, end {
     .flex-#{$direction}-#{$justifyContent} {
@@ -10,10 +14,21 @@
       flex-direction: $direction;
       justify-content: $justifyContent;
     }
+    .inline-flex-#{$direction}-#{$justifyContent} {
+      display: inline-flex;
+      flex-direction: $direction;
+      justify-content: $justifyContent;
+    }
 
     @each $alignItems in start, center, end, stretch {
       .flex-#{$direction}-#{$justifyContent}-#{$alignItems} {
         display: flex !important;
+        flex-direction: $direction !important;
+        justify-content: $justifyContent !important;
+        align-items: $alignItems !important;
+      }
+      .inline-flex-#{$direction}-#{$justifyContent}-#{$alignItems} {
+        display: inline-flex !important;
         flex-direction: $direction !important;
         justify-content: $justifyContent !important;
         align-items: $alignItems !important;

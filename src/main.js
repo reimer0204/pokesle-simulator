@@ -16,6 +16,7 @@ import DataPage from './pages/data.vue'
 import SettingPage from './pages/setting.vue'
 import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
+import EvaluateTable from './pages/evaluate-table.vue'
 import PokemonBox from './models/pokemon-box';
 app.use(createRouter({
   history: createWebHashHistory(),
@@ -25,6 +26,7 @@ app.use(createRouter({
     { path: '/setting', component: SettingPage },
     { path: '/faq', component: FaqPage },
     { path: '/history', component: HistoryPage },
+    { path: '/evaluate-table', component: EvaluateTable },
   ]
 }))
 
