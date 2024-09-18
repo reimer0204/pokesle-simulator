@@ -204,7 +204,6 @@ async function simulation() {
       targetDay: targetDay.value,
       resultList: bestResult,
     };
-    console.log(bestResult);
   })
 }
 
@@ -331,9 +330,7 @@ async function simulation() {
                   <tr>
                     <th>食材</th>
                     <td v-for="pokemon in result.pokemonList">
-                      <div class="flex-row-center-center" v-if="pokemon">
-                        <img v-for="food in pokemon.foodList" :src="Food.map[food].img" class="ml-0 mr-0">
-                      </div>
+                      <FoodList :pokemon="pokemon" />
                     </td>
                     <td></td>
                   </tr>
@@ -341,9 +338,7 @@ async function simulation() {
                   <tr>
                     <th>サブスキル</th>
                     <td v-for="pokemon in result.pokemonList">
-                      <div class="flex-row flex-wrap gap-3px" v-if="pokemon">
-                        <SubSkillLabel v-for="subSkill in pokemon.subSkillList" :subSkill="subSkill" short />
-                      </div>
+                      <SubSkillLabelList class="sub-skill-list" :pokemon="pokemon" />
                     </td>
                     <td></td>
                   </tr>

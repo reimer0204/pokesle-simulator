@@ -182,9 +182,7 @@ onBeforeUnmount(() => {
               <table>
                 <tr>
                   <th></th>
-                  <td v-for="pokemon in result.pokemonList">
-                    <NameLabel :pokemon="pokemon" /><template v-if="pokemon.bagOverOperation">(いつ育)</template>
-                  </td>
+                  <td v-for="pokemon in result.pokemonList"><NameLabel :pokemon="pokemon" /></td>
                   <td>合計</td>
                 </tr>
 
@@ -197,18 +195,7 @@ onBeforeUnmount(() => {
                 <tr>
                   <th>食材</th>
                   <td v-for="pokemon in result.pokemonList">
-                    <div class="flex-row-center-center">
-                      <img v-for="food in pokemon.foodList" :src="Food.map[food].img" >
-                    </div>
-                  </td>
-                  <td>-</td>
-                </tr>
-
-                <tr>
-                  <th>スキル</th>
-                  <td v-for="pokemon in result.pokemonList" class="w-100px">
-                    {{ pokemon.skillName }}
-                    <small>(Lv{{ pokemon.fixedSkillLv }})</small>
+                    <FoodList :pokemon="pokemon" />
                   </td>
                   <td>-</td>
                 </tr>
@@ -216,18 +203,7 @@ onBeforeUnmount(() => {
                 <tr>
                   <th>サブスキル</th>
                   <td v-for="pokemon in result.pokemonList">
-                    <div class="sub-skill-list">
-                      <div v-for="(subSkill, i) in pokemon.subSkillList"
-                        class="sub-skill"
-                        :class="[
-                          `sub-skill-${SubSkill.map[subSkill].rarity}`,
-                          {
-                            short: config.pokemonList.subSkillShort,
-                            disabled: i >= pokemon.enableSubSkillList.length,
-                          }
-                        ]"
-                      >{{ config.pokemonList.subSkillShort ? SubSkill.map[subSkill].short : subSkill }}</div>
-                    </div>
+                    <SubSkillLabelList class="sub-skill-list" :pokemon="pokemon" />
                   </td>
                   <td>-</td>
                 </tr>
@@ -275,6 +251,21 @@ onBeforeUnmount(() => {
                 </tr>
 
                 <tr>
+                  <th>スキル</th>
+                  <td v-for="pokemon in result.pokemonList">
+                    {{ pokemon.skillName }}
+                    <small>(Lv{{ pokemon.fixedSkillLv }})</small>
+                  </td>
+                  <td>-</td>
+                </tr>
+
+                <tr v-if="config.teamSimulation.result.detail">
+                  <th>スキル回数/週</th>
+                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
+                  <td>-</td>
+                </tr>
+
+                <tr>
                   <th>スキルE/週</th>
                   <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillEnergyPerDay * 7).toLocaleString() }}</td>
                   <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.skillEnergyPerDay, 0) * 7).toLocaleString() }}</td>
@@ -286,18 +277,12 @@ onBeforeUnmount(() => {
                   <td class="number">{{ Math.round(result.pokemonList.reduce((a, x) => a + x.shard, 0) * 7).toLocaleString() }}</td>
                 </tr>
 
-                <tr v-if="config.teamSimulation.result.detail">
-                  <th>スキル回数/週</th>
-                  <td v-for="pokemon in result.pokemonList" class="number">{{ Math.round(pokemon.skillPerDay * 7).toLocaleString() }}</td>
-                  <td>-</td>
-                </tr>
-
                 <tr v-for="food in Food.list" v-if="config.teamSimulation.result.food">
                   <th><img :src="food.img"></th>
                   <td v-for="pokemon in result.pokemonList" class="number">
                     <template v-if="pokemon[food.name]">{{ Math.round(pokemon[food.name] * 7).toLocaleString() }}</template>
                   </td>
-                  <td>
+                  <td class="white-space-nowrap">
                     {{ Math.round(result.defaultFoodNum[food.name] ?? 0).toLocaleString() }}
                     <span class="plus"> + {{ Math.round(result.pokemonList.reduce((a, x) => a + (x[food.name] ?? 0), 0) * 7).toLocaleString() }}</span>
                     <span v-if="result.useFoodNum[food.name]" class="minus"> - {{ Math.round(result.useFoodNum[food.name] ?? 0).toLocaleString() }}</span>
@@ -378,9 +363,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
 
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   height: calc(100% - 100px);
-
 
   .default-food-list {
     display: grid;
@@ -396,16 +380,12 @@ onBeforeUnmount(() => {
     }
   }
 
-  textarea {
-    width: 100%;
-    height: 500px;
-  }
-
   .simulation-result {
     flex: 1 1 100px;
     // overflow: auto;
 
     table {
+      width: 100%;
       border-collapse: collapse;
 
       th {
@@ -446,36 +426,7 @@ onBeforeUnmount(() => {
       }
 
       .sub-skill-list {
-        width: 105px;
         display: flex;
-        flex-wrap: wrap;
-        gap: 2px 5px;
-      }
-      .sub-skill {
-        display: flex;
-        justify-content: center;
-        width: 11.5em;
-        padding: 2px 0px;
-        white-space: nowrap;
-        overflow: hidden;
-
-        font-size: 10px;
-        font-weight: bold;
-        border-radius: 3px;
-
-        &.short {
-          width: 50px;
-          padding: 2px 0;
-        }
-
-        &.disabled {
-          opacity: 0.5;
-          font-weight: normal;
-        }
-
-        &.sub-skill-1 { background-color: #F8F8F8; border: 1px #AAA solid; color: #333; }
-        &.sub-skill-2 { background-color: #E0F0FF; border: 1px #9BD solid; color: #333; }
-        &.sub-skill-3 { background-color: #FFF4D0; border: 1px #B97 solid; color: #422; }
       }
     }
   }

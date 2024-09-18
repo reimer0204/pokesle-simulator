@@ -648,9 +648,7 @@ const disabledCookingNum = computed(() => {
           </template>
 
           <template #name="{ data }">
-            <div :class="{ shiny: data.shiny }">
-              <NameLabel :pokemon="data" /><template v-if="data.bagOverOperation">(いつ育)</template>
-            </div>
+            <NameLabel :pokemon="data" />
           </template>
 
           <template #lv="{ data }">

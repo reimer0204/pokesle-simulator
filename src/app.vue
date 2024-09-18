@@ -24,7 +24,7 @@ const requireRefresh = computed(() => {
     <header>
       <h1>ポケスリシミュ</h1>
       <router-link to="/">ボックス</router-link>
-      <router-link to="/data">データ</router-link>
+      <router-link to="/data/pokemon">データ</router-link>
       <router-link to="/setting">厳選情報生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
       <router-link to="/evaluate-table">厳選情報確認</router-link>
       <!-- <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link> -->

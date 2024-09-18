@@ -13,6 +13,7 @@ declare module 'vue' {
     DangerAlert: typeof import('./src/components/alert/danger-alert.vue')['default']
     DetailSettingPopup: typeof import('./src/components/detail-setting-popup.vue')['default']
     EditPokemonPopup: typeof import('./src/components/edit-pokemon-popup.vue')['default']
+    FoodList: typeof import('./src/components/status/food-list.vue')['default']
     GoogleSpreadsheetPopup: typeof import('./src/components/google-spreadsheet-popup.vue')['default']
     HelpButton: typeof import('./src/components/help/help-button.vue')['default']
     HelpPopup: typeof import('./src/components/help/help-popup.vue')['default']

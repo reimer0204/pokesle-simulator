@@ -129,13 +129,13 @@ const sortInfoMap = computed(() => {
 
 function setSort(event, key) {
   if (event.shiftKey) {
-    if (sortInfo.value.length && sortInfo.value[0].key == key) {
-      if(sortInfo.value[0].direction == 1) sortInfo.value[0].direction = -1;
-      else sortInfo.value.shift();
+    if (sortInfo.value.length && sortInfo.value[sortInfo.value.length - 1].key == key) {
+      if(sortInfo.value[sortInfo.value.length - 1].direction == 1) sortInfo.value[sortInfo.value.length - 1].direction = -1;
+      else sortInfo.value.pop();
 
     } else {
       sortInfo.value = sortInfo.value.filter(x => x.key != key);
-      sortInfo.value.unshift({
+      sortInfo.value.push({
         key,
         direction: 1,
       })
