@@ -12,8 +12,8 @@ const defaultConfig = {
   initSetting: false,
   version: {
     evaluateTable: null,
-    evaluateTableSleepTime: null,
-    evaluateTableCheckFreq: null,
+    evaluateTableSleepTime: 8.5,
+    evaluateTableCheckFreq: 10,
   },
 
   // シミュレーション設定

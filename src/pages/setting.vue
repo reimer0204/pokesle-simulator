@@ -20,10 +20,10 @@ async function save() {
     editConfig.initSetting = true;
     // editConfig.version.helpRate = HelpRate.VERSION;
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
+    editConfig.version.evaluateTableSleepTime = config.sleepTime
+    editConfig.version.evaluateTableCheckFreq = config.checkFreq
 
     config.save(editConfig);
-    config.version.sleepTime = config.sleepTime
-    config.version.checkFreq = config.checkFreq
 
     result.value = {
       isNew,
@@ -43,6 +43,9 @@ async function save() {
     </DangerAlert>
     <DangerAlert v-else-if="config.version.evaluateTable != EvaluateTable.VERSION">
       ポケモン情報、もしくは厳選計算アルゴリズムが修正されています。時間のある時に再計算の実行をお願いします。
+    </DangerAlert>
+    <DangerAlert v-else-if="!EvaluateTable.isEnableEvaluateTable(config)">
+      睡眠時間、チェック回数が変更されたため厳選テーブルの再計算が必要です。
     </DangerAlert>
 
     <ToggleArea open>

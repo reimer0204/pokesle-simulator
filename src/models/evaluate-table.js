@@ -13,8 +13,8 @@ export default class EvaluateTable {
 
   static isEnableEvaluateTable(config) {
     return config.version.evaluateTable == this.VERSION
-      && config.sleepTime == (config.version.sleepTime ?? config.sleepTime)
-      && config.checkFreq == (config.version.checkFreq ?? config.checkFreq)
+      && config.sleepTime == config.version.evaluateTableSleepTime
+      && config.checkFreq == config.version.evaluateTableCheckFreq
   }
 
   static load(config) {
