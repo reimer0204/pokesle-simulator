@@ -4,16 +4,16 @@ class TimeCounter {
 
   countMap = {};
 
-  add(key, f) {
-    let now = performance.now();
-    let result = f()
+  start(key) {
+    if(this.countMap[key] === undefined) {
+      this.countMap[key] = { start: null, sum: 0, count: 0 }
+    }
+    this.countMap[key].start = performance.now();
+  }
 
-    let past = performance.now() - now;
-    if(this.countMap[key] === undefined) this.countMap[key] = { sum: 0, count: 0 }
-    this.countMap[key].sum += past;
+  stop(key) {
+    this.countMap[key].sum += performance.now() - this.countMap[key].start;
     this.countMap[key].count++;
-
-    return result;
   }
 
   print() {

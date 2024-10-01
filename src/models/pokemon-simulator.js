@@ -367,7 +367,8 @@ class PokemonSimulator {
     return pokemon
   }
 
-  async calcHelp(pokemon, otherMorningHealEffect, otherDayHealEffect, modeOption = {}) {
+  async calcHelp(pokemon, otherMorningHealEffect, otherDayHealEffect, modeOption = {}, timeCounter = null) {
+    timeCounter?.start('calcHelp1');
     let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
 
     let totalMorningHealEffect = (pokemon.selfMorningHealEffect + otherMorningHealEffect) * pokemon.natureGenkiMultiplier;
@@ -379,6 +380,10 @@ class PokemonSimulator {
       helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, this.config)
       this.helpRateCache.set(cacheKey, helpRate)
     }
+    
+    timeCounter?.stop('calcHelp1');
+    
+    timeCounter?.start('calcHelp2');
 
     pokemon.morningHealEffect = totalMorningHealEffect
     pokemon.dayHealEffect = totalDayHealEffect
@@ -451,6 +456,9 @@ class PokemonSimulator {
     pokemon.skillEnergy = 0;
     pokemon.shard = 0;
     pokemon.skillEnergyMap = {};
+    
+    timeCounter?.stop('calcHelp2');
+    timeCounter?.start('calcHelp3');
 
     for(let skill of pokemon.skillList) {
       const effect = skill.effect[pokemon.fixedSkillLv - 1];
@@ -567,7 +575,8 @@ class PokemonSimulator {
         case 'ゆめのかけらゲットS':
         case 'ゆめのかけらゲットS(ランダム)':
           if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energy = effect * this.config.selectEvaluate.shardEnergy * pokemon.skillEffectRate;
+            // energy = effect * this.config.selectEvaluate.shardEnergy * pokemon.skillEffectRate;
+            pokemon.shard = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
 
           } else {
             pokemon.shard = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
@@ -645,113 +654,69 @@ class PokemonSimulator {
     // ここまでの概算日給
     pokemon.energyPerDay = pokemon.pickupEnergyPerDay + pokemon.skillEnergyPerDay;
 
+    timeCounter?.stop('calcHelp3');
+
     return pokemon;
   }
 
   // 厳選用評価
   selectEvaluate(basePokemon, lv, foodList, subSkillList, nature, scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter = null) {
-    if (timeCounter == null) {
-      let result = this.calcParameter(
-        {
-          ...basePokemon,
-          base: basePokemon,
-          bag: null,
-          lv,
-          berry: Berry.map[basePokemon.berry],
-          skill: Skill.map[basePokemon.skill],
-          skillLv: this.config.selectEvaluate.skillLevel[basePokemon.skill],
-          sleepTime: this.config.selectEvaluate.pokemonSleepTime,
-        },
-        foodList,
-        subSkillList,
-        nature,
-        this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
-      )
 
-      this.calcStatus(
-        result,
-        subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
-        subSkillList.includes('げんき回復ボーナス') ? 1 : 0,
-      )
+    timeCounter?.start('calcParameter')
+    let result = this.calcParameter(
+      {
+        ...basePokemon,
+        base: basePokemon,
+        bag: null,
+        lv,
+        berry: Berry.map[basePokemon.berry],
+        skill: Skill.map[basePokemon.skill],
+        skillLv: this.config.selectEvaluate.skillLevel[basePokemon.skill],
+        sleepTime: this.config.selectEvaluate.pokemonSleepTime,
+      },
+      foodList,
+      subSkillList,
+      nature,
+      this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
+    )
+    timeCounter?.stop('calcParameter')
 
-      this.calcHelp(
-        result,
-        result.otherMorningHealEffect,
-        result.otherDayHealEffect || (result.selfDayHealEffect ? 0 : this.config.selectEvaluate.healer / 100),
-        {
-          scoreForHealerEvaluate,
-          scoreForSupportEvaluate,
-          helpBoostCount: 5,
-        }
-      )
+    timeCounter?.start('calcStatus')
+    this.calcStatus(
+      result,
+      subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
+      subSkillList.includes('げんき回復ボーナス') ? 1 : 0,
+    )
+    timeCounter?.stop('calcStatus')
 
-      // おてボの残り評価はシンプルに倍率にする
-      if (subSkillList.includes('おてつだいボーナス')) {
-        result.energyPerDay /= 1 - (25 - this.config.selectEvaluate.helpBonus) * 0.01
-      }
+    timeCounter?.start('calcHelp')
+    this.calcHelp(
+      result,
+      result.otherMorningHealEffect,
+      result.otherDayHealEffect || (result.selfDayHealEffect ? 0 : this.config.selectEvaluate.healer / 100),
+      {
+        scoreForHealerEvaluate,
+        scoreForSupportEvaluate,
+        helpBoostCount: 5,
+      },
+      timeCounter
+    )
 
-      if (subSkillList.includes('ゆめのかけらボーナス')) {
-        result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
-      }
-      if (subSkillList.includes('リサーチEXPボーナス')) {
-        result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
-      }
-
-      return result;
-
+    // おてボの残り評価はシンプルに倍率にする
+    if (subSkillList.includes('おてつだいボーナス')) {
+      result.energyPerDay /= 1 - (25 - this.config.selectEvaluate.helpBonus) * 0.01
     }
 
-    let result = timeCounter.add('calcParameter', () => {
-      return this.calcParameter(
-        {
-          ...basePokemon,
-          base: basePokemon,
-          bag: null,
-          lv,
-          berry: Berry.map[basePokemon.berry],
-          skill: Skill.map[basePokemon.skill],
-          skillLv: this.config.selectEvaluate.skillLevel[basePokemon.skill],
-          sleepTime: this.config.selectEvaluate.pokemonSleepTime,
-        },
-        foodList,
-        subSkillList,
-        nature,
-        this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
-      )
-    })
+    if (subSkillList.includes('ゆめのかけらボーナス')) {
+      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
+    }
+    if (subSkillList.includes('リサーチEXPボーナス')) {
+      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
+    }
 
-    timeCounter.add('calcStatus', () => {
-      this.calcStatus(
-        result,
-        subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
-        subSkillList.includes('げんき回復ボーナス') ? 1 : 0,
-      )
-    })
+    result.energyPerDay += result.shard * this.config.selectEvaluate.shardEnergy * this.config.selectEvaluate.shardBonus / 100;
 
-    timeCounter.add('calcHelp', () => {
-      this.calcHelp(
-        result,
-        result.otherMorningHealEffect,
-        result.otherDayHealEffect || (result.selfDayHealEffect ? 0 : this.config.selectEvaluate.healer / 100),
-        {
-          scoreForHealerEvaluate,
-          scoreForSupportEvaluate,
-          helpBoostCount: 5,
-        }
-      )
-      
-      // おてボの残り評価はシンプルに倍率にする
-      if (subSkillList.includes('おてつだいボーナス')) {
-        result.energyPerDay /= 1 - (25 - this.config.selectEvaluate.helpBonus) * 0.01
-      }
-
-      if (subSkillList.includes('ゆめのかけらボーナス')) {
-        result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
-      }
-      if (subSkillList.includes('リサーチEXPボーナス')) {
-        result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
-      }
-    })
+    timeCounter?.stop('calcHelp')
 
     return result;
   }

@@ -102,7 +102,7 @@ const defaultConfig = {
   selectEvaluate: {
     berryMatchAll: true,    // 食材/スキルタイプ
     shardEnergyRate: 120,   // エナジー/ゆめのかけら
-    shardEnergy: 30,        // ゆめのかけらをエナジーに換算する
+    shardEnergy: 20,        // ゆめのかけらをエナジーに換算する
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
     silverSeedUse: true,    // 銀種前提で厳選するか
     foodEnergyRate: 70,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
