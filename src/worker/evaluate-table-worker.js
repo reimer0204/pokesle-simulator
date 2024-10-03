@@ -39,6 +39,7 @@ self.addEventListener('message', async (event) => {
     * foodCombinationList.length
     * subSkillCombinationList.length
     * natureList.length;
+  console.log(countMax);
 
   let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
@@ -71,6 +72,8 @@ self.addEventListener('message', async (event) => {
       let scoreList = [];
       let specialtyNumList = [];
 
+      timeCounter.start('sub_total')
+
       for(const subSkillCombination of subSkillCombinationList) {
         let { subSkillList, subSkillWeight } = subSkillCombination
 
@@ -80,25 +83,29 @@ self.addEventListener('message', async (event) => {
           let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
             scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter
           );
+          
+          timeCounter.start('after')
           if (isNaN(eachResult.energyPerDay)) {
             console.log(eachResult);
             throw '計算エラーが発生しました。'
           }
-          let fillBase = new Array(subSkillWeight * natureWeight);
+          // let fillBase = new Array(subSkillWeight * natureWeight);
+          // let fillBase = new Array(1);
 
-          scoreList.push(...fillBase.fill({
+          scoreList.push({
             score: eachResult.energyPerDay,
             baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
             pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
             // subSkillList,
             eachResult,
+            weight: subSkillWeight * natureWeight,
             // nature,
-          }));
+          });
           let specialtyScore;
           if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
           if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
           if (pokemon.specialty == 'スキル') specialtyScore = eachResult.skillPerDay;
-          specialtyNumList.push(...fillBase.fill(specialtyScore))
+          specialtyNumList.push({ score: specialtyScore, weight: subSkillWeight * natureWeight })
 
           if(++count % 1000 == 0) {
             // console.log(count, countMax);
@@ -107,16 +114,32 @@ self.addEventListener('message', async (event) => {
               body: count / countMax,
             })
           }
+          timeCounter.stop('after')
         }
       }
       
+      timeCounter.stop('sub_total')
+      
       scoreList.sort((a, b) => a.score - b.score)
-      specialtyNumList.sort((a, b) => a - b);
+      specialtyNumList.sort((a, b) => a.score - b.score);
       let percentile = [];
       let specialtyNumList100 = [];
-      for(let i = 0; i <= 100; i++) {
-        percentile.push(scoreList[Math.round((scoreList.length - 1) * i / 100)]);
-        specialtyNumList100.push(specialtyNumList[Math.round((specialtyNumList.length - 1) * i / 100)]);
+
+      let weightSum = 0;
+      let percentileIndex = 0;
+      let nextIndex = 0;
+      let totalWeight = subSkillCombinationList.length * natureList.length;
+      for(let i = 0; i < scoreList.length; i++) {
+        while (weightSum <= nextIndex && nextIndex < weightSum + scoreList[i].weight && percentileIndex <= 100) {
+          let percentileItem = { ...scoreList[i] };
+          delete percentileItem.weight
+          percentile.push(percentileItem);
+          specialtyNumList100.push(specialtyNumList[i].score);
+
+          percentileIndex++;
+          nextIndex = Math.round((totalWeight - 1) * percentileIndex / 100)
+        }
+        weightSum += scoreList[i].weight;
       }
 
       result[pokemon.name][foodIndexList.join('')] = {

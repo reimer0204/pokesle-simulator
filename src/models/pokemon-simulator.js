@@ -340,7 +340,7 @@ class PokemonSimulator {
         fixedEffectSum = fixedEffectSum / healSkillList.length * healSkillList.length / Skill.metronomeTarget.length;
       }
 
-      let cacheKey = fixedEffectSum ? `${pokemon.morningHealGenki.toFixed(8)}_${pokemon.fixedSkillRate.toFixed(8)}_${pokemon.speed.toFixed(8)}_${pokemon.bagFullHelpNum.toFixed(8)}_${pokemon.skillCeil.toFixed(8)}_${fixedEffectSum.toFixed(8)}` : ``
+      let cacheKey = fixedEffectSum ? `${pokemon.morningHealGenki.toFixed(3)}_${pokemon.fixedSkillRate.toFixed(3)}_${pokemon.speed.toFixed(3)}_${pokemon.bagFullHelpNum.toFixed(3)}_${pokemon.skillCeil.toFixed(3)}_${fixedEffectSum.toFixed(3)}` : ``
       let cache = this.helpEffectCache.get(cacheKey);
       if(cache == null) {
         cache = fixedEffectSum ? HelpRate.getHealEffect(pokemon, fixedEffectSum, this.config) : [0, 0];
@@ -374,15 +374,14 @@ class PokemonSimulator {
     let totalMorningHealEffect = (pokemon.selfMorningHealEffect + otherMorningHealEffect) * pokemon.natureGenkiMultiplier;
     let totalDayHealEffect = (pokemon.selfDayHealEffect + otherDayHealEffect) * pokemon.natureGenkiMultiplier;
 
-    let cacheKey = `${pokemon.morningHealGenki.toFixed(8)}_${totalMorningHealEffect.toFixed(8)}_${totalDayHealEffect.toFixed(8)}`
-    let helpRate = this.helpRateCache.get(cacheKey);
+    let cacheKey = `${pokemon.morningHealGenki.toFixed(3)}_${totalMorningHealEffect.toFixed(3)}_${totalDayHealEffect.toFixed(3)}`
+    let helpRate = this.helpRateCache.get(cacheKey)
     if(helpRate == null) {
       helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, this.config)
       this.helpRateCache.set(cacheKey, helpRate)
     }
     
     timeCounter?.stop('calcHelp1');
-    
     timeCounter?.start('calcHelp2');
 
     pokemon.morningHealEffect = totalMorningHealEffect
@@ -418,11 +417,20 @@ class PokemonSimulator {
     // 食材エナジー/日
     pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * pokemon.normalHelpNum * pokemon.fixedFoodRate;
     pokemon.foodNumPerDay = pokemon.foodNum * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+    
+    
+    timeCounter?.stop('calcHelp2');
+    timeCounter?.start('calcHelp2.5');
 
     // 食材の個数
-    for(let food of Food.list) {
-      pokemon[food.name] = (pokemon.foodPerHelp[food.name] ?? 0) * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+    if (this.mode != PokemonSimulator.MODE_SELECT) {
+      for(let foodName in pokemon.foodPerHelp) {
+        pokemon[foodName] = pokemon.foodPerHelp[foodName] * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+      }
     }
+    
+    timeCounter?.stop('calcHelp2.5');
+    timeCounter?.start('calcHelp3');
 
     // きのみor食材エナジー/日
     pokemon.pickupEnergyPerDay = pokemon.berryEnergyPerDay + pokemon.foodEnergyPerDay;
@@ -451,14 +459,11 @@ class PokemonSimulator {
     } else {
       pokemon.skillPerDay = 0;
     }
-
+    
     // スキルエナジー/日
     pokemon.skillEnergy = 0;
     pokemon.shard = 0;
     pokemon.skillEnergyMap = {};
-    
-    timeCounter?.stop('calcHelp2');
-    timeCounter?.start('calcHelp3');
 
     for(let skill of pokemon.skillList) {
       const effect = skill.effect[pokemon.fixedSkillLv - 1];
@@ -514,7 +519,7 @@ class PokemonSimulator {
             // げんき回復量は事前に総合的に計算しているので、ゆびをふるの場合は1回だけ評価
             if (pokemon.skill.name != 'ゆびをふる' || (pokemon.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')) {
 
-              let cacheKey = `${pokemon.morningHealGenki.toFixed(8)}_${otherMorningHealEffect.toFixed(8)}_${otherDayHealEffect.toFixed(8)}`
+              let cacheKey = `${pokemon.morningHealGenki.toFixed(3)}_${otherMorningHealEffect.toFixed(3)}_${otherDayHealEffect.toFixed(3)}`
               let helpRate = this.helpRateCache.get(cacheKey);
               if(helpRate == null) {
                 helpRate = HelpRate.getHelpRate(Math.min(this.config.sleepTime / 8.5, 1) * 100, otherMorningHealEffect, otherDayHealEffect, this.config)

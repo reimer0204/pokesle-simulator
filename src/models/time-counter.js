@@ -18,7 +18,7 @@ class TimeCounter {
 
   print() {
     Object.entries(this.countMap).forEach(([key, { sum, count }]) => {
-      console.log(`${key} => ${sum}us`);
+      console.log(key, sum);
     })
   }
 }
