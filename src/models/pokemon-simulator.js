@@ -424,8 +424,8 @@ class PokemonSimulator {
 
     // 食材の個数
     if (this.mode != PokemonSimulator.MODE_SELECT) {
-      for(let foodName in pokemon.foodPerHelp) {
-        pokemon[foodName] = pokemon.foodPerHelp[foodName] * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+      for(let food of Food.list) {
+        pokemon[food.name] = (pokemon.foodPerHelp[food.name] ?? 0) * pokemon.normalHelpNum * pokemon.fixedFoodRate;
       }
     }
     
