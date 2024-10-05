@@ -36,7 +36,7 @@ export default class EvaluateTable {
   static getPatternNum(lv) {
     const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
     const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
-    const subSkillCombinationNum = (SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[1]]).length;
+    const subSkillCombinationNum = (SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[]]).length;
 
     return foodNum * subSkillCombinationNum * Nature.list.length;
   }

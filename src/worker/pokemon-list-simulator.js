@@ -79,19 +79,23 @@ addEventListener('message', async (event) => {
               let subSkillList = SubSkill.useSilverSeed(pokemon.subSkillList).slice(0, subSkillNum);
               
               // 計算
-              let selectEvaluate = await evaluateSimulator.selectEvaluate(
+              let selectEvaluate = evaluateSimulator.selectEvaluate(
                 afterPokemon, lv, 
                 foodList.slice(0, foodNum), 
                 subSkillList,
                 pokemon.nature, 
                 evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv]
               )
-              let { energyPerDay, berryNumPerDay, foodNumPerDay, skillPerDay } = selectEvaluate
+              let score = evaluateSimulator.selectEvaluateToScore(
+                selectEvaluate, 
+                subSkillList.includes('ゆめのかけらボーナス'), 
+                subSkillList.includes('リサーチEXPボーナス')
+              )
               
               let specialtyScore;
-              if (afterPokemon.specialty == 'きのみ') specialtyScore = berryNumPerDay;
-              if (afterPokemon.specialty == '食材')   specialtyScore = foodNumPerDay;
-              if (afterPokemon.specialty == 'スキル') specialtyScore = skillPerDay;
+              if (afterPokemon.specialty == 'きのみ') specialtyScore = selectEvaluate.berryNumPerDay;
+              if (afterPokemon.specialty == '食材')   specialtyScore = selectEvaluate.foodNumPerDay;
+              if (afterPokemon.specialty == 'スキル') specialtyScore = selectEvaluate.skillPerDay;
 
               function getRate(list, num) {
                 let max = list.length - 1;
@@ -104,13 +108,13 @@ addEventListener('message', async (event) => {
 
               // 総合スコアの厳選状況
               let percentileList = evaluateTable[after][lv][pokemon.foodIndexList.slice(0, foodNum).join('')]?.percentile ?? [];
-              let rate = getRate(percentileList, energyPerDay)
-              let ratio = energyPerDay / percentileList[config.simulation.selectBorder];
+              let rate = getRate(percentileList, score)
+              let ratio = score / percentileList[config.simulation.selectBorder];
               let item = {
                 name: after,
                 rate, ratio,
                 score: config.simulation.selectType == 0 ? rate : ratio,
-                energy: energyPerDay,
+                energy: score,
               };
               pokemon.evaluateResult[lv][after] = item
               evaluateMaxScore = Math.max(evaluateMaxScore, item.score)

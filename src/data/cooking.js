@@ -99,6 +99,21 @@ const list = [
 			{ name: 'ワカクサコーン', num: 14 },
 			{ name: 'あったかジンジャー', num: 12 },]
 	},
+	{
+		type: 'カレー', name: 'めざめるパワーシチュー', rate: 1.61, foodList: [
+			{ name: 'ワカクサ大豆', num: 28 },
+			{ name: 'あんみんトマト', num: 25 },
+			{ name: 'あじわいキノコ', num: 23 },
+			{ name: 'めざましコーヒー', num: 16 },]
+	},
+	{
+		type: 'カレー', name: 'ピヨピヨパンチ辛口カレー', rate: 1.35, foodList: [
+			{ name: 'げきからハーブ', num: 11 },
+			{ name: 'あまいミツ', num: 11 },
+			{ name: 'めざましコーヒー', num: 11 },
+		]
+	},
+
 	{ type: 'サラダ', name: 'ごちゃまぜサラダ', rate: 1, foodList: [] },
 	{
 		type: 'サラダ', name: 'とくせんリンゴサラダ', rate: 1.06, foodList: [
@@ -206,6 +221,22 @@ const list = [
 			{ name: 'あんみんトマト', num: 14 },
 			{ name: 'ほっこりポテト', num: 9 },]
 	},
+	{
+		type: 'サラダ', name: 'まけんきコーヒーサラダ', rate: 1.61, foodList: [
+			{ name: 'マメミート', num: 28 },
+			{ name: 'ほっこりポテト', num: 22 },
+			{ name: 'ピュアなオイル', num: 22 },
+			{ name: 'めざましコーヒー', num: 28 },]
+	},
+	{
+		type: 'サラダ', name: 'クロスチョップドサラダ', rate: 1.35, foodList: [
+			{ name: 'マメミート', num: 15 },
+			{ name: 'とくせんエッグ', num: 20 },
+			{ name: 'あんみんトマト', num: 10 },
+			{ name: 'ワカクサコーン', num: 11 },]
+	},
+
+
 	{ type: 'デザート', name: 'ごちゃまぜドリンク', rate: 1, foodList: [] },
 	{
 		type: 'デザート', name: 'とくせんリンゴジュース', rate: 1.06, foodList: [
@@ -318,6 +349,20 @@ const list = [
 			{ name: 'とくせんエッグ', num: 25 },
 			{ name: 'あまいミツ', num: 17 },
 			{ name: 'モーモーミルク', num: 10 },]
+	},
+	{
+		type: 'デザート', name: 'スパークスパイスコーラ', rate: 1.61, foodList: [
+			{ name: 'ふといながねぎ', num: 20 },
+			{ name: 'とくせんリンゴ', num: 35 },
+			{ name: 'あったかジンジャー', num: 20 },
+			{ name: 'めざましコーヒー', num: 12 },]
+	},
+	{
+		type: 'デザート', name: 'はやおきコーヒーゼリー', rate: 1.35, foodList: [
+			{ name: 'モーモーミルク', num: 14 },
+			{ name: 'あまいミツ', num: 12 },
+			{ name: 'めざましコーヒー', num: 16 },
+		]
 	},
 ]
 

@@ -16,18 +16,23 @@ self.addEventListener('message', async (event) => {
     scoreForSupportEvaluate,
   } = event.data;
 
-  
+
   // サブスキルの組み合わせを列挙
   const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
   let subSkillCombinationList = SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[1]]
   if (subSkillCombinationList == null) {
     throw 'サブスキルの組み合わせの取得に失敗しました。'
   }
-  
+
   subSkillCombinationList = subSkillCombinationList.map(subSkillCombination => {
+    let weightList = [];
+    if (subSkillCombination[0]) weightList.push({ yumebo: false, risabo: false, weight: subSkillCombination[0] })
+    if (subSkillCombination[1]) weightList.push({ yumebo:  true, risabo: false, weight: subSkillCombination[1] })
+    if (subSkillCombination[2]) weightList.push({ yumebo: false, risabo:  true, weight: subSkillCombination[2] })
+    if (subSkillCombination[3]) weightList.push({ yumebo:  true, risabo:  true, weight: subSkillCombination[3] })
     return {
-      subSkillList: subSkillCombination.slice(0, -1).map(id => SubSkill.idMap[id].name), 
-      subSkillWeight: subSkillCombination.at(-1)
+      subSkillList: subSkillCombination.s.map(id => SubSkill.idMap[id].name),
+      weightList,
     }
   })
 
@@ -39,7 +44,6 @@ self.addEventListener('message', async (event) => {
     * foodCombinationList.length
     * subSkillCombinationList.length
     * natureList.length;
-  console.log(countMax);
 
   let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
@@ -49,7 +53,9 @@ self.addEventListener('message', async (event) => {
   let scoreForHealerEvaluateList = [];
   let scoreForSupportEvaluateList = [];
 
-  let timeCounter = new TimeCounter();
+  // let timeCounter = new TimeCounter();
+
+  let totalWeight = subSkillCombinationList.reduce((a, x) => a + x.weightList.reduce((a, x) => a + x.weight, 0), 0) * Nature.list.length;
 
   for(let pokemon of pokemonList) {
     result[pokemon.name] = {};
@@ -72,40 +78,41 @@ self.addEventListener('message', async (event) => {
       let scoreList = [];
       let specialtyNumList = [];
 
-      timeCounter.start('sub_total')
-
       for(const subSkillCombination of subSkillCombinationList) {
-        let { subSkillList, subSkillWeight } = subSkillCombination
+        let { subSkillList, weightList } = subSkillCombination
 
         for(let nature of natureList) {
           let natureWeight = nature == null ? 5 : 1;
 
           let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
-            scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter
+            scoreForHealerEvaluate, scoreForSupportEvaluate, 
+            // timeCounter
           );
-          
-          timeCounter.start('after')
+
           if (isNaN(eachResult.energyPerDay)) {
             console.log(eachResult);
             throw '計算エラーが発生しました。'
           }
-          // let fillBase = new Array(subSkillWeight * natureWeight);
-          // let fillBase = new Array(1);
 
-          scoreList.push({
-            score: eachResult.energyPerDay,
-            baseScore: eachResult.energyPerDay / eachResult.averageHelpRate,
-            pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
-            // subSkillList,
-            eachResult,
-            weight: subSkillWeight * natureWeight,
-            // nature,
-          });
-          let specialtyScore;
-          if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
-          if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
-          if (pokemon.specialty == 'スキル') specialtyScore = eachResult.skillPerDay;
-          specialtyNumList.push({ score: specialtyScore, weight: subSkillWeight * natureWeight })
+          for(let weight of weightList) {
+            let score = simulator.selectEvaluateToScore(pokemon, weight.yumebo, weight.risabo)
+
+            scoreList.push({
+              score: score,
+              baseScore: score / eachResult.averageHelpRate,
+              pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
+              // subSkillList,
+              eachResult,
+              weight: weight.weight * natureWeight,
+              // nature,
+            });
+            let specialtyScore;
+            if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
+            if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
+            if (pokemon.specialty == 'スキル') specialtyScore = eachResult.skillPerDay;
+            specialtyNumList.push({ score: specialtyScore, weight: weight.weight * natureWeight })
+
+          }
 
           if(++count % 1000 == 0) {
             // console.log(count, countMax);
@@ -114,12 +121,9 @@ self.addEventListener('message', async (event) => {
               body: count / countMax,
             })
           }
-          timeCounter.stop('after')
         }
       }
-      
-      timeCounter.stop('sub_total')
-      
+
       scoreList.sort((a, b) => a.score - b.score)
       specialtyNumList.sort((a, b) => a.score - b.score);
       let percentile = [];
@@ -128,9 +132,9 @@ self.addEventListener('message', async (event) => {
       let weightSum = 0;
       let percentileIndex = 0;
       let nextIndex = 0;
-      let totalWeight = subSkillCombinationList.length * natureList.length;
       for(let i = 0; i < scoreList.length; i++) {
-        while (weightSum <= nextIndex && nextIndex < weightSum + scoreList[i].weight && percentileIndex <= 100) {
+        let nextWeightSum = weightSum + scoreList[i].weight
+        while (weightSum <= nextIndex && nextIndex < nextWeightSum && percentileIndex <= 100) {
           let percentileItem = { ...scoreList[i] };
           delete percentileItem.weight
           percentile.push(percentileItem);
@@ -139,7 +143,7 @@ self.addEventListener('message', async (event) => {
           percentileIndex++;
           nextIndex = Math.round((totalWeight - 1) * percentileIndex / 100)
         }
-        weightSum += scoreList[i].weight;
+        weightSum = nextWeightSum;
       }
 
       result[pokemon.name][foodIndexList.join('')] = {
@@ -153,7 +157,7 @@ self.addEventListener('message', async (event) => {
     }
   }
 
-  timeCounter.print();
+  // timeCounter.print();
 
   postMessage({
     status: 'success',

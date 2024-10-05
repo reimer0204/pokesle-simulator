@@ -368,7 +368,6 @@ class PokemonSimulator {
   }
 
   async calcHelp(pokemon, otherMorningHealEffect, otherDayHealEffect, modeOption = {}, timeCounter = null) {
-    timeCounter?.start('calcHelp1');
     let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
 
     let totalMorningHealEffect = (pokemon.selfMorningHealEffect + otherMorningHealEffect) * pokemon.natureGenkiMultiplier;
@@ -380,9 +379,6 @@ class PokemonSimulator {
       helpRate = HelpRate.getHelpRate(pokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, this.config)
       this.helpRateCache.set(cacheKey, helpRate)
     }
-    
-    timeCounter?.stop('calcHelp1');
-    timeCounter?.start('calcHelp2');
 
     pokemon.morningHealEffect = totalMorningHealEffect
     pokemon.dayHealEffect = totalDayHealEffect
@@ -418,10 +414,6 @@ class PokemonSimulator {
     pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * pokemon.normalHelpNum * pokemon.fixedFoodRate;
     pokemon.foodNumPerDay = pokemon.foodNum * pokemon.normalHelpNum * pokemon.fixedFoodRate;
     
-    
-    timeCounter?.stop('calcHelp2');
-    timeCounter?.start('calcHelp2.5');
-
     // 食材の個数
     if (this.mode != PokemonSimulator.MODE_SELECT) {
       for(let food of Food.list) {
@@ -429,9 +421,6 @@ class PokemonSimulator {
       }
     }
     
-    timeCounter?.stop('calcHelp2.5');
-    timeCounter?.start('calcHelp3');
-
     // きのみor食材エナジー/日
     pokemon.pickupEnergyPerDay = pokemon.berryEnergyPerDay + pokemon.foodEnergyPerDay;
 
@@ -659,15 +648,13 @@ class PokemonSimulator {
     // ここまでの概算日給
     pokemon.energyPerDay = pokemon.pickupEnergyPerDay + pokemon.skillEnergyPerDay;
 
-    timeCounter?.stop('calcHelp3');
-
     return pokemon;
   }
 
   // 厳選用評価
   selectEvaluate(basePokemon, lv, foodList, subSkillList, nature, scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter = null) {
 
-    timeCounter?.start('calcParameter')
+    // timeCounter?.start('calcParameter')
     let result = this.calcParameter(
       {
         ...basePokemon,
@@ -684,17 +671,17 @@ class PokemonSimulator {
       nature,
       this.config.selectEvaluate.berryMatchAll || basePokemon.specialty == 'きのみ',
     )
-    timeCounter?.stop('calcParameter')
+    // timeCounter?.stop('calcParameter')
 
-    timeCounter?.start('calcStatus')
+    // timeCounter?.start('calcStatus')
     this.calcStatus(
       result,
       subSkillList.includes('おてつだいボーナス') ? this.config.selectEvaluate.helpBonus / 5 : 0,
       subSkillList.includes('げんき回復ボーナス') ? 1 : 0,
     )
-    timeCounter?.stop('calcStatus')
+    // timeCounter?.stop('calcStatus')
 
-    timeCounter?.start('calcHelp')
+    // timeCounter?.start('calcHelp')
     this.calcHelp(
       result,
       result.otherMorningHealEffect,
@@ -712,18 +699,24 @@ class PokemonSimulator {
       result.energyPerDay /= 1 - (25 - this.config.selectEvaluate.helpBonus) * 0.01
     }
 
-    if (subSkillList.includes('ゆめのかけらボーナス')) {
-      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
-    }
-    if (subSkillList.includes('リサーチEXPボーナス')) {
-      result.energyPerDay *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
-    }
-
-    result.energyPerDay += result.shard * this.config.selectEvaluate.shardEnergy * this.config.selectEvaluate.shardBonus / 100;
-
-    timeCounter?.stop('calcHelp')
+    // timeCounter?.stop('calcHelp')
 
     return result;
+  }
+
+  selectEvaluateToScore(pokemon, yumebo, risabo) {
+    let score = pokemon.energyPerDay;
+
+    if (yumebo) {
+      score *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100;
+    }
+    if (risabo) {
+      score *= 1 + 0.06 * this.config.selectEvaluate.shardBonus / 100 / 2;
+    }
+
+    score += pokemon.shard * this.config.selectEvaluate.shardEnergy * this.config.selectEvaluate.shardBonus / 100;
+
+    return score;
   }
 }
 

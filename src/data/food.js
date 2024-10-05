@@ -15,6 +15,7 @@ import soothingcacaoImg from '../img/food/soothingcacao.png'
 import slowpoketailImg from '../img/food/slowpoketail.png'
 import greengrasssoybeansImg from '../img/food/greengrasssoybeans.png'
 import greengrasscornImg from '../img/food/greengrasscorn.png'
+import coffeeImg from '../img/food/coffee.png'
 
 
 const list = [
@@ -34,6 +35,7 @@ const list = [
   { name: 'おいしいシッポ',     energy: 342, img: slowpoketailImg },
   { name: 'ワカクサ大豆',       energy: 100, img: greengrasssoybeansImg },
   { name: 'ワカクサコーン',     energy: 140, img: greengrasscornImg },
+  { name: 'めざましコーヒー',   energy: 153, img: coffeeImg },
 ]
 
 for(let food of list) {
