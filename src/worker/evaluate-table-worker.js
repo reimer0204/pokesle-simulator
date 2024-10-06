@@ -95,7 +95,7 @@ self.addEventListener('message', async (event) => {
           }
 
           for(let weight of weightList) {
-            let score = simulator.selectEvaluateToScore(pokemon, weight.yumebo, weight.risabo)
+            let score = simulator.selectEvaluateToScore(eachResult, weight.yumebo, weight.risabo)
 
             scoreList.push({
               score: score,
