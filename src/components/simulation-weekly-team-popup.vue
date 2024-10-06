@@ -308,7 +308,7 @@ async function simulation() {
           <template v-for="(result, i) in simulationResult.teamList">
             <ToggleArea :open="i == 0" class="w-100">
               <template #headerText>
-                {{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy / 4).toLocaleString() }})
+                {{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy).toLocaleString() }})
                 <HelpButton class="ml-5px" title="スコア" markdown="
                   スコアは1週間でリサーチに使われるエナジーの総和＋エナジー換算したゆめのかけら×ゆめのかけら評価度です。
                   つまり、1日分＋2日分＋…＋7日分のエナジーになるので、ゆめのかけらを稼がない場合は最終エナジーの4倍がスコアになります。
@@ -316,7 +316,7 @@ async function simulation() {
                 " />
               </template>
 
-              <table>
+              <table v-if="false">
                 <tr>
                   <th></th>
                   <td v-for="pokemon in result.pokemonList"><NameLabel :pokemon="pokemon" /></td>
@@ -498,7 +498,7 @@ async function simulation() {
                 </thead>
                 <tbody>
                   <tr>
-                    <th class="vertical" :rowspan="config.teamSimulation.result.detail ? 13 : 9">編成</th>
+                    <th class="vertical" :rowspan="config.teamSimulation.result.detail ? 13 : 10">編成</th>
                     <th class="white-space-nowrap">名前</th>
                     <td v-for="pokemon in result.pokemonList"><NameLabel :pokemon="pokemon" /></td>
                     <td></td>
@@ -538,7 +538,7 @@ async function simulation() {
                     </td>
                     <td></td>
                   </tr>
-                  <tr v-if="config.teamSimulation.result.detail">
+                  <!-- <tr v-if="config.teamSimulation.result.detail">
                     <th>げんき回復</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
                       <template v-if="pokemon">
@@ -546,7 +546,7 @@ async function simulation() {
                       </template>
                     </td>
                     <td></td>
-                  </tr>
+                  </tr> -->
                   <tr v-if="config.teamSimulation.result.detail">
                     <th>日中手伝い倍率</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
@@ -575,18 +575,27 @@ async function simulation() {
                     </td>
                   </tr>
                   <tr>
-                    <th>スキル回数</th>
+                    <th>スキル</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
                       <template v-if="pokemon">
-                        {{ pokemon.skillPerDay.toFixed(1) }}
-                        {{ result.cookingPowerUpEffectList }}
+                        {{ pokemon.skill.name }}
                       </template>
                     </td>
                     <td class="text-align-right">
                     </td>
                   </tr>
                   <tr>
-                    <th>スキル</th>
+                    <th>スキル回数</th>
+                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                      <template v-if="pokemon">
+                        {{ pokemon.skillPerDay.toFixed(1) }}
+                      </template>
+                    </td>
+                    <td class="text-align-right">
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>スキルエナジー</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
                       <template v-if="pokemon">
                         {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}

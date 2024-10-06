@@ -432,9 +432,6 @@ self.addEventListener('message', async (event) => {
             let dayRate = 7 - config.teamSimulation.day
             let shardEnergy = energy * dayRate
 
-            // energyShard = (energy * dayRate) / config.selectEvaluate.shardEnergyRate * (
-            //   + (config.simulation.researchRankMax ? 1.5 : 1)
-            // )
             energyShard = shardEnergy / config.selectEvaluate.shardEnergyRate;
             researchExp = config.simulation.researchRankMax ? shardEnergy / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
 
@@ -443,16 +440,14 @@ self.addEventListener('message', async (event) => {
             todayResearchExp = config.simulation.researchRankMax ? ((config.teamSimulation.beforeEnergy ?? 0) + energy) / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
 
           } else {
-            energy *= 4;
-            todayEnergy = rawEnergy * 4;
             skillShard *= 7;
 
-            todayShard = energyShard = energy / config.selectEvaluate.shardEnergyRate;
-            todayResearchExp = researchExp = config.simulation.researchRankMax ? energy / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
+            todayShard = energyShard = energy * 4 / config.selectEvaluate.shardEnergyRate;
+            todayResearchExp = researchExp = config.simulation.researchRankMax ? energy * 4 / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
           }
           bonusShard = todayShard * shardBonusCount * 0.06 + todayResearchExp * researchExpBonusCount * 0.06 * 0.5
           shardRate = (bonusShard + skillShard) / (energyShard + researchExp)
-          score = rawEnergy * (shardRate * config.simulation.shardWeight / 100 + 1)
+          score = energy * (shardRate * config.simulation.shardWeight / 100 + 1)
 
           resultOption = {
             rawEnergy,
