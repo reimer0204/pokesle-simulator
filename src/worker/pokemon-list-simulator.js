@@ -155,6 +155,11 @@ addEventListener('message', async (event) => {
               addPokemonList.push(afterPokemon)
             }
           }
+
+          if (Object.keys(pokemon.evaluateResult).length == 0) {
+            pokemon.evaluateResult = null;
+            pokemon.evaluateSpecialty = null;
+          }
         }
       }
 
