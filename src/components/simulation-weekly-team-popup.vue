@@ -433,14 +433,7 @@ async function simulation() {
                   <tr>
                     <th>ゆめのかけら</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.shard">
-                        {{
-                          Math.round(
-                            pokemon.shard
-                            + (pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? result.todayShard * 0.06 : 0)
-                            + (pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? result.todayResearchExp * 0.06 : 0)
-                          ).toLocaleString() }}
-                      </template>
+                      <template v-if="pokemon.shardBonus">{{ Math.round(pokemon.shardBonus).toLocaleString() }}</template>
                     </td>
                     <td class="text-align-right">
                       {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.shard, 0)).toLocaleString() }}

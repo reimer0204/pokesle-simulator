@@ -348,12 +348,11 @@ self.addEventListener('message', async (event) => {
             skillShard *= 7;
             totalCookingChanceEffect *= 7;
             for(let food of Food.list) {
-              foodNum[food.name] += addFoodNum[food.name] * 7;
+              addFoodNum[food.name] *= 7
             }
-          } else {
-            for(let food of Food.list) {
-              foodNum[food.name] += addFoodNum[food.name];
-            }
+          }
+          for(let food of Food.list) {
+            foodNum[food.name] += addFoodNum[food.name];
           }
 
           // 料理
@@ -514,7 +513,7 @@ self.addEventListener('message', async (event) => {
         }
 
         if (borderScore < score) {
-          bestResult.push(JSON.parse(JSON.stringify({
+          let result = JSON.parse(JSON.stringify({
             beforeEnergy: config.teamSimulation.beforeEnergy,
             energy,
             aboutScore,
@@ -534,7 +533,18 @@ self.addEventListener('message', async (event) => {
             foodNum,
             cookingPowerUpEffectList,
             ...resultOption,
-          })));
+          }))
+
+          for(let pokemon of result.pokemonList) {
+            for(let food of Food.list) {
+              pokemon[food.name] = (pokemon[food.name] ?? 0) * 7;
+            }
+            pokemon.shardBonus = pokemon.shard
+              + (pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? result.todayShard * 0.06 : 0)
+              + (pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? result.todayResearchExp * 0.06 : 0)
+          }
+
+          bestResult.push(result);
           bestResult = bestResult.sort((a, b) => b.score - a.score).slice(0, 10);
 
           if (bestResult.length >= 10) {
