@@ -89,6 +89,7 @@ const defaultConfig = {
     maxRank: 30,
     resultNum: 10,
     cookingNum: 3,
+    nightCapPikachu: 0,
 
     result: {
       detail: false,

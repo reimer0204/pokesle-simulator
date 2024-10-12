@@ -535,6 +535,15 @@ const disabledCookingNum = computed(() => {
             </td>
           </tr>
           <tr>
+            <th>ナイトキャップピカチュウ</th>
+            <td>
+              <div><input type="number" class="w-80px" v-model="config.teamSimulation.nightCapPikachu" min="0"> Lv</div>
+              <small>
+                0の場合はナイトキャップピカチュウなし
+              </small>
+            </td>
+          </tr>
+          <tr>
             <th>食材ゲット採用率</th>
             <td>
               <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>

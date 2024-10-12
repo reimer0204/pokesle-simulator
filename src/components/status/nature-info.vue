@@ -6,10 +6,10 @@ const props = defineProps({
 
 <template>
   <div class="nature-info">
-    {{ props.nature.name }}
-    <div class="info">
-      <div class="good">{{ props.nature.goodShort }}</div>
-      <div class="weak">{{ props.nature.weakShort }}</div>
+    {{ props.nature?.name }}
+    <div class="info" v-if="props.nature">
+      <div class="good">{{ props.nature?.goodShort }}</div>
+      <div class="weak">{{ props.nature?.weakShort }}</div>
     </div>
 
   </div>

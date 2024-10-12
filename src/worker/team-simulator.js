@@ -2,6 +2,8 @@ import PokemonSimulator from '../models/pokemon-simulator'
 
 import Cooking from '../data/cooking'
 import Food from '../data/food'
+import Berry from '../data/berry';
+import Field from '../data/field';
 
 let borderScore = 0;
 self.addEventListener('message', async (event) => {
@@ -66,6 +68,54 @@ self.addEventListener('message', async (event) => {
     if (type == 'simulate') {
       borderScore = -1;
       let { fixedPokemonList, targetPokemonList, combinationList, config } = body;
+      
+      let nightCapPikachu = null;
+      if (config.teamSimulation.nightCapPikachu > 0) {
+        nightCapPikachu = [
+          {time: 4800, berry: 1, foodNumList: []},
+          {time: 4680, berry: 1, foodNumList: []},
+          {time: 4560, berry: 1, foodNumList: [1]},
+          {time: 4440, berry: 1, foodNumList: [1]},
+          {time: 4380, berry: 1, foodNumList: [1]},
+          {time: 4320, berry: 1, foodNumList: [1]},
+          {time: 4260, berry: 1, foodNumList: [1]},
+          {time: 4200, berry: 1, foodNumList: [1]},
+          {time: 4140, berry: 1, foodNumList: [1,1]},
+          {time: 4080, berry: 1, foodNumList: [1,1]},
+          {time: 4020, berry: 2, foodNumList: [1,1]},
+          {time: 3960, berry: 2, foodNumList: [1,1]},
+          {time: 3900, berry: 2, foodNumList: [2,1]},
+          {time: 3840, berry: 2, foodNumList: [2,1]},
+          {time: 3780, berry: 2, foodNumList: [2,1]},
+          {time: 3720, berry: 2, foodNumList: [2,1]},
+          {time: 3660, berry: 2, foodNumList: [2,2]},
+          {time: 3600, berry: 2, foodNumList: [2,2]},
+          {time: 3570, berry: 2, foodNumList: [2,2,2]},
+          {time: 3540, berry: 2, foodNumList: [2,2,2]},
+        ][config.teamSimulation.nightCapPikachu - 1]
+
+        nightCapPikachu.name = 'ナイトキャップピカチュウ';
+        nightCapPikachu.lv = config.teamSimulation.nightCapPikachu;
+        nightCapPikachu.enableSubSkillList = [];
+        nightCapPikachu.skillEnergyPerDay = 0;
+        nightCapPikachu.shard = 0;
+        
+        nightCapPikachu.helpNum = 86400 / nightCapPikachu.time;
+        nightCapPikachu.berryEnergyPerDay = nightCapPikachu.helpNum * Math.max(
+          Berry.map['ウブ'].energy + config.teamSimulation.nightCapPikachu - 1,
+          Berry.map['ウブ'].energy * (1.025 ** (config.teamSimulation.nightCapPikachu - 1))
+        ) * (1 - 0.16 * nightCapPikachu.foodNumList.length)
+
+        if((
+          config.simulation.field == 'ワカクサ本島' ? config.simulation.berryList : Field.map[config.simulation.field].berryList
+        )?.includes('ウブ')) {
+          nightCapPikachu.berryEnergyPerDay *= 2;
+        }
+
+        nightCapPikachu['とくせんリンゴ'] = nightCapPikachu.foodNumList.length > 0 ? nightCapPikachu.helpNum * 0.16 * nightCapPikachu.foodNumList[0] : 0
+        nightCapPikachu['リラックスカカオ'] = nightCapPikachu.foodNumList.length > 1 ? nightCapPikachu.helpNum * 0.16 * nightCapPikachu.foodNumList[1] : 0
+        nightCapPikachu['あまいミツ'] = nightCapPikachu.foodNumList.length > 2 ? nightCapPikachu.helpNum * 0.16 * nightCapPikachu.foodNumList[2] : 0
+      }
 
       // 料理チャンス結果計算用キャッシュ
       let cookingChangeCache = new Map();
@@ -196,6 +246,14 @@ self.addEventListener('message', async (event) => {
 
           // 料理チャンスの効果量を加算
           totalCookingChanceEffect += pokemon.cookingChanceEffect;
+        }
+
+        if (nightCapPikachu) {
+          pokemonList.push(nightCapPikachu)
+          
+          for(let food of Food.list) {
+            addFoodNum[food.name] += nightCapPikachu[food.name] ?? 0;
+          }
         }
 
         if (config.teamSimulation.sundayPrepare) {
