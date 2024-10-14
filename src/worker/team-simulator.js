@@ -415,7 +415,7 @@ self.addEventListener('message', async (event) => {
             // 料理チャンスによる倍率を計算
             let chanceWeekEffect = cookingChangeCache.get(totalCookingChanceEffect)
             if (chanceWeekEffect == null) {
-              chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect)
+              chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect, config.teamSimulation.day)
               cookingChangeCache.set(totalCookingChanceEffect, chanceWeekEffect)
             }
 
@@ -448,11 +448,9 @@ self.addEventListener('message', async (event) => {
                 energy += cookingEnergy;
 
               } else {
-                // TODO: 本当は料理チャンスはもうちょっと正しい計算がありそう
                 const cookingEnergy =
                   (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1])
-                  // * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
-                  * ((sunday ? 0.3 : 0.1) * (sunday ? 2 : 1) + 1)
+                  * (chanceWeekEffect.successProbabilityList[index % 3] * (sunday ? 2 : 1) + 1)
                   * config.simulation.cookingWeight;
 
                 cookingList.push({

@@ -90,8 +90,6 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   )).flat(1);
 }
 
-
-let workerList = [];
 async function simulation() {
   asyncWatcher.run(async (progressCounter) => {
     let [stepA, stepB, stepC] = progressCounter.split(1, 3, 8);
@@ -100,7 +98,6 @@ async function simulation() {
       ...config,
       simulation: {
         ...config.simulation,
-        sundayPrepare: true,
         cookingType: cookingType.value,
       },
       teamSimulation: {

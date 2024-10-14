@@ -139,7 +139,7 @@ class PokemonBox {
   }
   
   static async exportGoogleSpreadsheet() {
-    // asyncWatcher.run(async () => {
+    if (config.pokemonBox.gs.url) {
       const form = new FormData();
       form.append('json', JSON.stringify({
         sheet: config.pokemonBox.gs.sheet,
@@ -161,7 +161,7 @@ class PokemonBox {
       }))
   
       await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
-    // })
+    }
   }
 
   static async importGoogleSpreadsheet(auto = false) {

@@ -5,7 +5,6 @@ import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
 import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
-import SimulationDailyTeamPopup from '../components/simulation-daily-team-popup.vue';
 import SimulationPrepareTeamPopup from '../components/simulation-prepare-team-popup.vue';
 import SimulationWeeklyTeamPopup from '../components/simulation-weekly-team-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
@@ -528,6 +527,15 @@ const disabledCookingNum = computed(() => {
         </template>
 
         <SettingTable>
+          <tr>
+            <th>レシピレベル</th>
+            <td>
+              <div><input type="number" v-model="config.simulation.cookingRecipeLv" min="0"> Lv</div>
+              <small>
+                個別に設定する機能は検討中なのでもしばらくお待ちください
+              </small>
+            </td>
+          </tr>
           <tr>
             <th>なべの大きさ</th>
             <td>

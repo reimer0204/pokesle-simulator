@@ -158,6 +158,9 @@ const defaultConfig = {
   },
 }
 
+defaultConfig.simulation.cookingRecipeLv = Object.keys(Cooking.recipeLvs).length;
+defaultConfig.simulation.potSize = Cooking.potMax;
+
 for(let food of Food.list) {
   defaultConfig.foodDefaultNum[food.name] = 0;
 }

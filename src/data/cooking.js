@@ -375,7 +375,7 @@ class Cooking {
 Cooking.list = list;
 Cooking.map = map;
 
-Cooking.potMax = 57;
+Cooking.potMax = 69;
 
 Cooking.recipeLvs = {
 	 1: 1.00,  2: 1.02,  3: 1.04,  4: 1.06,  5: 1.08,  6: 1.09,  7: 1.11,  8: 1.13,  9: 1.16, 10: 1.18,
@@ -389,34 +389,82 @@ Cooking.maxRecipeBonus = Math.max(...Object.values(Cooking.recipeLvs))
 
 // 週に料理チャンスでn%上がる時、どのくらい期待値があるか
 // TODO: こんなfor回さんでも計算できない？頑張ってみたけど無理だった…
-Cooking.getChanceWeekEffect = (effect) => {
-	if (effect == 0) return {
-		total: 24.6,
-		successProbabilityList: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3, 0.3, 0.3]
-	}
-	let p = Math.min(effect / 21, 0.7);
+Cooking.getChanceWeekEffect = (effect, day = null) => {
+	if (effect == 0) {
+		if (day == null) {
 
-	let result = 0;
-	let pList = [1];
-
-	// 料理回数
-	for(let i = 1; i <= 21; i++) {
-		let thisP = 0;
-
-		// pの積算
-		for(let j = 1; j <= i; j++) {
-			let rate = ((i <= 18 ? 0.1 : 0.3) + p * j) * pList[i - j];
-
-			for(let k = i - j + 1; k < i; k++) {
-				rate *= 1 - pList[k]
+			return {
+				total: 24.6,
+				successProbabilityList: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3, 0.3, 0.3]
 			}
-			thisP += rate;
+		} else if (day == 6){
+			return {
+				total: 3.9,
+				successProbabilityList: [0.3, 0.3, 0.3]
+			}
+		} else {
+			return {
+				total: 3.3,
+				successProbabilityList: [0.1, 0.1, 0.1]
+			}
 		}
-		result += thisP * (i <= 18 ? 1 : 2) + 1;
-		pList.push(thisP)
 	}
 
-	return { total: result, successProbabilityList: pList.slice(1) };
+	if (day == null) {
+		// 1週間の場合
+		let p = Math.min(effect / 21, 0.7);
+
+		let result = 0;
+		let pList = [1];
+
+		// 料理回数
+		for(let i = 1; i <= 21; i++) {
+			let thisP = 0;
+
+			// pの積算
+			for(let j = 1; j <= i; j++) {
+				let rate = ((i <= 18 ? 0.1 : 0.3) + p * j) * pList[i - j];
+
+				for(let k = i - j + 1; k < i; k++) {
+					rate *= 1 - pList[k]
+				}
+				thisP += rate;
+			}
+			result += thisP * (i <= 18 ? 1 : 2) + 1;
+			pList.push(thisP)
+		}
+
+		return { total: result, successProbabilityList: pList.slice(1) };
+
+	} else {
+		// 1週間の場合
+
+		// 1回あたりの上昇量(70%が上限)
+		let p = Math.min(effect / 3, 0.7);
+
+		let result = 0;
+		let pList = [1];
+
+		// 料理回数
+		for(let i = 1; i <= 3; i++) {
+			let thisP = 0;
+
+			// pの積算
+			for(let j = 1; j <= i; j++) {
+				let rate = ((day == 6 ? 0.3 : 0.1) + p * j) * pList[i - j];
+
+				for(let k = i - j + 1; k < i; k++) {
+					rate *= 1 - pList[k]
+				}
+				thisP += rate;
+			}
+			result += thisP * (day == 6 ? 2 : 1) + 1;
+			pList.push(thisP)
+		}
+
+		return { total: result, successProbabilityList: pList.slice(1) };
+
+	}
 }
 
 export default Cooking;
