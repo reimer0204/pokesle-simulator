@@ -4,6 +4,7 @@ import Nature from "../data/nature";
 import SubSkill from "../data/sub-skill";
 import SubSkillCombination from "../data/sub-skill-combination";
 import PokemonSimulator from "../models/pokemon-simulator";
+import TimeCounter from "../models/time-counter";
 
 self.addEventListener('message', async (event) => {
   const {
@@ -47,6 +48,8 @@ self.addEventListener('message', async (event) => {
   let scoreForHealerEvaluateList = [];
   let scoreForSupportEvaluateList = [];
 
+  let timeCounter = new TimeCounter();
+
   for(let pokemon of pokemonList) {
     result[pokemon.name] = {};
 
@@ -75,7 +78,7 @@ self.addEventListener('message', async (event) => {
           let natureWeight = nature == null ? 5 : 1;
 
           let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
-            scoreForHealerEvaluate, scoreForSupportEvaluate,
+            scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter
           );
           if (isNaN(eachResult.energyPerDay)) {
             console.log(eachResult);
@@ -126,6 +129,8 @@ self.addEventListener('message', async (event) => {
 
     }
   }
+
+  timeCounter.print();
 
   postMessage({
     status: 'success',
