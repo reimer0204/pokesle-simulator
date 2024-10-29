@@ -4,6 +4,8 @@ const list = [
   { name: 'トープ洞窟',       berryList: ['フィラ', 'ヒメリ', 'オボン']},
   { name: 'ウノハナ雪原',     berryList: ['チーゴ', 'キー', 'ウイ']},
   { name: 'ラピスラズリ湖畔', berryList: ['ドリ', 'マゴ', 'クラボ']},
+  { name: 'ゴールド旧発電所', berryList: ['ウブ', 'ベリブ', 'ベリー']},
+  // { name: '？？？', berryList: ['カゴ', 'ラム', 'ヤチェ']},
 ];
 
 class Field {

@@ -597,7 +597,7 @@ class PokemonSimulator {
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // 効果量だけ記憶しておく
-            pokemon.cookingPowerUpEffect = effect * pokemon.skillPerDay * pokemon.skillEffectRate;
+            pokemon.cookingPowerUpEffect = effect * pokemon.skillEffectRate;
 
           } else if (this.mode == PokemonSimulator.MODE_SELECT) {
             let limit = Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / effect) * 3
