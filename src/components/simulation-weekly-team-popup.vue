@@ -66,6 +66,9 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   // おてボ用に概算日給の高い上位6匹をリストアップしておく
   let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
 
+  // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
+  let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
+
   // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
   let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
 
@@ -83,6 +86,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
           Math.floor(pokemonList.length * (i + 1) / config.workerNum),
         ),
         helpBonusTop6,
+        berryEnergyTop5,
         pickupEnergyPerHelpTop5,
         healCheckTarget,
       }
@@ -126,6 +130,7 @@ async function simulation() {
 
 
     // 組み合わせを列挙
+    console.log('combinationList before');
     let combinationList = await (async () => {
       let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
         sum: 0,
@@ -160,6 +165,7 @@ async function simulation() {
         }),
       )).flat(1);
     })()
+    console.log('combinationList after');
 
     // 概算エナジーの高い順にソート
     combinationList.sort((a, b) => b.aboutScore - a.aboutScore)
@@ -168,7 +174,8 @@ async function simulation() {
       workerCombinationListList[i % customConfig.workerNum].push(combinationList[i])
     }
 
-    let bestResult = null;
+    console.log('simulate before');
+    let bestResult = [];
     let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);
     await multiWorker.call(
       stepC,
@@ -195,6 +202,7 @@ async function simulation() {
         return body.progress;
       }
     );
+    console.log('simulate after');
 
     simulationResult.value = {
       targetDay: customConfig.teamSimulation.day,

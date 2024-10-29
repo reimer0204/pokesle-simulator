@@ -241,6 +241,7 @@ addEventListener('message', async (event) => {
     let {
       pokemonList, 
       helpBonusTop6,
+      berryEnergyTop5,
       pickupEnergyPerHelpTop5,
       healCheckTarget,
     } = event.data;
@@ -305,6 +306,13 @@ addEventListener('message', async (event) => {
         let effect = pokemon.skill.effect[pokemon.fixedSkillLv - 1];
         for(let skill of skillList) {
           switch(skill.name) {
+            case 'ばけのかわ(きのみバースト)': {
+              let berryEnergySum = [...berryEnergyTop5.filter(x => x.index != pokemon.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
+              let success = 1 - (0.9 ** pokemon.skillPerDay);
+              pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay);
+              break;
+            }
+            
             case 'おてつだいサポートS':
             case 'おてつだいブースト':
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.index != pokemon.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)

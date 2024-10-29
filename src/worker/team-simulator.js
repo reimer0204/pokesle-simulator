@@ -29,7 +29,7 @@ self.addEventListener('message', async (event) => {
 
           combinationList.push({ combination: [...combination], aboutScore })
 
-          if (++count % 1000 == 0) {
+          if (++count % 10000 == 0) {
             postMessage({
               status: 'progress',
               body: count / pattern,
@@ -66,6 +66,7 @@ self.addEventListener('message', async (event) => {
     }
 
     if (type == 'simulate') {
+      let bestResult = [];
       borderScore = -1;
       let { fixedPokemonList, targetPokemonList, combinationList, config } = body;
       
@@ -138,7 +139,6 @@ self.addEventListener('message', async (event) => {
       for(let pokemon of fixedPokemonList) simulator.memberToInfo(pokemon);
       for(let pokemon of targetPokemonList) simulator.memberToInfo(pokemon);
 
-      let bestResult = [];
       let count = 0;
       let dayLength = config.teamSimulation.day != null ? 1 : 7;
       let cookingNum = config.teamSimulation.day != null ? (config.teamSimulation.cookingNum ?? 3) : 21
@@ -187,7 +187,6 @@ self.addEventListener('message', async (event) => {
           shardBonusCount += pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? 1 : 0;
           legendNum += pokemon.legend;
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? 1 : 0;
-
 
           if (typeSetMap[pokemon.type] === undefined) typeSetMap[pokemon.type] = new Set();
           typeSetMap[pokemon.type].add(pokemon.name);
@@ -534,8 +533,10 @@ self.addEventListener('message', async (event) => {
           }))
 
           for(let pokemon of result.pokemonList) {
-            for(let food of Food.list) {
-              pokemon[food.name] = (pokemon[food.name] ?? 0) * 7;
+            if (config.teamSimulation.day == null) {
+              for(let food of Food.list) {
+                pokemon[food.name] = (pokemon[food.name] ?? 0) * 7;
+              }
             }
             pokemon.shardBonus = pokemon.shard
               + (pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? result.todayShard * 0.06 : 0)

@@ -6,6 +6,7 @@ const list = [
   { name: 'エナジーチャージS' ,            effect: [400.0,  569.0,	 785.0,	1083.0,	1496.0,	2066.0,	3002.0] },
   { name: 'エナジーチャージS(ランダム)',   effect: [500.0,  711.5,	 981.5,	1354.0,	1870.0,	2582.5,	3752.5] },
   { name: 'エナジーチャージM',             effect: [800.0, 1251.0,	1726.0,	2383.0,	3290.0,	4546.0,	6409.0] },
+  { name: 'ばけのかわ(きのみバースト)',    effect: [    8,     10,	    15,	    17,	    19,	    21], team: true, metronome: false },
   { name: 'げんきチャージS',               effect: [ 12.0,   16.0,	  21.0,	  27.0,	  34.0,   43.0] },
   { name: 'げんきエールS',                 effect: [ 14.0,   17.0,	  23.0,	  29.0,	  38.0,   51.0], team: true },
   { name: 'げんきオールS',                 effect: [  5.0,    7.0,	   9.0,	  11.0,	  15.0,   18.0], team: true },
@@ -25,7 +26,7 @@ class Skill {
 }
 Skill.list = list;
 Skill.map = list.reduce((a, x) => (a[x.name] = x, a), {});
-Skill.metronomeTarget = Skill.list.filter(x => x.name != 'ゆびをふる');
+Skill.metronomeTarget = Skill.list.filter(x => x.name != 'ゆびをふる' && x.metronome !== false);
 Skill.metronomeNonTeamTarget = Skill.metronomeTarget.filter(x => !x.team);
 Skill.metronomeTeamTarget = Skill.metronomeTarget.filter(x => x.team);
 

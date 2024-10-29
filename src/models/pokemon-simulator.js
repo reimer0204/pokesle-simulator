@@ -167,13 +167,14 @@ class PokemonSimulator {
       + (subSkillList.includes('きのみの数S') ? 1 : 0)
 
     // きのみエナジー/手伝い
-    result.berryEnergyPerHelp = result.berryNum
-    * Math.max(
+    result.berryEnergy = Math.max(
       result.berry.energy + result.fixLv - 1,
       result.berry.energy * (1.025 ** (result.fixLv - 1))
     )
     * (berryMatch ? 2 : 1)
     * (this.config.simulation.berryWeight ?? 1)
+
+    result.berryEnergyPerHelp = result.berryEnergy * result.berryNum
 
     // 食材確率
     result.fixedFoodRate = result.foodRate
@@ -462,6 +463,31 @@ class PokemonSimulator {
         case 'エナジーチャージS(ランダム)':
         case 'エナジーチャージM':
           energy = effect * pokemon.skillEffectRate;
+          break;
+
+        case 'ばけのかわ(きのみバースト)':
+          let bonus = [1, 2, 2, 3, 4, 5][pokemon.fixedSkillLv - 1] ?? 0
+
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            energy = pokemon.berryEnergy * effect
+            // 他メンバーのエナジーはあとで計算
+            pokemon.burstBonus = bonus;
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            energy = 0
+            for(let subPokemon of pokemonList) {
+              energy += pokemon.berryEnergy * (pokemon == subPokemon ? effect : bonus);
+            }
+
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
+            energy = 
+              pokemon.berryEnergy * effect
+              + Math.max(Berry.map['ヤチェ'].energy + pokemon.fixLv - 1, Berry.map['ヤチェ'].energy * (1.025 ** (pokemon.fixLv - 1))) * bonus * 4;
+          }
+
+          let success = 1 - (0.9 ** pokemon.skillPerDay);
+          energy *= (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
+
           break;
 
         case 'おてつだいサポートS':

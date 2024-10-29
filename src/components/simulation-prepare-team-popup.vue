@@ -72,6 +72,9 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   // おてボ用に概算日給の高い上位6匹をリストアップしておく
   let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
 
+  // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
+  let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
+
   // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
   let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
 
@@ -89,6 +92,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
           Math.floor(pokemonList.length * (i + 1) / config.workerNum),
         ),
         helpBonusTop6,
+        berryEnergyTop5,
         pickupEnergyPerHelpTop5,
         healCheckTarget,
       }

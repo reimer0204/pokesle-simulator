@@ -68,6 +68,9 @@ async function createPokemonList(setConfig = false) {
     // おてボ用に概算日給の高い上位6匹をリストアップしておく
     let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
 
+    // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
+    let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
+
     // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
     let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
 
@@ -85,6 +88,7 @@ async function createPokemonList(setConfig = false) {
             Math.floor(pokemonList.length * (i + 1) / config.workerNum),
           ),
           helpBonusTop6,
+          berryEnergyTop5,
           pickupEnergyPerHelpTop5,
           healCheckTarget,
         }
@@ -108,12 +112,12 @@ watch(PokemonBox.watch, () => createPokemonList())
 
 const columnList = computed(() => {
   let result = [
-    { key: 'edit', name: '', type: String },
+    { key: 'edit', name: '', type: Number, convert: item => item.fix },
     { key: 'index', name: 'No', type: Number },
     { key: 'name', name: '名前', type: String },
     { key: 'lv', name: 'Lv', type: Number },
     { key: 'foodList', name: '食材', type: null },
-    { key: 'skillLv', name: 'スキル\nLv', type: null },
+    { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null },
     { key: 'subSkillList', name: 'サブスキル', type: null },
     { key: 'natureName', name: '性格', type: null },
     { key: 'score', name: 'スコア', type: Number, fixed: 1 },
@@ -631,7 +635,7 @@ const disabledCookingNum = computed(() => {
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
         <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
-          :fixColumn="config.pokemonList.fixScore ? 9 : 3"
+          :fixColumn="config.pokemonList.fixScore ? 10 : 4"
           :pager="config.pokemonList.pageUnit"
           scroll
         >
@@ -659,6 +663,10 @@ const disabledCookingNum = computed(() => {
                 <svg v-if="data.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
               </div>
             </div>
+          </template>
+
+          <template #header.edit>
+            <help-button style="color: #FFF;" title="この列について" markdown="この列でソートするとPTシミュへの固定/除外でソートできます。"></help-button>
           </template>
 
           <template #index="{ data }">
