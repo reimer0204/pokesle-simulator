@@ -232,12 +232,12 @@ async function showGoogleSpreadsheetPopup() {
 }
 
 async function simulationWeeklyTeam() {
-  Popup.show(SimulationWeeklyTeamPopup, { pokemonList: simulatedPokemonList.value })
+  Popup.show(SimulationWeeklyTeamPopup, { defaultTargetDay: -1 })
 }
 
 
 async function simulationDailyTeam() {
-  Popup.show(SimulationDailyTeamPopup)
+  Popup.show(SimulationWeeklyTeamPopup)
 }
 
 async function simulationPrepareTeam() {
