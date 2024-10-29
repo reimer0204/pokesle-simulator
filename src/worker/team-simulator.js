@@ -91,6 +91,7 @@ self.addEventListener('message', async (event) => {
       let bestResult = [];
       let count = 0;
       let dayLength = config.teamSimulation.day != null ? 1 : 7;
+      let cookingNum = config.teamSimulation.day != null ? (config.teamSimulation.cookingNum ?? 3) : 21
 
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
         aboutScore *= dayLength;
@@ -120,12 +121,15 @@ self.addEventListener('message', async (event) => {
         let useFoodNum = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])) };
         let addFoodNum = { ...useFoodNum };
         let energyShard = 0;
+        let researchExp = 0;
         let skillShard = 0;
         let bonusShard = 0;
         let typeSetMap = {};
         let noDuplicateCheck = new Set();
         let resultOption = {};
         let legendNum = 0;
+        let todayShard = 0;
+        let todayResearchExp = 0;
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0;
@@ -426,35 +430,29 @@ self.addEventListener('message', async (event) => {
           let shardRate;
           if (config.teamSimulation.day != null) {
             let dayRate = 7 - config.teamSimulation.day
+            let shardEnergy = energy * dayRate
 
-            energyShard = (energy * dayRate) / config.selectEvaluate.shardEnergyRate * (
-              + (config.simulation.researchRankMax ? 1.5 : 1)
-            )
+            // energyShard = (energy * dayRate) / config.selectEvaluate.shardEnergyRate * (
+            //   + (config.simulation.researchRankMax ? 1.5 : 1)
+            // )
+            energyShard = shardEnergy / config.selectEvaluate.shardEnergyRate;
+            researchExp = config.simulation.researchRankMax ? shardEnergy / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
 
             // ゆめボとリサボで得られるゆめのかけら
-            bonusShard = (((config.teamSimulation.beforeEnergy ?? 0) + energy) / config.selectEvaluate.shardEnergyRate) * (
-              shardBonusCount * 0.06
-              + (config.simulation.researchRankMax ? researchExpBonusCount * 0.06 * 0.5 : 0)
-            )
-
-            shardRate = (energyShard + bonusShard + skillShard) / (energyShard)
+            todayShard = ((config.teamSimulation.beforeEnergy ?? 0) + energy) / config.selectEvaluate.shardEnergyRate;
+            todayResearchExp = config.simulation.researchRankMax ? ((config.teamSimulation.beforeEnergy ?? 0) + energy) / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
 
           } else {
             energy *= 4;
+            todayEnergy = rawEnergy * 4;
+            skillShard *= 7;
 
-            energyShard = energy / config.selectEvaluate.shardEnergyRate * (
-              + (config.simulation.researchRankMax ? 1.5 : 1)
-            )
-
-            // ゆめボとリサボで得られるゆめのかけら
-            bonusShard = energy / config.selectEvaluate.shardEnergyRate * (
-              shardBonusCount * 0.06
-              + (config.simulation.researchRankMax ? researchExpBonusCount * 0.06 * 0.5 : 0)
-            )
-
-            shardRate = (energyShard + bonusShard + skillShard * 7) / energyShard;
+            todayShard = energyShard = energy / config.selectEvaluate.shardEnergyRate;
+            todayResearchExp = researchExp = config.simulation.researchRankMax ? energy / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
           }
-          score = energy * ((shardRate - 1) * config.simulation.shardWeight / 100 + 1)
+          bonusShard = todayShard * shardBonusCount * 0.06 + todayResearchExp * researchExpBonusCount * 0.06 * 0.5
+          shardRate = (bonusShard + skillShard) / (energyShard + researchExp)
+          score = rawEnergy * (shardRate * config.simulation.shardWeight / 100 + 1)
 
           resultOption = {
             rawEnergy,
@@ -470,6 +468,8 @@ self.addEventListener('message', async (event) => {
             energyShard,
             bonusShard,
             skillShard,
+            todayShard,
+            todayResearchExp,
             score,
             shardBonusCount,
             researchExpBonusCount,
@@ -479,6 +479,7 @@ self.addEventListener('message', async (event) => {
             addFoodNum,
             defaultFoodNum,
             foodNum,
+            cookingPowerUpEffectList,
             ...resultOption,
           })));
           bestResult = bestResult.sort((a, b) => b.score - a.score).slice(0, 10);
