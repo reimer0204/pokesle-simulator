@@ -45,6 +45,9 @@ class MultiWorker {
     progressCallback = null,
     threadNum = null,
   ) {
+
+    const startAt = performance.now();
+
     let promiseList = [];
     let workerProgressList = []
     threadNum ??= this.clusterList.length
@@ -84,6 +87,8 @@ class MultiWorker {
     let result = await Promise.all(promiseList)
     
     progressCounter?.set(1)
+
+    console.debug('実行時間(秒)', ((performance.now() - startAt) / 1000).toFixed(2));
 
     return result;
   }

@@ -350,7 +350,7 @@ const percentilePosition = computed(() => {
                 <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               
-              <template v-if="skill.name == 'げんきエールS' || skill.name == 'げんきオールS'">
+              <template v-if="skill.genki && skill.team">
                 <template v-if="result.skill.name != 'ゆびをふる' || (result.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')">
                   1日の1匹あたりの回復量<br>
                   起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>

@@ -9,7 +9,7 @@ import MultiWorker from "./multi-worker";
 
 export default class EvaluateTable {
 
-  static VERSION = 20241005;
+  static VERSION = 20241116;
 
   static isEnableEvaluateTable(config) {
     return config.version.evaluateTable == this.VERSION

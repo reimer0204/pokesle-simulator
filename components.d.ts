@@ -22,6 +22,7 @@ declare module 'vue' {
     NameLabel: typeof import('./src/components/status/name-label.vue')['default']
     NatureInfo: typeof import('./src/components/status/nature-info.vue')['default']
     PokemonBoxTsvPopup: typeof import('./src/components/pokemon-box-tsv-popup.vue')['default']
+    PokemonFilterEditor: typeof import('./src/components/filter/pokemon-filter-editor.vue')['default']
     PopupBase: typeof import('./src/components/util/popup-base.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

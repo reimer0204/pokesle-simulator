@@ -68,7 +68,45 @@ self.addEventListener('message', async (event) => {
     if (type == 'simulate') {
       let bestResult = [];
       borderScore = -1;
-      let { fixedPokemonList, targetPokemonList, combinationList, config } = body;
+      let { rankMax, pickup, topList, pattern, fixedPokemonList, targetPokemonList, config } = body;
+      
+      // 組み合わせを列挙
+      let combinationList = [];
+      for(let top of topList) {
+        let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
+        let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
+        combinationLoop: while(true) {
+          let aboutScore = 0;
+          if (targetPokemonList) {
+            for(let index of combination) {
+              aboutScore += targetPokemonList[index].score
+            }
+          }
+
+          combinationList.push({ combination: [...combination], aboutScore })
+
+          if (combinationList.length % 10000 == 0) {
+            postMessage({
+              status: 'progress',
+              body: combinationList.length / pattern * 0.1,
+            })
+          }
+
+          for(let i = pickup - 1; i >= 0; i--) {
+            combination[i]++;
+            if(combination[i] > combinationLimit[i]) {
+              if (i == 0) {
+                break combinationLoop;
+              }
+            } else {
+              for(let j = i + 1; j < pickup; j++) {
+                combination[j] = combination[j - 1] + 1;
+              }
+              break;
+            }
+          }
+        }
+      }
       
       let nightCapPikachu = null;
       if (config.teamSimulation.nightCapPikachu > 0) {
@@ -142,6 +180,8 @@ self.addEventListener('message', async (event) => {
       let count = 0;
       let dayLength = config.teamSimulation.day != null ? 1 : 7;
       let cookingNum = config.teamSimulation.day != null ? (config.teamSimulation.cookingNum ?? 3) : 21
+      let food0Map = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])) };
+      let defaultFoodNum = { ...food0Map, ...config.foodDefaultNum };
 
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
         aboutScore *= dayLength;
@@ -162,14 +202,14 @@ self.addEventListener('message', async (event) => {
         let helpBonusCount = 0;
         let genkiBonusCount = 0;
         let shardBonusCount = 0;
+        let suiminExpBonusCount = 0;
         let researchExpBonusCount = 0;
         let cookingPowerUpEffectList = new Array(21).fill(0);
         let totalCookingPowerUpEffect = 0;
         let totalCookingChanceEffect = 0;
-        let defaultFoodNum = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])), ...config.foodDefaultNum };
         let foodNum = { ...defaultFoodNum };
-        let useFoodNum = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])) };
-        let addFoodNum = { ...useFoodNum };
+        let useFoodNum = { ...food0Map };
+        let addFoodNum = { ...food0Map };
         let energyShard = 0;
         let researchExp = 0;
         let skillShard = 0;
@@ -185,6 +225,7 @@ self.addEventListener('message', async (event) => {
           helpBonusCount += pokemon.enableSubSkillList.includes('おてつだいボーナス') ? 1 : 0;
           genkiBonusCount += pokemon.enableSubSkillList.includes('げんき回復ボーナス') ? 1 : 0;
           shardBonusCount += pokemon.enableSubSkillList.includes('ゆめのかけらボーナス') ? 1 : 0;
+          suiminExpBonusCount += pokemon.enableSubSkillList.includes('睡眠EXPボーナス') ? 1 : 0;
           legendNum += pokemon.legend;
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.enableSubSkillList.includes('リサーチEXPボーナス') ? 1 : 0;
 
@@ -199,6 +240,11 @@ self.addEventListener('message', async (event) => {
           }
         }
 
+        // 睡眠EXPボーナスが指定値に満たない場合は不採用
+        if (suiminExpBonusCount < config.teamSimulation.require.suiminExp) {
+          continue;
+        }
+
         // 伝説は2匹以上入れられない
         if (legendNum >= 2) {
           continue;
@@ -207,16 +253,17 @@ self.addEventListener('message', async (event) => {
         // 個々の評価
         let totalOtherMorningHealEffect = 0;
         let totalOtherDayHealEffect = 0;
-        // await Promise.all(pokemonList.map(async pokemon => {
-        //   await simulator.calcStatus(pokemon, helpBonusCount);
-        //   totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
-        //   totalOtherDayHealEffect += pokemon.otherDayHealEffect;
-        // }))
         for(let pokemon of pokemonList) {
           simulator.calcStatus(pokemon, helpBonusCount, genkiBonusCount);
           totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
           totalOtherDayHealEffect += pokemon.otherDayHealEffect;
         }
+
+        // 睡眠EXPボーナスが指定値に満たない場合は不採用
+        if (suiminExpBonusCount < config.teamSimulation.require.suiminExp) {
+          continue;
+        }
+
         for(let pokemon of pokemonList) {
           simulator.calcHelp(
             pokemon,
@@ -227,6 +274,13 @@ self.addEventListener('message', async (event) => {
               helpBoostCount: typeSetMap[pokemon.type].size,
             },
           )
+          
+          // げんきによるお手伝い効率が指定値を下回ったら不採用
+          if (pokemon.dayHelpRate * 100 < config.teamSimulation.require.dayHelpRate
+            || pokemon.nightHelpRate * 100 < config.teamSimulation.require.nightHelpRate
+          ) {
+            continue combinationLoop;
+          }
 
           energy += pokemon.berryEnergyPerDay;
           energy += pokemon.skillEnergyPerDay;
@@ -555,7 +609,7 @@ self.addEventListener('message', async (event) => {
           postMessage({
             status: 'progress',
             body: {
-              progress: count / combinationList.length,
+              progress: count / combinationList.length * 0.9 + 0.1,
               bestResult,
             }
           })

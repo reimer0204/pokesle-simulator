@@ -10,6 +10,15 @@ app.use(VueCookies, { expires: '30y' })
 import Popup from './models/popup/popupper';
 app.use(Popup);
 
+Array.prototype.swap = function(a, b) {
+  if (0 <= a && a < this.length && 0 <= b && b < this.length) {
+    const aValue = this[a];
+    this[a] = this[b];
+    this[b] = aValue;
+  }
+  return this;
+}
+
 import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
 import DataPage from './pages/data.vue'

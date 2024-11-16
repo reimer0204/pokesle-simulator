@@ -249,7 +249,7 @@ addEventListener('message', async (event) => {
     let helpRateCache = new Map();
 
     // 他メンバーに影響を与える要素について計算
-    await Promise.all(pokemonList.map(async pokemon => {
+    for(const pokemon of pokemonList) {
       pokemon.supportScorePerDay = 0;
       pokemon.supportEnergyPerDay = 0;
   
@@ -276,10 +276,10 @@ addEventListener('message', async (event) => {
         }
       }
 
-      // げんき回復系評価
+      // げんき回復系スキル評価
       if (pokemon.otherMorningHealEffect > 0 || pokemon.otherDayHealEffect > 0) {
 
-        let healedAddEnergyList = await Promise.all(healCheckTarget.map(async subPokemon => {
+        let healedAddEnergyList = healCheckTarget.map(subPokemon => {
           if (subPokemon.index == pokemon.index) return 0;
 
           let totalMorningHealEffect = subPokemon.morningHealEffect + pokemon.otherMorningHealEffect * subPokemon.natureGenkiMultiplier;
@@ -295,7 +295,7 @@ addEventListener('message', async (event) => {
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
           let healedAddEnergy = subPokemon.tmpScore * Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
           return healedAddEnergy;
-        }));
+        });
 
         pokemon.supportScorePerDay += healedAddEnergyList.sort((a, b) => b - a).slice(0, 4).reduce((a, x) => a + x, 0);
       }
@@ -308,7 +308,7 @@ addEventListener('message', async (event) => {
           switch(skill.name) {
             case 'ばけのかわ(きのみバースト)': {
               let berryEnergySum = [...berryEnergyTop5.filter(x => x.index != pokemon.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
-              let success = 1 - (0.9 ** pokemon.skillPerDay);
+              let success = 1 - ((1 - skill.success) ** pokemon.skillPerDay);
               pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay);
               break;
             }
@@ -324,12 +324,14 @@ addEventListener('message', async (event) => {
   
       // 最終的なスコア計算
       pokemon.score = (pokemon.energyPerDay + pokemon.supportEnergyPerDay) * (100 + config.simulation.fieldBonus) / 100;
+
       pokemon.score += (
         pokemon.score * (config.simulation.researchRankMax ? 0.5 : 0)
         + pokemon.shard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
       ) * config.simulation.shardWeight / 100;
+
       pokemon.score += pokemon.supportScorePerDay
-    }))
+    }
 
     postMessage({
       status: 'success',

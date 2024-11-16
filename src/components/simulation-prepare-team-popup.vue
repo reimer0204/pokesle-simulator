@@ -101,7 +101,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
 }
 
 async function configSimulation(config, progressCounter, fixIgnore = false) {
-  let [stepA, stepB, stepC] = progressCounter.split(1, 3, 8);
+  let [stepA, stepC] = progressCounter.split(1, 8);
 
   config = JSON.parse(JSON.stringify(config))
 
@@ -118,27 +118,28 @@ async function configSimulation(config, progressCounter, fixIgnore = false) {
   targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)));
 
   // 組み合わせを列挙
-  let combinationList = await (async () => {
-    let combinationWorkerParameterList = new Array(config.workerNum).fill(0).map(x => ({
-      sum: 0,
-      topList: [],
-    }));
-    for(let i = 0; i <= rankMax - pickup; i++) {
-      let combinationSize = 1;
-      for(let j = 1; j <= pickup - 1; j++) {
-        combinationSize *= rankMax - i - j;
-        combinationSize /= j;
-      }
-
-      let min = null;
-      for(let combinationWorkerParameter of combinationWorkerParameterList) {
-        if(min == null || combinationWorkerParameter.sum < min.sum) {
-          min = combinationWorkerParameter;
-        }
-      }
-      min.sum += combinationSize;
-      min.topList.push(i);
+  let combinationWorkerParameterList = new Array(config.workerNum).fill(0).map(x => ({
+    sum: 0,
+    topList: [],
+  }));
+  for(let i = 0; i <= rankMax - pickup; i++) {
+    let combinationSize = 1;
+    for(let j = 1; j <= pickup - 1; j++) {
+      combinationSize *= rankMax - i - j;
+      combinationSize /= j;
     }
+
+    let min = null;
+    for(let combinationWorkerParameter of combinationWorkerParameterList) {
+      if(min == null || combinationWorkerParameter.sum < min.sum) {
+        min = combinationWorkerParameter;
+      }
+    }
+    min.sum += combinationSize;
+    min.topList.push(i);
+  }
+  /*
+  let combinationList = await (async () => {
 
     return (await multiWorker.call(
       stepB,
@@ -159,6 +160,7 @@ async function configSimulation(config, progressCounter, fixIgnore = false) {
   for(let i = 0; i < combinationList.length; i++) {
     workerCombinationListList[i % config.workerNum].push(combinationList[i])
   }
+  */
 
   let bestResult = null;
   let workerResultList = new Array(config.workerNum).fill(0).map(() => []);
@@ -167,10 +169,15 @@ async function configSimulation(config, progressCounter, fixIgnore = false) {
     (i) => {
       return {
         type: 'simulate',
+
+        rankMax,
+        pickup,
+        pattern: combinationWorkerParameterList[i].sum,
+        topList: combinationWorkerParameterList[i].topList,
+
         fixedPokemonList,
         targetPokemonList,
         config,
-        combinationList: workerCombinationListList[i],
       }
     },
     (i, body, workerList) => {

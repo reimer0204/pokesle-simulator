@@ -83,6 +83,11 @@ const defaultConfig = {
     fixBorder: 80,
 
     enableCooking: {},
+
+    filter: {
+      enable: true,
+      conditionList: [],
+    },
   },
 
   teamSimulation: {
@@ -90,6 +95,12 @@ const defaultConfig = {
     resultNum: 10,
     cookingNum: 3,
     nightCapPikachu: 0,
+
+    require: {
+      dayHelpRate: 0,
+      nightHelpRate: 0,
+      suiminExp: 0,
+    },
 
     result: {
       detail: false,

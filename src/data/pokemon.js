@@ -93,7 +93,7 @@ let list = [
   { name: 'ウパー', specialty: '食材', berry: 'オレン', foodList: [{ name: 'あじわいキノコ', numList: [2, 5, 7] }, { name: 'ほっこりポテト', numList: [null, 6, 10] }, { name: 'マメミート', numList: [null, null, 12] }], skill: 'げんきチャージS', help: 5900, bag: 10, foodRate: 0.201, skillRate: 0.038, before: null, legend: false },
   { name: 'ヌオー', specialty: '食材', berry: 'オレン', foodList: [{ name: 'あじわいキノコ', numList: [2, 5, 7] }, { name: 'ほっこりポテト', numList: [null, 6, 10] }, { name: 'マメミート', numList: [null, null, 12] }], skill: 'げんきチャージS', help: 3400, bag: 16, foodRate: 0.19, skillRate: 0.032, before: 'ウパー', legend: false },
   { name: 'エーフィ', specialty: 'スキル', berry: 'マゴ', foodList: [{ name: 'モーモーミルク', numList: [1, 2, 4] }, { name: 'リラックスカカオ', numList: [null, 1, 2] }, { name: 'マメミート', numList: [null, null, 3] }], skill: 'エナジーチャージM', help: 2400, bag: 16, foodRate: 0.164, skillRate: 0.044, before: 'イーブイ', legend: false },
-  { name: 'ブラッキー', specialty: 'スキル', berry: 'ウイ', foodList: [{ name: 'モーモーミルク', numList: [1, 2, 4] }, { name: 'リラックスカカオ', numList: [null, 1, 2] }, { name: 'マメミート', numList: [null, null, 3] }], skill: 'げんきチャージS', help: 3200, bag: 14, foodRate: 0.219, skillRate: 0.101, before: 'イーブイ', legend: false },
+  { name: 'ブラッキー', specialty: 'スキル', berry: 'ウイ', foodList: [{ name: 'モーモーミルク', numList: [1, 2, 4] }, { name: 'リラックスカカオ', numList: [null, 1, 2] }, { name: 'マメミート', numList: [null, null, 3] }], skill: 'つきのひかり(げんきチャージS)', help: 3200, bag: 14, foodRate: 0.219, skillRate: 0.101, before: 'イーブイ', legend: false },
   { name: 'ヤドキング', specialty: 'スキル', berry: 'オレン', foodList: [{ name: 'リラックスカカオ', numList: [1, 2, 4] }, { name: 'おいしいシッポ', numList: [null, 1, 2] }, { name: 'あんみんトマト', numList: [null, null, 5] }], skill: 'げんきエールS', help: 3400, bag: 17, foodRate: 0.166, skillRate: 0.074, before: 'ヤドン', legend: false },
   { name: 'ソーナンス', specialty: 'スキル', berry: 'マゴ', foodList: [{ name: 'とくせんリンゴ', numList: [1, 2, 4] }, { name: 'あじわいキノコ', numList: [null, 1, 2] }, { name: 'ピュアなオイル', numList: [null, null, 3] }], skill: 'げんきエールS', help: 3500, bag: 13, foodRate: 0.211, skillRate: 0.064, before: 'ソーナノ', legend: false },
   { name: 'ハガネール', specialty: 'きのみ', berry: 'ベリブ', foodList: [{ name: 'あんみんトマト', numList: [1, 2, 4] }, { name: 'マメミート', numList: [null, 2, 4] }, { name: 'ほっこりポテト', numList: [null, null, 3] }], skill: '食材ゲットS', help: 3000, bag: 15, foodRate: 0.154, skillRate: 0.032, before: 'イワーク', legend: false },
@@ -132,8 +132,8 @@ let list = [
   { name: 'コリンク', specialty: '食材', berry: 'ウブ', foodList: [{ name: 'あんみんトマト', numList: [2, 5, 7] }, { name: 'ピュアなオイル', numList: [null, 4, 7] }, { name: 'めざましコーヒー', numList: [null, null, 5] }], skill: '料理パワーアップS', help: 4400, bag: 11, foodRate: 0.181, skillRate: 0.018, before: null, legend: false },
   { name: 'ルクシオ', specialty: '食材', berry: 'ウブ', foodList: [{ name: 'あんみんトマト', numList: [2, 5, 7] }, { name: 'ピュアなオイル', numList: [null, 4, 7] }, { name: 'めざましコーヒー', numList: [null, null, 5] }], skill: '料理パワーアップS', help: 3200, bag: 16, foodRate: 0.182, skillRate: 0.018, before: 'コリンク', legend: false },
   { name: 'レントラー', specialty: '食材', berry: 'ウブ', foodList: [{ name: 'あんみんトマト', numList: [2, 5, 7] }, { name: 'ピュアなオイル', numList: [null, 4, 7] }, { name: 'めざましコーヒー', numList: [null, null, 5] }], skill: '料理パワーアップS', help: 2400, bag: 21, foodRate: 0.2, skillRate: 0.023, before: 'ルクシオ', legend: false },
-  { name: 'フワンテ', specialty: 'スキル', berry: 'ブリー', foodList: [{ name: 'ワカクサコーン', numList: [1, 2, 4] }, { name: 'ピュアなオイル', numList: [null, 3, 4] }, { name: 'ほっこりポテト', numList: [null, null, 4] }], skill: 'エナジーチャージS(ランダム)', help: 4800, bag: 9, foodRate: 0.137, skillRate: 0.069, before: null, legend: false },
-  { name: 'フワライド', specialty: 'スキル', berry: 'ブリー', foodList: [{ name: 'ワカクサコーン', numList: [1, 2, 4] }, { name: 'ピュアなオイル', numList: [null, 3, 4] }, { name: 'ほっこりポテト', numList: [null, null, 4] }], skill: 'エナジーチャージS(ランダム)', help: 2500, bag: 17, foodRate: 0.128, skillRate: 0.061, before: 'フワンテ', legend: false },
+  { name: 'フワンテ', specialty: 'スキル', berry: 'ブリー', foodList: [{ name: 'ワカクサコーン', numList: [1, 2, 4] }, { name: 'ピュアなオイル', numList: [null, 3, 4] }, { name: 'ほっこりポテト', numList: [null, null, 4] }], skill: 'たくわえる(エナジーチャージS)', help: 4800, bag: 9, foodRate: 0.137, skillRate: 0.069, before: null, legend: false },
+  { name: 'フワライド', specialty: 'スキル', berry: 'ブリー', foodList: [{ name: 'ワカクサコーン', numList: [1, 2, 4] }, { name: 'ピュアなオイル', numList: [null, 3, 4] }, { name: 'ほっこりポテト', numList: [null, null, 4] }], skill: 'たくわえる(エナジーチャージS)', help: 2500, bag: 17, foodRate: 0.128, skillRate: 0.061, before: 'フワンテ', legend: false },
   { name: 'ウソハチ', specialty: 'スキル', berry: 'オボン', foodList: [{ name: 'あんみんトマト', numList: [1, 2, 4] }, { name: 'ワカクサ大豆', numList: [null, 2, 4] }, { name: 'あじわいキノコ', numList: [null, null, 2] }], skill: 'エナジーチャージM', help: 6300, bag: 8, foodRate: 0.189, skillRate: 0.061, before: null, legend: false },
   { name: 'マネネ', specialty: '食材', berry: 'マゴ', foodList: [{ name: 'あんみんトマト', numList: [2, 5, 7] }, { name: 'ほっこりポテト', numList: [null, 4, 6] }, { name: 'ふといながねぎ', numList: [null, null, 4] }], skill: 'エナジーチャージS', help: 4300, bag: 10, foodRate: 0.201, skillRate: 0.032, before: null, legend: false },
   { name: 'リオル', specialty: 'スキル', berry: 'クラボ', foodList: [{ name: 'ピュアなオイル', numList: [1, 2, 4] }, { name: 'ほっこりポテト', numList: [null, 2, 4] }, { name: 'とくせんエッグ', numList: [null, null, 4] }], skill: 'ゆめのかけらゲットS', help: 4200, bag: 9, foodRate: 0.126, skillRate: 0.038, before: null, legend: false },
@@ -199,6 +199,7 @@ for(let pokemon of list) {
     targetList = newTarget;
     nestLv++;
   }
+  pokemon.isLast = pokemon.afterList[0] == pokemon.name;
 }
 
 class Pokemon {
@@ -207,6 +208,7 @@ class Pokemon {
 }
 
 Pokemon.list = list;
+Pokemon.nameSortList = [...Pokemon.list].sort((a, b) => a.name < b.name ? -1 : 1)
 Pokemon.map = map;
 
 export default Pokemon;

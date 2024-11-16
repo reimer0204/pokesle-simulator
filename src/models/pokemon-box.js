@@ -44,13 +44,15 @@ class PokemonBox {
     if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
 
     pokemon = JSON.parse(JSON.stringify(pokemon));
+    pokemon.bag = Number(pokemon.bag) || null
+    pokemon.skillLv = Number(pokemon.skillLv) || null
 
     if (index == null) {
       this._list.push({
         name: pokemon.name,
         lv: pokemon.lv,
-        bag: Number(pokemon.bag) || null,
-        skillLv: Number(pokemon.skillLv) || null,
+        bag: pokemon.bag,
+        skillLv: pokemon.skillLv,
         foodList: pokemon.foodList,
         subSkillList: pokemon.subSkillList,
         nature: pokemon.nature,

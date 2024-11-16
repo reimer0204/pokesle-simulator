@@ -1,0 +1,147 @@
+<script setup>
+
+import Pokemon from '../../data/pokemon';
+import Skill from '../../data/skill';
+import config from '../../models/config';
+import PokemonBox from '../../models/pokemon-box';
+import PokemonFilter from '../../models/pokemon-filter';
+
+const boxPokemonList = PokemonBox.load()
+
+const lastPokemonList = Pokemon.nameSortList.filter(x => x.isLast)
+
+const newCondition = reactive({
+  type: PokemonFilter.TYPE_LIST[0].id,
+  value: null,
+})
+
+watch(() => newCondition.type, () => {
+  newCondition.value = null;
+})
+
+const filterResult = computed(() => PokemonFilter.filter(boxPokemonList, config.simulation.filter));
+
+const enableAdd = computed(() => newCondition.type != null && newCondition.value != null && config.simulation.filter.enable);
+
+function add(mode) {
+  if (!enableAdd.value) return;
+  config.simulation.filter.conditionList.push({ ...newCondition, mode })
+}
+
+const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id == newCondition.type))
+
+</script>
+
+<template>
+  <div class="pokemon-filter">
+
+    <input-checkbox v-model="config.simulation.filter.enable">除外フィルタを有効にする</input-checkbox>
+
+    <div class="list-wrapper mt-10px">
+      <div class="item">
+        <div class="condition">ボックスすべて</div>
+        <div class="count">{{ boxPokemonList.length }}件</div>
+        <div class="flex-row-start-center gap-5px w-50px flex-00"></div>
+      </div>
+      
+      <div v-for="(step, i) in filterResult.stepList" class="item">
+        <div class="condition" :class="{
+          add: step.mode === true,
+          minus: step.mode === false,
+        }">
+          {{ step.name }}
+        </div>
+        <div class="count">{{ step.count }}件</div>
+
+        <div class="flex-row-start-center gap-5px w-50px flex-00">
+          <svg viewBox="0 0 100 100" @click="config.simulation.filter.conditionList.splice(i, 1)">
+            <path d="M10,10L90,90 M10,90L90,10" stroke="#888" stroke-width="10" fill="none" />
+          </svg>
+          <svg viewBox="0 0 100 100" width="14" @click="config.simulation.filter.conditionList.swap(i, i - 1)">
+            <path d="M0,70 L50,20 L100,70z" fill="#888" />
+          </svg>
+          <svg viewBox="0 0 100 100" width="14" @click="config.simulation.filter.conditionList.swap(i, i + 1)">
+            <path d="M0,30 L50,80 L100,30z" fill="#888" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-row-start-center gap-5px mt-10px">
+      <select v-model="newCondition.type">
+        <option v-for="type in PokemonFilter.TYPE_LIST" :value="type.id">{{ type.name }}</option>
+      </select>
+
+      <select v-if="newConditionType?.input == 'pokemon'" v-model="newCondition.value" class="w-200px">
+        <option v-for="pokemon in Pokemon.nameSortList" :value="pokemon.name">{{ pokemon.name }}</option>
+      </select>
+      <select v-if="newConditionType?.input == 'last_pokemon'" v-model="newCondition.value" class="w-200px">
+        <option v-for="pokemon in lastPokemonList" :value="pokemon.name">{{ pokemon.name }}</option>
+      </select>
+      <div v-if="newConditionType?.input == 'lv'">
+        <input type="number" v-model="newCondition.value" class="w-50px" />
+        Lv
+      </div>
+      <select v-if="newConditionType?.input == 'skill'" v-model="newCondition.value" class="w-200px">
+        <option v-for="skill in Skill.list" :value="skill.name">{{ skill.name }}</option>
+      </select>
+
+      <button @click="add(true)" :disabled="!enableAdd" class="ml-auto">追加</button>
+      <button @click="add(false)" :disabled="!enableAdd">除外</button>
+
+    </div>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+
+.pokemon-filter {
+  .list-wrapper {
+    width: 500px;
+    height: 300px;
+    border: 1px #000 solid;
+
+    overflow: auto;
+
+    div.item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 10px;
+
+      .condition {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 20px;
+        flex: 1 1 0;
+
+        background-color: #EEE;
+        border-radius: 10px;
+        padding: 0px 10px;
+
+        &.add {
+          background-color: #EFD;
+        }
+
+        &.minus {
+          background-color: #FEE;
+        }
+      }
+
+      svg {
+        width: 1em;
+      }
+
+      .count {
+        width: 40px;
+        margin-left: auto;
+
+        font-weight: bold;
+      }
+
+    }
+  }
+}
+
+</style>

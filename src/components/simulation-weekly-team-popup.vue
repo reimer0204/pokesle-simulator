@@ -1,18 +1,19 @@
 <script setup>
 import { onBeforeUnmount } from 'vue';
 import Food from '../data/food';
-import SubSkill from '../data/sub-skill';
 import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
+import EvaluateTable from '../models/evaluate-table';
 import MultiWorker from '../models/multi-worker';
+import PokemonBox from '../models/pokemon-box';
+import PokemonFilter from '../models/pokemon-filter';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 import TeamSimulator from '../worker/team-simulator?worker';
+import PokemonFilterEditor from './filter/pokemon-filter-editor.vue';
 import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
-import PokemonBox from '../models/pokemon-box';
 import SettingList from './util/setting-list.vue';
-import EvaluateTable from '../models/evaluate-table';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
@@ -22,13 +23,26 @@ let evaluateTable = EvaluateTable.load(config);
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
 
-const simulationResult = ref({
-  teamList: [],
-})
-
+// シミュレーション設定
 const cookingType = ref(config.simulation.cookingType)
 const targetDay = ref(props.defaultTargetDay ?? (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()))
 const beforeEnergy = ref(0);
+
+const filterResult = computed(() => PokemonFilter.filter(PokemonBox.list, config.simulation.filter));
+
+const requireText = computed(() => {
+  let result = [];
+  if (config.teamSimulation.require.dayHelpRate > 0) result.push(` 日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`)
+  if (config.teamSimulation.require.nightHelpRate > 0) result.push(` 夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`)
+  if (config.teamSimulation.require.suiminExp > 0) result.push(` 睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`)
+  if (result.length == 0) return 'なし';
+  return result.join('');
+});
+
+// シミュレーション実施関連
+const simulationResult = ref({
+  teamList: [],
+})
 
 const multiWorker = new MultiWorker(TeamSimulator, config.workerNum)
 const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
@@ -46,7 +60,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
     () => ({ type: 'config', config: JSON.parse(JSON.stringify(customConfig)) })
   )
 
-  let pokemonList = PokemonBox.list;
+  let pokemonList = filterResult.value.pokemonList;
 
   pokemonList = (await pokemonMultiWorker.call(
     calcBase,
@@ -96,7 +110,7 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
 
 async function simulation() {
   asyncWatcher.run(async (progressCounter) => {
-    let [stepA, stepB, stepC] = progressCounter.split(1, 3, 8);
+    let [stepA, stepC] = progressCounter.split(1, 8);
 
     let customConfig = JSON.parse(JSON.stringify({
       ...config,
@@ -127,54 +141,27 @@ async function simulation() {
     // スコアの高い上位のみをピックアップ
     targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)));
 
-
-
-    // 組み合わせを列挙
-    console.log('combinationList before');
-    let combinationList = await (async () => {
-      let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
-        sum: 0,
-        topList: [],
-      }));
-      for(let i = 0; i <= rankMax - pickup; i++) {
-        let combinationSize = 1;
-        for(let j = 1; j <= pickup - 1; j++) {
-          combinationSize *= rankMax - i - j;
-          combinationSize /= j;
-        }
-
-        let min = null;
-        for(let combinationWorkerParameter of combinationWorkerParameterList) {
-          if(min == null || combinationWorkerParameter.sum < min.sum) {
-            min = combinationWorkerParameter;
-          }
-        }
-        min.sum += combinationSize;
-        min.topList.push(i);
+    let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
+      sum: 0,
+      topList: [],
+    }));
+    for(let i = 0; i <= rankMax - pickup; i++) {
+      let combinationSize = 1;
+      for(let j = 1; j <= pickup - 1; j++) {
+        combinationSize *= rankMax - i - j;
+        combinationSize /= j;
       }
 
-      return (await multiWorker.call(
-        stepB,
-        (i) => ({
-          type: 'combination',
-          rankMax,
-          pickup,
-          pattern: combinationWorkerParameterList[i].sum,
-          topList: combinationWorkerParameterList[i].topList,
-          targetPokemonList,
-        }),
-      )).flat(1);
-    })()
-    console.log('combinationList after');
-
-    // 概算エナジーの高い順にソート
-    combinationList.sort((a, b) => b.aboutScore - a.aboutScore)
-    let workerCombinationListList = new Array(customConfig.workerNum).fill(0).map(x => []);
-    for(let i = 0; i < combinationList.length; i++) {
-      workerCombinationListList[i % customConfig.workerNum].push(combinationList[i])
+      let min = null;
+      for(let combinationWorkerParameter of combinationWorkerParameterList) {
+        if(min == null || combinationWorkerParameter.sum < min.sum) {
+          min = combinationWorkerParameter;
+        }
+      }
+      min.sum += combinationSize;
+      min.topList.push(i);
     }
 
-    console.log('simulate before');
     let bestResult = [];
     let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);
     await multiWorker.call(
@@ -182,10 +169,14 @@ async function simulation() {
       (i) => {
         return {
           type: 'simulate',
+          rankMax,
+          pickup,
+          pattern: combinationWorkerParameterList[i].sum,
+          topList: combinationWorkerParameterList[i].topList,
+
           fixedPokemonList,
           targetPokemonList,
           config: customConfig,
-          combinationList: workerCombinationListList[i],
         }
       },
       (i, body, workerList) => {
@@ -202,7 +193,6 @@ async function simulation() {
         return body.progress;
       }
     );
-    console.log('simulate after');
 
     simulationResult.value = {
       targetDay: customConfig.teamSimulation.day,
@@ -213,10 +203,6 @@ async function simulation() {
   })
 
 }
-
-// onBeforeUnmount(() => {
-//   workerList.forEach(w => w.terminal())
-// })
 
 </script>
 
@@ -301,6 +287,35 @@ async function simulation() {
             </div>
           </div>
         </SettingList>
+
+        <div class="flex-row flex-wrap gap-5px">
+          <SettingButton title="除外フィルタ">
+            <template #label>
+              <div class="inline-flex-row-center">
+                <template v-if="filterResult.excludeList.length == 0">除外なし</template>
+                <template v-else>除外：{{ filterResult.excludeList.length }}匹</template>
+              </div>
+            </template>
+
+            <div class="flex-column-start-start gap-5px">
+              <PokemonFilterEditor />
+            </div>
+          </SettingButton>
+
+          <SettingButton title="条件">
+            <template #label>
+              <div class="inline-flex-row-center">
+                条件：{{ requireText }}
+              </div>
+            </template>
+
+            <SettingTable>
+              <tr><th>日中手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222"> %以上(最大222%)</div></td></tr>
+              <tr><th>夜間手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222"> %以上(最大222%)</div></td></tr>
+              <tr><th>睡眠EXPボーナス</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp"> 匹以上</div></td></tr>
+            </SettingTable>
+          </SettingButton>
+        </div>
 
         <button @click="simulation">シミュレーション実行</button>
 
@@ -409,7 +424,7 @@ async function simulation() {
                   <tr>
                     <th>スキル</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.skill?.name">{{ pokemon.skill?.name }}</template>
+                      <template v-if="pokemon.skill?.name">{{ pokemon.skill?.name }}(Lv{{ pokemon.fixedSkillLv }})</template>
                     </td>
                     <td class="text-align-right">
                     </td>

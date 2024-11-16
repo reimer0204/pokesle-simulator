@@ -73,7 +73,6 @@ if (props.index != null) {
 
 let subSkillNameSort = SubSkill.list.toSorted((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
 
-
 const foodSelectList = computed(() => {
   if (basePokemon.value == null) return [[], [], []];
   return [
