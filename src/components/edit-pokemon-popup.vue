@@ -104,6 +104,7 @@ function convertFoodABC() {
   })
 }
 watch(() => assist.foodABC, convertFoodABC)
+watch(() => pokemon.name, convertFoodABC)
 
 function convertSubSkill(index) {
   if (assist.subSkillList[index] == null) return;

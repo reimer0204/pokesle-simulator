@@ -124,7 +124,7 @@ class PokemonSimulator {
     let enableFoodList = [];
     for(let i = 0; i < (pokemon.fixLv < 30 ? 1 : pokemon.fixLv < 60 ? 2 : 3); i++) {
       let food = Food.map[pokemon.foodList[i]];
-      let num = base.foodList.find(baseFood => baseFood.name == food.name).numList[i];
+      let num = base.foodList.find(baseFood => baseFood.name == food.name)?.numList[i] ?? 0;
       if (pokemon.eventBonus) {
         num += this.config.simulation.eventBonusTypeFood;
       }
