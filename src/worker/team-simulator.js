@@ -290,8 +290,10 @@ self.addEventListener('message', async (event) => {
             addFoodNum[food.name] += pokemon[food.name] ?? 0;
           }
 
+          pokemon.skillPerDay *= dayLength;
+
           // 料理パワーアップを発動回数に応じて振り分けておく
-          let skillNum = Math.floor(pokemon.skillEnergyPerDay / pokemon.skillName == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) * dayLength;
+          let skillNum = Math.floor(pokemon.skillPerDay / (pokemon.skillName == 'ゆびをふる' ? Skill.metronomeTarget.length : 1));
           for(let i = 0; i < skillNum; i++) {
             cookingPowerUpEffectList[Math.floor(i / skillNum * 3 * dayLength)] += pokemon.cookingPowerUpEffect
           }
