@@ -4,6 +4,7 @@ import Cooking from '../data/cooking'
 import Food from '../data/food'
 import Berry from '../data/berry';
 import Field from '../data/field';
+import Skill from '../data/skill';
 
 let borderScore = 0;
 self.addEventListener('message', async (event) => {
