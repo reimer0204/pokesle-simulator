@@ -8,6 +8,9 @@ const checkAll = computed({
   set(newValue) { Cooking.list.forEach(x => config.simulation.enableCooking[x.name] = newValue) },
 })
 
+const calcCookingList = computed(() => {
+  return Cooking.evaluateLvList(config)
+})
 </script>
 
 <template>
@@ -21,20 +24,41 @@ const checkAll = computed({
           任意の料理のレシピレベルを上げたい場合はその料理のみチェックを入れてください。<br>
           エナジー効率が良い料理は、エナジーが高いものではなく追加エナジーが高いものになります。
         </BaseAlert>
+
+        <SettingList>
+          <div>
+            <label>シミュレーション設定</label>
+            <div>
+              <div class="flex-row-start-center gap-20px">
+                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="1">個々に設定されたレシピレベルを使用する</InputRadio>
+                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="2">全て<input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" />Lvとする</InputRadio>
+                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="3"><input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" />回料理した際のLvとする</InputRadio>
+              </div>
+              <small class="mt-5px">
+                「個々に設定されたレシピレベルを使用する」はより正しい値になりますが、最上位料理であっても育っていない場合は評価されなくなります。<br>
+                料理を育てたい通常週と、スコアアタック週で使い分けてください。
+              </small>
+            </div>
+          </div>
+        </SettingList>
+
+        <!-- {{ calcCookingList }} -->
         
         <div class="scroll">
           <SortableTable
-            :dataList="Cooking.list"
+            :dataList="calcCookingList"
             :columnList="[
               { key: 'check', name: '', convert: data => config.simulation.enableCooking[data.name] },
               { key: 'type', name: 'タイプ' },
               { key: 'name', name: '名前' },
               { key: 'foodList', name: 'レシピ' },
-              { key: 'rate', name: 'ボーナス', percent: true, fixed: 0 },
-              { key: 'energy', name: 'エナジー', type: Number, fixed: 0 },
-              { key: 'addEnergy', name: '追加エナジー', type: Number, fixed: 0 },
-              { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
               { key: 'foodNum', name: '食材数', type: Number },
+              { key: 'rate', name: 'ボーナス', percent: true, fixed: 0 },
+              { key: 'energy', name: '基礎エナジー', type: Number, fixed: 0 },
+              // { key: 'addEnergy', name: '追加エナジー', type: Number, fixed: 0 },
+              // { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
+              { key: 'lv', name: 'レシピLv' },
+              { key: 'fixEnergy', name: '最終エナジー', type: Number, fixed: 0 },
             ]"
             @clickRow="(data) => config.simulation.enableCooking[data.name] = !config.simulation.enableCooking[data.name]"
           >
@@ -43,6 +67,19 @@ const checkAll = computed({
             </template>
             <template #check="{ data }">
               <InputCheckbox v-model="config.simulation.enableCooking[data.name]" @click.stop></InputCheckbox>
+            </template>
+            <template #lv="{ data }">
+              <template v-if="data.rate > 1">
+                <input
+                  v-if="config.simulation.cookingRecipeLvType == 1"
+                  class="w-50px"
+                  @click.stop
+                  v-model="config.simulation.cookingSettings[data.name].lv" type="number" min="1" :max="Cooking.maxRecipeLv"
+                >
+                <template v-else>{{ data.lv }}</template>
+              </template>
+              
+              <template v-else>-</template>
             </template>
 
             <template #foodList="{ data }">
@@ -62,7 +99,7 @@ const checkAll = computed({
 .edit-pokemon-popup {
   display: flex;
   flex-direction: column;
-  width: 1000px;
+  width: 1100px;
   max-width: 90%;
   height: 100%;
   flex: 1 1 0;

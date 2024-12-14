@@ -31,6 +31,7 @@ const defaultConfig = {
     foodInfo: false,
     simulatedInfo: false,
     fixScore: false,
+    candy: false,
     pageUnit: 50,
   },
 
@@ -81,8 +82,17 @@ const defaultConfig = {
     fixSubSkillSeed: false,
     fixSkillSeed: false,
     fixBorder: 80,
+    fixBorderSpecialty: 80,
+    fixFilter: {
+      enable: true,
+      conditionList: [],
+    },
 
     enableCooking: {},
+    cookingSettings: {},
+    cookingRecipeLvType: 2,
+    cookingRecipeFixLv: Cooking.maxRecipeLv,
+    cookingRecipeRepeatLv: 100,
 
     filter: {
       enable: true,
@@ -178,6 +188,9 @@ for(let food of Food.list) {
 }
 for(let cooking of Cooking.list) {
   defaultConfig.simulation.enableCooking[cooking.name] = true;
+  defaultConfig.simulation.cookingSettings[cooking.name] = {
+    lv: 1,
+  };
 }
 
 export default defaultConfig

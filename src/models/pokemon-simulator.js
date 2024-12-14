@@ -32,9 +32,10 @@ class PokemonSimulator {
       : Math.round(this.config.simulation.potSize * (this.config.simulation.campTicket ? 1.5 : 1))
 
     // 今週の料理タイプのリスト
+    this.cookingList = Cooking.evaluateLvList(config)
     this.cookingList =
-      mode == PokemonSimulator.MODE_SELECT ? Cooking.list
-      : Cooking.list.filter(c => c.type == this.config.simulation.cookingType && (config.simulation.enableCooking[c.name] || c.foodNum == 0));
+      mode == PokemonSimulator.MODE_SELECT ? this.cookingList
+      : this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (config.simulation.enableCooking[c.name] || c.foodNum == 0));
 
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};
@@ -43,7 +44,7 @@ class PokemonSimulator {
       for(const cookingFood of cooking.foodList) {
         this.foodEnergyMap[cookingFood.name] = Math.max(
           this.foodEnergyMap[cookingFood.name],
-          Food.map[cookingFood.name].energy * cooking.rate * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1]
+          Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus
         )
       }
     }
@@ -53,7 +54,7 @@ class PokemonSimulator {
       .filter(cooking => cooking.foodNum <= this.fixedPotSize)
       .map(cooking => ({
         ...cooking,
-        lastEnergy: cooking.energy * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1] + (this.fixedPotSize - cooking.foodNum) * Food.maxEnergy,
+        lastEnergy: cooking.fixEnergy + (this.fixedPotSize - cooking.foodNum) * Food.maxEnergy,
       }))
       .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 
@@ -220,6 +221,9 @@ class PokemonSimulator {
     if (result.sleepTime >=  500) result.fixedBag += 2;
     if (result.sleepTime >= 1000) result.fixedBag += 3;
     if (result.sleepTime >= 2000) result.fixedBag += 2;
+    if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket) {
+      result.fixedBag *= 1.2;
+    }
 
     // いつ育到達は所持数がいっぱい＋4回(キュー消化分)以降
     result.bagFullHelpNum = Math.max(result.fixedBag / (
@@ -585,7 +589,7 @@ class PokemonSimulator {
               let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
                 .map(cooking => ({
                   ...cooking,
-                  lastEnergy: cooking.energy * Cooking.recipeLvs[this.config.simulation.cookingRecipeLv ?? 1] + (afterPotSize - cooking.foodNum) * Food.maxEnergy,
+                  lastEnergy: cooking.fixEnergy + (afterPotSize - cooking.foodNum) * Food.maxEnergy,
                 }))
                 .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 

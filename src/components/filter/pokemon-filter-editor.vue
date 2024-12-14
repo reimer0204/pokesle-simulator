@@ -41,19 +41,29 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
       <div class="item">
         <div class="condition">ボックスすべて</div>
         <div class="count">{{ boxPokemonList.length }}件</div>
-        <div class="flex-row-start-center gap-5px w-50px flex-00"></div>
+        <div class="flex-row-start-center gap-5px w-80px flex-00"></div>
       </div>
       
       <div v-for="(step, i) in filterResult.stepList" class="item">
         <div class="condition" :class="{
           add: step.mode === true,
           minus: step.mode === false,
+          disabled: config.simulation.filter.conditionList[i].disabled,
         }">
+          <svg viewBox="0 0 100 50" @click="config.simulation.filter.conditionList[i].disabled = !config.simulation.filter.conditionList[i].disabled" class="w-20px">
+            <mask id="mask">
+              <rect x="0" y="0" width="100" height="100" fill="white" />
+            </mask>
+            <rect x="0" y="0" width="100" height="50" rx="25" fill="#888" mask="url(#mask)" />
+            <rect   v-if=" config.simulation.filter.conditionList[i].disabled"  x="5"   y="5"  width="90" height="40" rx="20" fill="#FFF" mask="url(#mask)" />
+            <circle v-if=" config.simulation.filter.conditionList[i].disabled" cx="30" cy="25" r="15" fill="#888" />
+            <circle v-if="!config.simulation.filter.conditionList[i].disabled" cx="70" cy="25" r="15" fill="white" />
+          </svg>
           {{ step.name }}
         </div>
-        <div class="count">{{ step.count }}件</div>
+        <div class="count"><template v-if="step.count != null">{{ step.count }}件</template></div>
 
-        <div class="flex-row-start-center gap-5px w-50px flex-00">
+        <div class="flex-row-start-center gap-5px w-80px flex-00">
           <svg viewBox="0 0 100 100" @click="config.simulation.filter.conditionList.splice(i, 1)">
             <path d="M10,10L90,90 M10,90L90,10" stroke="#888" stroke-width="10" fill="none" />
           </svg>
@@ -126,6 +136,10 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
 
         &.minus {
           background-color: #FEE;
+        }
+
+        &.disabled {
+          text-decoration: line-through;
         }
       }
 

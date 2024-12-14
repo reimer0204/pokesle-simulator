@@ -146,7 +146,8 @@ class PokemonBox {
       form.append('json', JSON.stringify({
         sheet: config.pokemonBox.gs.sheet,
         pokemonList: [
-          [this._time.toISOString(), ...new Array(15).fill('')],
+          // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
+          [this._time.toISOString(), ...new Array(16).fill('')],
           ...this.list.map(pokemon => [
             pokemon.name,
             pokemon.lv,
@@ -158,6 +159,7 @@ class PokemonBox {
             pokemon.shiny ? 1 : null,
             pokemon.fix,
             pokemon.sleepTime,
+            pokemon.training ?? null,
           ])
         ],
       }))
@@ -196,6 +198,7 @@ class PokemonBox {
         shiny: !!row[13],
         fix: row[14] || null,
         sleepTime: Number(row[15]) || null,
+        training: Number(row[16]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

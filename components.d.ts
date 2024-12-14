@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AsyncWatcherArea: typeof import('./src/components/util/async-watcher-area.vue')['default']
     BaseAlert: typeof import('./src/components/alert/base-alert.vue')['default']
+    CandyIcon: typeof import('./src/components/icon/candy-icon.vue')['default']
     CookingSettingPopup: typeof import('./src/components/cooking-setting-popup.vue')['default']
     DangerAlert: typeof import('./src/components/alert/danger-alert.vue')['default']
     DetailSettingPopup: typeof import('./src/components/detail-setting-popup.vue')['default']
@@ -18,6 +19,7 @@ declare module 'vue' {
     HelpButton: typeof import('./src/components/help/help-button.vue')['default']
     HelpPopup: typeof import('./src/components/help/help-popup.vue')['default']
     InputCheckbox: typeof import('./src/components/form/input-checkbox.vue')['default']
+    InputRadio: typeof import('./src/components/form/input-radio.vue')['default']
     LvLabel: typeof import('./src/components/status/lv-label.vue')['default']
     NameLabel: typeof import('./src/components/status/name-label.vue')['default']
     NatureInfo: typeof import('./src/components/status/nature-info.vue')['default']

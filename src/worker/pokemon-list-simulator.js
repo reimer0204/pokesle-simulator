@@ -55,6 +55,7 @@ addEventListener('message', async (event) => {
 
             let afterPokemon = Pokemon.map[after];
             let evaluateMaxScore = 0;
+            let evaluateSpecialtyMaxScore = 0;
             
             for(let lv of lvList) {
               if (pokemon.evaluateResult[lv] == null) pokemon.evaluateResult[lv] = {};
@@ -131,10 +132,14 @@ addEventListener('message', async (event) => {
                 num: specialtyScore,
               };
               pokemon.evaluateSpecialty[lv][after] = specialtyItem
+              evaluateSpecialtyMaxScore = Math.max(evaluateSpecialtyMaxScore, specialtyItem.score)
             }
 
             // 最終進化想定シミュをする場合、別個体に切り出し
-            if (config.simulation.fix && config.simulation.fixEvolve && evaluateMaxScore >= config.simulation.fixBorder / 100) {
+            if (config.simulation.fix && config.simulation.fixEvolve && (
+              evaluateMaxScore >= config.simulation.fixBorder / 100
+              || evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100
+            )) {
               const afterPokemon = simulator.memberToInfo({
                 ...pokemonList[i],
                 beforeName: pokemonList[i].name,
@@ -187,7 +192,10 @@ addEventListener('message', async (event) => {
 
         result.push(simulator.memberToInfo({
           ...pokemon,
-          fixable: config.simulation.fix && (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100,
+          fixable: config.simulation.fix && (
+            (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100
+            || (pokemon.evaluateSpecialty?.max?.best?.score ?? 0) >= config.simulation.fixBorderSpecialty / 100
+          ),
           index: i + startIndex,
         }))
       }

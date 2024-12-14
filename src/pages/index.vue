@@ -427,7 +427,7 @@ const disabledCookingNum = computed(() => {
           <div class="inline-flex-row-center">
             育成仮定: {{ config.simulation.fix ? 'する' : 'しない' }}
             <template v-if="config.simulation.fix">(
-              厳選{{ config.simulation.fixBorder }}%以上
+              厳選{{ config.simulation.fixBorder }}%/{{ config.simulation.fixBorderSpecialty }}%以上
               {{ config.simulation.fixLv }}Lv
               <template v-if="config.simulation.fixEvolve"> 進化 </template>
               <template v-if="config.simulation.fixSubSkillSeed"> 銀種 </template>
@@ -446,22 +446,23 @@ const disabledCookingNum = computed(() => {
           <tr>
             <th>仮定条件</th>
             <td>
-              <div>厳選 <input type="number" class="w-40px" v-model="config.simulation.fixBorder"           :disabled="!config.simulation.fix"> %以上のみ</div>
-              <small>厳選度が指定以上のポケモンのみ仮定します</small>
+              <div               >エナジー厳選度 <input type="number" class="w-50px" v-model="config.simulation.fixBorder"          :disabled="!config.simulation.fix"> %以上のみ</div>
+              <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" v-model="config.simulation.fixBorderSpecialty" :disabled="!config.simulation.fix"> %以上のみ</div>
+              <small>厳選度が指定以上のポケモンのみ仮定します。<br>どちらかに合致した場合に対象となります。</small>
             </td>
           </tr>
           <tr>
             <th>Lv</th>
             <td>
               <div><input type="number" class="w-40px" v-model="config.simulation.fixLv"           :disabled="!config.simulation.fix"> Lvまで育てたと仮定</div>
-              <small>指定レベル以上のポケモンはそのままでシミュレーションします</small>
+              <small>指定レベル以上のポケモンはそのままでシミュレーションします。</small>
             </td>
           </tr>
           <tr>
             <th>進化</th>
             <td>
               <div><label><input type="checkbox"            v-model="config.simulation.fixEvolve"       :disabled="!config.simulation.fix">最終進化にしたと仮定</label></div>
-              <small>イーブイ等、複数の進化先がある場合全てをシミュレーションします</small>
+              <small>イーブイ等、複数の進化先がある場合は全ての進化先をシミュレーションします。</small>
             </td>
           </tr>
           <tr>
@@ -625,6 +626,7 @@ const disabledCookingNum = computed(() => {
           <tr><th>食材数</th><td><label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label></td></tr>
           <tr><th>シミュ詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label></td></tr>
           <tr><th>スコアまで列固定</th><td><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></td></tr>
+          <!-- <tr><th>育成情報</th><td><label><input type="checkbox" v-model="config.pokemonList.candy" />育成情報</label></td></tr> -->
           <tr>
             <th>1ページ表示件数</th>
             <td><div><input type="number" class="w-80px" v-model="config.pokemonList.pageUnit"> 件</div></td>

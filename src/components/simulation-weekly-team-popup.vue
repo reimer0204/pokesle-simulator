@@ -462,12 +462,21 @@ async function simulation() {
                   <tr>
                     <th colspan="2">料理</th>
                     <td :colspan="result.pokemonList.length">
-                      {{
-                        Object.entries(result.cookingList.reduce((a, x) => (a[x.cooking.name] = (a[x.cooking.name] ?? 0) + 1, a), {}))
-                        .sort(([aName, aNum], [bName, bNum]) => bNum - aNum)
-                        .map(([name, num]) => `${name}x${num}`)
-                        .join(' / ')
-                      }}
+                      <template v-if="!config.teamSimulation.result.detail">
+                        {{
+                          Object.entries(result.cookingList.reduce((a, x) => (a[x.cooking.name] = (a[x.cooking.name] ?? 0) + 1, a), {}))
+                          .sort(([aName, aNum], [bName, bNum]) => bNum - aNum)
+                          .map(([name, num]) => `${name}x${num}`)
+                          .join(' / ')
+                        }}
+                      </template>
+                      <template v-else>
+                        <div v-for="cooking in result.cookingList">
+                          {{ cooking.cooking.name }}
+                          鍋{{ cooking.potSize }}
+                          {{ Math.round(cooking.cooking.energy).toLocaleString() }}×{{ (cooking.cooking.recipeLvBonus * 100) }}% + {{ Math.round(cooking.energy - cooking.cooking.fixEnergy).toLocaleString() }}
+                          = {{ Math.round(cooking.energy).toLocaleString() }}エナジー</div>
+                      </template>
                     </td>
                     <td class="text-align-right">
                       {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}

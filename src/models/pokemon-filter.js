@@ -16,6 +16,7 @@ class PokemonFilter {
     
     if (filter.enable) {
       for(let condition of filter.conditionList) {
+        
         const modeName = condition.mode ? '追加' : '除外'
         let stepName;
         let func = null;
@@ -45,7 +46,7 @@ class PokemonFilter {
           stepName = `スキルが${condition.value}のポケモンを${modeName}`
         }
 
-        if (func) {
+        if (func && !condition.disabled) {
           if (condition.mode) {
             pokemonList.push(...excludeList.filter(func))
           } else {
@@ -59,7 +60,7 @@ class PokemonFilter {
           }
         }
         
-        stepList.push({ name: stepName, mode: condition.mode, count: pokemonList.length })
+        stepList.push({ name: stepName, mode: condition.mode, count: condition.disabled ? null : pokemonList.length })
       }
     }
 

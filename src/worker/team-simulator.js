@@ -161,14 +161,15 @@ self.addEventListener('message', async (event) => {
       let cookingChangeCache = new Map();
 
       // 料理を良い順にソートしておく
+      let cookingList = Cooking.evaluateLvList(config);
       let cookingListMap = {
-        'カレー': Cooking.list.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
-        'サラダ': Cooking.list.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
-        'デザート': Cooking.list.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'カレー': cookingList.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'サラダ': cookingList.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'デザート': cookingList.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
       }
       let targetCookingList = config.simulation.cookingType
         ? cookingListMap[config.simulation.cookingType]
-        : Cooking.list.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.addEnergy - a.addEnergy);
+        : cookingList.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.addEnergy - a.addEnergy);
 
       // シミュレーター用意
       await PokemonSimulator.isReady;
@@ -363,8 +364,7 @@ self.addEventListener('message', async (event) => {
 
                 // 料理のスコアを加算、月曜は7倍で評価
                 eachEnergy += (
-                    bestCooking.energy
-                    * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1]
+                    bestCooking.fixEnergy
                     + (firstCooking ? Food.averageEnergy * totalCookingPowerUpEffect : 0)
                   )
                   * (100 + config.simulation.fieldBonus) / 100
@@ -492,26 +492,28 @@ self.addEventListener('message', async (event) => {
                 }
 
                 const cookingEnergy =
-                  (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1] + addFoodPower)
+                  (cooking.fixEnergy + addFoodPower)
                   * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
                   * config.simulation.cookingWeight;
 
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  potSize,
                 });
 
                 energy += cookingEnergy;
 
               } else {
                 const cookingEnergy =
-                  (cooking.energy * Cooking.recipeLvs[config.simulation.cookingRecipeLv ?? 1])
+                  cooking.fixEnergy
                   * (chanceWeekEffect.successProbabilityList[index % 3] * (sunday ? 2 : 1) + 1)
                   * config.simulation.cookingWeight;
 
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  potSize,
                 });
 
                 energy += cookingEnergy;
