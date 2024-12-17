@@ -147,6 +147,21 @@ const columnList = computed(() => {
     }
   }
 
+  if (config.pokemonList.candy) {
+    result.push(
+      { key: 'candy', name: '所持ｱﾒ' },
+      { key: 'training', name: '目標Lv' },
+      { key: 'normalCandyNum', name: '通常\nｱﾒ' },
+      { key: 'normalCandyShard', name: '通常\nゆめかけ' },
+      { key: 'boostCandyNum', name: 'ﾌﾞｰｽﾄ\nｱﾒ' },
+      { key: 'boostCandyShard', name: 'ﾌﾞｰｽﾄ\nゆめかけ' },
+      { key: 'bestBoostCandyNum', name: '最適\nﾌﾞｰｽﾄ' },
+      { key: 'bestBoostCandyShard', name: '最適ﾌﾞｰｽﾄ\nゆめかけ' },
+      { key: 'bestNormalCandyNum', name: '最適\n通常' },
+      { key: 'bestNormalCandyShard', name: '最適通常\nゆめかけ' },
+    )
+  }
+
   if (config.pokemonList.baseInfo) {
     result.push(
       { key: 'afterList', name: '最終進化' },
@@ -626,7 +641,7 @@ const disabledCookingNum = computed(() => {
           <tr><th>食材数</th><td><label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label></td></tr>
           <tr><th>シミュ詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label></td></tr>
           <tr><th>スコアまで列固定</th><td><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></td></tr>
-          <!-- <tr><th>育成情報</th><td><label><input type="checkbox" v-model="config.pokemonList.candy" />育成情報</label></td></tr> -->
+          <tr><th>育成情報</th><td><label><input type="checkbox" v-model="config.pokemonList.candy" />育成情報</label></td></tr>
           <tr>
             <th>1ページ表示件数</th>
             <td><div><input type="number" class="w-80px" v-model="config.pokemonList.pageUnit"> 件</div></td>
