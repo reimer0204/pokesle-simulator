@@ -130,27 +130,6 @@ class Exp {
 				lv++;
 				nextTotal = Math.round(this.list[lv]?.total * pokemonInfo.exp)
 			}
-			
-			// 全ブーストの必要がないなら
-			lastTotal - nextTotal
-
-			if (config.candy.bag[pokemonInfo.seed] > result.boostCandyNum) {
-				lv = pokemon.lv
-				while(lv < pokemon.training && nextTotal) {
-					const requireCandyNum = Math.ceil((nextTotal - normalTotal) / candyExp);
-					result.normalCandyNum += requireCandyNum;
-					result.normalCandyShard += this.list[lv - 1].shard * requireCandyNum;
-					normalTotal += requireCandyNum * candyExp;
-					
-					const boostRequireCandyNum = Math.ceil((nextTotal - boostTotal) / candyExp / config.candy.boostMultiply);
-					result.boostCandyNum += boostRequireCandyNum;
-					result.boostCandyShard += this.list[lv - 1].shard * boostRequireCandyNum * config.candy.boostShard;
-					boostTotal += boostRequireCandyNum * candyExp * config.candy.boostMultiply;
-
-					lv++;
-					nextTotal = Math.round(this.list[lv]?.total * pokemonInfo.exp)
-				}
-			}
 		}
 
 		return result
