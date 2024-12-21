@@ -292,6 +292,7 @@ self.addEventListener('message', async (event) => {
             addFoodNum[food.name] += pokemon[food.name] ?? 0;
           }
 
+          pokemon.shard *= dayLength;
           pokemon.skillPerDay *= dayLength;
 
           // 料理パワーアップを発動回数に応じて振り分けておく
@@ -553,8 +554,6 @@ self.addEventListener('message', async (event) => {
             todayResearchExp = config.simulation.researchRankMax ? ((config.teamSimulation.beforeEnergy ?? 0) + energy) / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
 
           } else {
-            skillShard *= 7;
-
             todayShard = energyShard = energy * 4 / config.selectEvaluate.shardEnergyRate;
             todayResearchExp = researchExp = config.simulation.researchRankMax ? energy * 4 / config.selectEvaluate.shardEnergyRate * 0.5 : 0;
           }

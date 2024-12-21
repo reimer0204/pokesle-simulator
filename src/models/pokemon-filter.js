@@ -10,7 +10,7 @@ class PokemonFilter {
   ]
 
   static filter(pokemonBox, filter) {
-    let pokemonList = [...pokemonBox];
+    let pokemonList = [...pokemonBox.map((x, i) => ({ ...x, index: i}))];
     let excludeList = [];
     const stepList = [];
     

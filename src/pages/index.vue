@@ -12,6 +12,7 @@ import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import SettingList from '../components/util/setting-list.vue';
 import Berry from '../data/berry.js';
+import Exp from '../data/exp.js';
 import Field from '../data/field.js';
 import Food from '../data/food.js';
 import Pokemon from '../data/pokemon.js';
@@ -20,6 +21,7 @@ import config from '../models/config.js';
 import EvaluateTable from '../models/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box';
+import PokemonFilter from '../models/pokemon-filter.js';
 import Popup from '../models/popup/popup.js';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 
@@ -94,7 +96,15 @@ async function createPokemonList(setConfig = false) {
         }
       }
     )).flat(1);
+    processSimulatedPokemonList();
   })
+}
+
+// 必要アメ数の計算
+function processSimulatedPokemonList() {
+  for(const pokemon of simulatedPokemonList.value) {
+    Object.assign(pokemon, Exp.calcRequireInfo(PokemonBox.list[pokemon.index], pokemon.nature, config))
+  }
 }
 
 // 設定が変わる度に再計算する
@@ -107,8 +117,7 @@ watch(() => config.checkFreq, () => {
   createPokemonList(true);
 })
 watch(config.simulation, () => createPokemonList(true), { immediate: true })
-
-watch(PokemonBox.watch, () => createPokemonList())
+watch(config.candy, processSimulatedPokemonList)
 
 const columnList = computed(() => {
   let result = [
@@ -151,14 +160,15 @@ const columnList = computed(() => {
     result.push(
       { key: 'candy', name: '所持ｱﾒ' },
       { key: 'training', name: '目標Lv' },
-      { key: 'normalCandyNum', name: '通常\nｱﾒ' },
-      { key: 'normalCandyShard', name: '通常\nゆめかけ' },
-      { key: 'boostCandyNum', name: 'ﾌﾞｰｽﾄ\nｱﾒ' },
-      { key: 'boostCandyShard', name: 'ﾌﾞｰｽﾄ\nゆめかけ' },
-      { key: 'bestBoostCandyNum', name: '最適\nﾌﾞｰｽﾄ' },
-      { key: 'bestBoostCandyShard', name: '最適ﾌﾞｰｽﾄ\nゆめかけ' },
-      { key: 'bestNormalCandyNum', name: '最適\n通常' },
-      { key: 'bestNormalCandyShard', name: '最適通常\nゆめかけ' },
+      { key: 'nextExp', name: '次Lv迄\nのExp' },
+      { key: 'normalCandyNum', name: '通常\nｱﾒ', type: Number },
+      { key: 'normalCandyShard', name: '通常\nゆめかけ', type: Number },
+      { key: 'boostCandyNum', name: 'ﾌﾞｰｽﾄ\nｱﾒ', type: Number },
+      { key: 'boostCandyShard', name: 'ﾌﾞｰｽﾄ\nゆめかけ', type: Number },
+      { key: 'bestBoostCandyNum', name: '最適\nﾌﾞｰｽﾄ', type: Number },
+      { key: 'bestBoostCandyShard', name: '最適ﾌﾞｰｽﾄ\nゆめかけ', type: Number },
+      { key: 'bestNormalCandyNum', name: '最適\n通常', type: Number },
+      { key: 'bestNormalCandyShard', name: '最適通常\nゆめかけ', type: Number },
     )
   }
 
@@ -210,45 +220,32 @@ const columnList = computed(() => {
   return result;
 })
 
+const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, config.simulation.fixFilter));
+
 async function showEditPopup(pokemon) {
   await asyncWatcher.wait;
   if(await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
-    if (config.pokemonBox.gs.autoExport) {
-      PokemonBox.exportGoogleSpreadsheet();
-    }
+    createPokemonList()
   }
 }
 
 async function addPokemon() {
   await asyncWatcher.wait;
   if(await Popup.show(EditPokemonPopup, { evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
-    if (config.pokemonBox.gs.autoExport) {
-      PokemonBox.exportGoogleSpreadsheet();
-    }
+    createPokemonList()
   }
 }
 
 async function showTsvPopup() {
   if(await Popup.show(PokemonBoxTsvPopup)) {
-    if (config.pokemonBox.gs.autoExport) {
-      PokemonBox.exportGoogleSpreadsheet();
-    }
+    createPokemonList()
   }
 }
 
-async function toggleFix(data, newValue) {
-  let pokemon = PokemonBox.list[data.index]
-  if (newValue !== undefined) pokemon.fix = newValue;
-  else if(pokemon.fix == null) pokemon.fix = 1;
-  else if(pokemon.fix == 1) pokemon.fix = -1;
-  else if(pokemon.fix == -1) pokemon.fix = null;
-  data.fix = pokemon.fix;
-  PokemonBox.post(pokemon, data.index)
-  PokemonBox.exportGoogleSpreadsheet();
-}
-
 async function showGoogleSpreadsheetPopup() {
-  await Popup.show(GoogleSpreadsheetPopup)
+  if(await Popup.show(GoogleSpreadsheetPopup)) {
+    createPokemonList()
+  }
 }
 
 async function simulationWeeklyTeam() {
@@ -267,7 +264,26 @@ async function simulationPrepareTeam() {
 function deletePokemon(index) {
   if (confirm(`${PokemonBox.list[index].name}(Lv${PokemonBox.list[index].lv})を削除します。よろしいですか？`)) {
     PokemonBox.delete(index);
+    createPokemonList()
   }
+}
+
+async function toggleFix(data, newValue) {
+  let pokemon = PokemonBox.list[data.index]
+  if (newValue !== undefined) pokemon.fix = newValue;
+  else if(pokemon.fix == null) pokemon.fix = 1;
+  else if(pokemon.fix == 1) pokemon.fix = -1;
+  else if(pokemon.fix == -1) pokemon.fix = null;
+  data.fix = pokemon.fix;
+  PokemonBox.post(pokemon, data.index)
+  createPokemonList()
+}
+
+function updateGrowthInfo(data) {
+  let pokemon = PokemonBox.list[data.index]
+  PokemonBox.post(pokemon, data.index)
+
+  processSimulatedPokemonList();
 }
 
 // 厳選詳細ポップアップを表示
@@ -332,7 +348,7 @@ const disabledCookingNum = computed(() => {
                   <template v-for="i in 3">
                     <select :value="config.simulation.berryList[i - 1]" @input="config.simulation.berryList[i - 1] = $event.target.value || null">
                       <option value="">-</option>
-                      <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}</option>
+                      <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}({{ berry.type }})</option>
                     </select>
                   </template>
                 </div>
@@ -464,6 +480,22 @@ const disabledCookingNum = computed(() => {
               <div               >エナジー厳選度 <input type="number" class="w-50px" v-model="config.simulation.fixBorder"          :disabled="!config.simulation.fix"> %以上のみ</div>
               <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" v-model="config.simulation.fixBorderSpecialty" :disabled="!config.simulation.fix"> %以上のみ</div>
               <small>厳選度が指定以上のポケモンのみ仮定します。<br>どちらかに合致した場合に対象となります。</small>
+
+              <div>
+                <SettingButton title="除外フィルタ">
+                  <template #label>
+                    <div class="inline-flex-row-center">
+                      <template v-if="fixFilterResult.excludeList.length == 0">除外なし</template>
+                      <template v-else>除外：{{ fixFilterResult.excludeList.length }}匹</template>
+                    </div>
+                  </template>
+
+                  <div class="flex-column-start-start gap-5px">
+                    <PokemonFilterEditor v-model="config.simulation.fixFilter" />
+                  </div>
+                </SettingButton>
+              </div>
+              
             </td>
           </tr>
           <tr>
@@ -495,7 +527,6 @@ const disabledCookingNum = computed(() => {
             </td>
           </tr>
         </SettingTable>
-        
       </SettingButton>
       
       <SettingButton title="厳選設定">
@@ -626,25 +657,54 @@ const disabledCookingNum = computed(() => {
 
         <SettingTable>
           <tr><th>サブスキル名省略</th><td><label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label></td></tr>
-          <tr><th>厳選度</th><td><label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選度</label></td></tr>
-          <tr><th>とくい厳選度</th>
+          <tr>
+            <th>厳選</th>
             <td>
-              <label><input type="checkbox" v-model="config.simulation.specialtySelectInfo" />とくい厳選度</label>
-              <div class="w-300px">
-                <small>とくい分野の数値だけに限り評価した値です。<br>きのみ得意の場合はきのみの数、食材得意の場合は食材の数、スキル得意の場合はスキルの発動期待値で評価しています。</small>
+              <div>
+                <label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選度</label>
+                <div class="w-300px">
+                  <small>厳選設定に基づいて計算されたエナジーでの厳選度を表示します。</small>
+                </div>
+              </div>
+              <div class="mt-5px">
+                <label><input type="checkbox" v-model="config.simulation.specialtySelectInfo" />とくい厳選度</label>
+                <div class="w-300px">
+                  <small>とくい分野の数値だけに限り評価した値です。<br>きのみ得意の場合はきのみの数、食材得意の場合は食材の数、スキル得意の場合はスキルの発動期待値で評価しています。</small>
+                </div>
+              </div>
+              <div class="mt-5px">
+                <label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選元値表示</label>
+                <div class="w-300px">
+                  <small>厳選度の場合はエナジー、とくい厳選度の場合はその分野の数量を表示するかどうかのオプションです。</small>
+                </div>
+              </div>
+              <div class="mt-5px">
+                <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label>
+                <div class="w-300px">
+                  <small>進化先が複数あるポケモンについて、最も適正が高い進化先以外の結果もすべて表示します。</small>
+                </div>
               </div>
             </td>
           </tr>
-          <tr><th>厳選エナジー表示</th><td><label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選元値表示</label></td></tr>
-          <tr><th>厳選詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label></td></tr>
+          <tr>
+            <th>アメ情報</th>
+            <td>
+              <div class="flex-column gap-5px">
+                <div><label><input type="checkbox" v-model="config.pokemonList.candy" />アメ情報</label></div>
+                <div>ブーストEXP倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostMultiply"> 倍</div>
+                <div>ブーストかけら倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostShard"> 倍</div>
+              </div>
+            </td>
+          </tr>
           <tr><th>基礎情報</th><td><label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label></td></tr>
           <tr><th>食材数</th><td><label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label></td></tr>
           <tr><th>シミュ詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label></td></tr>
-          <tr><th>スコアまで列固定</th><td><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></td></tr>
-          <tr><th>育成情報</th><td><label><input type="checkbox" v-model="config.pokemonList.candy" />育成情報</label></td></tr>
           <tr>
-            <th>1ページ表示件数</th>
-            <td><div><input type="number" class="w-80px" v-model="config.pokemonList.pageUnit"> 件</div></td>
+            <th>表示設定</th>
+            <td>
+              <div><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></div>
+              <div class="mt-5px">1ページ表示件数&nbsp;<input type="number" class="w-50px" v-model="config.pokemonList.pageUnit"> 件</div>
+            </td>
           </tr>
         </SettingTable>
       </SettingButton>
@@ -837,6 +897,22 @@ const disabledCookingNum = computed(() => {
 
             </div>
           </template>
+
+          <template #candy="{ data, column }">
+            <input type="number" class="w-50px" v-model="config.candy.bag[data.seed]" />
+          </template>
+
+          <template #training="{ data, column }">
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].training" @input="updateGrowthInfo(data)" />
+          </template>
+
+          <template #nextExp="{ data, column }">
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].nextExp" @input="updateGrowthInfo(data)" />
+          </template>
+
+          <!-- <template #nextExp="{ data, column }">
+            <input type="number" class="w-50px" v-model="data.nextExp" @input="updateGrowthInfo(data)" />
+          </template> -->
 
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%;">

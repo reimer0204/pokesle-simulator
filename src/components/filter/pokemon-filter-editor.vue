@@ -8,6 +8,10 @@ import PokemonFilter from '../../models/pokemon-filter';
 
 const boxPokemonList = PokemonBox.load()
 
+const props = defineProps({
+  modelValue: { required: true }
+})
+
 const lastPokemonList = Pokemon.nameSortList.filter(x => x.isLast)
 
 const newCondition = reactive({
@@ -19,13 +23,13 @@ watch(() => newCondition.type, () => {
   newCondition.value = null;
 })
 
-const filterResult = computed(() => PokemonFilter.filter(boxPokemonList, config.simulation.filter));
+const filterResult = computed(() => PokemonFilter.filter(boxPokemonList, props.modelValue));
 
-const enableAdd = computed(() => newCondition.type != null && newCondition.value != null && config.simulation.filter.enable);
+const enableAdd = computed(() => newCondition.type != null && newCondition.value != null && props.modelValue.enable);
 
 function add(mode) {
   if (!enableAdd.value) return;
-  config.simulation.filter.conditionList.push({ ...newCondition, mode })
+  props.modelValue.conditionList.push({ ...newCondition, mode })
 }
 
 const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id == newCondition.type))
@@ -35,7 +39,7 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
 <template>
   <div class="pokemon-filter">
 
-    <input-checkbox v-model="config.simulation.filter.enable">除外フィルタを有効にする</input-checkbox>
+    <input-checkbox v-model="props.modelValue.enable">除外フィルタを有効にする</input-checkbox>
 
     <div class="list-wrapper mt-10px">
       <div class="item">
@@ -48,29 +52,29 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
         <div class="condition" :class="{
           add: step.mode === true,
           minus: step.mode === false,
-          disabled: config.simulation.filter.conditionList[i].disabled,
+          disabled: props.modelValue.conditionList[i].disabled,
         }">
-          <svg viewBox="0 0 100 50" @click="config.simulation.filter.conditionList[i].disabled = !config.simulation.filter.conditionList[i].disabled" class="w-20px">
+          <svg viewBox="0 0 100 50" @click="props.modelValue.conditionList[i].disabled = !props.modelValue.conditionList[i].disabled" class="w-20px">
             <mask id="mask">
               <rect x="0" y="0" width="100" height="100" fill="white" />
             </mask>
             <rect x="0" y="0" width="100" height="50" rx="25" fill="#888" mask="url(#mask)" />
-            <rect   v-if=" config.simulation.filter.conditionList[i].disabled"  x="5"   y="5"  width="90" height="40" rx="20" fill="#FFF" mask="url(#mask)" />
-            <circle v-if=" config.simulation.filter.conditionList[i].disabled" cx="30" cy="25" r="15" fill="#888" />
-            <circle v-if="!config.simulation.filter.conditionList[i].disabled" cx="70" cy="25" r="15" fill="white" />
+            <rect   v-if=" props.modelValue.conditionList[i].disabled"  x="5"   y="5"  width="90" height="40" rx="20" fill="#FFF" mask="url(#mask)" />
+            <circle v-if=" props.modelValue.conditionList[i].disabled" cx="30" cy="25" r="15" fill="#888" />
+            <circle v-if="!props.modelValue.conditionList[i].disabled" cx="70" cy="25" r="15" fill="white" />
           </svg>
           {{ step.name }}
         </div>
         <div class="count"><template v-if="step.count != null">{{ step.count }}件</template></div>
 
         <div class="flex-row-start-center gap-5px w-80px flex-00">
-          <svg viewBox="0 0 100 100" @click="config.simulation.filter.conditionList.splice(i, 1)">
+          <svg viewBox="0 0 100 100" @click="props.modelValue.conditionList.splice(i, 1)">
             <path d="M10,10L90,90 M10,90L90,10" stroke="#888" stroke-width="10" fill="none" />
           </svg>
-          <svg viewBox="0 0 100 100" width="14" @click="config.simulation.filter.conditionList.swap(i, i - 1)">
+          <svg viewBox="0 0 100 100" width="14" @click="props.modelValue.conditionList.swap(i, i - 1)">
             <path d="M0,70 L50,20 L100,70z" fill="#888" />
           </svg>
-          <svg viewBox="0 0 100 100" width="14" @click="config.simulation.filter.conditionList.swap(i, i + 1)">
+          <svg viewBox="0 0 100 100" width="14" @click="props.modelValue.conditionList.swap(i, i + 1)">
             <path d="M0,30 L50,80 L100,30z" fill="#888" />
           </svg>
         </div>

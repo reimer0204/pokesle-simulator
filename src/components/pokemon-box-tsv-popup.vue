@@ -35,6 +35,8 @@ function exportList() {
     if(config.pokemonBox.tsv.shiny) arr[config.pokemonBox.tsv.shiny - 1] = pokemon.shiny ? 1 : '';
     if(config.pokemonBox.tsv.fix) arr[config.pokemonBox.tsv.fix - 1] = pokemon.fix;
     if(config.pokemonBox.tsv.sleepTime) arr[config.pokemonBox.tsv.sleepTime - 1] = pokemon.sleepTime;
+    if(config.pokemonBox.tsv.training) arr[config.pokemonBox.tsv.training - 1] = pokemon.training;
+    if(config.pokemonBox.tsv.nextExp) arr[config.pokemonBox.tsv.nextExp - 1] = pokemon.nextExp;
 
     return arr.join('\t');
   }).join('\n')
@@ -75,6 +77,8 @@ function importList() {
       <div><label>色違い</label><input type="number" v-model="config.pokemonBox.tsv.shiny" placeholder="なし"></div>
       <div><label>固定</label><input type="number" v-model="config.pokemonBox.tsv.fix" placeholder="なし"></div>
       <div><label>睡眠時間</label><input type="number" v-model="config.pokemonBox.tsv.sleepTime" placeholder="なし"></div>
+      <div><label>目標Lv</label><input type="number" v-model="config.pokemonBox.tsv.training" placeholder="なし"></div>
+      <div><label>次Lv迄のExp</label><input type="number" v-model="config.pokemonBox.tsv.nextExp" placeholder="なし"></div>
     </SettingList>
 
     <div class="flex-row gap-10px mt-10px">

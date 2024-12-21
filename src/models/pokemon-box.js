@@ -85,6 +85,9 @@ class PokemonBox {
       time: this._time.toISOString(),
       list: this._list,
     }))
+    if (config.pokemonBox.gs.autoExport) {
+      PokemonBox.exportGoogleSpreadsheet();
+    }
     this.watch.value = +new Date();
   }
 
@@ -110,6 +113,8 @@ class PokemonBox {
         shiny: !!cells[config.pokemonBox.tsv.shiny],
         fix: cells[config.pokemonBox.tsv.fix],
         sleepTime: cells[config.pokemonBox.tsv.sleepTime],
+        training: cells[config.pokemonBox.tsv.training],
+        nextExp: cells[config.pokemonBox.tsv.nextExp],
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
@@ -147,7 +152,7 @@ class PokemonBox {
         sheet: config.pokemonBox.gs.sheet,
         pokemonList: [
           // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
-          [this._time.toISOString(), ...new Array(16).fill('')],
+          [this._time.toISOString(), ...new Array(17).fill('')],
           ...this.list.map(pokemon => [
             pokemon.name,
             pokemon.lv,
@@ -160,6 +165,7 @@ class PokemonBox {
             pokemon.fix,
             pokemon.sleepTime,
             pokemon.training ?? null,
+            pokemon.nextExp ?? null,
           ])
         ],
       }))
@@ -199,6 +205,7 @@ class PokemonBox {
         fix: row[14] || null,
         sleepTime: Number(row[15]) || null,
         training: Number(row[16]) || null,
+        nextExp: Number(row[17]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

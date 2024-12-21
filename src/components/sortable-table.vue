@@ -260,8 +260,13 @@ function toggleHiddenColumn(key) {
                 <template v-if="column.percent">
                   {{ data[column.key] != null ? `${(data[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
                 </template>
-                <template v-else-if="column.fixed != null">
-                  {{ data[column.key]?.toFixed(column.fixed) }}
+                <template v-else-if="column.type == Number">
+                  <template v-if="data[column.key] != null">
+                    {{ Number(data[column.key].toFixed(column.fixed ?? 0)).toLocaleString(undefined, {
+                      minimumFractionDigits: column.fixed ?? 0,
+                      maximumFractionDigits: column.fixed ?? 0,
+                    }) }}
+                  </template>
                 </template>
                 <template v-else>
                   {{ data[column.key] }}

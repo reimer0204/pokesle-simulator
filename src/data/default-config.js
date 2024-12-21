@@ -1,6 +1,7 @@
 import SortableTable from "../components/sortable-table.vue";
 import Cooking from "./cooking";
 import Food from './food'
+import Pokemon from "./pokemon";
 
 const defaultConfig = {
 
@@ -46,6 +47,10 @@ const defaultConfig = {
       subSkillList: [8, 9, 10, 11, 12],
       nature: 13,
       shiny: 14,
+      fix: 15,
+      sleepTime: 16,
+      training: 17,
+      nextExp: 18,
     },
     gs: {
       url: null,
@@ -162,7 +167,12 @@ const defaultConfig = {
     pokemonSleepTime: 500,
   },
 
-
+  candy: {
+    boostMultiply: 2,
+    boostShard: 5,
+    bag: {
+    },
+  },
 
   // 起床時元気評価
   // 0: 睡眠時間や性格に応じたげんきからスタートする
@@ -191,6 +201,11 @@ for(let cooking of Cooking.list) {
   defaultConfig.simulation.cookingSettings[cooking.name] = {
     lv: 1,
   };
+}
+
+// 種ポケをリストアップし所持アメ設定のメンバーにする
+for(const pokemon of Pokemon.list.filter(x => x.before == null)) {
+  defaultConfig.candy.bag[pokemon.name] = 0;
 }
 
 export default defaultConfig

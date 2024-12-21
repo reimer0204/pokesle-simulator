@@ -298,7 +298,7 @@ async function simulation() {
             </template>
 
             <div class="flex-column-start-start gap-5px">
-              <PokemonFilterEditor />
+              <PokemonFilterEditor v-model="config.simulation.filter" />
             </div>
           </SettingButton>
 

@@ -4,6 +4,7 @@ import Pokemon from "../data/pokemon";
 import Skill from "../data/skill";
 import SubSkill from "../data/sub-skill";
 import HelpRate from "../models/help-rate";
+import PokemonFilter from "../models/pokemon-filter";
 import PokemonSimulator from "../models/pokemon-simulator";
 
 let simulator;
@@ -34,6 +35,11 @@ addEventListener('message', async (event) => {
 
     let result = [];
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+
+    let fixablePokemonIndexSet = null;
+    if (config.simulation.fix) {
+      fixablePokemonIndexSet = new Set(PokemonFilter.filter(pokemonList, config.simulation.fixFilter).pokemonList.map(x => x.index + startIndex));
+    }
 
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo({...pokemonList[i]});
@@ -136,7 +142,7 @@ addEventListener('message', async (event) => {
             }
 
             // 最終進化想定シミュをする場合、別個体に切り出し
-            if (config.simulation.fix && config.simulation.fixEvolve && (
+            if (config.simulation.fix && config.simulation.fixEvolve && fixablePokemonIndexSet.has(pokemon.index) && (
               evaluateMaxScore >= config.simulation.fixBorder / 100
               || evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100
             )) {
@@ -145,6 +151,7 @@ addEventListener('message', async (event) => {
                 beforeName: pokemonList[i].name,
                 name: after,
               });
+              afterPokemon.index = i + startIndex
               afterPokemon.evaluateResult = {};
               afterPokemon.evaluateSpecialty = {};
               
@@ -192,7 +199,7 @@ addEventListener('message', async (event) => {
 
         result.push(simulator.memberToInfo({
           ...pokemon,
-          fixable: config.simulation.fix && (
+          fixable: config.simulation.fix && fixablePokemonIndexSet.has(pokemon.index) && (
             (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100
             || (pokemon.evaluateSpecialty?.max?.best?.score ?? 0) >= config.simulation.fixBorderSpecialty / 100
           ),
