@@ -90,12 +90,12 @@ class Exp {
 			let boostedCandyExp = candyExp * config.candy.boostMultiply;
 
 			const requireExp = lastTotal - normalTotal;
-			let minBoostCandyNum = Math.ceil((requireExp / candyExp - config.candy.bag[pokemonInfo.seed]) / (config.candy.boostMultiply - 1))
+			let minBoostCandyNum = Math.max(Math.ceil((requireExp / candyExp - config.candy.bag[pokemonInfo.seed]) / (config.candy.boostMultiply - 1)), 0)
 			const canMinBoost = config.candy.bag[pokemonInfo.seed] - minBoostCandyNum >= 1
 			if (canMinBoost) {
 				result.bestBoostCandyNum = minBoostCandyNum;
 				result.bestBoostCandyShard = 0;
-				result.bestNormalCandyNum = config.candy.bag[pokemonInfo.seed] - minBoostCandyNum;
+				result.bestNormalCandyNum = Math.min(config.candy.bag[pokemonInfo.seed], Math.ceil(requireExp / candyExp)) - minBoostCandyNum;
 				result.bestNormalCandyShard = 0;
 			}
 
