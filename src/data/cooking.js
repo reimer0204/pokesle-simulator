@@ -1,369 +1,70 @@
 const list = [
-	{ type: 'カレー', name: 'ごちゃまぜカレー', rate: 1, foodList: [] },
-	{
-		type: 'カレー', name: 'とくせんリンゴカレー', rate: 1.06, foodList: [
-			{ name: 'とくせんリンゴ', num: 7 },]
-	},
-	{
-		type: 'カレー', name: 'たんじゅんホワイトシチュー', rate: 1.06, foodList: [
-			{ name: 'モーモーミルク', num: 7 },]
-	},
-	{
-		type: 'カレー', name: 'ベイビィハニーカレー', rate: 1.06, foodList: [
-			{ name: 'あまいミツ', num: 7 },]
-	},
-	{
-		type: 'カレー', name: 'マメバーグカレー', rate: 1.06, foodList: [
-			{ name: 'マメミート', num: 7 },]
-	},
-	{
-		type: 'カレー', name: '満腹チーズバーグカレー', rate: 1.11, foodList: [
-			{ name: 'モーモーミルク', num: 8 },
-			{ name: 'マメミート', num: 8 },]
-	},
-	{
-		type: 'カレー', name: 'ひでりカツカレー', rate: 1.11, foodList: [
-			{ name: 'マメミート', num: 10 },
-			{ name: 'ピュアなオイル', num: 5 },]
-	},
-	{
-		type: 'カレー', name: 'サンパワートマトカレー', rate: 1.11, foodList: [
-			{ name: 'げきからハーブ', num: 5 },
-			{ name: 'あんみんトマト', num: 10 },]
-	},
-	{
-		type: 'カレー', name: 'とけるオムカレー', rate: 1.11, foodList: [
-			{ name: 'とくせんエッグ', num: 10 },
-			{ name: 'あんみんトマト', num: 6 },]
-	},
-	{
-		type: 'カレー', name: 'ほっこりホワイトシチュー', rate: 1.17, foodList: [
-			{ name: 'モーモーミルク', num: 10 },
-			{ name: 'ほっこりポテト', num: 8 },
-			{ name: 'あじわいキノコ', num: 4 },]
-	},
-	{
-		type: 'カレー', name: 'ビルドアップマメカレー', rate: 1.17, foodList: [
-			{ name: 'ワカクサ大豆', num: 12 },
-			{ name: 'マメミート', num: 6 },
-			{ name: 'とくせんエッグ', num: 4 },
-			{ name: 'げきからハーブ', num: 4 },]
-	},
-	{
-		type: 'カレー', name: 'キノコのほうしカレー', rate: 1.17, foodList: [
-			{ name: 'あじわいキノコ', num: 14 },
-			{ name: 'ほっこりポテト', num: 9 },]
-	},
-	{
-		type: 'カレー', name: 'おやこあいカレー', rate: 1.25, foodList: [
-			{ name: 'あまいミツ', num: 12 },
-			{ name: 'とくせんエッグ', num: 8 },
-			{ name: 'とくせんリンゴ', num: 11 },
-			{ name: 'ほっこりポテト', num: 4 },]
-	},
-	{
-		type: 'カレー', name: 'からくちネギもりカレー', rate: 1.25, foodList: [
-			{ name: 'ふといながねぎ', num: 14 },
-			{ name: 'あったかジンジャー', num: 10 },
-			{ name: 'げきからハーブ', num: 8 },]
-	},
-	{
-		type: 'カレー', name: 'ニンジャカレー', rate: 1.48, foodList: [
-			{ name: 'ワカクサ大豆', num: 24 },
-			{ name: 'ふといながねぎ', num: 12 },
-			{ name: 'マメミート', num: 9 },
-			{ name: 'あじわいキノコ', num: 5 },]
-	},
-	{
-		type: 'カレー', name: 'あぶりテールカレー', rate: 1.25, foodList: [
-			{ name: 'おいしいシッポ', num: 8 },
-			{ name: 'げきからハーブ', num: 25 },]
-	},
-	{
-		type: 'カレー', name: 'じゅうなんコーンシチュー', rate: 1.25, foodList: [
-			{ name: 'ワカクサコーン', num: 14 },
-			{ name: 'モーモーミルク', num: 8 },
-			{ name: 'ほっこりポテト', num: 8 },]
-	},
-	{
-		type: 'カレー', name: 'ぜったいねむりバターカレー', rate: 1.35, foodList: [
-			{ name: 'リラックスカカオ', num: 12 },
-			{ name: 'モーモーミルク', num: 10 },
-			{ name: 'ほっこりポテト', num: 18 },
-			{ name: 'あんみんトマト', num: 15 },]
-	},
-	{
-		type: 'カレー', name: 'れんごくコーンキーマカレー', rate: 1.48, foodList: [
-			{ name: 'げきからハーブ', num: 27 },
-			{ name: 'マメミート', num: 24 },
-			{ name: 'ワカクサコーン', num: 14 },
-			{ name: 'あったかジンジャー', num: 12 },]
-	},
-	{
-		type: 'カレー', name: 'めざめるパワーシチュー', rate: 1.61, foodList: [
-			{ name: 'ワカクサ大豆', num: 28 },
-			{ name: 'あんみんトマト', num: 25 },
-			{ name: 'あじわいキノコ', num: 23 },
-			{ name: 'めざましコーヒー', num: 16 },]
-	},
-	{
-		type: 'カレー', name: 'ピヨピヨパンチ辛口カレー', rate: 1.35, foodList: [
-			{ name: 'げきからハーブ', num: 11 },
-			{ name: 'あまいミツ', num: 11 },
-			{ name: 'めざましコーヒー', num: 11 },
-		]
-	},
-
-	{ type: 'サラダ', name: 'ごちゃまぜサラダ', rate: 1, foodList: [] },
-	{
-		type: 'サラダ', name: 'とくせんリンゴサラダ', rate: 1.06, foodList: [
-			{ name: 'とくせんリンゴ', num: 8 },]
-	},
-	{
-		type: 'サラダ', name: 'マメハムサラダ', rate: 1.06, foodList: [
-			{ name: 'マメミート', num: 8 },]
-	},
-	{
-		type: 'サラダ', name: 'あんみんトマトサラダ', rate: 1.06, foodList: [
-			{ name: 'あんみんトマト', num: 8 },]
-	},
-	{
-		type: 'サラダ', name: 'ゆきかきシーザーサラダ', rate: 1.11, foodList: [
-			{ name: 'モーモーミルク', num: 10 },
-			{ name: 'マメミート', num: 6 },]
-	},
-	{
-		type: 'サラダ', name: 'うるおいとうふサラダ', rate: 1.25, foodList: [
-			{ name: 'ワカクサ大豆', num: 15 },
-			{ name: 'あんみんトマト', num: 9 },]
-	},
-	{
-		type: 'サラダ', name: 'ねっぷうとうふサラダ', rate: 1.11, foodList: [
-			{ name: 'ワカクサ大豆', num: 10 },
-			{ name: 'げきからハーブ', num: 6 },]
-	},
-	{
-		type: 'サラダ', name: 'めんえきねぎサラダ', rate: 1.11, foodList: [
-			{ name: 'あったかジンジャー', num: 5 },
-			{ name: 'ふといながねぎ', num: 10 },]
-	},
-	{
-		type: 'サラダ', name: 'メロメロりんごのチーズサラダ', rate: 1.17, foodList: [
-			{ name: 'モーモーミルク', num: 5 },
-			{ name: 'ピュアなオイル', num: 3 },
-			{ name: 'とくせんリンゴ', num: 15 },]
-	},
-	{
-		type: 'サラダ', name: 'モーモーカプレーゼ', rate: 1.17, foodList: [
-			{ name: 'モーモーミルク', num: 12 },
-			{ name: 'ピュアなオイル', num: 5 },
-			{ name: 'あんみんトマト', num: 6 },]
-	},
-	{
-		type: 'サラダ', name: 'ばかぢからワイルドサラダ', rate: 1.17, foodList: [
-			{ name: 'マメミート', num: 9 },
-			{ name: 'あったかジンジャー', num: 6 },
-			{ name: 'とくせんエッグ', num: 5 },
-			{ name: 'ほっこりポテト', num: 3 },]
-	},
-	{
-		type: 'サラダ', name: 'ムラっけチョコミートサラダ', rate: 1.17, foodList: [
-			{ name: 'リラックスカカオ', num: 14 },
-			{ name: 'マメミート', num: 9 },]
-	},
-	{
-		type: 'サラダ', name: 'くいしんぼうポテトサラダ', rate: 1.25, foodList: [
-			{ name: 'ほっこりポテト', num: 14 },
-			{ name: 'とくせんエッグ', num: 9 },
-			{ name: 'マメミート', num: 7 },
-			{ name: 'とくせんリンゴ', num: 6 },]
-	},
-	{
-		type: 'サラダ', name: 'オーバーヒートサラダ', rate: 1.25, foodList: [
-			{ name: 'げきからハーブ', num: 17 },
-			{ name: 'あんみんトマト', num: 8 },
-			{ name: 'あったかジンジャー', num: 10 },]
-	},
-	{
-		type: 'サラダ', name: 'キノコのほうしサラダ', rate: 1.25, foodList: [
-			{ name: 'あじわいキノコ', num: 17 },
-			{ name: 'ピュアなオイル', num: 8 },
-			{ name: 'あんみんトマト', num: 8 },]
-	},
-	{
-		type: 'サラダ', name: 'ヤドンテールのペッパーサラダ', rate: 1.25, foodList: [
-			{ name: 'げきからハーブ', num: 10 },
-			{ name: 'ピュアなオイル', num: 15 },
-			{ name: 'おいしいシッポ', num: 10 },]
-	},
-	{
-		type: 'サラダ', name: 'みだれづきコーンサラダ', rate: 1.25, foodList: [
-			{ name: 'ワカクサコーン', num: 9 },
-			{ name: 'ピュアなオイル', num: 8 },]
-	},
-	{
-		type: 'サラダ', name: 'ニンジャサラダ', rate: 1.48, foodList: [
-			{ name: 'あったかジンジャー', num: 11 },
-			{ name: 'ワカクサ大豆', num: 19 },
-			{ name: 'あじわいキノコ', num: 12 },
-			{ name: 'ふといながねぎ', num: 15 },]
-	},
-	{
-		type: 'サラダ', name: 'めいそうスイートサラダ', rate: 1.48, foodList: [
-			{ name: 'とくせんリンゴ', num: 21 },
-			{ name: 'あまいミツ', num: 16 },
-			{ name: 'ワカクサコーン', num: 12 },]
-	},
-	{
-		type: 'サラダ', name: 'ワカクササラダ', rate: 1.48, foodList: [
-			{ name: 'ピュアなオイル', num: 22 },
-			{ name: 'ワカクサコーン', num: 17 },
-			{ name: 'あんみんトマト', num: 14 },
-			{ name: 'ほっこりポテト', num: 9 },]
-	},
-	{
-		type: 'サラダ', name: 'まけんきコーヒーサラダ', rate: 1.61, foodList: [
-			{ name: 'マメミート', num: 28 },
-			{ name: 'ほっこりポテト', num: 22 },
-			{ name: 'ピュアなオイル', num: 22 },
-			{ name: 'めざましコーヒー', num: 28 },]
-	},
-	{
-		type: 'サラダ', name: 'クロスチョップドサラダ', rate: 1.35, foodList: [
-			{ name: 'マメミート', num: 15 },
-			{ name: 'とくせんエッグ', num: 20 },
-			{ name: 'あんみんトマト', num: 10 },
-			{ name: 'ワカクサコーン', num: 11 },]
-	},
-
-
-	{ type: 'デザート', name: 'ごちゃまぜドリンク', rate: 1, foodList: [] },
-	{
-		type: 'デザート', name: 'とくせんリンゴジュース', rate: 1.06, foodList: [
-			{ name: 'とくせんリンゴ', num: 8 },]
-	},
-	{
-		type: 'デザート', name: 'モーモーホットミルク', rate: 1.06, foodList: [
-			{ name: 'モーモーミルク', num: 7 },]
-	},
-	{
-		type: 'デザート', name: 'クラフトサイコソーダ', rate: 1.06, foodList: [
-			{ name: 'あまいミツ', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'ねがいごとアップルパイ', rate: 1.11, foodList: [
-			{ name: 'モーモーミルク', num: 4 },
-			{ name: 'とくせんリンゴ', num: 12 },]
-	},
-	{
-		type: 'デザート', name: 'じゅくせいスイートポテト', rate: 1.11, foodList: [
-			{ name: 'モーモーミルク', num: 5 },
-			{ name: 'ほっこりポテト', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'ひのこジンジャーティー', rate: 1.11, foodList: [
-			{ name: 'とくせんリンゴ', num: 7 },
-			{ name: 'あったかジンジャー', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'マイペースやさいジュース', rate: 1.11, foodList: [
-			{ name: 'とくせんリンゴ', num: 7 },
-			{ name: 'あんみんトマト', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'かるわざソイケーキ', rate: 1.11, foodList: [
-			{ name: 'ワカクサ大豆', num: 7 },
-			{ name: 'とくせんエッグ', num: 8 },]
-	},
-	{
-		type: 'デザート', name: 'はりきりプロテインスムージー', rate: 1.17, foodList: [
-			{ name: 'ワカクサ大豆', num: 15 },
-			{ name: 'リラックスカカオ', num: 8 },]
-	},
-	{
-		type: 'デザート', name: 'ちからもちソイドーナッツ', rate: 1.35, foodList: [
-			{ name: 'ワカクサ大豆', num: 16 },
-			{ name: 'リラックスカカオ', num: 7 },
-			{ name: 'ピュアなオイル', num: 12 },]
-	},
-	{
-		type: 'デザート', name: 'あまいかおりチョコケーキ', rate: 1.17, foodList: [
-			{ name: 'リラックスカカオ', num: 8 },
-			{ name: 'モーモーミルク', num: 7 },
-			{ name: 'あまいミツ', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'おおきいマラサダ', rate: 1.17, foodList: [
-			{ name: 'モーモーミルク', num: 7 },
-			{ name: 'ピュアなオイル', num: 10 },
-			{ name: 'あまいミツ', num: 6 },]
-	},
-	{
-		type: 'デザート', name: 'あくまのキッスフルーツオレ', rate: 1.25, foodList: [
-			{ name: 'リラックスカカオ', num: 8 },
-			{ name: 'モーモーミルク', num: 9 },
-			{ name: 'とくせんリンゴ', num: 11 },
-			{ name: 'あまいミツ', num: 7 },]
-	},
-	{
-		type: 'デザート', name: 'ふくつのジンジャークッキー', rate: 1.25, foodList: [
-			{ name: 'リラックスカカオ', num: 5 },
-			{ name: 'とくせんエッグ', num: 4 },
-			{ name: 'あまいミツ', num: 14 },
-			{ name: 'あったかジンジャー', num: 12 },]
-	},
-	{
-		type: 'デザート', name: 'ネロリのデトックスティー', rate: 1.25, foodList: [
-			{ name: 'とくせんリンゴ', num: 15 },
-			{ name: 'あったかジンジャー', num: 11 },
-			{ name: 'あじわいキノコ', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'はなびらのまいチョコタルト', rate: 1.25, foodList: [
-			{ name: 'リラックスカカオ', num: 11 },
-			{ name: 'とくせんリンゴ', num: 11 },]
-	},
-	{
-		type: 'デザート', name: 'プリンのプリンアラモード', rate: 1.35, foodList: [
-			{ name: 'モーモーミルク', num: 10 },
-			{ name: 'とくせんリンゴ', num: 10 },
-			{ name: 'とくせんエッグ', num: 15 },
-			{ name: 'あまいミツ', num: 20 },]
-	},
-	{
-		type: 'デザート', name: 'だいばくはつポップコーン', rate: 1.35, foodList: [
-			{ name: 'ワカクサコーン', num: 15 },
-			{ name: 'ピュアなオイル', num: 14 },
-			{ name: 'モーモーミルク', num: 7 },]
-	},
-	{
-		type: 'デザート', name: 'おちゃかいコーンスコーン', rate: 1.48, foodList: [
-			{ name: 'とくせんリンゴ', num: 20 },
-			{ name: 'あったかジンジャー', num: 20 },
-			{ name: 'ワカクサコーン', num: 18 },
-			{ name: 'モーモーミルク', num: 9 },]
-	},
-	{
-		type: 'デザート', name: 'フラワーギフトマカロン', rate: 1.48, foodList: [
-			{ name: 'リラックスカカオ', num: 25 },
-			{ name: 'とくせんエッグ', num: 25 },
-			{ name: 'あまいミツ', num: 17 },
-			{ name: 'モーモーミルク', num: 10 },]
-	},
-	{
-		type: 'デザート', name: 'スパークスパイスコーラ', rate: 1.61, foodList: [
-			{ name: 'ふといながねぎ', num: 20 },
-			{ name: 'とくせんリンゴ', num: 35 },
-			{ name: 'あったかジンジャー', num: 20 },
-			{ name: 'めざましコーヒー', num: 12 },]
-	},
-	{
-		type: 'デザート', name: 'はやおきコーヒーゼリー', rate: 1.35, foodList: [
-			{ name: 'モーモーミルク', num: 14 },
-			{ name: 'あまいミツ', num: 12 },
-			{ name: 'めざましコーヒー', num: 16 },
-		]
-	},
+	{type: 'カレー', name: 'ごちゃまぜカレー', energy: 0, foodList: []},
+	{type: 'カレー', name: 'とくせんリンゴカレー', energy: 748, foodList: [{name: 'とくせんリンゴ', num: 7},]},
+	{type: 'カレー', name: 'あぶりテールカレー', energy: 7483, foodList: [{name: 'おいしいシッポ', num: 8},{name: 'げきからハーブ', num: 25},]},
+	{type: 'カレー', name: 'サンパワートマトカレー', energy: 2078, foodList: [{name: 'あんみんトマト', num: 10},{name: 'げきからハーブ', num: 5},]},
+	{type: 'カレー', name: 'ぜったいねむりバターカレー', energy: 9010, foodList: [{name: 'ほっこりポテト', num: 18},{name: 'リラックスカカオ', num: 12},{name: 'あんみんトマト', num: 15},{name: 'モーモーミルク', num: 10},]},
+	{type: 'カレー', name: 'からくちネギもりカレー', energy: 5900, foodList: [{name: 'ふといながねぎ', num: 14},{name: 'あったかジンジャー', num: 10},{name: 'げきからハーブ', num: 8},]},
+	{type: 'カレー', name: 'キノコのほうしカレー', energy: 4162, foodList: [{name: 'あじわいキノコ', num: 14},{name: 'ほっこりポテト', num: 9},]},
+	{type: 'カレー', name: 'おやこあいカレー', energy: 4523, foodList: [{name: 'あまいミツ', num: 12},{name: 'とくせんエッグ', num: 8},{name: 'とくせんリンゴ', num: 11},{name: 'ほっこりポテト', num: 4},]},
+	{type: 'カレー', name: '満腹チーズバーグカレー', energy: 1910, foodList: [{name: 'モーモーミルク', num: 8},{name: 'マメミート', num: 8},]},
+	{type: 'カレー', name: 'ほっこりホワイトシチュー', energy: 3181, foodList: [{name: 'モーモーミルク', num: 10},{name: 'ほっこりポテト', num: 8},{name: 'あじわいキノコ', num: 4},]},
+	{type: 'カレー', name: 'たんじゅんホワイトシチュー', energy: 814, foodList: [{name: 'モーモーミルク', num: 7},]},
+	{type: 'カレー', name: 'マメバーグカレー', energy: 856, foodList: [{name: 'マメミート', num: 7},]},
+	{type: 'カレー', name: 'ベイビィハニーカレー', energy: 839, foodList: [{name: 'あまいミツ', num: 7},]},
+	{type: 'カレー', name: 'ニンジャカレー', energy: 9445, foodList: [{name: 'ワカクサ大豆', num: 24},{name: 'ふといながねぎ', num: 12},{name: 'マメミート', num: 9},{name: 'あじわいキノコ', num: 5},]},
+	{type: 'カレー', name: 'ひでりカツレツカレー', energy: 1942, foodList: [{name: 'マメミート', num: 10},{name: 'ピュアなオイル', num: 5},]},
+	{type: 'カレー', name: 'とけるオムカレー', energy: 2150, foodList: [{name: 'とくせんエッグ', num: 10},{name: 'あんみんトマト', num: 6},]},
+	{type: 'カレー', name: 'ビルドアップマメカレー', energy: 3372, foodList: [{name: 'ワカクサ大豆', num: 12},{name: 'マメミート', num: 6},{name: 'とくせんエッグ', num: 4},{name: 'げきからハーブ', num: 4},]},
+	{type: 'カレー', name: 'じゅうなんコーンシチュー', energy: 4670, foodList: [{name: 'ワカクサコーン', num: 14},{name: 'モーモーミルク', num: 8},{name: 'ほっこりポテト', num: 8},]},
+	{type: 'カレー', name: 'れんごくコーンキーマカレー', energy: 13690, foodList: [{name: 'げきからハーブ', num: 27},{name: 'マメミート', num: 24},{name: 'ワカクサコーン', num: 14},{name: 'あったかジンジャー', num: 12},]},
+	{type: 'カレー', name: 'めざめるパワーシチュー', energy: 19061, foodList: [{name: 'ワカクサ大豆', num: 28},{name: 'あんみんトマト', num: 25},{name: 'あじわいキノコ', num: 23},{name: 'めざましコーヒー', num: 16},]},
+	{type: 'カレー', name: 'ピヨピヨパンチ辛口カレー', energy: 5702, foodList: [{name: 'めざましコーヒー', num: 11},{name: 'げきからハーブ', num: 11},{name: 'あまいミツ', num: 11},]},
+	{type: 'サラダ', name: 'ごちゃまぜサラダ', energy: 0, foodList: []},
+	{type: 'サラダ', name: 'ヤドンテールのペッパーサラダ', energy: 8169, foodList: [{name: 'げきからハーブ', num: 10},{name: 'ピュアなオイル', num: 15},{name: 'おいしいシッポ', num: 10},]},
+	{type: 'サラダ', name: 'キノコのほうしサラダ', energy: 5859, foodList: [{name: 'あじわいキノコ', num: 17},{name: 'ピュアなオイル', num: 8},{name: 'あんみんトマト', num: 8},]},
+	{type: 'サラダ', name: 'ゆきかきシーザーサラダ', energy: 1898, foodList: [{name: 'モーモーミルク', num: 10},{name: 'マメミート', num: 6},]},
+	{type: 'サラダ', name: 'くいしんぼうポテトサラダ', energy: 5040, foodList: [{name: 'ほっこりポテト', num: 14},{name: 'とくせんエッグ', num: 9},{name: 'マメミート', num: 7},{name: 'とくせんリンゴ', num: 6},]},
+	{type: 'サラダ', name: 'うるおいとうふサラダ', energy: 3113, foodList: [{name: 'ワカクサ大豆', num: 15},{name: 'あんみんトマト', num: 9},]},
+	{type: 'サラダ', name: 'ばかぢからワイルドサラダ', energy: 3046, foodList: [{name: 'マメミート', num: 9},{name: 'あったかジンジャー', num: 6},{name: 'とくせんエッグ', num: 5},{name: 'ほっこりポテト', num: 3},]},
+	{type: 'サラダ', name: 'マメハムサラダ', energy: 978, foodList: [{name: 'マメミート', num: 8},]},
+	{type: 'サラダ', name: 'あんみんトマトサラダ', energy: 1045, foodList: [{name: 'あんみんトマト', num: 8},]},
+	{type: 'サラダ', name: 'モーモーカプレーゼ', energy: 2942, foodList: [{name: 'モーモーミルク', num: 12},{name: 'あんみんトマト', num: 6},{name: 'ピュアなオイル', num: 5},]},
+	{type: 'サラダ', name: 'ムラっけチョコミートサラダ', energy: 3665, foodList: [{name: 'リラックスカカオ', num: 14},{name: 'マメミート', num: 9},]},
+	{type: 'サラダ', name: 'オーバーヒートサラダ', energy: 5225, foodList: [{name: 'げきからハーブ', num: 17},{name: 'あったかジンジャー', num: 10},{name: 'あんみんトマト', num: 8},]},
+	{type: 'サラダ', name: 'とくせんリンゴサラダ', energy: 855, foodList: [{name: 'とくせんリンゴ', num: 8},]},
+	{type: 'サラダ', name: 'めんえきねぎサラダ', energy: 2845, foodList: [{name: 'あったかジンジャー', num: 5},{name: 'ふといながねぎ', num: 10},]},
+	{type: 'サラダ', name: 'メロメロりんごのチーズサラダ', energy: 2655, foodList: [{name: 'とくせんリンゴ', num: 15},{name: 'モーモーミルク', num: 5},{name: 'ピュアなオイル', num: 3},]},
+	{type: 'サラダ', name: 'ニンジャサラダ', energy: 11659, foodList: [{name: 'あったかジンジャー', num: 11},{name: 'ワカクサ大豆', num: 19},{name: 'あじわいキノコ', num: 12},{name: 'ふといながねぎ', num: 15},]},
+	{type: 'サラダ', name: 'ねっぷうとうふサラダ', energy: 2114, foodList: [{name: 'げきからハーブ', num: 6},{name: 'ワカクサ大豆', num: 10},]},
+	{type: 'サラダ', name: 'ワカクササラダ', energy: 11393, foodList: [{name: 'ピュアなオイル', num: 22},{name: 'ワカクサコーン', num: 17},{name: 'あんみんトマト', num: 14},{name: 'ほっこりポテト', num: 9},]},
+	{type: 'サラダ', name: 'めいそうスイートサラダ', energy: 7675, foodList: [{name: 'とくせんリンゴ', num: 21},{name: 'あまいミツ', num: 16},{name: 'ワカクサコーン', num: 12},]},
+	{type: 'サラダ', name: 'みだれづきコーンサラダ', energy: 2785, foodList: [{name: 'ワカクサコーン', num: 9},{name: 'ピュアなオイル', num: 8},]},
+	{type: 'サラダ', name: 'まけんきコーヒーサラダ', energy: 20218, foodList: [{name: 'めざましコーヒー', num: 28},{name: 'マメミート', num: 28},{name: 'ピュアなオイル', num: 22},{name: 'ほっこりポテト', num: 22},]},
+	{type: 'サラダ', name: 'クロスチョップドサラダ', energy: 8755, foodList: [{name: 'とくせんエッグ', num: 20},{name: 'マメミート', num: 15},{name: 'ワカクサコーン', num: 11},{name: 'あんみんトマト', num: 10},]},
+	{type: 'デザート', name: 'ごちゃまぜジュース', energy: 0, foodList: []},
+	{type: 'デザート', name: 'じゅくせいスイートポテト', energy: 1907, foodList: [{name: 'ほっこりポテト', num: 9},{name: 'モーモーミルク', num: 5},]},
+	{type: 'デザート', name: 'ふくつのジンジャークッキー', energy: 4921, foodList: [{name: 'あまいミツ', num: 14},{name: 'あったかジンジャー', num: 12},{name: 'リラックスカカオ', num: 5},{name: 'とくせんエッグ', num: 4},]},
+	{type: 'デザート', name: 'とくせんリンゴジュース', energy: 855, foodList: [{name: 'とくせんリンゴ', num: 8},]},
+	{type: 'デザート', name: 'クラフトサイコソーダ', energy: 1079, foodList: [{name: 'あまいミツ', num: 9},]},
+	{type: 'デザート', name: 'ひのこのジンジャーティー', energy: 1913, foodList: [{name: 'とくせんリンゴ', num: 7},{name: 'あったかジンジャー', num: 9},]},
+	{type: 'デザート', name: 'プリンのプリンアラモード', energy: 7594, foodList: [{name: 'あまいミツ', num: 20},{name: 'とくせんエッグ', num: 15},{name: 'とくせんリンゴ', num: 10},{name: 'モーモーミルク', num: 10},]},
+	{type: 'デザート', name: 'あくまのキッスフルーツオレ', energy: 4734, foodList: [{name: 'とくせんリンゴ', num: 11},{name: 'モーモーミルク', num: 9},{name: 'あまいミツ', num: 7},{name: 'リラックスカカオ', num: 8},]},
+	{type: 'デザート', name: 'ねがいごとアップルパイ', energy: 1748, foodList: [{name: 'とくせんリンゴ', num: 12},{name: 'モーモーミルク', num: 4},]},
+	{type: 'デザート', name: 'ネロリのデトックスティー', energy: 5065, foodList: [{name: 'あったかジンジャー', num: 11},{name: 'とくせんリンゴ', num: 15},{name: 'あじわいキノコ', num: 9},]},
+	{type: 'デザート', name: 'あまいかおりチョコケーキ', energy: 3378, foodList: [{name: 'あまいミツ', num: 9},{name: 'リラックスカカオ', num: 8},{name: 'モーモーミルク', num: 7},]},
+	{type: 'デザート', name: 'モーモーホットミルク', energy: 814, foodList: [{name: 'モーモーミルク', num: 7},]},
+	{type: 'デザート', name: 'かるわざソイケーキ', energy: 1924, foodList: [{name: 'とくせんエッグ', num: 8},{name: 'ワカクサ大豆', num: 7},]},
+	{type: 'デザート', name: 'はりきりプロテインスムージー', energy: 3263, foodList: [{name: 'ワカクサ大豆', num: 15},{name: 'リラックスカカオ', num: 8},]},
+	{type: 'デザート', name: 'マイペースやさいジュース', energy: 1924, foodList: [{name: 'とくせんリンゴ', num: 7},{name: 'あんみんトマト', num: 9},]},
+	{type: 'デザート', name: 'おおきいマラサダ', energy: 3015, foodList: [{name: 'ピュアなオイル', num: 10},{name: 'モーモーミルク', num: 7},{name: 'あまいミツ', num: 6},]},
+	{type: 'デザート', name: 'ちからもちソイドーナッツ', energy: 5547, foodList: [{name: 'ピュアなオイル', num: 12},{name: 'リラックスカカオ', num: 7},{name: 'ワカクサ大豆', num: 16},]},
+	{type: 'デザート', name: 'だいばくはつポップコーン', energy: 6048, foodList: [{name: 'ワカクサコーン', num: 15},{name: 'ピュアなオイル', num: 14},{name: 'モーモーミルク', num: 7},]},
+	{type: 'デザート', name: 'おちゃかいコーンスコーン', energy: 10925, foodList: [{name: 'とくせんリンゴ', num: 20},{name: 'あったかジンジャー', num: 20},{name: 'ワカクサコーン', num: 18},{name: 'モーモーミルク', num: 9},]},
+	{type: 'デザート', name: 'はなびらのまいチョコタルト', energy: 3314, foodList: [{name: 'リラックスカカオ', num: 11},{name: 'とくせんリンゴ', num: 11},]},
+	{type: 'デザート', name: 'フラワーギフトマカロン', energy: 13834, foodList: [{name: 'リラックスカカオ', num: 25},{name: 'とくせんエッグ', num: 25},{name: 'あまいミツ', num: 17},{name: 'モーモーミルク', num: 10},]},
+	{type: 'デザート', name: 'スパークスパイスコーラ', energy: 17494, foodList: [{name: 'とくせんリンゴ', num: 35},{name: 'あったかジンジャー', num: 20},{name: 'ふといながねぎ', num: 20},{name: 'めざましコーヒー', num: 12},]},
+	{type: 'デザート', name: 'はやおきコーヒーゼリー', energy: 6793, foodList: [{name: 'めざましコーヒー', num: 16},{name: 'モーモーミルク', num: 14},{name: 'あまいミツ', num: 12},]},
 ]
 
 let map = list.reduce((a, x) => (a[x.name] = x, a), {});
@@ -481,7 +182,7 @@ Cooking.evaluateLvList = (config) => {
 			}
 		}
 
-		cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv].bonus;
+		cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv]?.bonus ?? 0;
 		cooking.fixEnergy = cooking.energy * cooking.recipeLvBonus
 		
 		return cooking;

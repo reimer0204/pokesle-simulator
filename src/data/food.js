@@ -58,6 +58,13 @@ Food.maxEnergy = Math.max(...list.map(x => x.energy))
 Food.averageEnergy = Food.list.reduce((a, x) => a + x.energy, 0) / Food.list.length;
 
 for(let cooking of Cooking.list) {
+  cooking.foodNum = cooking.foodList.reduce((a, x) => a + x.num, 0)
+  cooking.rawEnergy = cooking.foodList.reduce((a, x) => a + Food.map[x.name].energy * x.num, 0)
+  cooking.rate = cooking.rawEnergy ? cooking.energy / cooking.rawEnergy : 1;
+  // cooking.energy = cooking.rawEnergy * cooking.rate
+  cooking.maxEnergy = cooking.energy * Cooking.maxRecipeBonus
+  cooking.addEnergy = cooking.energy - cooking.rawEnergy
+  cooking.maxAddEnergy = cooking.maxEnergy - cooking.rawEnergy
 
   for(let { name, num } of cooking.foodList) {
     if (map[name].bestRate == null || map[name].bestRate < cooking.rate) {
@@ -68,12 +75,6 @@ for(let cooking of Cooking.list) {
     }
 
   }
-  cooking.foodNum = cooking.foodList.reduce((a, x) => a + x.num, 0)
-  cooking.rawEnergy = cooking.foodList.reduce((a, x) => a + Food.map[x.name].energy * x.num, 0)
-  cooking.energy = cooking.rawEnergy * cooking.rate
-  cooking.maxEnergy = cooking.rawEnergy * cooking.rate * Cooking.maxRecipeBonus
-  cooking.addEnergy = cooking.energy - cooking.rawEnergy
-  cooking.maxAddEnergy = cooking.maxEnergy - cooking.rawEnergy
 }
 Cooking.maxFoodNum = Math.max(...Cooking.list.map(x => x.foodNum));
 Cooking.maxEnergy = Math.max(...Cooking.list.map(x => x.maxEnergy));
