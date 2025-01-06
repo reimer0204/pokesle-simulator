@@ -382,7 +382,9 @@ const disabledCookingNum = computed(() => {
               <th>料理評価倍率</th>
               <td>
                 <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1"> 倍
-                <div class="w-200px"><small>エナジーを捨ててレシピレベルを育てる場合などはこの値を大きくすると、料理だけ重視したシミュレーションが出来ます</small></div>
+                <div class="w-400px"><small>
+                  イベント等で料理エナジーにボーナスがかかっている場合に設定してください。<br>また、イベント週以外でもきのみエナジー度外視でレシピレベルを育てる場合などはこの値を大きくすると、料理を重視したシミュレーションが出来ます。
+                </small></div>
               </td>
             </tr>
             
@@ -927,7 +929,7 @@ const disabledCookingNum = computed(() => {
         <button @click="addPokemon">ポケモン新規追加</button>
         <button @click="simulationWeeklyTeam">週間PTシミュ</button>
         <button @click="simulationDailyTeam">日別PTシミュ</button>
-        <button @click="simulationPrepareTeam">準備シミュ</button>
+        <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
         <button @click="showGoogleSpreadsheetPopup" class="ml-auto">Googleスプレッドシート連携</button>
         <button @click="showTsvPopup">TSVインポート/エクスポート</button>
       </div>

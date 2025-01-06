@@ -474,8 +474,12 @@ async function simulation() {
                         <div v-for="cooking in result.cookingList">
                           {{ cooking.cooking.name }}
                           鍋{{ cooking.potSize }}
-                          {{ Math.round(cooking.cooking.energy).toLocaleString() }}×{{ (cooking.cooking.recipeLvBonus * 100) }}% + {{ Math.round(cooking.energy - cooking.cooking.fixEnergy).toLocaleString() }}
-                          = {{ Math.round(cooking.energy).toLocaleString() }}エナジー</div>
+                          (
+                            {{ Math.round(cooking.cooking.energy).toLocaleString() }}
+                            × {{ Math.round(cooking.cooking.recipeLvBonus * 100) }}%
+                            <template v-if="cooking.addEnergy > 0">＋ {{ Math.round(cooking.addEnergy).toLocaleString() }}</template>
+                          ) × {{ Math.round(config.simulation.cookingWeight * 100) }}%
+                          ＝ {{ Math.round(cooking.energy).toLocaleString() }}エナジー</div>
                       </template>
                     </td>
                     <td class="text-align-right">

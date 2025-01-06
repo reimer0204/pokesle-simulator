@@ -500,6 +500,7 @@ self.addEventListener('message', async (event) => {
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  addEnergy: addFoodPower,
                   potSize,
                 });
 
@@ -514,6 +515,7 @@ self.addEventListener('message', async (event) => {
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  addEnergy: 0,
                   potSize,
                 });
 
