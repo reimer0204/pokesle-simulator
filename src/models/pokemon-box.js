@@ -111,10 +111,10 @@ class PokemonBox {
         ],
         nature: cells[config.pokemonBox.tsv.nature],
         shiny: !!cells[config.pokemonBox.tsv.shiny],
-        fix: cells[config.pokemonBox.tsv.fix],
-        sleepTime: cells[config.pokemonBox.tsv.sleepTime],
-        training: cells[config.pokemonBox.tsv.training],
-        nextExp: cells[config.pokemonBox.tsv.nextExp],
+        fix: Number(cells[config.pokemonBox.tsv.fix]) || null,
+        sleepTime: Number(cells[config.pokemonBox.tsv.sleepTime]) || null,
+        training: Number(cells[config.pokemonBox.tsv.training]) || null,
+        nextExp: Number(cells[config.pokemonBox.tsv.nextExp]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
