@@ -12,6 +12,7 @@ const defaultConfig = {
   // 初期設定が完了しているか
   initSetting: false,
   version: {
+    history: 0,
     evaluateTable: null,
     evaluateTableSleepTime: 8.5,
     evaluateTableCheckFreq: 10,
@@ -95,7 +96,9 @@ const defaultConfig = {
 
     enableCooking: {},
     cookingSettings: {},
-    cookingRecipeLvType: 2,
+    cookingRecipeLvType1: true,
+    cookingRecipeLvType2: true,
+    cookingRecipeLvType3: true,
     cookingRecipeFixLv: Cooking.maxRecipeLv,
     cookingRecipeRepeatLv: 100,
 

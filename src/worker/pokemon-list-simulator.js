@@ -318,8 +318,8 @@ addEventListener('message', async (event) => {
       if (pokemon.fixedBag > 0) {
         let skillList = pokemon.skill.name == 'ゆびをふる' ? Skill.metronomeTeamTarget : [pokemon.skill];
         let effectRate = pokemon.skill.name == 'ゆびをふる' ? (1 / Skill.metronomeTarget.length) : 1;
-        let effect = pokemon.skill.effect[pokemon.fixedSkillLv - 1];
         for(let skill of skillList) {
+          let effect = skill.effect[(skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1];
           switch(skill.name) {
             case 'ばけのかわ(きのみバースト)': {
               let berryEnergySum = [...berryEnergyTop5.filter(x => x.index != pokemon.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
@@ -331,7 +331,7 @@ addEventListener('message', async (event) => {
             case 'おてつだいサポートS':
             case 'おてつだいブースト':
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.index != pokemon.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
-              pokemon.supportEnergyPerDay += effect * pickupEnergySum / (skill.name == 'おてつだいブースト' ? 1 : 5) * effectRate * pokemon.skillPerDay;
+              pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5) * effectRate * pokemon.skillPerDay;
               break;
           }
         }

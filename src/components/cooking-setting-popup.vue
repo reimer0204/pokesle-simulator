@@ -11,6 +11,25 @@ const checkAll = computed({
 const calcCookingList = computed(() => {
   return Cooking.evaluateLvList(config)
 })
+
+const columnList = computed(() => {
+  return [
+    { key: 'check', name: '', convert: data => config.simulation.enableCooking[data.name] },
+    { key: 'type', name: 'タイプ' },
+    { key: 'name', name: '名前' },
+    { key: 'foodList', name: 'レシピ' },
+    { key: 'foodNum', name: '食材数', type: Number },
+    { key: 'rate', name: 'ボーナス', percent: true, fixed: 0 },
+    { key: 'energy', name: '基礎エナジー', type: Number, fixed: 0 },
+    // { key: 'addEnergy', name: '追加エナジー', type: Number, fixed: 0 },
+    // { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
+    config.simulation.cookingRecipeLvType1 ? { key: 'lv1', name: '実際のLv' } : null,
+    config.simulation.cookingRecipeLvType3 ? { key: 'lv3', name: `${config.simulation.cookingRecipeRepeatLv}回\n料理時Lv` } : null,
+    { key: 'lv', name: '計算Lv' },
+    { key: 'fixEnergy', name: '最終エナジー', type: Number, fixed: 0 },
+  ].filter(x => x)
+})
+
 </script>
 
 <template>
@@ -30,12 +49,17 @@ const calcCookingList = computed(() => {
             <label>シミュレーション設定</label>
             <div>
               <div class="flex-row-start-center gap-20px">
-                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="1">個々に設定されたレシピレベルを使用する</InputRadio>
-                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="2">全て<input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" />Lvとする</InputRadio>
-                <InputRadio v-model.number="config.simulation.cookingRecipeLvType" :value="3"><input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" />回料理した際のLvとする</InputRadio>
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType1" :value="1">実際のLv</InputCheckbox>
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType2" :value="2">
+                  全て<input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" @click.stop />Lv
+                </InputCheckbox>
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType3" :value="3">
+                  <input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" @click.stop />
+                回料理した際のLv</InputCheckbox>
               </div>
               <small class="mt-5px">
-                「個々に設定されたレシピレベルを使用する」はより正しい値になりますが、最上位料理であっても育っていない場合は評価されなくなります。<br>
+                <b>上記で選択したもののうち、最もレベルの高いものが各種シミュレーションに採用されます。</b><br>
+                「個々に設定されたレシピレベルを使用する」のみを使用するのが最も正しい値になりますが、最上位料理であっても育っていない場合は評価されなくなります。<br>
                 料理を育てたい通常週と、スコアアタック週で使い分けてください。
               </small>
             </div>
@@ -47,19 +71,7 @@ const calcCookingList = computed(() => {
         <div class="scroll">
           <SortableTable
             :dataList="calcCookingList"
-            :columnList="[
-              { key: 'check', name: '', convert: data => config.simulation.enableCooking[data.name] },
-              { key: 'type', name: 'タイプ' },
-              { key: 'name', name: '名前' },
-              { key: 'foodList', name: 'レシピ' },
-              { key: 'foodNum', name: '食材数', type: Number },
-              { key: 'rate', name: 'ボーナス', percent: true, fixed: 0 },
-              { key: 'energy', name: '基礎エナジー', type: Number, fixed: 0 },
-              // { key: 'addEnergy', name: '追加エナジー', type: Number, fixed: 0 },
-              // { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
-              { key: 'lv', name: 'レシピLv' },
-              { key: 'fixEnergy', name: '最終エナジー', type: Number, fixed: 0 },
-            ]"
+            :columnList="columnList"
             @clickRow="(data) => config.simulation.enableCooking[data.name] = !config.simulation.enableCooking[data.name]"
           >
             <template #header.check>
@@ -68,17 +80,15 @@ const calcCookingList = computed(() => {
             <template #check="{ data }">
               <InputCheckbox v-model="config.simulation.enableCooking[data.name]" @click.stop></InputCheckbox>
             </template>
-            <template #lv="{ data }">
+            <template #lv1="{ data }">
               <template v-if="data.rate > 1">
                 <input
-                  v-if="config.simulation.cookingRecipeLvType == 1"
                   class="w-50px"
                   @click.stop
                   v-model="config.simulation.cookingSettings[data.name].lv" type="number" min="1" :max="Cooking.maxRecipeLv"
                 >
-                <template v-else>{{ data.lv }}</template>
+                <template>{{ data.lv }}</template>
               </template>
-              
               <template v-else>-</template>
             </template>
 

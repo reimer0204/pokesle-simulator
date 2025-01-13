@@ -166,24 +166,32 @@ Cooking.evaluateLvList = (config) => {
 	return structuredClone(Cooking.list).map(cooking => {
 		cooking.lv = 1;
 
-		if (config.simulation.cookingRecipeLvType == 1) {
-			cooking.lv = config.simulation.cookingSettings[cooking.name].lv;
-		}
-		if (config.simulation.cookingRecipeLvType == 2) {
-			cooking.lv = config.simulation.cookingRecipeFixLv;
-		}
-		if (config.simulation.cookingRecipeLvType == 3) {
-			let exp = 0;
-			for(let i = 0; i < config.simulation.cookingRecipeRepeatLv; i++) {
-				exp += Cooking.recipeLvs[cooking.lv].bonus * cooking.energy;
-				while(Cooking.recipeLvs[cooking.lv].totalExp <= exp && cooking.lv < Cooking.maxRecipeLv) {
-					cooking.lv++;
+		if (cooking.rate > 1) {
+			if (config.simulation.cookingRecipeLvType1) {
+				cooking.lv1 = config.simulation.cookingSettings[cooking.name].lv;
+				cooking.lv = Math.max(cooking.lv, cooking.lv1);
+			}
+			if (config.simulation.cookingRecipeLvType2) {
+				cooking.lv2 = config.simulation.cookingRecipeFixLv;
+				cooking.lv = Math.max(cooking.lv, cooking.lv2);
+			}
+			if (config.simulation.cookingRecipeLvType3) {
+				let exp = 0;
+				let lv = 1;
+				for(let i = 0; i < config.simulation.cookingRecipeRepeatLv; i++) {
+					exp += Cooking.recipeLvs[lv].bonus * cooking.energy;
+					while(Cooking.recipeLvs[lv].totalExp <= exp && lv < Cooking.maxRecipeLv) {
+						lv++;
+					}
 				}
+				cooking.lv3 = lv;
+				cooking.lv = Math.max(cooking.lv, cooking.lv3);
 			}
 		}
 
 		cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv]?.bonus ?? 0;
 		cooking.fixEnergy = cooking.energy * cooking.recipeLvBonus
+		cooking.fixAddEnergy = cooking.fixEnergy - cooking.rawEnergy
 		
 		return cooking;
 	})

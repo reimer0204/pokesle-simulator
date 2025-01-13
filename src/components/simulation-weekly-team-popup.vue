@@ -476,9 +476,10 @@ async function simulation() {
                           鍋{{ cooking.potSize }}
                           (
                             {{ Math.round(cooking.cooking.energy).toLocaleString() }}
-                            × {{ Math.round(cooking.cooking.recipeLvBonus * 100) }}%
-                            <template v-if="cooking.addEnergy > 0">＋ {{ Math.round(cooking.addEnergy).toLocaleString() }}</template>
-                          ) × {{ Math.round(config.simulation.cookingWeight * 100) }}%
+                            × {{ Math.round(cooking.cooking.recipeLvBonus * 100) }}%(Lv)
+                            × {{ Math.round(cooking.successPower * 100) }}%(大成功)
+                            <template v-if="cooking.addEnergy > 0">＋ {{ Math.round(cooking.addEnergy).toLocaleString() }}(追加)</template>
+                          ) × {{ Math.round(config.simulation.cookingWeight * 100) }}%(設定)
                           ＝ {{ Math.round(cooking.energy).toLocaleString() }}エナジー</div>
                       </template>
                     </td>

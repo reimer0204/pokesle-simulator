@@ -4,6 +4,7 @@ import config from './models/config';
 import AsyncWatcherArea from './components/util/async-watcher-area.vue';
 import EvaluateTable from './models/evaluate-table';
 import HelpRate from './models/help-rate';
+import Version from './models/version';
 
 let browserSupportError = ref(null);
 if(window.localStorage == null) browserSupportError.value = 'LocalStorageに対応していません。最新のブラウザを使用するか、ブラウザの設定を確認してください。'
@@ -29,7 +30,7 @@ const requireRefresh = computed(() => {
       <router-link to="/evaluate-table">厳選情報確認</router-link>
       <!-- <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link> -->
       <router-link to="/faq">FAQ</router-link>
-      <router-link to="/history">更新履歴</router-link>
+      <router-link to="/history">更新履歴<div class="caution" v-if="config.version.history < Version.HISTORY">!</div></router-link>
     </header>
     <main>
       <template v-if="browserSupportError == null">

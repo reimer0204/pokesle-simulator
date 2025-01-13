@@ -6,10 +6,11 @@ import SubSkillCombination from "../data/sub-skill-combination";
 import EvaluateTableWorker from "../worker/evaluate-table-worker?worker";
 import config from "./config";
 import MultiWorker from "./multi-worker";
+import Version from "./version";
 
 export default class EvaluateTable {
 
-  static VERSION = 20241227;
+  static VERSION = Version.EVALUATE;
 
   static isEnableEvaluateTable(config) {
     return config.version.evaluateTable == this.VERSION

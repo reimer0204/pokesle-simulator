@@ -73,40 +73,44 @@ self.addEventListener('message', async (event) => {
       
       // 組み合わせを列挙
       let combinationList = [];
-      for(let top of topList) {
-        let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
-        let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
-        combinationLoop: while(true) {
-          let aboutScore = 0;
-          if (targetPokemonList) {
-            for(let index of combination) {
-              aboutScore += targetPokemonList[index].score
+      if (pickup > 0) {
+        for(let top of topList) {
+          let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
+          let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
+          combinationLoop: while(true) {
+            let aboutScore = 0;
+            if (targetPokemonList) {
+              for(let index of combination) {
+                aboutScore += targetPokemonList[index].score
+              }
             }
-          }
 
-          combinationList.push({ combination: [...combination], aboutScore })
+            combinationList.push({ combination: [...combination], aboutScore })
 
-          if (combinationList.length % 10000 == 0) {
-            postMessage({
-              status: 'progress',
-              body: combinationList.length / pattern * 0.1,
-            })
-          }
+            if (combinationList.length % 10000 == 0) {
+              postMessage({
+                status: 'progress',
+                body: combinationList.length / pattern * 0.1,
+              })
+            }
 
-          for(let i = pickup - 1; i >= 0; i--) {
-            combination[i]++;
-            if(combination[i] > combinationLimit[i]) {
-              if (i == 0) {
-                break combinationLoop;
+            for(let i = pickup - 1; i >= 0; i--) {
+              combination[i]++;
+              if(combination[i] > combinationLimit[i]) {
+                if (i == 0) {
+                  break combinationLoop;
+                }
+              } else {
+                for(let j = i + 1; j < pickup; j++) {
+                  combination[j] = combination[j - 1] + 1;
+                }
+                break;
               }
-            } else {
-              for(let j = i + 1; j < pickup; j++) {
-                combination[j] = combination[j - 1] + 1;
-              }
-              break;
             }
           }
         }
+      } else {
+        combinationList.push({ combination: [], aboutScore: 0 })
       }
       
       let nightCapPikachu = null;
@@ -163,13 +167,13 @@ self.addEventListener('message', async (event) => {
       // 料理を良い順にソートしておく
       let cookingList = Cooking.evaluateLvList(config);
       let cookingListMap = {
-        'カレー': cookingList.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
-        'サラダ': cookingList.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
-        'デザート': cookingList.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.addEnergy - a.addEnergy),
+        'カレー': cookingList.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
+        'サラダ': cookingList.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
+        'デザート': cookingList.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
       }
       let targetCookingList = config.simulation.cookingType
         ? cookingListMap[config.simulation.cookingType]
-        : cookingList.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.addEnergy - a.addEnergy);
+        : cookingList.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy);
 
       // シミュレーター用意
       await PokemonSimulator.isReady;
@@ -256,7 +260,7 @@ self.addEventListener('message', async (event) => {
         let totalOtherMorningHealEffect = 0;
         let totalOtherDayHealEffect = 0;
         for(let pokemon of pokemonList) {
-          simulator.calcStatus(pokemon, helpBonusCount, genkiBonusCount);
+          simulator.calcStatus(pokemon, helpBonusCount, genkiBonusCount, pokemonList);
           totalOtherMorningHealEffect += pokemon.otherMorningHealEffect;
           totalOtherDayHealEffect += pokemon.otherDayHealEffect;
         }
@@ -479,7 +483,7 @@ self.addEventListener('message', async (event) => {
             // 最終的に余った食材の平均パワーを計算
             let remainFoodList = Object.entries(foodNum).map(([name, num]) => ({ name, num, energy: Food.map[name].energy })).sort((a, b) => b.energy - a.energy);
             for(const { cooking, potSize, sunday, week, index } of selectedCookingList) {
-              let potRemain = potSize - cooking.foodCount;
+              let potRemain = potSize - cooking.foodNum;
 
               if (config.teamSimulation.day == null) {
                 // 余った食材を詰める
@@ -492,29 +496,34 @@ self.addEventListener('message', async (event) => {
                   if (remainFoodList[0].num <= 0) remainFoodList.shift();
                 }
 
+                const successPower = (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1);
                 const cookingEnergy =
                   (cooking.fixEnergy + addFoodPower)
-                  * (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1)
+                  * successPower
                   * config.simulation.cookingWeight;
 
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  successPower,
                   addEnergy: addFoodPower,
+                  successPower,
                   potSize,
                 });
 
                 energy += cookingEnergy;
 
               } else {
+                const successPower = chanceWeekEffect.successProbabilityList[index % 3] * (sunday ? 2 : 1) + 1;
                 const cookingEnergy =
                   cooking.fixEnergy
-                  * (chanceWeekEffect.successProbabilityList[index % 3] * (sunday ? 2 : 1) + 1)
+                  * successPower
                   * config.simulation.cookingWeight;
 
                 cookingList.push({
                   cooking,
                   energy: cookingEnergy,
+                  successPower,
                   addEnergy: 0,
                   potSize,
                 });

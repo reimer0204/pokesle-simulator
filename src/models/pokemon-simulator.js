@@ -267,12 +267,17 @@ class PokemonSimulator {
     result.skillEffectRate = result.skill.name == 'ゆびをふる' ? (1 / Skill.metronomeTarget.length) : 1;
 
     // 発動するスキルの一覧(ゆびをふる用)
-    result.skillList = result.skill.name == 'ゆびをふる' ? Skill.metronomeTarget : [result.skill];
+    if (result.skill.name == 'ゆびをふる') {
+      result.skillList = Skill.metronomeTarget;
+    } else {
+      result.skillList = [result.skill]
+    }
 
     return result;
   }
 
-  calcStatus(pokemon, helpBonus, genkiHealBonus = 0) {
+  // チームによって決まる値の計算
+  calcStatus(pokemon, helpBonus, genkiHealBonus = 0, pokemonList = null) {
 
     // おてつだい速度短縮量計算
     pokemon.speedBonus = 0;
@@ -311,6 +316,25 @@ class PokemonSimulator {
       baseDayHelpNum += dayRemainTime / pokemon.speed;
     }
     pokemon.baseDayHelpNum = baseDayHelpNum;
+    
+
+    // 特定のスキルの場合はチームのスキル一覧に変換
+    if (pokemonList) {
+      if (pokemon.skill.name == 'へんしん(スキルコピー)' || pokemon.skill.name == 'ものまね(スキルコピー)') {
+        pokemon.skillList = [];
+        for(let subPokemon of pokemonList) {
+          if (pokemon != subPokemon) {
+            // TODO: ゆびをふるをコピーした場合は本来はゆびをふる対象のスキルすべてをリストアップしないといけないが、重みが異なるので計算を根本的にいじる必要がある
+            if (subPokemon.skill.name == 'ゆびをふる') {
+              pokemon.skillList.push(Skill.map['エナジーチャージS'])
+            } else {
+              pokemon.skillList.push(subPokemon.skill)
+            }
+          }
+        }
+      }
+    }
+
 
     // 性格のげんき回復係数
     pokemon.natureGenkiMultiplier = (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)
@@ -331,14 +355,14 @@ class PokemonSimulator {
     if (pokemon.fixedBag > 0) {
       let healSkillList = 
         pokemon.skill.genki ? [pokemon.skill] :
-        pokemon.skill.name == 'ゆびをふる' ? Skill.genkiSkillList :
+        pokemon.skillList.length ? pokemon.skillList.filter(x => x.genki) :
         null
 
-      if (healSkillList) {
+      if (healSkillList?.length) {
         let selfEffectSum = 0;
         let otherEffectSum = 0;
         for(let skill of healSkillList) {
-          const effect = skill.effect[pokemon.fixedSkillLv - 1];
+          const effect = skill.effect[(skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1];
           selfEffectSum += effect.self ?? 0;
           otherEffectSum += effect.other ?? 0;
         }
@@ -460,7 +484,8 @@ class PokemonSimulator {
     pokemon.skillEnergyMap = {};
 
     for(let skill of pokemon.skillList) {
-      const effect = skill.effect[pokemon.fixedSkillLv - 1];
+      const skillLv = (skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1;
+      const effect = skill.effect[skillLv];
       let energy;
       switch(skill.name) {
         case 'エナジーチャージS':
@@ -506,15 +531,8 @@ class PokemonSimulator {
               helpCount = effect / 5;
             }
             if (skill.name == 'おてつだいブースト') {
-              helpCount = [2, 3, 3, 4, 4, 5][pokemon.fixedSkillLv - 1];
-              helpCount += [
-                [0, 0, 1, 2, 4],
-                [0, 0, 1, 2, 4],
-                [0, 0, 2, 3, 5],
-                [0, 0, 2, 3, 5],
-                [0, 1, 3, 4, 6],
-                [0, 1, 3, 4, 6],
-              ][pokemon.fixedSkillLv - 1][helpBoostCount - 1]
+              helpCount = effect.fix;
+              helpCount += effect.team[helpBoostCount - 1]
             }
             helpCount *= pokemon.skillEffectRate;
 
@@ -527,7 +545,7 @@ class PokemonSimulator {
             }
 
           } else if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energy = scoreForSupportEvaluate * effect * (skill.name == 'おてつだいブースト' ? 5 : 1) * pokemon.skillEffectRate;
+            energy = scoreForSupportEvaluate * (skill.name == 'おてつだいブースト' ? effect.max * 5 : effect) * pokemon.skillEffectRate;
           }
           break;
 
@@ -635,6 +653,32 @@ class PokemonSimulator {
           }
 
           break;
+
+        case 'へんしん(スキルコピー)':
+        case 'ものまね(スキルコピー)':
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            // 厳選時はエナジーチャージM相当で計算
+            energy = Skill.map['エナジーチャージM'].effect[pokemon.fixedSkillLv]
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            // 概算時はエナジーチャージM相当で計算
+            energy = Skill.map['エナジーチャージM'].effect[pokemon.fixedSkillLv]
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            // スキルコピーがスキルコピーをコピーした場合はエナジーチャージS相当(公式)
+            energy = Skill.map['エナジーチャージS'].effect[pokemon.fixedSkillLv]
+          }
+          break;
+
+        case 'げんきオールS':
+        case 'げんきエールS':
+        case 'げんきチャージS':
+        case 'つきのひかり(げんきチャージS)':
+          // 別の場所で計算
+          break;
+        
+        default:
+          throw `未実装のスキル: ${skill.name}`
       }
 
       if (energy) {

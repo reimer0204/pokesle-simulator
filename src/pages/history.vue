@@ -1,7 +1,25 @@
+<script setup>
+import Version from '../models/version';
+import config from '../models/config';
+
+config.version.history = Version.HISTORY;
+</script>
+
 <template>
   <div class="page">
 
     <h2>更新履歴</h2>
+
+    <h3>2025/01/13</h3>
+    <ul>
+      <li>
+        へんしん、ものまねを仮実装
+        <ul>
+          <li>ゆびをふるをコピーした際の計算がややこしすぎるので、ゆびをふるをコピーした場合はエナチャS相当で仮置き(そのうちどうにかする)</li>
+        </ul>
+      </li>
+      <li>料理のレシピレベル設定を改善(3つのうち最も高いものを採用する形式に変更)</li>
+    </ul>
 
     <h3>2025/01/06</h3>
     <ul>
