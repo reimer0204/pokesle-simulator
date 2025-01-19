@@ -83,7 +83,10 @@ class PokemonSimulator {
       skillName: base.skill,
       skillLv: pokemon.fixable && this.config.simulation.fixSkillSeed ? skill.effect.length : pokemon.skillLv,
       // ...FOOD_EMPTY_MAP,
-      eventBonus: this.config.simulation.eventBonusType == 'all' || this.config.simulation.eventBonusType == base.type,
+      eventBonus:
+        this.config.simulation.eventBonusType == 'all'
+        || this.config.simulation.eventBonusType == base.type
+        || this.config.simulation.eventBonusType == base.specialty,
     };
 
     // 有効なサブスキル計算

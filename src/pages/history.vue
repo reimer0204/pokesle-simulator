@@ -10,6 +10,11 @@ config.version.history = Version.HISTORY;
 
     <h2>更新履歴</h2>
 
+    <h3>2025/01/19</h3>
+    <ul>
+      <li>イベントボーナスの設定に得意による指定を追加</li>
+    </ul>
+
     <h3>2025/01/13</h3>
     <ul>
       <li>

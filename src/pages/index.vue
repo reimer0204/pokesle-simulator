@@ -416,7 +416,10 @@ const disabledCookingNum = computed(() => {
               <select :value="config.simulation.eventBonusType" @input="config.simulation.eventBonusType = $event.target.value || null">
                 <option value="">-</option>
                 <option value="all">全員</option>
-                <option v-for="berry in Berry.list" :value="berry.type">{{ berry.type }}</option>
+                <option value="きのみ">とくい：きのみ</option>
+                <option value="食材">とくい：食材</option>
+                <option value="スキル">とくい：スキル</option>
+                <option v-for="berry in Berry.list" :value="berry.type">タイプ：{{ berry.type }}</option>
               </select>
             </td>
           </tr>
