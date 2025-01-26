@@ -25,6 +25,18 @@ const list = [
     success: 0.2,
   },
   {
+    name: 'きのみバースト',    
+    effect: [
+      { self: 11, other: 1 },
+      { self: 14, other: 2 },
+      { self: 21, other: 2 },
+      { self: 24, other: 3 },
+      { self: 27, other: 4 },
+      { self: 30, other: 5 },
+    ],
+    team: true,
+  },
+  {
     name: 'げんきチャージS',
     effect: [12.0, 16.2, 21.2, 26.6, 33.6, 43.4].map(x => ({ self: x })),
     genki: true,
@@ -72,8 +84,8 @@ const list = [
   { name: '料理チャンスS',                 effect: [  4.0,    5.0,    6.0,	   7.0,	   8.0,	  10.0] },
   { name: 'ゆめのかけらゲットS',           effect: [240.0,  340.0,	 480.0,	 670.0,	 920.0,	1260.0,	1800.0], shard: true },
   { name: 'ゆめのかけらゲットS(ランダム)', effect: [300.0,  425.0,	 600.0,	 837.5,	1150.0,	1575.0,	2250.0], shard: true },
-  { name: 'へんしん(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null] },
-  { name: 'ものまね(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null] },
+  { name: 'へんしん(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
+  { name: 'ものまね(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
   { name: 'ゆびをふる',                    effect: [ null,   null,    null,   null,   null,   null], team: true, },
 ]
 
@@ -84,6 +96,7 @@ class Skill {
 Skill.list = list;
 Skill.map = Skill.list.reduce((a, x) => (a[x.name] = x, a), {});
 Skill.metronomeTarget = Skill.list.filter(x => x.name != 'ゆびをふる' && x.metronome !== false);
+Skill.metronomeWeightMap = Object.fromEntries(Skill.metronomeTarget.map(x => [x.name, { skill: x, weight: 1 / Skill.metronomeTarget.length}]));
 Skill.metronomeNonTeamTarget = Skill.metronomeTarget.filter(x => !x.team);
 Skill.metronomeTeamTarget = Skill.metronomeTarget.filter(x => x.team);
 Skill.genkiSkillList = list.filter(x => x.genki);

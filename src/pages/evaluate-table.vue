@@ -38,6 +38,8 @@ let evaluateTablePokemonList = computed(() => {
 let columnList = computed(() => {
   return [
     { key: 'name', name: '名前', type: String },
+    { key: 'specialty', name: 'とくい', type: String, convert: (x) => Pokemon.map[x.name].specialty },
+    { key: 'skill', name: 'スキル', type: String, convert: (x) => Pokemon.map[x.name].skill },
     { key: 'foodList', name: '食材', type: null },
     ...new Array(100 / step.value + 1).fill(0).map((_, i) => {
       let p = i * step.value;
@@ -61,8 +63,8 @@ async function showDetail(pokemon, p) {
           config: JSON.parse(JSON.stringify(config)),
           pokemonList: [Pokemon.map[pokemon.name]],
           foodCombinationList: [pokemon.foodIndexList],
-          scoreForHealerEvaluate: evaluateTable.scoreForHealerEvaluate[lv],
-          scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv],
+          scoreForHealerEvaluate: evaluateTable.scoreForHealerEvaluate[lv.value],
+          scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv.value],
         }
       }
     ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p].eachResult

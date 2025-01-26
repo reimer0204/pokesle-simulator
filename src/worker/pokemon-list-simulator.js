@@ -316,23 +316,31 @@ addEventListener('message', async (event) => {
       }
   
       if (pokemon.fixedBag > 0) {
-        let skillList = pokemon.skill.name == 'ゆびをふる' ? Skill.metronomeTeamTarget : [pokemon.skill];
-        let effectRate = pokemon.skill.name == 'ゆびをふる' ? (1 / Skill.metronomeTarget.length) : 1;
-        for(let skill of skillList) {
+        for(let { skill, weight} of Object.values(pokemon.skillList)) {
+          let supportSkillEnergy = 0;
           let effect = skill.effect[(skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1];
           switch(skill.name) {
-            case 'ばけのかわ(きのみバースト)': {
+            case 'ばけのかわ(きのみバースト)':
+            case 'きのみバースト': {
               let berryEnergySum = [...berryEnergyTop5.filter(x => x.index != pokemon.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
-              let success = 1 - ((1 - skill.success) ** pokemon.skillPerDay);
-              pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay);
+
+              if (skill.name == 'ばけのかわ(きのみバースト)') {
+                let success = 1 - ((1 - skill.success) ** pokemon.skillPerDay);
+                pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
+              } else {
+                pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
+              }
               break;
             }
             
             case 'おてつだいサポートS':
             case 'おてつだいブースト':
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.index != pokemon.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
-              pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5) * effectRate * pokemon.skillPerDay;
+              pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
               break;
+          }
+          if (supportSkillEnergy) {
+            pokemon.supportEnergyPerDay += supportSkillEnergy * pokemon.skillPerDay * weight
           }
         }
       }

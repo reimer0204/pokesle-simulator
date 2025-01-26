@@ -66,6 +66,8 @@ const result = computed(() => {
     basePokemon.value, props.lv, foodList, subSkillList, props.nature,
     evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv])
 
+  result.skillList = Skill.list.map(({ name }) => result.skillList[name]).filter(x => x != null)
+
   result.scoreForHealerEvaluate = evaluateTable.scoreForHealerEvaluate[lv]
   result.scoreForSupportEvaluate = evaluateTable.scoreForSupportEvaluate[lv]
 
@@ -322,7 +324,7 @@ const percentilePosition = computed(() => {
               </template>
             </td>
           </tr>
-          <tr v-for="skill of result.skillList">
+          <tr v-for="{ skill, weight } of result.skillList">
             <th>{{ skill.name }}</th>
             <td>
               <template v-if="skill.name == 'エナジーチャージS' || skill.name == 'エナジーチャージS(ランダム)' || skill.name == 'エナジーチャージM'">
@@ -346,7 +348,8 @@ const percentilePosition = computed(() => {
               
               <template v-if="skill.name == 'おてつだいサポートS' || skill.name == 'おてつだいブースト'">
                 {{ result.scoreForSupportEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のおてつだいあたりのエナジーの平均値<br>
-                × {{ skill.effect[result.fixedSkillLv - 1] }}<template v-if="skill.name == 'おてつだいブースト'"> × 5</template><br>
+                <template v-if="skill.name == 'おてつだいブースト'">× {{ skill.effect[result.fixedSkillLv - 1].max }} × 5</template>
+                <template v-else>× {{ skill.effect[result.fixedSkillLv - 1] }}</template><br>
                 <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               
@@ -373,6 +376,7 @@ const percentilePosition = computed(() => {
               <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">
                 {{ skill.effect[result.fixedSkillLv - 1] }} × {{ config.selectEvaluate.shardEnergy }} ※{{ config.selectEvaluate.shardEnergy }}はゆめのかけらゲット評価の設定値<br>
                 <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
+                ＝ {{ (skill.effect[result.fixedSkillLv - 1] * config.selectEvaluate.shardEnergy * weight).toFixed(0) }}
               </template>
 
               <template v-if="skill.name == '料理パワーアップS'">
