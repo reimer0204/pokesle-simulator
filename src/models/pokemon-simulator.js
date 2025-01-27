@@ -326,7 +326,7 @@ class PokemonSimulator {
           if (pokemon != subPokemon) {
             let list;
             if (subPokemon.skill.name == 'へんしん(スキルコピー)' || subPokemon.skill.name == 'ものまね(スキルコピー)') {
-              list = { skill: Skill.map['エナジーチャージS'], weight: 1 }
+              list = [{ skill: Skill.map['エナジーチャージS'], weight: 1 }]
             } else {
               list = Object.values(pokemon.skillList)
             }
