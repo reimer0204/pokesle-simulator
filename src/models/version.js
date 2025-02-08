@@ -1,4 +1,4 @@
 export default class Version {
-  static HISTORY = 20250127;
-  static EVALUATE = 20250126;
+  static HISTORY = 20250206;
+  static EVALUATE = 20250206;
 }

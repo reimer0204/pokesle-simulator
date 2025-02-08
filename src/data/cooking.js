@@ -65,6 +65,8 @@ const list = [
 	{type: 'デザート', name: 'フラワーギフトマカロン', energy: 13834, foodList: [{name: 'リラックスカカオ', num: 25},{name: 'とくせんエッグ', num: 25},{name: 'あまいミツ', num: 17},{name: 'モーモーミルク', num: 10},]},
 	{type: 'デザート', name: 'スパークスパイスコーラ', energy: 17494, foodList: [{name: 'とくせんリンゴ', num: 35},{name: 'あったかジンジャー', num: 20},{name: 'ふといながねぎ', num: 20},{name: 'めざましコーヒー', num: 12},]},
 	{type: 'デザート', name: 'はやおきコーヒーゼリー', energy: 6793, foodList: [{name: 'めざましコーヒー', num: 16},{name: 'モーモーミルク', num: 14},{name: 'あまいミツ', num: 12},]},
+	{type: 'デザート', name: 'ドオーのエクレア', energy: 20885, foodList: [{name: 'リラックスカカオ', num: 30},{name: 'モーモーミルク', num: 26},{name: 'あまいミツ', num: 22},{name: 'めざましコーヒー', num: 24},]},
+	{type: 'デザート', name: 'かたやぶりコーンティラミス', energy: 7125, foodList: [{name: 'モーモーミルク', num: 12},{name: 'ワカクサコーン', num: 14},{name: 'めざましコーヒー', num: 14},]},
 ]
 
 let map = list.reduce((a, x) => (a[x.name] = x, a), {});
