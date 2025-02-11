@@ -15,6 +15,7 @@ import Berry from '../data/berry.js';
 import Exp from '../data/exp.js';
 import Field from '../data/field.js';
 import Food from '../data/food.js';
+import NightCapPikachu from '../data/nightcap_pikachu.js';
 import Pokemon from '../data/pokemon.js';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.js';
@@ -586,15 +587,6 @@ const disabledCookingNum = computed(() => {
 
         <SettingTable>
           <tr>
-            <th>レシピレベル</th>
-            <td>
-              <div><input type="number" v-model="config.simulation.cookingRecipeLv" min="0"> Lv</div>
-              <small>
-                個別に設定する機能は検討中なのでもしばらくお待ちください
-              </small>
-            </td>
-          </tr>
-          <tr>
             <th>なべの大きさ</th>
             <td>
               <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
@@ -603,7 +595,14 @@ const disabledCookingNum = computed(() => {
           <tr>
             <th>ナイトキャップピカチュウ</th>
             <td>
-              <div><input type="number" class="w-80px" v-model="config.teamSimulation.nightCapPikachu" min="0"> Lv</div>
+              <div>
+                <input
+                  type="number" class="w-80px"
+                  v-model="config.teamSimulation.nightCapPikachu"
+                  min="0" :max="NightCapPikachu.list.length"
+                >
+                Lv
+              </div>
               <small>
                 0の場合はナイトキャップピカチュウなし
               </small>

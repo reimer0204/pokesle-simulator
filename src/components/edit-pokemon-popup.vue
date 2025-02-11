@@ -84,13 +84,24 @@ const foodSelectList = computed(() => {
 
 function inferName(name) {
   // ローマ字をカタカナに、ひらがなをカタカナに変換
-  name = convertRomaji(name)
-    .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
+  const regexp = new RegExp(
+    convertRomaji(name)
+    .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60))
+    .split('').map(x => '^$\\.*+?()[]{}|'.includes(x) ? `\\${x}` : x).join('.*')
+  );
+  console.log(regexp.toString())
 
-  let matchPokemonList = Pokemon.list.filter(x => x.name.includes(name))
+  let matchPokemonList = Pokemon.list.map(pokemon => {
+    let result = regexp.exec(pokemon.name)
+    if (result) return { pokemon, matchLength: result[0].length }
+    return null;
+  }).filter(x => x)
   if (matchPokemonList.length) {
-    matchPokemonList.sort((a, b) => Math.abs(a.name.length - name.length) - Math.abs(b.name.length - name.length))
-    pokemon.name = matchPokemonList[0].name;
+    matchPokemonList.sort((a, b) => {
+      if (a.matchLength != b.matchLength) return a.matchLength - b.matchLength;
+      return a.pokemon.name.length - b.pokemon.name.length;
+    })
+    pokemon.name = matchPokemonList[0].pokemon.name;
   }
 }
 watch(() => assist.name, inferName)

@@ -52,7 +52,7 @@ const map = {
   XTS: [null,   null,   'ッ',   null,   null  ],
 }
 let vowel = ['A', 'I', 'U', 'E', 'O'];
-let consonantRegExpList = 'BCDFGHJKLMNPQRSTVWXYZ'.split('').map(x => new RegExp(x + '{2,}', 'gi'))
+let consonantRegExpList = 'BCDFGHJKLMPQRSTVWXYZ'.split('').map(x => new RegExp(x + '{2,}', 'gi'))
 
 let romajiMap = Object.fromEntries(Object.entries(map).flatMap(([consonant, list]) => {
   return list.map((letter, vowelIndex) => {
@@ -63,11 +63,16 @@ let romajiMap = Object.fromEntries(Object.entries(map).flatMap(([consonant, list
     }
   }).filter(x => x)
 }))
-romajiMap.NN = 'ン'
-romajiMap.N = 'ン'
-romajiMap['-'] = 'ー'
 
-let convertList = Object.entries(romajiMap)
+let convertList = Object.entries(romajiMap);
+convertList.unshift(['NN', 'ン'])
+convertList.unshift(['N', 'ン'])
+convertList.unshift(['-', 'ー'])
+// romajiMap.NN = 'ン'
+// romajiMap.N = 'ン'
+// romajiMap['-'] = 'ー'
+
+convertList = convertList
   .map(([romaji, letter]) => ({ romaji, letter, exp: new RegExp(romaji.toLowerCase(), 'g') }))
   .sort((a, b) => b.romaji.length - a.romaji.length)
 
