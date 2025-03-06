@@ -83,11 +83,16 @@ $i: 1;
 .mr-0 { margin-right: 0px !important; }
 
 .flex-110 { flex: 1 1 0 !important }
-.flex-100 { flex: 0 1 0 !important }
-.flex-010 { flex: 1 0 0 !important }
+.flex-100 { flex: 1 0 0 !important }
+.flex-010 { flex: 0 1 0 !important }
 .flex-11auto { flex: 0 0 auto !important }
 .flex-10auto { flex: 0 1 auto !important }
 .flex-01auto { flex: 1 0 auto !important }
+.flex-00auto { flex: 0 0 auto !important }
+.flex-11 { flex: 0 0 auto !important }
+.flex-10 { flex: 0 1 auto !important }
+.flex-01 { flex: 1 0 auto !important }
+.flex-00 { flex: 0 0 auto !important }
 
 .text-align-left { text-align: left !important; }
 .text-align-center { text-align: center !important; }

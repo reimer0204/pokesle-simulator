@@ -52,6 +52,7 @@ const defaultConfig = {
       sleepTime: 16,
       training: 17,
       nextExp: 18,
+      memo: 19,
     },
     gs: {
       url: null,
@@ -155,6 +156,7 @@ const defaultConfig = {
       'エナジーチャージS(ランダム)': null,
       'エナジーチャージM': 7,
       'ばけのかわ(きのみバースト)': 6,
+      'きのみバースト': 6,
       'げんきチャージS': null,
       'げんきエールS': null,
       'げんきオールS': 6,

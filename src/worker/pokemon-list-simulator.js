@@ -43,7 +43,7 @@ addEventListener('message', async (event) => {
 
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo({...pokemonList[i]});
-      pokemon.index = i + startIndex;
+      // pokemon.index = i + startIndex;
 
       let addPokemonList = []
 
@@ -151,7 +151,7 @@ addEventListener('message', async (event) => {
                 beforeName: pokemonList[i].name,
                 name: after,
               });
-              afterPokemon.index = i + startIndex
+              // afterPokemon.index = i + startIndex
               afterPokemon.evaluateResult = {};
               afterPokemon.evaluateSpecialty = {};
               
@@ -203,7 +203,7 @@ addEventListener('message', async (event) => {
             (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100
             || (pokemon.evaluateSpecialty?.max?.best?.score ?? 0) >= config.simulation.fixBorderSpecialty / 100
           ),
-          index: i + startIndex,
+          // index: i + startIndex,
         }))
       }
     }

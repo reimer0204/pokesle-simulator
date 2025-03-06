@@ -14,6 +14,8 @@ import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
+import Popup from '../models/popup/popup';
+import EditPokemonPopup from './edit-pokemon-popup.vue';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
@@ -204,6 +206,10 @@ async function simulation() {
 
 }
 
+async function showEditPopup(pokemon) {
+  await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: null })
+}
+
 </script>
 
 <template>
@@ -347,7 +353,14 @@ async function simulation() {
                   <tr>
                     <th class="vertical" :rowspan="config.teamSimulation.result.detail ? 13 : 10">編成</th>
                     <th class="white-space-nowrap">名前</th>
-                    <td v-for="pokemon in result.pokemonList"><NameLabel :pokemon="pokemon" /></td>
+                    <td v-for="pokemon in result.pokemonList">
+                      <div class="flex-row-start-center gap-5px">
+                        <NameLabel :pokemon="pokemon" />
+                        <svg v-if="pokemon.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
+                          <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
+                        </svg>
+                      </div>
+                    </td>
                     <td></td>
                   </tr>
                   <tr>

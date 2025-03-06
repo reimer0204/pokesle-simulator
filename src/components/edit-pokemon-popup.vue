@@ -89,7 +89,6 @@ function inferName(name) {
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60))
     .split('').map(x => '^$\\.*+?()[]{}|'.includes(x) ? `\\${x}` : x).join('.*')
   );
-  console.log(regexp.toString())
 
   let matchPokemonList = Pokemon.list.map(pokemon => {
     let result = regexp.exec(pokemon.name)
@@ -209,23 +208,25 @@ watch(pokemon, async () => {
         }
       )).flat(1)[0];
 
-      selectResult.value.box = {};
-      for(let selectLv of selectLvList) {
-        selectResult.value.box[selectLv] = {};
-        for(let after of selectResult.value.afterList) {
-          let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
-          let sameFoodTargetList = targetList.filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
+      if (props.simulatedPokemonList) {
+        selectResult.value.box = {};
+        for(let selectLv of selectLvList) {
+          selectResult.value.box[selectLv] = {};
+          for(let after of selectResult.value.afterList) {
+            let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
+            let sameFoodTargetList = targetList.filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
 
-          let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-          let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
-          let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-          let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
+            let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+            let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
+            let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+            let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
 
-          selectResult.value.box[selectLv][after] = {
-            same: sameList.length ? Math.max(...sameList) : null,
-            food: sameFoodList.length ? Math.max(...sameFoodList) : null,
-            sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
-            foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
+            selectResult.value.box[selectLv][after] = {
+              same: sameList.length ? Math.max(...sameList) : null,
+              food: sameFoodList.length ? Math.max(...sameFoodList) : null,
+              sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
+              foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
+            }
           }
         }
       }
@@ -295,10 +296,14 @@ function shareX() {
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`)
 }
 
+function changeColor() {
+  pokemon.shiny = !pokemon.shiny;
+}
+
 </script>
 
 <template>
-  <PopupBase class="edit-pokemon-popup" @close="$emit('close')" @keydown.esc.stop="onEsc">
+  <PopupBase class="edit-pokemon-popup" @close="$emit('close')" @keydown.esc.stop="onEsc" @keydown.c.alt="changeColor">
     <template #headerText>ポケモン編集</template>
 
     <BaseAlert>
@@ -395,12 +400,16 @@ function shareX() {
 
 
       <div>色違い</div>
-      <div></div>
+      <div>Alt+Cで切り替え</div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <label><input type="checkbox" v-model="pokemon.shiny" />色違い</label>
+      
+      <div>メモ</div>
+      <div></div>
+      <label><input class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
     </div>
 
-    <ToggleArea class="mt-20px" open>
+    <ToggleArea class="mt-20px" open v-if="simulatedPokemonList">
       <template #headerText>厳選情報</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">

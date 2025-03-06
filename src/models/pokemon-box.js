@@ -10,7 +10,7 @@ class PokemonBox {
   static watch = ref(0);
 
   static get list() {
-    return [...this._list];
+    return [...this._list.map((x,i ) => ({ ...x, index: i }))];
   }
 
   static load() {
@@ -83,7 +83,7 @@ class PokemonBox {
     this._time = time ? new Date(time) : new Date();
     localStorage.setItem('pokemonBox', JSON.stringify({
       time: this._time.toISOString(),
-      list: this._list,
+      list: this._list.map(x => ({ ...x, index: undefined })),
     }))
     if (config.pokemonBox.gs.autoExport) {
       PokemonBox.exportGoogleSpreadsheet();
@@ -115,6 +115,7 @@ class PokemonBox {
         sleepTime: Number(cells[config.pokemonBox.tsv.sleepTime]) || null,
         training: Number(cells[config.pokemonBox.tsv.training]) || null,
         nextExp: Number(cells[config.pokemonBox.tsv.nextExp]) || null,
+        memo: Number(cells[config.pokemonBox.tsv.memo]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
@@ -152,7 +153,7 @@ class PokemonBox {
         sheet: config.pokemonBox.gs.sheet,
         pokemonList: [
           // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
-          [this._time.toISOString(), ...new Array(17).fill('')],
+          [this._time.toISOString(), ...new Array(18).fill('')],
           ...this.list.map(pokemon => [
             pokemon.name,
             pokemon.lv,
@@ -166,11 +167,17 @@ class PokemonBox {
             pokemon.sleepTime,
             pokemon.training ?? null,
             pokemon.nextExp ?? null,
+            pokemon.memo ?? null,
           ])
         ],
       }))
   
-      await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
+      try {
+        await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
+      } catch(e) {
+        console.error(e);
+        alert('エクスポートに失敗しました');
+      }
     }
   }
 
@@ -206,6 +213,7 @@ class PokemonBox {
         sleepTime: Number(row[15]) || null,
         training: Number(row[16]) || null,
         nextExp: Number(row[17]) || null,
+        memo: Number(row[18]) || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
