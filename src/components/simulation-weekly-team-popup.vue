@@ -72,7 +72,6 @@ async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
       return {
         type: 'basic',
         pokemonList: pokemonList.slice(startIndex, endIndex),
-        startIndex,
         evaluateTable,
       }
     }

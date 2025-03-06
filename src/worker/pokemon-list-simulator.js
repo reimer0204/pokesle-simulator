@@ -29,7 +29,6 @@ addEventListener('message', async (event) => {
   if (type == 'basic') {
     let {
       pokemonList, 
-      startIndex,
       evaluateTable,
     } = event.data;
 
@@ -38,12 +37,11 @@ addEventListener('message', async (event) => {
 
     let fixablePokemonIndexSet = null;
     if (config.simulation.fix) {
-      fixablePokemonIndexSet = new Set(PokemonFilter.filter(pokemonList, config.simulation.fixFilter).pokemonList.map(x => x.index + startIndex));
+      fixablePokemonIndexSet = new Set(PokemonFilter.filter(pokemonList, config.simulation.fixFilter).pokemonList.map(x => x.index));
     }
 
     for(let i = 0; i < pokemonList.length; i++) {
       const pokemon = simulator.memberToInfo({...pokemonList[i]});
-      // pokemon.index = i + startIndex;
 
       let addPokemonList = []
 
@@ -151,7 +149,6 @@ addEventListener('message', async (event) => {
                 beforeName: pokemonList[i].name,
                 name: after,
               });
-              // afterPokemon.index = i + startIndex
               afterPokemon.evaluateResult = {};
               afterPokemon.evaluateSpecialty = {};
               
@@ -203,7 +200,6 @@ addEventListener('message', async (event) => {
             (pokemon.evaluateResult?.max?.best?.score ?? 0) >= config.simulation.fixBorder / 100
             || (pokemon.evaluateSpecialty?.max?.best?.score ?? 0) >= config.simulation.fixBorderSpecialty / 100
           ),
-          // index: i + startIndex,
         }))
       }
     }

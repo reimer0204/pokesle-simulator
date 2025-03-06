@@ -61,7 +61,6 @@ async function createPokemonList(setConfig = false) {
         return {
           type: 'basic',
           pokemonList: pokemonList.slice(startIndex, endIndex),
-          startIndex,
           evaluateTable,
         }
       }
