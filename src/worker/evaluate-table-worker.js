@@ -70,7 +70,7 @@ self.addEventListener('message', async (event) => {
           name: pokemon.foodList[f].name,
           num: pokemon.foodList[f].numList[i],
           energy: food.energy * pokemon.foodList[f].numList[i]
-            * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.foodEnergyRate / 100 + 1),
+            * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.specialty[pokemon.specialty].foodEnergyRate / 100 + 1),
         }
       });
       if (foodList.includes(null)) continue;

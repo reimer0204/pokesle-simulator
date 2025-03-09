@@ -74,7 +74,7 @@ addEventListener('message', async (event) => {
                   name: baseFood.name,
                   num: baseFood.numList[i],
                   energy: food.energy * baseFood.numList[i]
-                    * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.foodEnergyRate / 100 + 1),
+                    * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.specialty[afterPokemon.specialty].foodEnergyRate / 100 + 1),
                 }
               });
 

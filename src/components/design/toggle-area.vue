@@ -27,6 +27,7 @@ const isOpen = ref(props.open);
   border: 1px #CCC solid;
   border-radius: 5px;
   overflow: hidden;
+  flex: 0 0 auto;
 
   h2 {
     display: flex;

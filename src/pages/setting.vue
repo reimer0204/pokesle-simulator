@@ -32,6 +32,8 @@ async function save() {
 
 }
 
+const specialtyList = ['きのみ', '食材', 'スキル']
+
 </script>
 
 <template>
@@ -68,38 +70,6 @@ async function save() {
       <template #headerText>厳選設定</template>
 
       <SettingList>
-        <div>
-          <label>きのみ評価</label>
-          <div>
-            <label class="flex-row-start-center">
-              <input type="checkbox" v-model="editConfig.selectEvaluate.berryMatchAll">食材/スキルタイプも<br>好物前提で計算
-            </label>
-            <small>食材タイプやスキルタイプに<br>きのみエナジーを期待しない<br>場合は外してください。</small>
-          </div>
-        </div>
-        <div>
-          <label>食材評価</label>
-          <div>
-            <div><input type="number" v-model="editConfig.selectEvaluate.foodEnergyRate" step="1"> %</div>
-            <small>
-              0%:基礎エナジー<br>
-              100%:最良料理×最大レシピLv
-            </small>
-          </div>
-        </div>
-        <div>
-          <label>食材ゲット評価</label>
-          <div>
-            <div><input type="number" v-model="editConfig.selectEvaluate.foodGetRate" step="1"> %</div>
-            <small>
-              0%:基礎エナジー<br>
-              100%:最良料理×最大レシピLv<br>
-              <HelpButton title="食材ゲット評価値の設定について" markdown="
-                食材ゲットで手に入る食材を全て料理に使用するのは大抵の場合難しいため、食材評価より低い数値を設定します。
-              " />
-            </small>
-          </div>
-        </div>
         <div>
           <label>エナジー/ゆめのかけら</label>
           <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergyRate" step="1"></div>
@@ -186,23 +156,89 @@ async function save() {
             <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.pokemonSleepTime"> 時間</div>
           </div>
         </div>
-        <div class="flex-110 w-100 flex-column-start-stretch">
-          <label>スキルレベル</label>
-          <div>
-            <div class="skill-level-list gap-1px">
-              <template v-for="skill in Skill.list">
-                <label>{{ skill.name }}</label>
-                <label>：</label>
-                <div>
-                  <input type="number" class="w-50px" :value="editConfig.selectEvaluate.skillLevel[skill.name]"
-                    @input="editConfig.selectEvaluate.skillLevel[skill.name] = $event.target.value ? Number($event.target.value) : null">
-                </div>
-              </template>
-            </div>
-            <small>未入力の場合は進化回数に応じたスキルレベルで計算します(例:ライチュウなら3)</small>
-          </div>
-        </div>
       </SettingList>
+    </ToggleArea>
+
+    <ToggleArea open>
+      <template #headerText>とくい毎設定</template>
+
+      <DesignTable>
+        <thead>
+          <tr>
+            <th></th>
+            <th>きのみ</th>
+            <th>食材</th>
+            <th>スキル</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>きのみ評価</th>
+            <td v-for="specialty in specialtyList">
+              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].berryEnergyRate" step="1"> %</div>
+            </td>
+            <td>
+              <small>
+              100%:好みと合わせない前提<br>
+              200%:好みと合わせる前提
+              </small>
+            </td>
+          </tr>
+          <tr>
+            <th>食材評価</th>
+            <td v-for="specialty in specialtyList">
+              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodEnergyRate" step="1"> %</div>
+            </td>
+            <td>
+              <small>
+              0%:基礎エナジー<br>
+              100%:最良料理×最大レシピLv
+              </small>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              食材ゲット評価
+            </th>
+            <td v-for="specialty in specialtyList">
+              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodGetRate" step="1"> %</div>
+            </td>
+            <td class="w-200px">
+              <small>
+                食材ゲットで手に入る食材を全て料理に使用するのは大抵の場合難しいため、食材評価より低い数値を設定します。<br>
+                0%:基礎エナジー<br>
+                100%:最良料理×最大レシピLv<br>
+              </small>
+            </td>
+          </tr>
+          <tr v-for="skill in Skill.list">
+            <th>
+              <div>{{ skill.name }}</div>
+              <div>のスキルレベル</div>
+            </th>
+            <td v-for="specialty in specialtyList">
+              <div>
+                <InputRadio v-model="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type" :value="1">最終進化時Lv</InputRadio>
+                <InputRadio v-model="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type" :value="2">最大Lv</InputRadio>
+                <InputRadio v-model="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type" :value="3">
+                  <div class="flex-row-start-center white-space-nowrap gap-5px">
+                    指定レベル
+                    <input type="number" class="w-50px" :value="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].lv"
+                      @input="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].lv = $event.target.value ? Number($event.target.value) : null"
+                      :disabled="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type != 3">
+                  </div>
+                </InputRadio>
+              </div>
+            </td>
+            <td>
+              <small>
+                「最終進化時Lv」は例えばライチュウなら3になります。
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </DesignTable>
     </ToggleArea>
 
     <ToggleArea open>
@@ -229,10 +265,13 @@ async function save() {
 
 <style lang="scss" scoped>
 .page {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: start;
   gap: 10px;
+  height: 100%;
+  overflow: auto;
 
   .list {
     display: grid;
