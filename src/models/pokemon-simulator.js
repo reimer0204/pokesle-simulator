@@ -35,7 +35,7 @@ class PokemonSimulator {
     this.cookingList = Cooking.evaluateLvList(config)
     this.cookingList =
       mode == PokemonSimulator.MODE_SELECT ? this.cookingList
-      : this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (config.simulation.enableCooking[c.name] || c.foodNum == 0));
+      : this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0));
 
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};

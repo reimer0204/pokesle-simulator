@@ -10,6 +10,7 @@ declare module 'vue' {
     AsyncWatcherArea: typeof import('./src/components/util/async-watcher-area.vue')['default']
     BaseAlert: typeof import('./src/components/alert/base-alert.vue')['default']
     CandyIcon: typeof import('./src/components/icon/candy-icon.vue')['default']
+    CommonSetting: typeof import('./src/components/common-setting.vue')['default']
     CookingSettingPopup: typeof import('./src/components/cooking-setting-popup.vue')['default']
     DangerAlert: typeof import('./src/components/alert/danger-alert.vue')['default']
     DetailSettingPopup: typeof import('./src/components/detail-setting-popup.vue')['default']

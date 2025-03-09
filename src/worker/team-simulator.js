@@ -131,9 +131,9 @@ self.addEventListener('message', async (event) => {
       // 料理を良い順にソートしておく
       let cookingList = Cooking.evaluateLvList(config);
       let cookingListMap = {
-        'カレー': cookingList.filter(c => c.type == 'カレー' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
-        'サラダ': cookingList.filter(c => c.type == 'サラダ' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
-        'デザート': cookingList.filter(c => c.type == 'デザート' && (config.simulation.enableCooking[c.name] || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
+        'カレー': cookingList.filter(c => c.type == 'カレー' && (c.enable || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
+        'サラダ': cookingList.filter(c => c.type == 'サラダ' && (c.enable || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
+        'デザート': cookingList.filter(c => c.type == 'デザート' && (c.enable || c.foodNum == 0)).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy),
       }
       let targetCookingList = config.simulation.cookingType
         ? cookingListMap[config.simulation.cookingType]

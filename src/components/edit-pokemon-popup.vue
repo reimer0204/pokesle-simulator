@@ -109,7 +109,10 @@ function convertFoodABC() {
   if (basePokemon.value == null || assist.foodABC == null) return;
 
   assist.foodABC.slice(0, 3).split('').forEach((letter, i) => {
-    let foodIndex = Math.min(Math.max(letter.toUpperCase().charCodeAt(0) - 65, 0), 2);
+    let charCode = letter.toUpperCase().charCodeAt(0);
+    if (65 <= charCode && charCode <= 67) charCode -= 65;
+    if (49 <= charCode && charCode <= 51) charCode -= 49;
+    let foodIndex = Math.min(Math.max(charCode, 0), 2);
     pokemon.foodList[i] = basePokemon.value.foodList[foodIndex].name;
   })
 }

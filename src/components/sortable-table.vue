@@ -6,6 +6,7 @@ const props = defineProps({
   setting: { type: Object, default: () => ({}) },
   pager: { type: Number, default: null },
   scroll: { type: Boolean, default: false },
+  disabledColumn: { type: Function, default: null },
 })
 const emits = defineEmits(['clickRow', 'update:setting'])
 
@@ -50,6 +51,10 @@ const convertedDataList = computed(() => {
       if (column.convert) {
         newData[column.key] = column.convert(newData);
       }
+    }
+
+    if (props.disabledColumn) {
+      newData.$disabled = props.disabledColumn(data);
     }
 
     return newData;
@@ -247,7 +252,9 @@ function toggleHiddenColumn(key) {
         </thead>
 
         <tbody>
-          <tr v-for="(data, j) in sortedDataList">
+          <tr v-for="(data, j) in sortedDataList" :class="{
+            disabled: data.$disabled,
+          }">
             <td v-for="(column, i) in enableColumnList"
               :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
               :style="{
@@ -351,6 +358,9 @@ function toggleHiddenColumn(key) {
         max-height: 2em;
       }
 
+      svg {
+        flex: 0 0 auto;
+      }
       svg:hover {
         background-color: #FFF4;
       }
@@ -358,6 +368,7 @@ function toggleHiddenColumn(key) {
 
     & > thead, & > tbody {
       & > tr {
+
         & > th, & > td {
           padding: 3px 5px;
           background-color: #FFF;
@@ -372,6 +383,10 @@ function toggleHiddenColumn(key) {
 
         &:nth-child(odd) > td {
           background-color: #F8F8F8;
+        }
+
+        &.disabled > td {
+          background-color: #DDD !important;
         }
       }
     }

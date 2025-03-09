@@ -21,6 +21,7 @@ Array.prototype.swap = function(a, b) {
 
 import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
+import SimulationPage from './pages/simulation.vue'
 import DataPage from './pages/data.vue'
 import DataFoodPage from './pages/data/food.vue'
 import DataCookingPage from './pages/data/cooking.vue'
@@ -36,6 +37,7 @@ app.use(createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: IndexPage },
+    { path: '/simulation', component: SimulationPage },
     { path: '/data', component: DataPage,
       children: [
         { path: 'food', component: DataFoodPage },

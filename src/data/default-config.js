@@ -102,6 +102,7 @@ const defaultConfig = {
     cookingRecipeLvType3: true,
     cookingRecipeFixLv: Cooking.maxRecipeLv,
     cookingRecipeRepeatLv: 100,
+    cookingExcludeLvMax: false,
 
     filter: {
       enable: true,

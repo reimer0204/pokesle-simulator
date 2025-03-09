@@ -62,23 +62,29 @@ const columnList = computed(() => {
                 「個々に設定されたレシピレベルを使用する」のみを使用するのが最も正しい値になりますが、最上位料理であっても育っていない場合は評価されなくなります。<br>
                 料理を育てたい通常週と、スコアアタック週で使い分けてください。
               </small>
+
+              <div class="mt-10px">
+                <InputCheckbox v-model="config.simulation.cookingExcludeLvMax">レシピレベル上げ(カンスト済みを除外)</InputCheckbox>
+              </div>
             </div>
           </div>
         </SettingList>
-
-        <!-- {{ calcCookingList }} -->
         
         <div class="scroll">
           <SortableTable
             :dataList="calcCookingList"
             :columnList="columnList"
-            @clickRow="(data) => config.simulation.enableCooking[data.name] = !config.simulation.enableCooking[data.name]"
+            :disabledColumn="data => !config.simulation.enableCooking[data.name]"
           >
             <template #header.check>
-              <InputCheckbox v-model="checkAll" @click.stop></InputCheckbox>
+              <div class="w-100 h-100 flex-row-center-center">
+                <InputCheckbox v-model="checkAll" @click.stop></InputCheckbox>
+              </div>
             </template>
             <template #check="{ data }">
-              <InputCheckbox v-model="config.simulation.enableCooking[data.name]" @click.stop></InputCheckbox>
+              <div class="w-100 h-100 flex-row-center-center" @click="config.simulation.enableCooking[data.name] = !config.simulation.enableCooking[data.name]">
+                <InputCheckbox :modelValue="config.simulation.enableCooking[data.name]"></InputCheckbox>
+              </div>
             </template>
             <template #lv1="{ data }">
               <template v-if="data.rate > 1">

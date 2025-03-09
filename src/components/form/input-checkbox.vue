@@ -24,8 +24,11 @@ const emits = defineEmits(['update:modelValue'])
   align-items: center;
   gap: 5px;
 
+  cursor: pointer;
+  user-select: none;
+
   svg {
-    width: 1em;
+    width: 1.2em;
   }
 }
 </style>

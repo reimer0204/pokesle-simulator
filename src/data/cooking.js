@@ -194,9 +194,21 @@ Cooking.evaluateLvList = (config) => {
 		cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv]?.bonus ?? 0;
 		cooking.fixEnergy = cooking.energy * cooking.recipeLvBonus
 		cooking.fixAddEnergy = cooking.fixEnergy - cooking.rawEnergy
+
+		cooking.enable = true;
+		if (config.simulation.enableCooking[cooking.name] === false) cooking.enable = false;
+		if (config.simulation.cookingExcludeLvMax && config.simulation.cookingSettings[cooking.name].lv >= Cooking.maxRecipeLv) cooking.enable = false;
 		
 		return cooking;
 	})
+}
+
+Cooking.getEnableCookingList = (config) => {
+  return Cooking.evaluateLvList(config).filter(x => x.enable);
+}
+
+Cooking.getDisabledCookingNum = (config) => {
+  return Cooking.list.length - Cooking.getEnableCookingList(config).length;
 }
 
 export default Cooking;

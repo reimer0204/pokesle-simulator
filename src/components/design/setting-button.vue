@@ -1,7 +1,8 @@
 <script setup>
 const showingPopup = ref(false);
 const props = defineProps({
-  title: { type: String }
+  title: { type: String },
+  important: { type: Boolean },
 })
 defineOptions({
   inheritAttrs: false
@@ -11,7 +12,12 @@ defineOptions({
 
 <template>
 
-  <button class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : (showingPopup = true)">
+  <button
+    class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : (showingPopup = true)"
+    :class="{
+      important: props.important,
+    }"
+  >
     <slot name="label"></slot>
 
     <svg viewBox="0 0 100 100">
@@ -24,7 +30,7 @@ defineOptions({
           <div class="popup">
                     
             <slot name="header">
-              <div class="header flex-row-start-center">
+              <div class="header flex-row-start-center gap-15px">
                 <slot name="headerText">{{ title }}</slot>
 
                 <svg viewBox="0 0 100 100" width="20" class="ml-auto" @click="showingPopup = false">
@@ -61,6 +67,10 @@ defineOptions({
     height: 1em;
     margin-left: 0.5em;
   }
+
+  &.important {
+    background-color: #E40;
+  }
 }
 
 .popup-back {
@@ -87,8 +97,8 @@ defineOptions({
       border-radius: 10px;
       
       .header {
-        padding: 8px 10px;
-        font-size: 24px;
+        padding: 10px 15px;
+        font-size: 20px;
         font-weight: bold;
         border-bottom: 1px #CCC solid;
       }
