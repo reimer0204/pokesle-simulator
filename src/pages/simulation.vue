@@ -25,7 +25,6 @@ const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
 
 // シミュレーション設定
-const cookingType = ref(config.simulation.cookingType)
 const targetDay = ref(props.defaultTargetDay ?? (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()))
 const beforeEnergy = ref(0);
 
@@ -116,10 +115,6 @@ async function simulation() {
 
     let customConfig = JSON.parse(JSON.stringify({
       ...config,
-      simulation: {
-        ...config.simulation,
-        cookingType: cookingType.value,
-      },
       teamSimulation: {
         ...config.teamSimulation,
         beforeEnergy: beforeEnergy.value,
