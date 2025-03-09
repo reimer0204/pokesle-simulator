@@ -58,7 +58,7 @@ const result = computed(() => {
       name: basePokemon.value.foodList[f].name,
       num: basePokemon.value.foodList[f].numList[i],
       energy: food.energy * basePokemon.value.foodList[f].numList[i]
-        * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.foodEnergyRate / 100 + 1),
+        * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.specialty[basePokemon.value.specialty].foodEnergyRate / 100 + 1),
     }
   });
 
@@ -252,7 +252,7 @@ const percentilePosition = computed(() => {
             <td>
               max({{ Berry.map[result.base.berry].energy }} + {{ result.lv }} - 1, {{ Berry.map[result.base.berry].energy }} × 102.5% ^ ({{ result.lv }} - 1))<br>
               × {{ result.berryNum }} ※きのみの数<br>
-              <template v-if="config.selectEvaluate.berryMatchAll || result.specialty == 'きのみ'">× 2 ※好物前提のため2倍<br></template>
+              <template v-if="config.selectEvaluate.specialty[result.base.specialty].berryEnergyRate != 100">× {{ config.selectEvaluate.specialty[result.base.specialty].berryEnergyRate }}% ※好物補正<br></template>
               × ({{ (result.normalHelpNum).toFixed(2) }} × (100% - {{ (result.fixedFoodRate * 100).toFixed(1) }}%) + {{ (result.berryHelpNum).toFixed(2) }}) ※通常手伝い×きのみ率＋いつ育<br>
               ＝ {{ result.berryEnergyPerDay.toFixed(1) }}
             </td>
@@ -264,7 +264,7 @@ const percentilePosition = computed(() => {
               {{ (result.normalHelpNum).toFixed(2) }} × {{ (result.fixedFoodRate * 100).toFixed(1) }}% ※通常手伝い×食材率<br>
               × (<br>
               <template v-for="(food, i) in result.enableFoodList">
-              &emsp;<template v-if="i">+ </template>{{ Food.map[food.name].energy }} × {{ food.num }} × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.foodEnergyRate }}% + 100%)<br>
+              &emsp;<template v-if="i">+ </template>{{ Food.map[food.name].energy }} × {{ food.num }} × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%)<br>
               </template>
               )<br>
               ÷ {{ result.enableFoodList.length }}<br>
@@ -313,15 +313,10 @@ const percentilePosition = computed(() => {
           <tr>
             <th>スキルLv</th>
             <td>
-              <template v-if="config.selectEvaluate.skillLevel[result.skill.name]">
-                {{ config.selectEvaluate.skillLevel[result.skill.name] }} ※設定値
-              </template>
-              <template v-else>
-                {{ result.evolveLv }} ※進化段階
-                <template v-if="result.enableSubSkillList.includes('スキルレベルアップS')">+ 1 (サブスキル)<br></template>
-                <template v-if="result.enableSubSkillList.includes('スキルレベルアップM')">+ 2 (サブスキル)<br></template>
-                ＝ {{ result.fixedSkillLv }}
-              </template>
+              {{ result.skillLv }}
+              <template v-if="result.enableSubSkillList.includes('スキルレベルアップS')">+ 1 (サブスキル)<br></template>
+              <template v-if="result.enableSubSkillList.includes('スキルレベルアップM')">+ 2 (サブスキル)<br></template>
+              <template v-if="result.skillLv != result.fixedSkillLv">＝ {{ result.fixedSkillLv }}</template>
             </td>
           </tr>
           <tr v-for="{ skill, weight } of result.skillList">
@@ -334,7 +329,7 @@ const percentilePosition = computed(() => {
               <template v-if="skill.name == '食材ゲットS'">
                 (<br>
                 <template v-for="(food, i) in Food.list">
-                  {{ i ? '+ ' : '' }}{{ food.energy }} × (({{ (food.bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.foodGetRate }}% + 100%) ※{{ food.name }}<br>
+                  {{ i ? '+ ' : '' }}{{ food.energy }} × (({{ (food.bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodGetRate }}% + 100%) ※{{ food.name }}<br>
                 </template>
                 )<br>
                 ÷ {{ Food.list.length }}<br>

@@ -2,6 +2,7 @@ import SortableTable from "../components/sortable-table.vue";
 import Cooking from "./cooking";
 import Food from './food'
 import Pokemon from "./pokemon";
+import Skill from "./skill";
 
 const defaultConfig = {
 
@@ -132,13 +133,10 @@ const defaultConfig = {
 
   // 厳選関連
   selectEvaluate: {
-    berryMatchAll: true,    // 食材/スキルタイプ
     shardEnergyRate: 120,   // エナジー/ゆめのかけら
     shardEnergy: 20,        // ゆめのかけらをエナジーに換算する
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
     silverSeedUse: true,    // 銀種前提で厳選するか
-    foodEnergyRate: 70,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-    foodGetRate: 30,        // 食材ゲットの評価レート
     helpBonus: 20,          // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
     supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     supportRankNum: 20,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
@@ -152,23 +150,31 @@ const defaultConfig = {
       75: true,
       100: false,
     },
-    skillLevel: {           // 厳選評価時のスキルレベル
-      'エナジーチャージS': null,
-      'エナジーチャージS(ランダム)': null,
-      'エナジーチャージM': 7,
-      'ばけのかわ(きのみバースト)': 6,
-      'きのみバースト': 6,
-      'げんきチャージS': null,
-      'げんきエールS': null,
-      'げんきオールS': 6,
-      '食材ゲットS': 7,
-      'おてつだいサポートS': 7,
-      'おてつだいブースト': 6,
-      '料理パワーアップS': 7,
-      '料理チャンスS': 6,
-      'ゆめのかけらゲットS': 7,
-      'ゆめのかけらゲットS(ランダム)': 7,
-      'ゆびをふる': 6,
+    specialty: {
+      'きのみ': {
+        berryEnergyRate: 200,   // 
+        foodEnergyRate: 50,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 30,        // 食材ゲットの評価レート
+        skillLv: {
+          ...Object.fromEntries(Skill.list.map(x => [x.name, { type: 1, lv: 1 }])),
+        },
+      },
+      '食材': {
+        berryEnergyRate: 200,   // 
+        foodEnergyRate: 80,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 30,        // 食材ゲットの評価レート
+        skillLv: {
+          ...Object.fromEntries(Skill.list.map(x => [x.name, { type: 1, lv: 1 }])),
+        },
+      },
+      'スキル': {
+        berryEnergyRate: 200,   // 
+        foodEnergyRate: 50,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 50,        // 食材ゲットの評価レート
+        skillLv: {
+          ...Object.fromEntries(Skill.list.map(x => [x.name, { type: 2, lv: 1 }])),
+        },
+      },
     },
     pokemonSleepTime: 500,
   },

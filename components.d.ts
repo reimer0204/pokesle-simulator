@@ -13,6 +13,7 @@ declare module 'vue' {
     CommonSetting: typeof import('./src/components/common-setting.vue')['default']
     CookingSettingPopup: typeof import('./src/components/cooking-setting-popup.vue')['default']
     DangerAlert: typeof import('./src/components/alert/danger-alert.vue')['default']
+    DesignTable: typeof import('./src/components/design-table.vue')['default']
     DetailSettingPopup: typeof import('./src/components/detail-setting-popup.vue')['default']
     EditPokemonPopup: typeof import('./src/components/edit-pokemon-popup.vue')['default']
     FoodList: typeof import('./src/components/status/food-list.vue')['default']

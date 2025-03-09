@@ -401,7 +401,6 @@ function toggleHiddenColumn(key) {
       justify-content: center;
       align-items: center;
       text-align: center;
-      border-bottom: 1px #CCC solid;
     }
 
     & > tbody  > tr > td {
