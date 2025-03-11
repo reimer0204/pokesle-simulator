@@ -560,11 +560,11 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #training="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].training" @input="updateGrowthInfo(data)" />
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].original.training" @input="updateGrowthInfo(data)" />
           </template>
 
           <template #nextExp="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].nextExp" @input="updateGrowthInfo(data)" />
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].original.nextExp" @input="updateGrowthInfo(data)" />
           </template>
 
           <!-- <template #nextExp="{ data, column }">

@@ -10,7 +10,7 @@ class PokemonBox {
   static watch = ref(0);
 
   static get list() {
-    return [...this._list.map((x,i ) => ({ ...x, index: i }))];
+    return [...this._list.map((x,i ) => ({ ...x, index: i, original: x }))];
   }
 
   static load() {
