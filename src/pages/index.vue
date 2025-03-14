@@ -1,6 +1,4 @@
 <script setup>
-import CookingSettingPopup from '../components/cooking-setting-popup.vue';
-import DetailSettingPopup from '../components/detail-setting-popup.vue';
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
@@ -10,19 +8,14 @@ import SimulationWeeklyTeamPopup from '../components/simulation-weekly-team-popu
 import SortableTable from '../components/sortable-table.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
-import SettingList from '../components/util/setting-list.vue';
-import Berry from '../data/berry.js';
 import Exp from '../data/exp.js';
-import Field from '../data/field.js';
 import Food from '../data/food.js';
-import NightCapPikachu from '../data/nightcap_pikachu.js';
 import Pokemon from '../data/pokemon.js';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.js';
 import EvaluateTable from '../models/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box';
-import PokemonFilter from '../models/pokemon-filter.js';
 import Popup from '../models/popup/popup.js';
 import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
 
@@ -219,8 +212,6 @@ const columnList = computed(() => {
 
   return result;
 })
-
-const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, config.simulation.fixFilter));
 
 async function showEditPopup(pokemon) {
   await asyncWatcher.wait;

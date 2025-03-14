@@ -5,11 +5,15 @@ import Cooking from '../data/cooking.js';
 import Field from '../data/field.js';
 import NightCapPikachu from '../data/nightcap_pikachu.js';
 import config from '../models/config.js';
+import PokemonBox from '../models/pokemon-box.js';
+import PokemonFilter from '../models/pokemon-filter.js';
 import Popup from '../models/popup/popup.js';
 
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);
 })
+
+const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, config.simulation.fixFilter));
 
 </script>
 
