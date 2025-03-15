@@ -115,7 +115,7 @@ class PokemonBox {
         sleepTime: Number(cells[config.pokemonBox.tsv.sleepTime]) || null,
         training: Number(cells[config.pokemonBox.tsv.training]) || null,
         nextExp: Number(cells[config.pokemonBox.tsv.nextExp]) || null,
-        memo: Number(cells[config.pokemonBox.tsv.memo]) || null,
+        memo: cells[config.pokemonBox.tsv.memo] || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
@@ -213,7 +213,7 @@ class PokemonBox {
         sleepTime: Number(row[15]) || null,
         training: Number(row[16]) || null,
         nextExp: Number(row[17]) || null,
-        memo: Number(row[18]) || null,
+        memo: row[18] || null,
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

@@ -68,8 +68,6 @@ async function showDetail(pokemon, p) {
         }
       }
     ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p].eachResult
-    // console.log(result);
-    // return;
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,

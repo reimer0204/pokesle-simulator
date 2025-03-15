@@ -49,7 +49,7 @@ const result = computed(() => {
   // サブスキルの組み合わせを列挙
   const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
   let subSkillList = props.subSkillList;
-  subSkillList = SubSkill.useSilverSeed(subSkillList).slice(0, subSkillNum);
+  subSkillList = (config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(subSkillList) : subSkillList).slice(0, subSkillNum);
 
   let foodList = foodIndexList.value.map((f, i) => {
     const food = Food.map[basePokemon.value.foodList[f]?.name];
