@@ -593,15 +593,6 @@ function showSelectDetail(pokemon, after, lv) {
   flex-direction: column;
   height: 100%;
 
-  .setting-button {
-    img {
-      width: 1.2em;
-      height: 1.2em;
-      line-height: 0;
-      margin: 0;
-    }
-  }
-
   .pokemon-list {
     flex: 1 1 0;
     display: flex;

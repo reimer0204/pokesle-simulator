@@ -362,3 +362,14 @@ const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, con
     </SettingTable>
   </SettingButton>
 </template>
+
+<style lang="scss" scoped>
+.setting-button {
+  img {
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 0;
+    margin: 0;
+  }
+}
+</style>

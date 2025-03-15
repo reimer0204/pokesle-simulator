@@ -1,4 +1,6 @@
+import json from '../../public/version.json'
+
 export default class Version {
-  static HISTORY = 20250311;
-  static EVALUATE = 20250309;
+  static HISTORY = json.HISTORY;
+  static EVALUATE = json.EVALUATE;
 }
