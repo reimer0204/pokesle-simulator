@@ -65,6 +65,12 @@ const result = computed(() => {
   let result = simulator.value.selectEvaluate(
     basePokemon.value, props.lv, foodList, subSkillList, props.nature,
     evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv])
+  
+  result.score = simulator.value.selectEvaluateToScore(
+    result, 
+    subSkillList.includes('ゆめのかけらボーナス'), 
+    subSkillList.includes('リサーチEXPボーナス')
+  )
 
   result.skillList = Skill.list.map(({ name }) => result.skillList[name]).filter(x => x != null)
 
@@ -79,8 +85,8 @@ const result = computed(() => {
 
 const percentilePosition = computed(() => {
   return {
-    upper: Math.min(percentile.value.findIndex(x => x >= result.value.energyPerDay), 100),
-    lower: Math.max(percentile.value.findLastIndex(x => x <= result.value.energyPerDay), 0),
+    upper: Math.min(percentile.value.findIndex(x => x >= result.value.score), 100),
+    lower: Math.max(percentile.value.findLastIndex(x => x <= result.value.score), 0),
   }
 })
 
@@ -93,7 +99,7 @@ const percentilePosition = computed(() => {
     </template>)の厳選詳細</template>
 
     <template v-if="result">
-      <h2>エナジー期待値：{{ Math.round(result.energyPerDay).toLocaleString() }}</h2>
+      <h2>厳選スコア：{{ Math.round(result.score).toLocaleString() }}</h2>
 
       <ToggleArea class="mt-10px" :open="props.percentile">
         <template #headerText>パーセンタイル</template>
@@ -109,7 +115,7 @@ const percentilePosition = computed(() => {
                   <template v-if="i == 1 && j == 1"><td></td></template>
                   <template v-if="j == 2">
                     <td :rowspan="i == 101 ? 1 : 2">
-                      <template v-if="percentilePosition.upper == 101 - i">{{ Math.round(result.energyPerDay).toLocaleString() }}</template>
+                      <template v-if="percentilePosition.upper == 101 - i">{{ Math.round(result.score).toLocaleString() }}</template>
                       <template v-else-if="i != 101">&nbsp;</template>
                     </td>
                   </template>
@@ -369,9 +375,9 @@ const percentilePosition = computed(() => {
               </template>
 
               <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">
-                {{ skill.effect[result.fixedSkillLv - 1] }} × {{ config.selectEvaluate.shardEnergy }} ※{{ config.selectEvaluate.shardEnergy }}はゆめのかけらゲット評価の設定値<br>
+                {{ skill.effect[result.fixedSkillLv - 1] }}
                 <template v-if="result.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
-                ＝ {{ (skill.effect[result.fixedSkillLv - 1] * config.selectEvaluate.shardEnergy * weight).toFixed(0) }}
+                ＝ {{ (skill.effect[result.fixedSkillLv - 1] * weight).toFixed(1) }}
               </template>
 
               <template v-if="skill.name == '料理パワーアップS'">
@@ -424,7 +430,8 @@ const percentilePosition = computed(() => {
               <template v-if="result.enableSubSkillList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template>
               <template v-if="result.enableSubSkillList.includes('ゆめのかけらボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}%) ※ゆめのかけらボーナス<br></template>
               <template v-if="result.enableSubSkillList.includes('リサーチEXPボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}% ÷ 2) ※リサーチEXPボーナス<br></template>
-              ＝ {{ result.energyPerDay.toFixed(0) }}<br>
+              <template v-if="result.shard">+ {{ result.shard.toFixed(1) }} × {{ config.selectEvaluate.shardEnergy }} × {{ config.selectEvaluate.shardBonus }}% ※ゆめのかけらゲット<br></template>
+              ＝ {{ result.score.toFixed(0) }}<br>
             </td>
           </tr>
 

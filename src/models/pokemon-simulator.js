@@ -599,7 +599,7 @@ class PokemonSimulator {
 
         case 'ゆめのかけらゲットS':
         case 'ゆめのかけらゲットS(ランダム)':
-          pokemon.shard = effect * pokemon.skillPerDay * weight;
+          pokemon.shard += effect * pokemon.skillPerDay * weight;
           break;
 
         case '料理パワーアップS':

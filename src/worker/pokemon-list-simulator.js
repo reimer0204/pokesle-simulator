@@ -81,7 +81,10 @@ addEventListener('message', async (event) => {
               let foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 3;
               let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
 
-              let subSkillList = SubSkill.useSilverSeed(pokemon.subSkillList).slice(0, subSkillNum);
+              let subSkillList = (
+                config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(pokemon.subSkillList) : pokemon.subSkillList
+              ).slice(0, subSkillNum);
+
               
               // 計算
               let selectEvaluate = evaluateSimulator.selectEvaluate(
