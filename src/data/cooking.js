@@ -196,8 +196,8 @@ Cooking.evaluateLvList = (config) => {
 		cooking.fixAddEnergy = cooking.fixEnergy - cooking.rawEnergy
 
 		cooking.enable = true;
-		if (config.simulation.enableCooking[cooking.name] === false) cooking.enable = false;
-		if (config.simulation.cookingExcludeLvMax && config.simulation.cookingSettings[cooking.name].lv >= Cooking.maxRecipeLv) cooking.enable = false;
+		if (config.simulation?.enableCooking?.[cooking.name] === false) cooking.enable = false;
+		if (config.simulation?.cookingExcludeLvMax && config.simulation?.cookingSettings[cooking.name].lv >= Cooking.maxRecipeLv) cooking.enable = false;
 		
 		return cooking;
 	})

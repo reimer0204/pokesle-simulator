@@ -65,7 +65,8 @@ addEventListener('message', async (event) => {
               if (pokemon.evaluateResult[lv] == null) pokemon.evaluateResult[lv] = {};
               if (pokemon.evaluateSpecialty[lv] == null) pokemon.evaluateSpecialty[lv] = {};
               
-              let foodList = pokemon.foodIndexList.slice(0, lv < 30 ? 1 : lv < 60 ? 2 : 3).map((foodIndex, i) => {
+              let foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 3;
+              let foodList = pokemon.foodIndexList.slice(0, foodNum).map((foodIndex, i) => {
                 const food = Food.map[pokemon.base.foodList[foodIndex].name];
                 if (food == null) return null;
                 const baseFood = pokemon.base.foodList[foodIndex];
@@ -77,8 +78,8 @@ addEventListener('message', async (event) => {
                     * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.specialty[afterPokemon.specialty].foodEnergyRate / 100 + 1),
                 }
               });
+              let foodProbList = simulator.calcFoodProbList(foodList)
 
-              let foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 3;
               let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
 
               let subSkillList = (
@@ -89,7 +90,7 @@ addEventListener('message', async (event) => {
               // 計算
               let selectEvaluate = evaluateSimulator.selectEvaluate(
                 afterPokemon, lv, 
-                foodList.slice(0, foodNum), 
+                foodList, foodProbList,
                 subSkillList,
                 pokemon.nature, 
                 evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv]

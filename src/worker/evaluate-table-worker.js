@@ -74,6 +74,7 @@ self.addEventListener('message', async (event) => {
         }
       });
       if (foodList.includes(null)) continue;
+      let foodProbList = simulator.calcFoodProbList(foodList)
 
       let scoreList = [];
       let specialtyNumList = [];
@@ -84,7 +85,7 @@ self.addEventListener('message', async (event) => {
         for(let nature of natureList) {
           let natureWeight = nature == null ? 5 : 1;
 
-          let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, subSkillList, nature,
+          let eachResult = simulator.selectEvaluate(pokemon, lv, foodList, foodProbList, subSkillList, nature,
             scoreForHealerEvaluate, scoreForSupportEvaluate, 
             // timeCounter
           );

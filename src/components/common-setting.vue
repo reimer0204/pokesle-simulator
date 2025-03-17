@@ -288,6 +288,41 @@ const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, con
     </template>
   </SettingButton>
 
+  <SettingButton title="下振れ補正">
+    <template #label>
+      <div class="inline-flex-row-center">
+        下振れ補正
+      </div>
+    </template>
+    
+    <div>
+      <BaseAlert class="mt-5px w-600px">
+        1%で当たるものを100回試行した時の期待値は1%×100で1回ですが、1回以上当たる確率は63.4%程度しかありません。<br>
+        つまり、下振れして1回も当たらない確率が36.6%あるということです。<br>
+        試行回数がもっと多ければ期待値に収束していきますが、ポケスリでは基本的に試行回数が少ないため下振れすることも多いです。<br>
+        そのために、「XX%の確率で少なくとも1日n回は当たる」という方法で計算できるようにしたのが下振れ補正です。
+      </BaseAlert>
+
+    </div>
+    <SettingTable>
+      <tr>
+        <th>下振れ補正ボーダー</th>
+        <td>
+          <div><input type="number" class="w-80px" v-model="config.simulation.expectType.border" step="1"> %</div>
+        </td>
+      </tr>
+      <tr>
+        <th>食材</th>
+        <td>
+          <div class="flex-row gap-10px">
+            <InputRadio v-model="config.simulation.expectType.food" :value="0">通常期待値</InputRadio>
+            <InputRadio v-model="config.simulation.expectType.food" :value="1">下振れ補正</InputRadio>
+          </div>
+        </td>
+      </tr>
+    </SettingTable>
+  </SettingButton>
+
   <SettingButton title="その他設定">
     <template #label>
       <div class="inline-flex-row-center">

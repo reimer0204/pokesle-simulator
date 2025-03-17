@@ -43,6 +43,10 @@
       }
     }
 
+    & > label {
+      margin-bottom: 3px;
+    }
+
     // &:nth-child(2n+1) {
     //   font-weight: bold;
     //   background-color: #EEE;

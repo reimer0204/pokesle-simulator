@@ -32,16 +32,18 @@ const percentile = computed(() => {
   return evaluateTable[props.name][props.lv][foodIndexList.value.slice(0, ).join('')].percentile
 })
 
-const simulator = ref(null);
+let simulator = null;
+const simulatorLoaded = ref(false);
 (async () => {
   await PokemonSimulator.isReady
-  simulator.value = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT)
+  simulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT)
+  simulatorLoaded.value = true;
 })()
 
 const basePokemon = computed(() => Pokemon.map[props.name]);
 
 const result = computed(() => {
-  if (simulator.value == null) return null;
+  if (!simulatorLoaded.value) return null;
 
   const evaluateTable = EvaluateTable.load(config);
   const lv = props.lv;
@@ -61,12 +63,13 @@ const result = computed(() => {
         * ((food.bestRate * Cooking.maxRecipeBonus - 1) * config.selectEvaluate.specialty[basePokemon.value.specialty].foodEnergyRate / 100 + 1),
     }
   });
+  let foodProbList = simulator.calcFoodProbList(foodList)
 
-  let result = simulator.value.selectEvaluate(
-    basePokemon.value, props.lv, foodList, subSkillList, props.nature,
+  let result = simulator.selectEvaluate(
+    basePokemon.value, props.lv, foodList, foodProbList, subSkillList, props.nature,
     evaluateTable.scoreForHealerEvaluate[lv], evaluateTable.scoreForSupportEvaluate[lv])
   
-  result.score = simulator.value.selectEvaluateToScore(
+  result.score = simulator.selectEvaluateToScore(
     result, 
     subSkillList.includes('ゆめのかけらボーナス'), 
     subSkillList.includes('リサーチEXPボーナス')
@@ -267,13 +270,22 @@ const percentilePosition = computed(() => {
           <tr>
             <th>食材エナジー</th>
             <td>
-              {{ (result.normalHelpNum).toFixed(2) }} × {{ (result.fixedFoodRate * 100).toFixed(1) }}% ※通常手伝い×食材率<br>
-              × (<br>
-              <template v-for="(food, i) in result.enableFoodList">
-              &emsp;<template v-if="i">+ </template>{{ Food.map[food.name].energy }} × {{ food.num }} × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%)<br>
+              <template v-if="config.selectEvaluate.expectType.food == 0">
+                {{ (result.normalHelpNum).toFixed(2) }} × {{ (result.fixedFoodRate * 100).toFixed(1) }}% ※通常手伝い×食材率<br>
+                × (<br>
+                <template v-for="(food, i) in result.enableFoodList">
+                &emsp;<template v-if="i">+ </template>{{ Food.map[food.name].energy }} × {{ food.num }} × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%)<br>
+                </template>
+                )<br>
+                ÷ {{ result.enableFoodList.length }}<br>
               </template>
-              )<br>
-              ÷ {{ result.enableFoodList.length }}<br>
+              <template v-else>
+                <template v-for="food in Food.list">
+                  <template v-if="result[food.name]">
+                    {{ Food.map[food.name].energy }}エナジー × {{ result[food.name] }}個 × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%) ※{{ food.name }}<br>
+                  </template>
+                </template>
+              </template>
               ＝ {{ result.foodEnergyPerDay.toFixed(1) }}
             </td>
           </tr>

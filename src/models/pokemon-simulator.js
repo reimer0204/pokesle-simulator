@@ -8,12 +8,16 @@ import Field from '../data/field.js';
 import Berry from '../data/berry.js';
 import Cooking from '../data/cooking.js';
 import SubSkill from '../data/sub-skill.js';
+import ProbBorder from './utils/prob-border.js';
 
 const GENKI_EFFECT = [0, 0.45, 0.52, 0.62, 0.71, 1.00];
 
 // const FOOD_EMPTY_MAP = Object.fromEntries(Food.list.map(x => [x.name, 0]))
 
 class PokemonSimulator {
+
+  #expectType;
+  #probBorder;
 
   static MODE_ABOUT = 1;
   static MODE_TEAM = 2;
@@ -32,10 +36,17 @@ class PokemonSimulator {
       : Math.round(this.config.simulation.potSize * (this.config.simulation.campTicket ? 1.5 : 1))
 
     // 今週の料理タイプのリスト
-    this.cookingList = Cooking.evaluateLvList(config)
-    this.cookingList =
-      mode == PokemonSimulator.MODE_SELECT ? this.cookingList
-      : this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0));
+    if (mode == PokemonSimulator.MODE_SELECT) {
+      this.cookingList = Cooking.evaluateLvList({
+        simulation: {
+          cookingRecipeLvType2: true,
+          cookingRecipeFixLv: Cooking.maxRecipeLv,
+        }
+      })
+    } else {
+      this.cookingList = Cooking.evaluateLvList(config)
+      this.cookingList = this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0));
+    }
 
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};
@@ -61,6 +72,10 @@ class PokemonSimulator {
       this.calcStatusCache = new Map();
 
     this.defaultHelpRate = HelpRate.getHelpRate(Math.min(config.sleepTime / 8.5, 1) * 100, 0, 0, this.config)
+
+    // 期待値計算
+    this.#expectType = mode == PokemonSimulator.MODE_SELECT ? config.selectEvaluate.expectType : config.simulation.expectType;
+    this.#probBorder = new ProbBorder(this.#expectType.border / 100)
   }
 
   static get isReady() {
@@ -138,6 +153,7 @@ class PokemonSimulator {
         energy: this.foodEnergyMap[food.name] * num,
       });
     }
+    pokemon.foodProbList = this.calcFoodProbList(enableFoodList);
 
     this.calcParameter(
       pokemon,
@@ -447,16 +463,56 @@ class PokemonSimulator {
     let berryHelpNum = pokemon.normalHelpNum * (1 - pokemon.fixedFoodRate) + pokemon.berryHelpNum
     pokemon.berryEnergyPerDay = pokemon.berryEnergyPerHelp * berryHelpNum
     pokemon.berryNumPerDay = pokemon.berryNum * berryHelpNum;
+    
+    if (this.#expectType.food == 0) {
+
+      // 食材エナジー/日
+      let foodGetChance = pokemon.normalHelpNum * pokemon.fixedFoodRate;
+      pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * foodGetChance;
+      pokemon.foodNumPerDay = pokemon.foodNum * foodGetChance;
+      
+      // 食材の個数
+      if (this.mode != PokemonSimulator.MODE_SELECT) {
+        for(let food of Food.list) {
+          pokemon[food.name] = (pokemon.foodPerHelp[food.name] ?? 0) * foodGetChance;
+        }
+      }
+
+    } else {
+      // 食材エナジー/日
+      pokemon.foodEnergyPerDay = 0;
+      pokemon.foodNumPerDay = 0;
+      
+      // 食材の個数
+      // if (this.mode != PokemonSimulator.MODE_SELECT) {
+        for(let food of Food.list) {
+          pokemon[food.name] = 0;
+        }
+      // }
+      for(const foodProb of pokemon.foodProbList) {
+        const num = this.#probBorder.get(pokemon.fixedFoodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
+        pokemon.foodEnergyPerDay += num * this.foodEnergyMap[foodProb.name];
+        pokemon.foodNumPerDay += num;
+        
+        // if (this.mode != PokemonSimulator.MODE_SELECT) {
+          pokemon[foodProb.name] += num;
+        // }
+      }
+    }
 
     // 食材エナジー/日
-    pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * pokemon.normalHelpNum * pokemon.fixedFoodRate;
-    pokemon.foodNumPerDay = pokemon.foodNum * pokemon.normalHelpNum * pokemon.fixedFoodRate;
-    
-    // 食材の個数
-    if (this.mode != PokemonSimulator.MODE_SELECT) {
-      for(let food of Food.list) {
-        pokemon[food.name] = (pokemon.foodPerHelp[food.name] ?? 0) * pokemon.normalHelpNum * pokemon.fixedFoodRate;
+    let foodGetChance = pokemon.normalHelpNum * pokemon.fixedFoodRate;
+    if (this.#expectType.food == 0) {
+      pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * foodGetChance;
+      pokemon.foodNumPerDay = pokemon.foodNum * foodGetChance;
+    } else {
+      pokemon.foodEnergyPerDay = 0;
+      pokemon.foodNumPerDay = 0;
+      
+      for(const foodProb of pokemon.foodProbList) {
+        pokemon[foodProb.name] += this.#probBorder.get(pokemon.fixedFoodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
       }
+
     }
     
     // きのみor食材エナジー/日
@@ -730,8 +786,23 @@ class PokemonSimulator {
     return pokemon;
   }
 
+  // AAAの情報を2個得る確率と追加で3個得る確率、更に追加で2個得る確率、といった形に変換する
+  calcFoodProbList(foodList) {
+    let foodProbList = [];
+    for(let { name, num } of foodList) {
+      for(let foodProb of foodProbList) {
+        if (foodProb.name == name) {
+          num -= foodProb.num;
+          foodProb.weight += 1 / foodList.length;
+        }
+      }
+      foodProbList.push({ name, num, weight: 1 / foodList.length })
+    }
+    return foodProbList;
+  }
+
   // 厳選用評価
-  selectEvaluate(basePokemon, lv, foodList, subSkillList, nature, scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter = null) {
+  selectEvaluate(basePokemon, lv, foodList, foodProbList, subSkillList, nature, scoreForHealerEvaluate, scoreForSupportEvaluate, timeCounter = null) {
 
     let skillLvSetting = this.config.selectEvaluate.specialty[basePokemon.specialty].skillLv[basePokemon.skill];
     let skillLv = null;
@@ -756,6 +827,7 @@ class PokemonSimulator {
         skill: Skill.map[basePokemon.skill],
         skillLv,
         sleepTime: this.config.selectEvaluate.pokemonSleepTime,
+        foodProbList,
       },
       foodList,
       subSkillList,
