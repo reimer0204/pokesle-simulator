@@ -255,11 +255,11 @@ const specialtyList = ['きのみ', '食材', 'スキル']
       </SettingList>
     </ToggleArea>
 
-    <button @click="save">設定を保存して厳選情報を計算する</button>
-
     <BaseAlert v-if="result">
       厳選情報の計算が完了しました。ボックス画面から厳選情報を確認できます。
     </BaseAlert>
+
+    <button @click="save">設定を保存して厳選情報を計算する</button>
   </div>
 </template>
 
