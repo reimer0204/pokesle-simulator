@@ -1,10 +1,9 @@
 <script setup>
-import Cooking from '../../data/cooking.js';
-import Food from '../../data/food.js';
-import Nature from '../../data/nature.js';
-import Pokemon from '../../data/pokemon.js';
-import config from '../../models/config.js';
-import PokemonSimulator from '../../models/pokemon-simulator.js';
+import { Food, Cooking } from '../../data/food_and_cooking';
+import Nature from '../../data/nature';
+import Pokemon from '../../data/pokemon';
+import config from '../../models/config';
+import PokemonSimulator from '../../models/simulation/pokemon-simulator';
 
 const lv = ref(60);
 const pokemonList = ref([])

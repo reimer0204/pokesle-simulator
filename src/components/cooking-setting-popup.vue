@@ -1,5 +1,5 @@
 <script setup>
-import Cooking from '../data/cooking';
+import { Cooking } from '../data/food_and_cooking';
 import config from '../models/config';
 import PopupBase from './util/popup-base.vue';
 
@@ -62,10 +62,6 @@ const columnList = computed(() => {
                 「個々に設定されたレシピレベルを使用する」のみを使用するのが最も正しい値になりますが、最上位料理であっても育っていない場合は評価されなくなります。<br>
                 料理を育てたい通常週と、スコアアタック週で使い分けてください。
               </small>
-
-              <div class="mt-10px">
-                <InputCheckbox v-model="config.simulation.cookingExcludeLvMax">レシピレベル上げ(カンスト済みを除外)</InputCheckbox>
-              </div>
             </div>
           </div>
         </SettingList>

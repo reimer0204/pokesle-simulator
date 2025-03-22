@@ -1,5 +1,5 @@
 <script setup>
-import Food from '../../data/food.js';
+import { Food, Cooking } from '../../data/food_and_cooking';
 </script>
 
 <template>

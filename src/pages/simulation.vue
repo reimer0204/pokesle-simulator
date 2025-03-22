@@ -4,16 +4,16 @@ import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import SettingList from '../components/util/setting-list.vue';
-import Food from '../data/food.js';
+import { Food, Cooking } from '../data/food_and_cooking';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.js';
-import EvaluateTable from '../models/evaluate-table.js';
+import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
-import PokemonBox from '../models/pokemon-box';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter.js';
 import Popup from '../models/popup/popup.js';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import TeamSimulator from '../worker/team-simulator?worker';
+import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
+import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';
 
 const props = defineProps({
@@ -55,58 +55,11 @@ onBeforeUnmount(() => {
 })
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
-  let [setConfigProgress, calcBase, calcAssist] = progressCounter.split(1, 1, 2)
-
-  await pokemonMultiWorker.call(
-    setConfigProgress,
-    () => ({ type: 'config', config: JSON.parse(JSON.stringify(customConfig)) })
+  return await PokemonBox.simulation(
+    filterResult.value.pokemonList, pokemonMultiWorker, evaluateTable, 
+    customConfig,
+    progressCounter
   )
-
-  let pokemonList = filterResult.value.pokemonList;
-
-  pokemonList = (await pokemonMultiWorker.call(
-    calcBase,
-    (i) => {
-      let startIndex = Math.floor(pokemonList.length * i / config.workerNum);
-      let endIndex = Math.floor(pokemonList.length * (i + 1) / config.workerNum);
-      return {
-        type: 'basic',
-        pokemonList: pokemonList.slice(startIndex, endIndex),
-        evaluateTable,
-      }
-    }
-  )).flat(1);
-
-  /* ここからおてボとかげんき回復系の計算 */
-  // おてボ用に概算日給の高い上位6匹をリストアップしておく
-  let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
-
-  // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
-  let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
-
-  // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
-  let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
-
-  // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
-  let healCheckTarget = pokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6)
-  healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
-
-  return (await pokemonMultiWorker.call(
-    calcAssist,
-    (i) => {
-      return {
-        type: 'assist',
-        pokemonList: pokemonList.slice(
-          Math.floor(pokemonList.length * i / config.workerNum),
-          Math.floor(pokemonList.length * (i + 1) / config.workerNum),
-        ),
-        helpBonusTop6,
-        berryEnergyTop5,
-        pickupEnergyPerHelpTop5,
-        healCheckTarget,
-      }
-    }
-  )).flat(1);
 }
 
 async function simulation() {
@@ -120,6 +73,11 @@ async function simulation() {
         beforeEnergy: beforeEnergy.value,
       },
     }))
+
+    if (config.simulation.mode == 2) {
+      customConfig.simulation.berryEnergyWeight = 0;
+      customConfig.simulation.skillEnergyIgnore = 0;
+    }
 
     if (targetDay.value != -1) {
       customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / (7 - targetDay.value);
@@ -202,7 +160,7 @@ async function simulation() {
 }
 
 async function showEditPopup(pokemon) {
-  await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: null })
+  await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: null })
 
   loadedPokemonBoxList.value = PokemonBox.list;
 }
@@ -321,8 +279,10 @@ async function showEditPopup(pokemon) {
         <div>
           <label>モード</label>
           <div>
-            <div>
-              <InputCheckbox v-model="config.simulation.cookingExcludeLvMax">レシピレベル上げ</InputCheckbox>
+            <div class="flex-row gap-10px">
+              <InputRadio v-model="config.simulation.mode" :value="0">通常</InputRadio>
+              <InputRadio v-model="config.simulation.mode" :value="1">料理育成(カンスト除外のみ)</InputRadio>
+              <InputRadio v-model="config.simulation.mode" :value="2">料理育成(料理以外無視)</InputRadio>
             </div>
             <small>
             </small>
@@ -377,7 +337,7 @@ async function showEditPopup(pokemon) {
                     <td v-for="pokemon in result.pokemonList">
                       <div class="flex-row-start-center gap-5px">
                         <NameLabel :pokemon="pokemon" />
-                        <svg v-if="pokemon.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
+                        <svg v-if="pokemon.box?.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
                           <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
                         </svg>
                       </div>

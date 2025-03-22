@@ -1,13 +1,13 @@
 <script setup>
 import CookingSettingPopup from '../components/cooking-setting-popup.vue';
-import Berry from '../data/berry.js';
-import Cooking from '../data/cooking.js';
-import Field from '../data/field.js';
-import NightCapPikachu from '../data/nightcap_pikachu.js';
-import config from '../models/config.js';
-import PokemonBox from '../models/pokemon-box.js';
-import PokemonFilter from '../models/pokemon-filter.js';
-import Popup from '../models/popup/popup.js';
+import Berry from '../data/berry';
+import { Cooking } from '../data/food_and_cooking';
+import Field from '../data/field';
+import NightCapPikachu from '../data/nightcap_pikachu';
+import config from '../models/config';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
+import PokemonFilter from '../models/pokemon-filter';
+import Popup from '../models/popup/popup';
 
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);

@@ -1,7 +1,7 @@
 <script setup>
 import Pokemon from '../data/pokemon';
 import config from '../models/config';
-import PokemonBox from '../models/pokemon-box';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
 

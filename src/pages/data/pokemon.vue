@@ -1,7 +1,7 @@
 <script setup>
-import Pokemon from '../../data/pokemon.js';
-import Berry from '../../data/berry.js';
-import Food from '../../data/food.js';
+import Pokemon from '../../data/pokemon';
+import Berry from '../../data/berry';
+import { Food, Cooking } from '../../data/food_and_cooking';
 
 const pokemonListLastOnly = ref(false);
 const pokemonList = computed(() => {

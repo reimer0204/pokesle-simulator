@@ -2,13 +2,13 @@
 import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
 import SettingList from '../components/util/setting-list.vue';
-import Food from '../data/food.js';
-import Pokemon from '../data/pokemon.js';
+import { Food, Cooking } from '../data/food_and_cooking';
+import Pokemon from '../data/pokemon';
 import config from '../models/config.js';
-import EvaluateTable from '../models/evaluate-table.js';
+import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import Popup from '../models/popup/popup.js';
-import EvaluateTableWorker from '../worker/evaluate-table-worker.js?worker';
+import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 let lv = ref(lvList.at(-1))
@@ -111,7 +111,7 @@ async function showDetail(pokemon, p) {
           <div class="flex-row-center-center gap-2px">
             <div v-for="(food, i) of data.foodList" class="food">
               <img :src="Food.map[food].img" />
-              <div class="num">{{ Pokemon.map[data.name].foodMap[food].numList[i] }}</div>
+              <div class="num">{{ Pokemon.map[data.name].foodNumListMap[food]?.[i] }}</div>
             </div>
           </div>
         </template>

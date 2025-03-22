@@ -8,7 +8,7 @@ const props = defineProps({
   fix: { type: Boolean, default: false },
 })
 
-const subSkill = computed(() => SubSkill.map[props.subSkill]);
+const subSkill = computed(() => props.subSkill);
 
 </script>
 

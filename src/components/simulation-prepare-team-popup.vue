@@ -1,18 +1,18 @@
 <script setup>
 import { onBeforeUnmount } from 'vue';
 import Berry from '../data/berry';
-import Food from '../data/food';
+import { Food, Cooking } from '../data/food_and_cooking';
 import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
 import MultiWorker from '../models/multi-worker';
-import PokemonBox from '../models/pokemon-box';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import TeamSimulator from '../worker/team-simulator?worker';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
+import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
+import TeamSimulator from '../models/simulation/team-simulator?worker';
 import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
-import EvaluateTable from '../models/evaluate-table';
+import EvaluateTable from '../models/simulation/evaluate-table';
 
 let evaluateTable = EvaluateTable.load(config);
 const asyncWatcher = AsyncWatcher.init();

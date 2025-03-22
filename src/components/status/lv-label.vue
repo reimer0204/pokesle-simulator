@@ -1,6 +1,6 @@
 <script setup>
 import config from '../../models/config.js';
-import PokemonBox from '../../models/pokemon-box.js';
+import PokemonBox from '../../models/pokemon-box/pokemon-box.js';
 
 const props = defineProps({
   pokemon: { required: true }
@@ -8,9 +8,9 @@ const props = defineProps({
 
 function toggleTraining() {
   props.pokemon.training = props.pokemon.training ? null : props.pokemon.fixLv;
-  const pokemon = structuredClone(PokemonBox.list[props.pokemon.index]);
+  const pokemon = structuredClone(PokemonBox.list[props.pokemon.box.index]);
   pokemon.training = props.pokemon.training
-  PokemonBox.post(pokemon, props.pokemon.index)
+  PokemonBox.post(pokemon, props.pokemon.box.index)
 
   if (config.pokemonBox.gs.autoExport) {
     PokemonBox.exportGoogleSpreadsheet();

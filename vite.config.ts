@@ -20,6 +20,7 @@ export default defineConfig({
 				}
 			],
 			vueTemplate: true,
+			dts: true,
 		}),
 		Components({
 			dirs: ['src/components'],

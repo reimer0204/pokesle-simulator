@@ -1,6 +1,5 @@
 import SortableTable from "../components/sortable-table.vue";
-import Cooking from "./cooking";
-import Food from './food'
+import { Food, Cooking } from './food_and_cooking'
 import Pokemon from "./pokemon";
 import Skill from "./skill";
 
@@ -103,7 +102,7 @@ const defaultConfig = {
     cookingRecipeLvType3: true,
     cookingRecipeFixLv: Cooking.maxRecipeLv,
     cookingRecipeRepeatLv: 100,
-    cookingExcludeLvMax: false,
+    mode: 0,
 
     filter: {
       enable: true,

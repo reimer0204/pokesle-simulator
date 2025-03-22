@@ -1,16 +1,5 @@
 <script setup>
-import Food from '../data/food';
-import Nature from '../data/nature';
-import Pokemon from '../data/pokemon';
-import SubSkill from '../data/sub-skill';
-import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
-import EvaluateTable from '../models/evaluate-table';
-import MultiWorker from '../models/multi-worker';
-import PokemonBox from '../models/pokemon-box';
-import convertRomaji from '../models/utils/convert-romaji';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 
 </script>
