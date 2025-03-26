@@ -1,6 +1,5 @@
 import SortableTable from "../components/sortable-table.vue";
-import Cooking from "./cooking";
-import Food from './food'
+import { Food, Cooking } from './food_and_cooking'
 import Pokemon from "./pokemon";
 import Skill from "./skill";
 
@@ -103,11 +102,20 @@ const defaultConfig = {
     cookingRecipeLvType3: true,
     cookingRecipeFixLv: Cooking.maxRecipeLv,
     cookingRecipeRepeatLv: 100,
-    cookingExcludeLvMax: false,
+    mode: 0,
 
     filter: {
       enable: true,
       conditionList: [],
+    },
+
+    expectType: {
+      border: 80,
+      food: 0,
+      // ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
+      // 'げんきオールS': 0,
+      // '食材ゲットS': 0,
+      // '料理パワーアップS': 0,
     },
   },
 
@@ -139,8 +147,16 @@ const defaultConfig = {
     silverSeedUse: true,    // 銀種前提で厳選するか
     helpBonus: 20,          // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
     supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
-    supportRankNum: 20,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
+    supportRankNum: 20,     // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     healer: 50,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
+    expectType: {
+      border: 70,
+      food: 1,
+      // ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
+      // 'げんきオールS': 1,
+      // '食材ゲットS': 1,
+      // '料理パワーアップS': 1,
+    },
     levelList: {
       10: false,
       25: false,

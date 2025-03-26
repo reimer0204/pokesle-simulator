@@ -27,9 +27,17 @@ class NightCapPikachu {
   static get(lv) {
     let nightCapPikachu = this.list[Math.min(Math.max(1, lv), this.list.length) - 1]
 
-    nightCapPikachu.name = 'ナイトキャップピカチュウ';
+    nightCapPikachu.base = {
+      name: 'ナイトキャップピカチュウ',
+    };
     nightCapPikachu.lv = lv;
-    nightCapPikachu.enableSubSkillList = [];
+    nightCapPikachu.subSkillList = [];
+    nightCapPikachu.subSkillNameList = [];
+    nightCapPikachu.foodList = [
+      { name: 'とくせんリンゴ',   num: nightCapPikachu.foodNumList[0] },
+      { name: 'リラックスカカオ', num: nightCapPikachu.foodNumList[1] },
+      { name: 'あまいミツ',       num: nightCapPikachu.foodNumList[2] },
+    ].slice(0, nightCapPikachu.foodNumList.length);
     nightCapPikachu.skillEnergyPerDay = 0;
     nightCapPikachu.shard = 0;
     

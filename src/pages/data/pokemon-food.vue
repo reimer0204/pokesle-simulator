@@ -1,10 +1,9 @@
 <script setup>
-import Cooking from '../../data/cooking.js';
-import Food from '../../data/food.js';
-import Nature from '../../data/nature.js';
-import Pokemon from '../../data/pokemon.js';
-import config from '../../models/config.js';
-import PokemonSimulator from '../../models/pokemon-simulator.js';
+import { Food, Cooking } from '../../data/food_and_cooking';
+import Nature from '../../data/nature';
+import Pokemon from '../../data/pokemon';
+import config from '../../models/config';
+import PokemonSimulator from '../../models/simulation/pokemon-simulator';
 
 const lv = ref(60);
 const pokemonList = ref([])
@@ -43,7 +42,7 @@ async function calc() {
       });
       if (foodList.includes(null)) continue;
 
-      const pokemon = simulator.memberToInfo({
+      const pokemon = simulator.fromBox({
         name: base.name,
         lv: lv.value,
         foodList: foodList,
@@ -76,7 +75,7 @@ calc();
 
 const columnList = computed(() => {
   return [
-    { key: 'name', name: '名前' },
+    { key: 'name', name: '名前', convert: x => x.base.name },
     { key: 'foodList', name: '食材' },
     ...Food.list.map(food => ({ key: food.name, name: food.name, img: food.img, type: Number, fixed: 1 })),
   ]

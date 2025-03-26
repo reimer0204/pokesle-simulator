@@ -32,7 +32,7 @@ import SettingPage from './pages/setting.vue'
 import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
 import EvaluateTable from './pages/evaluate-table.vue'
-import PokemonBox from './models/pokemon-box';
+import PokemonBox from './models/pokemon-box/pokemon-box';
 app.use(createRouter({
   history: createWebHashHistory(),
   routes: [

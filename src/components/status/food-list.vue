@@ -1,5 +1,5 @@
 <script setup>
-import Food from '../../data/food';
+import { Food, Cooking } from '../../data/food_and_cooking';
 import Pokemon from '../../data/pokemon';
 import config from '../../models/config';
 
@@ -10,15 +10,15 @@ const props = defineProps({
 
 <template>
   <div class="food-list">
-    <div v-for="(food, i) of pokemon.foodList"
+    <div v-for="(food, i) of pokemon.box?.foodList"
       class="food"
       :class="{
-        disabled: i >= pokemon.enableFoodList.length,
-        error: Pokemon.map[pokemon.name].foodMap[food]?.numList[i] == null,
+        disabled: i >= pokemon.foodList.length,
+        error: pokemon.base?.foodNumListMap[food]?.[i] == null,
       }"
     >
       <img :src="Food.map[food].img" />
-      <div class="num">{{ Pokemon.map[pokemon.name].foodMap[food]?.numList[i] }}</div>
+      <div class="num">{{ pokemon.base?.foodNumListMap[food]?.[i] }}</div>
     </div>
   </div>
 </template>

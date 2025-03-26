@@ -1,10 +1,9 @@
 <script setup>
-import Cooking from '../../data/cooking.js';
-import Food from '../../data/food.js';
-import Nature from '../../data/nature.js';
-import Pokemon from '../../data/pokemon.js';
-import config from '../../models/config.js';
-import PokemonSimulator from '../../models/pokemon-simulator.js';
+import { Food, Cooking } from '../../data/food_and_cooking';
+import Nature from '../../data/nature';
+import Pokemon from '../../data/pokemon';
+import config from '../../models/config';
+import PokemonSimulator from '../../models/simulation/pokemon-simulator';
 
 const lv = ref(60);
 const pokemonList = ref([])
@@ -43,7 +42,7 @@ async function calc() {
       });
       if (foodList.includes(null)) continue;
 
-      const pokemon = simulator.memberToInfo({
+      const pokemon = simulator.fromBox({
         name: base.name,
         lv: lv.value,
         foodList: foodList,
@@ -76,13 +75,13 @@ calc();
 
 const columnList = computed(() => {
   return [
-    { key: 'name', name: '名前' },
+    { key: 'name', name: '名前', convert: pokemon => pokemon.base.name },
     { key: 'foodList', name: '食材' },
-    { key: 'skill', name: 'スキル', convert: pokemon => pokemon.skill.name },
-    { key: 'fixedSkillRate', name: 'スキル確率', percent: true },
+    { key: 'skill', name: 'スキル', convert: pokemon => pokemon.base.skill.name },
+    { key: 'skillRate', name: 'スキル確率', percent: true },
     { key: 'ceilSkillRate', name: 'スキル確率\n(天井補正)', percent: true },
     { key: 'skillCeil', name: '天井', type: Number, fixed: 1 },
-    { key: 'skillCeilProb', name: '天井到達\n確率', percent: true, convert: (pokemon) => Math.pow(1 - pokemon.fixedSkillRate, pokemon.skillCeil) },
+    { key: 'skillCeilProb', name: '天井到達\n確率', percent: true, convert: (pokemon) => Math.pow(1 - pokemon.skillRate, pokemon.skillCeil) },
     { key: 'skillPerDay', name: 'スキル回数/日', type: Number, fixed: 2 },
   ]
 })

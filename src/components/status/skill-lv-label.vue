@@ -1,9 +1,9 @@
-<script setup>
-import Pokemon from '../../data/pokemon';
+<script setup lang="ts">
+import type { SimulatedPokemon } from '../../type'
 
-const props = defineProps({
-  pokemon: { required: true }
-})
+const props = defineProps<{
+  pokemon: SimulatedPokemon, 
+}>()
 
 const inputedSkillLv = computed(() => {
   return props.pokemon.box.skillLv != null;
@@ -12,11 +12,11 @@ const inputedSkillLv = computed(() => {
 const originalSkillLv = computed(() => {
   if (props.pokemon.box.skillLv) return props.pokemon.box.skillLv;
 
-  let originalSkillLv = Pokemon.map[props.pokemon.name].evolveLv
-  if (props.pokemon.enableSubSkillList.includes('スキルレベルアップM')) originalSkillLv += 2;
-  if (props.pokemon.enableSubSkillList.includes('スキルレベルアップS')) originalSkillLv += 1;
+  let originalSkillLv = props.pokemon.base.evolveLv ?? 1
+  if (props.pokemon.subSkillNameList.includes('スキルレベルアップM')) originalSkillLv += 2;
+  if (props.pokemon.subSkillNameList.includes('スキルレベルアップS')) originalSkillLv += 1;
 
-  return Math.min(originalSkillLv, props.pokemon.skill.effect.length);
+  return Math.min(originalSkillLv, props.pokemon.base.skill.effect.length);
 })
 
 </script>

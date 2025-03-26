@@ -2,7 +2,7 @@
 import SettingList from '../components/util/setting-list.vue';
 import Skill from '../data/skill';
 import config from '../models/config';
-import EvaluateTable from '../models/evaluate-table';
+import EvaluateTable from '../models/simulation/evaluate-table';
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
@@ -11,14 +11,8 @@ async function save() {
   asyncWatcher.run(async (progressCounter) => {
     let isNew = !editConfig.initSetting;
 
-    // let parameter = await HelpRate.inferParameter(editConfig, genkiCounter);
-    // editConfig.healEffectParameter = parameter.healEffectParameter;
-    // editConfig.dayHelpParameter = parameter.dayHelpParameter;
-    // editConfig.nightHelpParameter = parameter.nightHelpParameter;
-
     await EvaluateTable.simulation(editConfig, progressCounter);
     editConfig.initSetting = true;
-    // editConfig.version.helpRate = HelpRate.VERSION;
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
     editConfig.version.evaluateTableSleepTime = config.sleepTime
     editConfig.version.evaluateTableCheckFreq = config.checkFreq
@@ -70,6 +64,33 @@ const specialtyList = ['きのみ', '食材', 'スキル']
       <template #headerText>厳選設定</template>
 
       <SettingList>
+        <div>
+          <label>下振れ考慮ボーダー</label>
+          <div class="flex-column gap-5px">
+            <div><input type="number" class="w-40px" v-model="editConfig.selectEvaluate.expectType.border" step="1" min="0" max="100" >&nbsp;%</div>
+          </div>
+          <small class="mt-5px w-150px">
+            下振れ考慮するかどうかは次の「とくい毎設定・詳細設定」にあります。<br>
+            下振れ考慮について
+            
+            <HelpButton title="下振れ考慮について" markdown="
+              # 下振れ考慮について
+              1%で当たるものを100回試行した時の期待値は1%×100で1回ですが、1回以上当たる確率は63.4%程度しかありません。
+              つまり、下振れして1回も当たらない確率が36.6%あるということです。
+              試行回数がもっと多ければ期待値に収束していきますが、ポケモンを日々入れ替える場合は試行回数が少ないため下振れすることも多いです。
+              そのために、「XX%の確率で少なくとも1日n回は当たる」という方法で計算できるようにしたのが下振れ考慮です。
+
+              # サブスキル・せいかく評価への影響
+              「期待値」によって計算する場合、食材やスキルだけに限って考えると、確率アップとおてつだいスピードの短縮はほぼ等価です(実際は所持数溢れのためおてつだいスピードの方が若干評価が劣ります)。
+              「下振れ考慮」によって計算する場合、確率が高い方が下振れが起きにくいので確率アップの方が若干高く評価されます。
+
+              # その他、通常期待値との違い
+              とくい分野の厳選度はより実態に即したものに近づきます。
+              総合スコアの厳選度は通常の期待値より食材・スキルが少なく見積もられることになるので、相対的にきのみの数Sなどが高く評価されることになります。
+              食材とくいは収束しにくいABCだと食材の価値が若干低く見積もられ、相対的にきのみとスキルに関連するサブスキルが高く評価されることになります。
+            " />
+          </small>
+        </div>
         <div>
           <label>エナジー/ゆめのかけら</label>
           <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergyRate" step="1"></div>
@@ -160,7 +181,7 @@ const specialtyList = ['きのみ', '食材', 'スキル']
     </ToggleArea>
 
     <ToggleArea open>
-      <template #headerText>とくい毎設定</template>
+      <template #headerText>とくい毎設定・詳細設定</template>
 
       <DesignTable>
         <thead>
@@ -169,6 +190,7 @@ const specialtyList = ['きのみ', '食材', 'スキル']
             <th>きのみ</th>
             <th>食材</th>
             <th>スキル</th>
+            <th>下振れ考慮</th>
             <th>備考</th>
           </tr>
         </thead>
@@ -178,6 +200,7 @@ const specialtyList = ['きのみ', '食材', 'スキル']
             <td v-for="specialty in specialtyList">
               <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].berryEnergyRate" step="1"> %</div>
             </td>
+            <td></td>
             <td>
               <small>
               100%:好みと合わせない前提<br>
@@ -189,6 +212,12 @@ const specialtyList = ['きのみ', '食材', 'スキル']
             <th>食材評価</th>
             <td v-for="specialty in specialtyList">
               <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodEnergyRate" step="1"> %</div>
+            </td>
+            <td>
+              <div class="flex-column-start-start gap-5px">
+                <InputRadio v-model="editConfig.selectEvaluate.expectType.food" :value="0">通常期待値(確率×回数)</InputRadio>
+                <InputRadio v-model="editConfig.selectEvaluate.expectType.food" :value="1">下振れ考慮</InputRadio>
+              </div>
             </td>
             <td>
               <small>
@@ -204,6 +233,7 @@ const specialtyList = ['きのみ', '食材', 'スキル']
             <td v-for="specialty in specialtyList">
               <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodGetRate" step="1"> %</div>
             </td>
+            <td></td>
             <td class="w-200px">
               <small>
                 食材ゲットで手に入る食材を全て料理に使用するのは大抵の場合難しいため、食材評価より低い数値を設定します。<br>
@@ -229,6 +259,15 @@ const specialtyList = ['きのみ', '食材', 'スキル']
                       :disabled="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type != 3">
                   </div>
                 </InputRadio>
+              </div>
+            </td>
+            <td>
+              <div class="flex-column-start-start gap-5px">
+                <!-- <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="0">通常期待値(確率×回数)</InputRadio>
+                <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="1">下振れ考慮</InputRadio> -->
+                <InputRadio :value="0" disabled>通常期待値(確率×回数)</InputRadio>
+                <InputRadio :value="1" disabled>下振れ考慮</InputRadio>
+                <div>※将来機能</div>
               </div>
             </td>
             <td>

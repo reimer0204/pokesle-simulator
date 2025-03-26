@@ -3,7 +3,7 @@
 import Pokemon from '../../data/pokemon';
 import Skill from '../../data/skill';
 import config from '../../models/config';
-import PokemonBox from '../../models/pokemon-box';
+import PokemonBox from '../../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../../models/pokemon-filter';
 
 const boxPokemonList = PokemonBox.load()

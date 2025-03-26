@@ -2,22 +2,22 @@
 import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
-import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
+import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vue';
 import SimulationPrepareTeamPopup from '../components/simulation-prepare-team-popup.vue';
 import SimulationWeeklyTeamPopup from '../components/simulation-weekly-team-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import Exp from '../data/exp.js';
-import Food from '../data/food.js';
-import Pokemon from '../data/pokemon.js';
+import { Food, Cooking } from '../data/food_and_cooking';
+import Pokemon from '../data/pokemon';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.js';
-import EvaluateTable from '../models/evaluate-table.js';
+import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
-import PokemonBox from '../models/pokemon-box';
+import PokemonBox from '../models/pokemon-box/pokemon-box.js';
 import Popup from '../models/popup/popup.js';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 
 let evaluateTable = EvaluateTable.load(config);
 
@@ -33,62 +33,12 @@ async function createPokemonList(setConfig = false) {
   multiWorker.reject();
 
   asyncWatcher.run(async (progressCounter) => {
-    let clonedConfig = JSON.parse(JSON.stringify(config))
-
-    let [setConfigProgress, stepA, stepB] = progressCounter.split(setConfig ? 1 : 0, 1, 2, 1)
-
-    if (setConfig) {
-      await multiWorker.call(
-        setConfigProgress,
-        () => ({ type: 'config', config: clonedConfig })
-      )
-    }
-
-    let pokemonList = PokemonBox.list;
-
-    pokemonList = (await multiWorker.call(
-      stepA,
-      (i) => {
-        let startIndex = Math.floor(pokemonList.length * i / config.workerNum);
-        let endIndex = Math.floor(pokemonList.length * (i + 1) / config.workerNum);
-        return {
-          type: 'basic',
-          pokemonList: pokemonList.slice(startIndex, endIndex),
-          evaluateTable,
-        }
-      }
-    )).flat(1);
-
-    /* ここからおてボとかげんき回復系の計算 */
-    // おてボ用に概算日給の高い上位6匹をリストアップしておく
-    let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
-
-    // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
-    let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
-
-    // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
-    let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
-
-    // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
-    let healCheckTarget = pokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6)
-    healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
-
-    simulatedPokemonList.value = (await multiWorker.call(
-      stepB,
-      (i) => {
-        return {
-          type: 'assist',
-          pokemonList: pokemonList.slice(
-            Math.floor(pokemonList.length * i / config.workerNum),
-            Math.floor(pokemonList.length * (i + 1) / config.workerNum),
-          ),
-          helpBonusTop6,
-          berryEnergyTop5,
-          pickupEnergyPerHelpTop5,
-          healCheckTarget,
-        }
-      }
-    )).flat(1);
+    simulatedPokemonList.value = await PokemonBox.simulation(
+      PokemonBox.list,
+      multiWorker, evaluateTable, 
+      config,
+      progressCounter, setConfig
+    )
     processSimulatedPokemonList();
   })
 }
@@ -96,7 +46,7 @@ async function createPokemonList(setConfig = false) {
 // 必要アメ数の計算
 function processSimulatedPokemonList() {
   for(const pokemon of simulatedPokemonList.value) {
-    Object.assign(pokemon, Exp.calcRequireInfo(PokemonBox.list[pokemon.index], pokemon.nature, config))
+    Object.assign(pokemon, Exp.calcRequireInfo(PokemonBox.list[pokemon.box.index], pokemon.nature, config))
   }
 }
 
@@ -115,7 +65,7 @@ watch(config.candy, processSimulatedPokemonList)
 const columnList = computed(() => {
   let result = [
     { key: 'edit', name: '', type: Number, convert: item => item.fix == -1 ? 2 : item.fix },
-    { key: 'index', name: 'No', type: Number },
+    { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
     { key: 'name', name: '名前', type: String },
     { key: 'lv', name: 'Lv', type: Number },
     { key: 'foodList', name: '食材', type: null },
@@ -152,7 +102,7 @@ const columnList = computed(() => {
   if (config.pokemonList.candy) {
     result.push(
       { key: 'candy', name: '所持ｱﾒ' },
-      { key: 'training', name: '目標Lv' },
+      { key: 'training', name: '目標Lv', convert: x => x?.box.training },
       { key: 'nextExp', name: '次Lv迄\nのExp' },
       { key: 'normalCandyNum', name: '通常\nｱﾒ', type: Number },
       { key: 'normalCandyShard', name: '通常\nゆめかけ', type: Number },
@@ -168,8 +118,8 @@ const columnList = computed(() => {
   if (config.pokemonList.baseInfo) {
     result.push(
       { key: 'afterList', name: '最終進化' },
-      { key: 'berryName', name: 'きのみ' },
-      { key: 'skillName', name: 'スキル' },
+      { key: 'berryName', name: 'きのみ', convert: x => x.base.berry.name },
+      { key: 'skillName', name: 'スキル', convert: x => x.base.skill.name },
     )
   }
 
@@ -193,13 +143,13 @@ const columnList = computed(() => {
       { key: 'foodEnergyPerDay', name: '食材\n/日', type: Number, fixed: 1 },
       { key: 'pickupEnergyPerHelp', name: 'きのみ+食材\n/手伝い', type: Number, fixed: 1 },
       { key: 'pickupEnergyPerDay', name: 'きのみ+食材\n/日', type: Number, fixed: 1 },
-      { key: 'fixedBag', name: '所持\n数', type: Number },
+      { key: 'bag', name: '所持\n数', type: Number },
       { key: 'bagFullHelpNum', name: 'いつ育\n到達回数', type: Number, fixed: 1 },
       { key: 'normalHelpNum', name: '通常おてつ\nだい回数', type: Number, fixed: 2 },
       { key: 'berryHelpNum', name: 'いつ育おてつ\nだい回数', type: Number, fixed: 2 },
       { key: 'fixedSkillLv', name: '補正後\nスキルLv', type: Number },
       { key: 'skillRate', name: 'スキル\n確率', type: Number, percent: true, fixed: 2 },
-      { key: 'fixedSkillRate', name: '補正後\nスキル確率', type: Number, percent: true, fixed: 2 },
+      { key: 'skillRate', name: '補正後\nスキル確率', type: Number, percent: true, fixed: 2 },
       { key: 'ceilSkillRate', name: '天井補正\nスキル確率', type: Number, percent: true, fixed: 2 },
       { key: 'skillPerDay', name: 'スキル\n回数/日', type: Number, fixed: 2 },
       { key: 'skillEnergyPerDay', name: 'スキル\nエナジー/日', type: Number, fixed: 1 },
@@ -215,7 +165,7 @@ const columnList = computed(() => {
 
 async function showEditPopup(pokemon) {
   await asyncWatcher.wait;
-  if(await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
+  if(await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
     createPokemonList()
   }
 }
@@ -282,8 +232,8 @@ function showSelectDetail(pokemon, after, lv) {
   Popup.show(SelectTableDetailPopup, {
     name: after,
     lv,
-    foodIndexList: pokemon.foodList.map(f => Math.max(pokemon.base.foodList.findIndex(f2 => f2.name == f)), 0),
-    subSkillList: pokemon.subSkillList,
+    foodIndexList: pokemon.box.foodList.map(f => Math.max(pokemon.base.foodList.findIndex(f2 => f2.name == f)), 0),
+    subSkillList: pokemon.box.subSkillList,
     nature: pokemon.nature,
   })
 }
@@ -410,15 +360,15 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #foodList="{ data }">
             <div class="flex-row-center-center gap-2px">
-              <div v-for="(food, i) of data.foodList"
+              <div v-for="(food, i) of data.box.foodList"
                 class="food"
                 :class="{
-                  disabled: i >= data.enableFoodList.length,
-                  error: Pokemon.map[data.name].foodMap[food]?.numList[i] == null,
+                  disabled: i >= data.foodList.length,
+                  error: data.base.foodNumListMap[food]?.[i] == null,
                 }"
               >
                 <img :src="Food.map[food].img" />
-                <div class="num">{{ Pokemon.map[data.name].foodMap[food]?.numList[i] }}</div>
+                <div class="num">{{ data.base.foodNumListMap[food]?.[i] }}</div>
               </div>
             </div>
           </template>
@@ -437,7 +387,7 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #evaluate="{ data, column }">
             <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.afterList">
+              <template v-for="after in data.base.afterList">
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
                   <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].score)">-</template>
@@ -465,7 +415,7 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #evaluate_energy="{ data, column }">
             <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.afterList">
+              <template v-for="after in data.base.afterList">
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
                 <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
                   <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].energy)">-</template>
@@ -547,15 +497,15 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #candy="{ data, column }">
-            <input type="number" class="w-50px" v-model="config.candy.bag[data.seed]" />
+            <input type="number" class="w-50px" v-model="config.candy.bag[data.base.seed]" />
           </template>
 
           <template #training="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].original.training" @input="updateGrowthInfo(data)" />
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.training" @input="updateGrowthInfo(data)" />
           </template>
 
           <template #nextExp="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.index].original.nextExp" @input="updateGrowthInfo(data)" />
+            <input type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.nextExp" @input="updateGrowthInfo(data)" />
           </template>
 
           <!-- <template #nextExp="{ data, column }">
@@ -564,7 +514,7 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%;">
-              {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
+              {{ data.base.afterList.length > 1 ? data.base.afterList[0] + '等' : data.base.afterList[0] }}
             </div>
           </template>
 

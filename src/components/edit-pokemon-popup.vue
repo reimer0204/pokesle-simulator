@@ -1,15 +1,15 @@
 <script setup>
-import Food from '../data/food';
+import { Food, Cooking } from '../data/food_and_cooking';
 import Nature from '../data/nature';
 import Pokemon from '../data/pokemon';
 import SubSkill from '../data/sub-skill';
 import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
-import EvaluateTable from '../models/evaluate-table';
+import EvaluateTable from '../models/simulation/evaluate-table';
 import MultiWorker from '../models/multi-worker';
-import PokemonBox from '../models/pokemon-box';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
 import convertRomaji from '../models/utils/convert-romaji';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
+import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 
@@ -215,9 +215,9 @@ watch(pokemon, async () => {
         selectResult.value.box = {};
         for(let selectLv of selectLvList) {
           selectResult.value.box[selectLv] = {};
-          for(let after of selectResult.value.afterList) {
+          for(let after of selectResult.value.base.afterList) {
             let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
-            let sameFoodTargetList = targetList.filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f))
+            let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f.name))
 
             let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
             let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
@@ -438,7 +438,7 @@ function changeColor() {
             </tr>
           </thead>
           <tbody>
-            <template v-for="after in selectResult.afterList">
+            <template v-for="after in selectResult.base.afterList">
               <tr>
                 <th rowspan="3">{{ after }}</th>
                 <th>本個体</th>

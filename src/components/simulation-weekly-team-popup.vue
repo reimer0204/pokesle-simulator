@@ -1,14 +1,14 @@
 <script setup>
 import { onBeforeUnmount } from 'vue';
-import Food from '../data/food';
+import { Food, Cooking } from '../data/food_and_cooking';
 import { AsyncWatcher } from '../models/async-watcher';
 import config from '../models/config';
-import EvaluateTable from '../models/evaluate-table';
+import EvaluateTable from '../models/simulation/evaluate-table';
 import MultiWorker from '../models/multi-worker';
-import PokemonBox from '../models/pokemon-box';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter';
-import PokemonListSimulator from '../worker/pokemon-list-simulator?worker';
-import TeamSimulator from '../worker/team-simulator?worker';
+import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
+import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from './filter/pokemon-filter-editor.vue';
 import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
@@ -206,7 +206,7 @@ async function simulation() {
 }
 
 async function showEditPopup(pokemon) {
-  await Popup.show(EditPokemonPopup, { index: pokemon.index, evaluateTable, simulatedPokemonList: null })
+  await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: null })
 }
 
 </script>
@@ -355,7 +355,7 @@ async function showEditPopup(pokemon) {
                     <td v-for="pokemon in result.pokemonList">
                       <div class="flex-row-start-center gap-5px">
                         <NameLabel :pokemon="pokemon" />
-                        <svg v-if="pokemon.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
+                        <svg v-if="pokemon.box.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
                           <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
                         </svg>
                       </div>

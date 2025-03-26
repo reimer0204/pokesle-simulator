@@ -1,13 +1,13 @@
 <script setup>
 import CookingSettingPopup from '../components/cooking-setting-popup.vue';
-import Berry from '../data/berry.js';
-import Cooking from '../data/cooking.js';
-import Field from '../data/field.js';
-import NightCapPikachu from '../data/nightcap_pikachu.js';
-import config from '../models/config.js';
-import PokemonBox from '../models/pokemon-box.js';
-import PokemonFilter from '../models/pokemon-filter.js';
-import Popup from '../models/popup/popup.js';
+import Berry from '../data/berry';
+import { Cooking } from '../data/food_and_cooking';
+import Field from '../data/field';
+import NightCapPikachu from '../data/nightcap_pikachu';
+import config from '../models/config';
+import PokemonBox from '../models/pokemon-box/pokemon-box';
+import PokemonFilter from '../models/pokemon-filter';
+import Popup from '../models/popup/popup';
 
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);
@@ -286,6 +286,41 @@ const fixFilterResult = computed(() => PokemonFilter.filter(PokemonBox.list, con
         <template v-if="disabledCookingNum">(無効:{{ disabledCookingNum }}種)</template>
       </div>
     </template>
+  </SettingButton>
+
+  <SettingButton title="下振れ補正">
+    <template #label>
+      <div class="inline-flex-row-center">
+        下振れ補正
+      </div>
+    </template>
+    
+    <div>
+      <BaseAlert class="mt-5px w-600px">
+        1%で当たるものを100回試行した時の期待値は1%×100で1回ですが、1回以上当たる確率は63.4%程度しかありません。<br>
+        つまり、下振れして1回も当たらない確率が36.6%あるということです。<br>
+        試行回数がもっと多ければ期待値に収束していきますが、ポケスリでは基本的に試行回数が少ないため下振れすることも多いです。<br>
+        そのために、「XX%の確率で少なくとも1日n回は当たる」という方法で計算できるようにしたのが下振れ補正です。
+      </BaseAlert>
+
+    </div>
+    <SettingTable>
+      <tr>
+        <th>下振れ補正ボーダー</th>
+        <td>
+          <div><input type="number" class="w-80px" v-model="config.simulation.expectType.border" step="1"> %</div>
+        </td>
+      </tr>
+      <tr>
+        <th>食材</th>
+        <td>
+          <div class="flex-row gap-10px">
+            <InputRadio v-model="config.simulation.expectType.food" :value="0">通常期待値</InputRadio>
+            <InputRadio v-model="config.simulation.expectType.food" :value="1">下振れ補正</InputRadio>
+          </div>
+        </td>
+      </tr>
+    </SettingTable>
   </SettingButton>
 
   <SettingButton title="その他設定">
