@@ -217,7 +217,7 @@ watch(pokemon, async () => {
           selectResult.value.box[selectLv] = {};
           for(let after of selectResult.value.base.afterList) {
             let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
-            let sameFoodTargetList = targetList.filter(x => x.foodList.every((f, i) => pokemon.foodList[i] == f.name))
+            let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f.name))
 
             let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
             let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);

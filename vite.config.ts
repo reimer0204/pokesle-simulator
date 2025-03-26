@@ -16,7 +16,7 @@ export default defineConfig({
 			imports: [
 				'vue',
 				{
-					'@/src/models/async-watcher.js': [ ['default', 'asyncWatcher'] ],
+					'@/models/async-watcher.js': [ ['default', 'asyncWatcher'] ],
 				}
 			],
 			vueTemplate: true,
@@ -29,7 +29,7 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			'@': __dirname,
+			'@': __dirname + '/src',
 		},
 	},
 	base: "/pokesle-simulator/",

@@ -40,12 +40,13 @@ class PokemonSimulator {
   #expectType;
   #probBorder;
   #berryEnergyWeight = 1;
-  #skillEnergyIgnore = 1;
+  #skillEnergyIgnore = 0;
 
 
   static MODE_ABOUT = 1;
   static MODE_TEAM = 2;
   static MODE_SELECT = 3;
+  static FOOD_NUM_RESET = Object.fromEntries(Food.list.map(x => [x.name, 0]));
 
   constructor(config, mode) {
     if (!mode) throw 'モードが指定されていません'
@@ -223,7 +224,7 @@ class PokemonSimulator {
     for(let [index, name] of foodNameList.slice(0, foodUnlock).entries()) {
       const food = Food.map[name];
       if (food == null) throw `${pokemon.base.name}:不正な食べ物(${name})`
-      let num = firstFoodEnergy * [1, 2.25, 3.6][index] / food.energy;
+      let num = Math.round(firstFoodEnergy * [1, 2.25, 3.6][index] / food.energy);
       if (eventBonus) {
         num += this.config.simulation.eventBonusTypeFood;
       }
@@ -400,7 +401,7 @@ class PokemonSimulator {
       pokemon.base.help
       * (1 - (pokemon.lv - 1) * 0.002)
       * (1 - pokemon.speedBonus)
-      * (pokemon.nature?.good == '手伝いスピード' ? 0.9 : pokemon.nature?.weak == '手伝いスピード' ? 1.1 : 1)
+      * (pokemon.nature?.good == '手伝いスピード' ? 0.9 : pokemon.nature?.weak == '手伝いスピード' ? 1.075 : 1)
       / (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket ? 1.2 : 1)
     );
     if (pokemon.base.remainEvolveLv == 1 && pokemon.sleepTime >=  500) pokemon.speed *= 0.95
@@ -583,14 +584,19 @@ class PokemonSimulator {
       pokemon.foodNumPerDay = 0;
       
       // 食材の個数
-      for(let food of Food.list) {
-        pokemon[food.name] = 0;
+      if (this.mode != PokemonSimulator.MODE_SELECT) {
+        Object.assign(pokemon, PokemonSimulator.FOOD_NUM_RESET);
       }
+      // for(let food of Food.list) {
+      //   pokemon[food.name] = 0;
+      // }
       for(const foodProb of pokemon.foodProbList) {
         const num = this.#probBorder.get(pokemon.foodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
         pokemon.foodEnergyPerDay += num * this.foodEnergyMap[foodProb.name];
         pokemon.foodNumPerDay += num;
-        pokemon[foodProb.name] += num;
+        if (this.mode != PokemonSimulator.MODE_SELECT) {
+          pokemon[foodProb.name] += num;
+        }
       }
     }
     

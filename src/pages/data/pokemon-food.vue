@@ -42,7 +42,7 @@ async function calc() {
       });
       if (foodList.includes(null)) continue;
 
-      const pokemon = simulator.memberToInfo({
+      const pokemon = simulator.fromBox({
         name: base.name,
         lv: lv.value,
         foodList: foodList,
@@ -75,7 +75,7 @@ calc();
 
 const columnList = computed(() => {
   return [
-    { key: 'name', name: '名前' },
+    { key: 'name', name: '名前', convert: x => x.base.name },
     { key: 'foodList', name: '食材' },
     ...Food.list.map(food => ({ key: food.name, name: food.name, img: food.img, type: Number, fixed: 1 })),
   ]

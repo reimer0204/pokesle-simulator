@@ -42,7 +42,7 @@ async function calc() {
       });
       if (foodList.includes(null)) continue;
 
-      const pokemon = simulator.memberToInfo({
+      const pokemon = simulator.fromBox({
         name: base.name,
         lv: lv.value,
         foodList: foodList,
@@ -75,9 +75,9 @@ calc();
 
 const columnList = computed(() => {
   return [
-    { key: 'name', name: '名前' },
+    { key: 'name', name: '名前', convert: pokemon => pokemon.base.name },
     { key: 'foodList', name: '食材' },
-    { key: 'skill', name: 'スキル', convert: pokemon => pokemon.skill.name },
+    { key: 'skill', name: 'スキル', convert: pokemon => pokemon.base.skill.name },
     { key: 'skillRate', name: 'スキル確率', percent: true },
     { key: 'ceilSkillRate', name: 'スキル確率\n(天井補正)', percent: true },
     { key: 'skillCeil', name: '天井', type: Number, fixed: 1 },

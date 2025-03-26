@@ -35,10 +35,10 @@ self.addEventListener('message', async (event: {
 
   subSkillCombinationList = subSkillCombinationList.map(subSkillCombination => {
     let weightList = [];
-    if (subSkillCombination[0]) weightList.push({ yumebo: false, risabo: false, weight: subSkillCombination[0] })
-    if (subSkillCombination[1]) weightList.push({ yumebo:  true, risabo: false, weight: subSkillCombination[1] })
-    if (subSkillCombination[2]) weightList.push({ yumebo: false, risabo:  true, weight: subSkillCombination[2] })
-    if (subSkillCombination[3]) weightList.push({ yumebo:  true, risabo:  true, weight: subSkillCombination[3] })
+    if (subSkillCombination[0]) weightList.push({ yumebo: false, risabo: false, weight: subSkillCombination[0][0], ids: subSkillCombination[0].slice(1) })
+    if (subSkillCombination[1]) weightList.push({ yumebo:  true, risabo: false, weight: subSkillCombination[1][0], ids: subSkillCombination[1].slice(1) })
+    if (subSkillCombination[2]) weightList.push({ yumebo: false, risabo:  true, weight: subSkillCombination[2][0], ids: subSkillCombination[2].slice(1) })
+    if (subSkillCombination[3]) weightList.push({ yumebo:  true, risabo:  true, weight: subSkillCombination[3][0], ids: subSkillCombination[3].slice(1) })
     return {
       subSkillList: subSkillCombination.s.map(id => SubSkill.idMap[id].name),
       weightList,
@@ -104,15 +104,14 @@ self.addEventListener('message', async (event: {
           for(let weight of weightList) {
             let score = simulator.selectEvaluateToScore(eachResult, weight.yumebo, weight.risabo)
 
-            scoreList.push({
+            scoreList.push(structuredClone({
               score: score,
               baseScore: score / eachResult.averageHelpRate,
               pickupEnergyPerHelp: eachResult.pickupEnergyPerHelp,
-              // subSkillList,
-              eachResult,
+              subSkillList: weight.ids.map(id => SubSkill.idMap[id].name),
+              nature: eachResult.nature?.name,
               weight: weight.weight * natureWeight,
-              // nature,
-            });
+            }));
             let specialtyScore = 0;
             if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
             if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
@@ -143,7 +142,7 @@ self.addEventListener('message', async (event: {
         let nextWeightSum = weightSum + scoreList[i].weight
         while (weightSum <= nextIndex && nextIndex < nextWeightSum && percentileIndex <= 100) {
           let percentileItem = { ...scoreList[i] };
-          delete percentileItem.weight
+          // delete percentileItem.weight
           percentile.push(percentileItem);
           specialtyNumList100.push(specialtyNumList[i].score);
 

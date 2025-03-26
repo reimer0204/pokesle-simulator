@@ -11,14 +11,8 @@ async function save() {
   asyncWatcher.run(async (progressCounter) => {
     let isNew = !editConfig.initSetting;
 
-    // let parameter = await HelpRate.inferParameter(editConfig, genkiCounter);
-    // editConfig.healEffectParameter = parameter.healEffectParameter;
-    // editConfig.dayHelpParameter = parameter.dayHelpParameter;
-    // editConfig.nightHelpParameter = parameter.nightHelpParameter;
-
     await EvaluateTable.simulation(editConfig, progressCounter);
     editConfig.initSetting = true;
-    // editConfig.version.helpRate = HelpRate.VERSION;
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
     editConfig.version.evaluateTableSleepTime = config.sleepTime
     editConfig.version.evaluateTableCheckFreq = config.checkFreq

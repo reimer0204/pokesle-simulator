@@ -6,7 +6,7 @@
 export {}
 declare global {
   const EffectScope: typeof import('vue')['EffectScope']
-  const asyncWatcher: typeof import('@/src/models/async-watcher.js')['default']
+  const asyncWatcher: typeof import('@/models/async-watcher.js')['default']
   const computed: typeof import('vue')['computed']
   const createApp: typeof import('vue')['createApp']
   const customRef: typeof import('vue')['customRef']
@@ -71,7 +71,7 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
-    readonly asyncWatcher: UnwrapRef<typeof import('@/src/models/async-watcher.js')['default']>
+    readonly asyncWatcher: UnwrapRef<typeof import('@/models/async-watcher.js')['default']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
@@ -129,7 +129,7 @@ declare module '@vue/runtime-core' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
-    readonly asyncWatcher: UnwrapRef<typeof import('@/src/models/async-watcher.js')['default']>
+    readonly asyncWatcher: UnwrapRef<typeof import('@/models/async-watcher.js')['default']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>

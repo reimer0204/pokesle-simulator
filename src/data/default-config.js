@@ -112,10 +112,10 @@ const defaultConfig = {
     expectType: {
       border: 80,
       food: 0,
-      ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
-      'げんきオールS': 0,
-      '食材ゲットS': 0,
-      '料理パワーアップS': 0,
+      // ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
+      // 'げんきオールS': 0,
+      // '食材ゲットS': 0,
+      // '料理パワーアップS': 0,
     },
   },
 
@@ -152,10 +152,10 @@ const defaultConfig = {
     expectType: {
       border: 70,
       food: 1,
-      ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
-      'げんきオールS': 1,
-      '食材ゲットS': 1,
-      '料理パワーアップS': 1,
+      // ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
+      // 'げんきオールS': 1,
+      // '食材ゲットS': 1,
+      // '料理パワーアップS': 1,
     },
     levelList: {
       10: false,

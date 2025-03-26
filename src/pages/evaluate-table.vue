@@ -1,5 +1,5 @@
 <script setup>
-import SelectTableDetailPopup from '../components/select-table-detail-popup.vue';
+import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
 import SettingList from '../components/util/setting-list.vue';
 import { Food, Cooking } from '../data/food_and_cooking';
@@ -9,6 +9,8 @@ import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import Popup from '../models/popup/popup.js';
 import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker';
+import SubSkill from '../data/sub-skill';
+import Nature from '@/data/nature';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 let lv = ref(lvList.at(-1))
@@ -39,7 +41,7 @@ let columnList = computed(() => {
   return [
     { key: 'name', name: '名前', type: String },
     { key: 'specialty', name: 'とくい', type: String, convert: (x) => Pokemon.map[x.name].specialty },
-    { key: 'skill', name: 'スキル', type: String, convert: (x) => Pokemon.map[x.name].skill },
+    { key: 'skill', name: 'スキル', type: String, convert: (x) => Pokemon.map[x.name].skill.name },
     { key: 'foodList', name: '食材', type: null },
     ...new Array(100 / step.value + 1).fill(0).map((_, i) => {
       let p = i * step.value;
@@ -67,14 +69,14 @@ async function showDetail(pokemon, p) {
           scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv.value],
         }
       }
-    ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p].eachResult
+    ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p]
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,
       lv: lv.value,
       foodIndexList: pokemon.foodList.map(f => Math.max(Pokemon.map[pokemon.name].foodList.findIndex(f2 => f2.name == f)), 0),
-      subSkillList: result.enableSubSkillList,
-      nature: result.nature,
+      subSkillList: result.subSkillList,
+      nature: Nature.map[result.nature],
       percentile: false,
     })
   })
