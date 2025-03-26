@@ -64,7 +64,7 @@ watch(config.candy, processSimulatedPokemonList)
 
 const columnList = computed(() => {
   let result = [
-    { key: 'edit', name: '', type: Number, convert: item => item.fix == -1 ? 2 : item.fix },
+    { key: 'edit', name: '', type: Number, convert: item => item.box?.fix == -1 ? 2 : item.box?.fix },
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
     { key: 'name', name: '名前', type: String },
     { key: 'lv', name: 'Lv', type: Number },
@@ -335,9 +335,9 @@ function showSelectDetail(pokemon, after, lv) {
               </svg>
               <div title="チームのシミュレーションで固定・除外する設定">
                 <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
-                <svg v-if="data.fix == null" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
-                <svg v-if="data.fix ==    1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
-                <svg v-if="data.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
+                <svg v-if="data.box?.fix == null" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
+                <svg v-if="data.box?.fix ==    1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
+                <svg v-if="data.box?.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
               </div>
             </div>
           </template>
