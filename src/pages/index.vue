@@ -117,7 +117,7 @@ const columnList = computed(() => {
 
   if (config.pokemonList.baseInfo) {
     result.push(
-      { key: 'afterList', name: '最終進化' },
+      { key: 'afterList', name: '最終進化', convert: x => x.base.afterList },
       { key: 'berryName', name: 'きのみ', convert: x => x.base.berry.name },
       { key: 'skillName', name: 'スキル', convert: x => x.base.skill.name },
     )
@@ -148,8 +148,7 @@ const columnList = computed(() => {
       { key: 'normalHelpNum', name: '通常おてつ\nだい回数', type: Number, fixed: 2 },
       { key: 'berryHelpNum', name: 'いつ育おてつ\nだい回数', type: Number, fixed: 2 },
       { key: 'fixedSkillLv', name: '補正後\nスキルLv', type: Number },
-      { key: 'skillRate', name: 'スキル\n確率', type: Number, percent: true, fixed: 2 },
-      { key: 'skillRate', name: '補正後\nスキル確率', type: Number, percent: true, fixed: 2 },
+      { key: 'skillRate', name: 'スキル確率', type: Number, percent: true, fixed: 2 },
       { key: 'ceilSkillRate', name: '天井補正\nスキル確率', type: Number, percent: true, fixed: 2 },
       { key: 'skillPerDay', name: 'スキル\n回数/日', type: Number, fixed: 2 },
       { key: 'skillEnergyPerDay', name: 'スキル\nエナジー/日', type: Number, fixed: 1 },
