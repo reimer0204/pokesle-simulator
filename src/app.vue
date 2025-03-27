@@ -19,7 +19,7 @@ const requireRefresh = computed(() => {
 let loadedVersion = null;
 const newVersion = ref(false);
 async function loadVersion() {
-  const version = await Ajax.get('version.json')
+  const version = await Ajax.get('version.json?' + (new Date()))
   if (loadedVersion != null) {
     for(const key in version) {
       if (loadedVersion[key] != version[key]) {

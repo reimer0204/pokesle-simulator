@@ -87,8 +87,8 @@ async function simulation() {
     let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
 
     // 固定のポケモンと推論対象を選ぶ
-    const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.fix == 1)));
-    let targetPokemonList = pokemonList.filter(x => x.fix == null);
+    const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
+    let targetPokemonList = pokemonList.filter(x => x.box?.fix == null);
 
     const rankMax = Math.min(customConfig.teamSimulation.maxRank, targetPokemonList.length);
     const pickup = 5 - fixedPokemonList.length;

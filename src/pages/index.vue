@@ -66,12 +66,12 @@ const columnList = computed(() => {
   let result = [
     { key: 'edit', name: '', type: Number, convert: item => item.box?.fix == -1 ? 2 : item.box?.fix },
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
-    { key: 'name', name: '名前', type: String },
+    { key: 'name', name: '名前', type: String, convert: x => x.box.name },
     { key: 'lv', name: 'Lv', type: Number },
-    { key: 'foodList', name: '食材', type: null },
+    { key: 'foodNameList', name: '食材', type: null, convert: x => x.box.foodList },
     { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null },
-    { key: 'subSkillList', name: 'サブスキル', type: null },
-    { key: 'natureName', name: '性格', type: null },
+    { key: 'subSkillNameList', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
+    { key: 'natureName', name: '性格', type: null, convert: x => x.box.nature },
     { key: 'score', name: 'スコア', type: Number, fixed: 1 },
   ]
 
@@ -358,7 +358,7 @@ function showSelectDetail(pokemon, after, lv) {
             <LvLabel :pokemon="data" />
           </template>
 
-          <template #foodList="{ data }">
+          <template #foodNameList="{ data }">
             <div class="flex-row-center-center gap-2px">
               <div v-for="(food, i) of data.box.foodList"
                 class="food"
@@ -377,7 +377,7 @@ function showSelectDetail(pokemon, after, lv) {
             <SkillLvLabel :pokemon="data" />
           </template>
 
-          <template #subSkillList="{ data }">
+          <template #subSkillNameList="{ data }">
             <SubSkillLabelList class="sub-skill-list" :pokemon="data" />
           </template>
 
