@@ -157,6 +157,7 @@ async function simulation() {
     // console.log(performance.now() - startAt);
   })
 
+  gtag('event', 'simulation_team');
 }
 
 async function showEditPopup(pokemon) {

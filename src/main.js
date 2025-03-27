@@ -33,7 +33,7 @@ import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
 import EvaluateTable from './pages/evaluate-table.vue'
 import PokemonBox from './models/pokemon-box/pokemon-box';
-app.use(createRouter({
+const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', component: IndexPage },
@@ -52,7 +52,16 @@ app.use(createRouter({
     { path: '/history', component: HistoryPage },
     { path: '/evaluate-table', component: EvaluateTable },
   ]
-}))
+});
+
+import VueGtag from 'vue-gtag'
+app.use(VueGtag, {
+  config: {
+    id: 'G-LXPDYB07H5'
+  }
+}, router)
+
+app.use(router)
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
