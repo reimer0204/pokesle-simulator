@@ -70,7 +70,7 @@ const columnList = computed(() => {
     { key: 'lv', name: 'Lv', type: Number },
     { key: 'foodNameList', name: '食材', type: null, convert: x => x.box.foodList },
     { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null },
-    { key: 'subSkillNameList', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
+    { key: 'subSkill', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
     { key: 'natureName', name: '性格', type: null, convert: x => x.box.nature },
     { key: 'score', name: 'スコア', type: Number, fixed: 1 },
   ]
@@ -376,7 +376,7 @@ function showSelectDetail(pokemon, after, lv) {
             <SkillLvLabel :pokemon="data" />
           </template>
 
-          <template #subSkillNameList="{ data }">
+          <template #subSkill="{ data }">
             <SubSkillLabelList class="sub-skill-list" :pokemon="data" />
           </template>
 

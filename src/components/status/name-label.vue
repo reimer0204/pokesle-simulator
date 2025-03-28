@@ -5,7 +5,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <span class="name-label" :class="{ shiny: pokemon.shiny }">
+  <span class="name-label" :class="{ shiny: pokemon.box?.shiny }">
     <template v-if="props.pokemon.beforeName && props.pokemon.beforeName != props.pokemon.base.name"><small>{{ props.pokemon.beforeName }}→</small>{{ props.pokemon.base.name }}</template>
     <template v-else>{{ props.pokemon.base.name }}</template>
     <template v-if="pokemon.bagOverOperation">(いつ育)</template>
