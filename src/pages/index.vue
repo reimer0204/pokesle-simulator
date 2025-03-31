@@ -346,7 +346,7 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #index="{ data }">
-            {{ data.index + 1 }}
+            {{ data.box.index + 1 }}
           </template>
 
           <template #name="{ data }">

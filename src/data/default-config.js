@@ -79,7 +79,7 @@ const defaultConfig = {
     eventBonusTypeFood: 1,
     eventBonusTypeSkillRate: 1.5,
     eventBonusTypeSkillLv: 3,
-    potSize: 57,
+    potSize: Cooking.potMax,
     bagOverOperation: true,
     researchRankMax: true,
 

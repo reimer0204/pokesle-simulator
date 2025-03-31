@@ -671,6 +671,30 @@ class PokemonSimulator {
 
           break;
         }
+        
+        case 'みかづきのいのり(げんきオールS)': {
+          if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            const { self, other } = effect.team.at(-1)
+            energy = pokemon.berryEnergy * self
+            // 他メンバーのエナジーはあとで計算
+            pokemon.burstBonus = other;
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            const { self, other } = effect.team[helpBoostCount - 1]
+            energy = 0
+            for(let subPokemon of pokemonList) {
+              energy += pokemon.berryEnergy * (pokemon == subPokemon ? self : other);
+            }
+
+          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
+            const { self, other } = effect.team[helpBoostCount - 1]
+            energy = 
+              pokemon.berryEnergy * self
+              + Math.max(Berry.map['マゴ'].energy + pokemon.lv - 1, Berry.map['マゴ'].energy * (1.025 ** (pokemon.lv - 1))) * other * 4;
+          }
+
+          break;
+        }
 
         case 'おてつだいサポートS':
         case 'おてつだいブースト':

@@ -49,9 +49,10 @@ document.addEventListener("visibilitychange", () => {
       <h1>ポケスリシミュ</h1>
       <router-link to="/">ボックス</router-link>
       <router-link to="/simulation">チームシミュ</router-link>
+      <router-link to="/box-summary">ボックス<br>サマリー</router-link>
       <router-link to="/data/pokemon">データ</router-link>
-      <router-link to="/setting">厳選情報生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
-      <router-link to="/evaluate-table">厳選情報確認</router-link>
+      <router-link to="/setting">厳選情報<br>生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
+      <router-link to="/evaluate-table">厳選情報<br>確認</router-link>
       <!-- <router-link to="/cache" v-if="config.initSetting">その他<div class="caution" v-if="requireRefresh.cache">!</div></router-link> -->
       <router-link to="/faq">FAQ</router-link>
       <router-link to="/history">更新履歴<div class="caution" v-if="config.version.history < Version.HISTORY">!</div></router-link>
@@ -91,6 +92,7 @@ document.addEventListener("visibilitychange", () => {
     display: flex;
     justify-content: start;
     align-items: center;
+    flex-wrap: wrap;
 
     background-color: rgb(49, 50, 58);
     color: #FFF;
@@ -102,6 +104,7 @@ document.addEventListener("visibilitychange", () => {
     }
 
     a {
+      height: 48px;
       align-self: stretch;
       display: flex;
       align-items: center;
@@ -110,6 +113,7 @@ document.addEventListener("visibilitychange", () => {
       color: #FFF;
       font-weight: bold;
       text-decoration: none;
+      text-align: center;
 
       &:hover, &.router-link-active {
         background: #FFF2;

@@ -45,11 +45,11 @@ const columnMap = computed(() => {
 
 const convertedDataList = computed(() => {
   return props.dataList.map(data => {
-    let newData = { ...data };
+    let newData = { $original: data, $clone: { ...data } };
 
     for(let column of props.columnList) {
       if (column.convert) {
-        newData[column.key] = column.convert(newData);
+        newData.$clone[column.key] = column.convert(data);
       }
     }
 
@@ -74,8 +74,8 @@ const sortedDataList = computed(() => {
     // ソート
     result = convertedDataList.value.toSorted((a, b) => {
       for(let sort of sortInfo.value) {
-        if ((a[sort.key] || 0) > (b[sort.key] || 0)) return sort.direction;
-        if ((a[sort.key] || 0) < (b[sort.key] || 0)) return -sort.direction;
+        if ((a.$clone[sort.key] || 0) > (b.$clone[sort.key] || 0)) return sort.direction;
+        if ((a.$clone[sort.key] || 0) < (b.$clone[sort.key] || 0)) return -sort.direction;
       }
       return 0;
     });
@@ -86,9 +86,9 @@ const sortedDataList = computed(() => {
     for(let data of result) {
       for(let sort of sortInfo.value) {
         if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key]?.percent) {
-          minmax[sort.key] ??= { min: data[sort.key] ?? 0, max: data[sort.key] ?? 0 };
-          minmax[sort.key].min = Math.min(minmax[sort.key].min, data[sort.key] ?? 0)
-          minmax[sort.key].max = Math.max(minmax[sort.key].max, data[sort.key] ?? 0)
+          minmax[sort.key] ??= { min: data.$clone[sort.key] ?? 0, max: data.$clone[sort.key] ?? 0 };
+          minmax[sort.key].min = Math.min(minmax[sort.key].min, data.$clone[sort.key] ?? 0)
+          minmax[sort.key].max = Math.max(minmax[sort.key].max, data.$clone[sort.key] ?? 0)
         }
       }
     }
@@ -100,10 +100,10 @@ const sortedDataList = computed(() => {
         if (columnMap.value[sort.key] == null) continue;
         let color;
         if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
-          let rate = (data[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
+          let rate = (data.$clone[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
           color = `hsl(${rate * 120}deg 90% 95%)`
         } else {
-          let text = String(data[sort.key] ?? '');
+          let text = String(data.$clone[sort.key] ?? '');
           color = sringColorMap.get(text)
           if (color == null) {
             let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
@@ -261,22 +261,22 @@ function toggleHiddenColumn(key) {
                 left: columnLeftList[i],
                 backgroundColor: sortColors[j]?.[column.key],
               }"
-              @click="emits('clickRow', data)"
+              @click="emits('clickRow', data.$original)"
             >
-              <slot :name="column.template ?? column.key" v-bind="{ data, column, value: data[column.key] }">
+              <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key] }">
                 <template v-if="column.percent">
-                  {{ data[column.key] != null ? `${(data[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
+                  {{ data.$clone[column.key] != null ? `${(data.$clone[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
                 </template>
                 <template v-else-if="column.type == Number">
-                  <template v-if="data[column.key] != null">
-                    {{ Number(data[column.key].toFixed(column.fixed ?? 0)).toLocaleString(undefined, {
+                  <template v-if="data.$clone[column.key] != null">
+                    {{ Number(data.$clone[column.key].toFixed(column.fixed ?? 0)).toLocaleString(undefined, {
                       minimumFractionDigits: column.fixed ?? 0,
                       maximumFractionDigits: column.fixed ?? 0,
                     }) }}
                   </template>
                 </template>
                 <template v-else>
-                  {{ data[column.key] }}
+                  {{ data.$clone[column.key] }}
                 </template>
               </slot>
             </td>

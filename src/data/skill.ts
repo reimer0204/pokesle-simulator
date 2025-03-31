@@ -70,6 +70,19 @@ class Skill {
       team: true,
       genki: true,
     },
+    {
+      name: 'みかづきのいのり(げんきオールS)',
+      effect: [
+        { team: [{ self:  5, other: 1 }, { self:  7, other: 1 }, { self:  9, other: 1 }, { self: 12, other: 1 }, { self: 14, other: 2 }], other:  3.0 }, 
+        { team: [{ self:  9, other: 1 }, { self: 12, other: 1 }, { self: 15, other: 1 }, { self: 16, other: 2 }, { self: 19, other: 3 }], other:  4.0 }, 
+        { team: [{ self: 13, other: 1 }, { self: 17, other: 1 }, { self: 18, other: 2 }, { self: 20, other: 3 }, { self: 24, other: 4 }], other:  5.0 }, 
+        { team: [{ self: 17, other: 1 }, { self: 19, other: 2 }, { self: 25, other: 2 }, { self: 28, other: 3 }, { self: 29, other: 5 }], other:  7.0 }, 
+        { team: [{ self: 21, other: 1 }, { self: 24, other: 2 }, { self: 27, other: 3 }, { self: 28, other: 5 }, { self: 30, other: 7 }], other:  9.0 }, 
+        { team: [{ self: 25, other: 1 }, { self: 29, other: 2 }, { self: 30, other: 4 }, { self: 31, other: 6 }, { self: 32, other: 9 }], other: 11.0 }, 
+      ],
+      team: true,
+      genki: true,
+    },
     { name: '食材ゲットS',                   effect: [  6.0,    8.0,	  11.0,	  14.0,	  17.0,   21.0,   24.0] },
     { name: 'おてつだいサポートS',           effect: [  5.0,    6.0,	   7.0,	   8.0,	   9.0,   10.0,   11.0], team: true },
     {
