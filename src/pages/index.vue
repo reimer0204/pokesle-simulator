@@ -69,7 +69,7 @@ const columnList = computed(() => {
     { key: 'name', name: '名前', type: String, convert: x => x.box.name },
     { key: 'lv', name: 'Lv', type: Number },
     { key: 'foodNameList', name: '食材', type: null, convert: x => x.box.foodList },
-    { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null },
+    { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null, convert: x => x.fixedSkillLv },
     { key: 'subSkill', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
     { key: 'natureName', name: '性格', type: null, convert: x => x.box.nature },
     { key: 'score', name: 'スコア', type: Number, fixed: 1 },
@@ -101,9 +101,9 @@ const columnList = computed(() => {
 
   if (config.pokemonList.candy) {
     result.push(
-      { key: 'candy', name: '所持ｱﾒ' },
+      { key: 'candy', name: '所持ｱﾒ', convert: x => config.candy.bag[x.base.seed] },
       { key: 'training', name: '目標Lv', convert: x => x?.box.training },
-      { key: 'nextExp', name: '次Lv迄\nのExp' },
+      { key: 'nextExp', name: '次Lv迄\nのExp', convert: x => x?.box.nextExp },
       { key: 'normalCandyNum', name: '通常\nｱﾒ', type: Number },
       { key: 'normalCandyShard', name: '通常\nゆめかけ', type: Number },
       { key: 'boostCandyNum', name: 'ﾌﾞｰｽﾄ\nｱﾒ', type: Number },
@@ -209,13 +209,13 @@ function deletePokemon(index) {
 }
 
 async function toggleFix(data, newValue) {
-  let pokemon = PokemonBox.list[data.index]
+  let pokemon = PokemonBox.list[data.box.index]
   if (newValue !== undefined) pokemon.fix = newValue;
   else if(pokemon.fix == null) pokemon.fix = 1;
   else if(pokemon.fix == 1) pokemon.fix = -1;
   else if(pokemon.fix == -1) pokemon.fix = null;
   data.fix = pokemon.fix;
-  PokemonBox.post(pokemon, data.index)
+  PokemonBox.post(pokemon, data.box.index)
   createPokemonList()
 }
 
@@ -322,14 +322,14 @@ function showSelectDetail(pokemon, after, lv) {
                 <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
               </svg>
               <template v-if="(config.sortableTable.pokemonList2.sort.length == 1 && config.sortableTable.pokemonList2.sort[0].key == 'index') || config.sortableTable.pokemonList2.sort.length == 0">
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
+                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.box.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
                   <path d="M0,70 L50,20 L100,70z" fill="#888" />
                 </svg>
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
+                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.box.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
                   <path d="M0,30 L50,80 L100,30z" fill="#888" />
                 </svg>
               </template>
-              <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.index)">
+              <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.box.index)">
                 <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
               </svg>
               <div title="チームのシミュレーションで固定・除外する設定">

@@ -10,6 +10,11 @@ config.version.history = Version.HISTORY;
 
     <h2>更新履歴</h2>
 
+    <h3>2025/04/01</h3>
+    <ul>
+      <li>ボックス画面の一部機能が正常に動作していない不具合の修正</li>
+    </ul>
+
     <h3>2025/03/31</h3>
     <ul>
       <li>クレセリアを追加</li>
