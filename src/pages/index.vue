@@ -220,8 +220,8 @@ async function toggleFix(data, newValue) {
 }
 
 function updateGrowthInfo(data) {
-  let pokemon = PokemonBox.list[data.index]
-  PokemonBox.post(pokemon, data.index)
+  let pokemon = PokemonBox.list[data.box.index]
+  PokemonBox.post(pokemon, data.box.index)
 
   processSimulatedPokemonList();
 }
