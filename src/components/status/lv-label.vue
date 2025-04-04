@@ -21,8 +21,8 @@ function toggleTraining() {
 
 <template>
   <span>
-    <template v-if="props.pokemon.fixLv != null && props.pokemon.fixLv != props.pokemon.lv">
-      <small>{{ props.pokemon.lv }}→</small>{{ props.pokemon.fixLv }}
+    <template v-if="props.pokemon.box?.lv != null && props.pokemon.box?.lv != props.pokemon.lv">
+      <small>{{ props.pokemon.box?.lv }}→</small>{{ props.pokemon.lv }}
       <!-- <CandyIcon @click="toggleTraining" :style="{
         color: props.pokemon.training ? '#6C4' : '#888'
       }" /> -->
