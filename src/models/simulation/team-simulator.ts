@@ -201,7 +201,7 @@ self.addEventListener('message', async (event) => {
           genkiBonusCount += pokemon.subSkillNameList.includes('げんき回復ボーナス') ? 1 : 0;
           shardBonusCount += pokemon.subSkillNameList.includes('ゆめのかけらボーナス') ? 1 : 0;
           suiminExpBonusCount += pokemon.subSkillNameList.includes('睡眠EXPボーナス') ? 1 : 0;
-          legendNum += pokemon.legend;
+          legendNum += pokemon.base.legend;
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.subSkillNameList.includes('リサーチEXPボーナス') ? 1 : 0;
 
           if (typeSetMap[pokemon.type] === undefined) typeSetMap[pokemon.type] = new Set();
