@@ -28,7 +28,7 @@ class Skill {
       energyOnly: true,
     },
     {
-      name: 'きのみバースト',    
+      name: 'きのみバースト',
       effect: [
         { self: 11, other: 1 },
         { self: 14, other: 2 },
@@ -57,6 +57,11 @@ class Skill {
       ].map(x => ({ self: x.self, other: x.other * 0.5 / 5 })), // 大成功は50%、1匹だけなので/5
       genki: true,
       team: true,
+    },
+    {
+      name: 'ナイトメア(エナジーチャージM)',
+      effect: [2640.0, 4839.6, 7039.2, 9238.8, 11438.4, 13638.0],
+      energyOnly: true
     },
     {
       name: 'げんきエールS',

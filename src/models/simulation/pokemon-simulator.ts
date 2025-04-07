@@ -642,6 +642,7 @@ class PokemonSimulator {
         case 'エナジーチャージS(ランダム)':
         case 'エナジーチャージM':
         case 'たくわえる(エナジーチャージS)':
+        case 'ナイトメア(エナジーチャージM)': //XXX: 仮実装
           energy = effect;
           break;
 
