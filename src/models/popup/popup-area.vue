@@ -9,6 +9,7 @@ import Popup from './popup.js'
       <div class="popup">
         <component
           :is="popup.component" v-bind="popup.bind"
+          :id="popup.uuid"
           @close="popup.close($event)"
           @input="popup.input = $event"
           @click.native.stop>

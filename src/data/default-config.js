@@ -86,6 +86,8 @@ const defaultConfig = {
     fix: false,
     fixLv: null,
     fixEvolve: null,
+    fixEvolveExcludeSleep: false,
+    fixResourceMode: 0,
     fixSubSkillSeed: false,
     fixSkillSeed: false,
     fixBorder: 80,
@@ -196,9 +198,13 @@ const defaultConfig = {
   },
 
   candy: {
+    shard: null,
     boostMultiply: 2,
     boostShard: 5,
     bag: {
+      s: 0,
+      m: 0,
+      l: 0,
     },
   },
 
@@ -232,8 +238,8 @@ for(let cooking of Cooking.list) {
 }
 
 // 種ポケをリストアップし所持アメ設定のメンバーにする
-for(const pokemon of Pokemon.list.filter(x => x.before == null)) {
-  defaultConfig.candy.bag[pokemon.name] = 0;
+for(const pokemon of Pokemon.list.filter(x => x.evolve.before == null)) {
+  defaultConfig.candy.bag[pokemon.candyName] = 0;
 }
 
 export default defaultConfig

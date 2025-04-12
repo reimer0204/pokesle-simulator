@@ -1,6 +1,7 @@
 import HelpRate from '../help-rate';
 
 import Pokemon from "../../data/pokemon";
+import Exp from "../../data/exp";
 import Skill from "../../data/skill";
 import { Food, Cooking } from "../../data/food_and_cooking";
 import Nature from "../../data/nature";
@@ -112,9 +113,38 @@ class PokemonSimulator {
     return HelpRate.isReady;
   }
 
-  fromBox(box: PokemonBoxType, fixable: boolean) {
+  fromBox(box: PokemonBoxType, fixable: boolean, useCandy: number = 0, requireLv: number = 0) {
     const base = Pokemon.map[box.name];
-    const lv = fixable && this.config.simulation.fixLv ? Math.max(this.config.simulation.fixLv, box.lv) : box.lv;
+    let lv = box.lv;
+    let useShard = 0;
+    const nature = Nature.map[box.nature];
+
+    if(fixable) {
+      if (this.config.simulation.fixResourceMode == 0) {
+        if (this.config.simulation.fixLv || requireLv) {
+          lv = Math.max(this.config.simulation.fixLv, box.lv, requireLv); 
+        }
+      }
+      if (this.config.simulation.fixResourceMode == 1 || this.config.simulation.fixResourceMode == 2) {
+        const lvLimit = this.config.simulation.fixResourceMode == 1 ? Exp.list.length : Math.max(this.config.simulation.fixLv, requireLv);
+        let totalExp = box.nextExp ? Math.round(Exp.list[box.lv].total * base.exp) - box.nextExp : Math.round(Exp.list[box.lv - 1].total * base.exp)
+        let candyExp = nature.good == 'EXP獲得量' ? 30 : nature.weak == 'EXP獲得量' ? 21 : 25;
+        
+        while(lv < lvLimit) {
+          let nextTotal = Math.round(Exp.list[lv].total * base.exp)
+          const requireCandy = Math.ceil((nextTotal - totalExp) / candyExp)
+          const requireShard = Exp.list[lv - 1].shard * requireCandy;
+          totalExp += candyExp * requireCandy;
+          if (useCandy + requireCandy <= this.config.candy.bag[base.candyName] && (!this.config.candy.shard || requireShard + useShard <= this.config.candy.shard)) {
+            useCandy += requireCandy
+            useShard += requireShard
+            lv++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
 
     // 銀種
     // 有効なサブスキル計算
@@ -149,6 +179,8 @@ class PokemonSimulator {
         || this.config.simulation.eventBonusType == base.type
         || this.config.simulation.eventBonusType == base.specialty,
       box.sleepTime,
+      useCandy,
+      useShard,
     );
     pokemon.box = box;
     pokemon.fixable = fixable;
@@ -162,7 +194,7 @@ class PokemonSimulator {
     this.calcParameter(
       pokemon,
       enableSubSkillList.map(x => SubSkill.map[x]),
-      Nature.map[box.nature],
+      nature,
       (
         this.config.simulation.field == 'ワカクサ本島' ? this.config.simulation.berryList : Field.map[this.config.simulation.field].berryList
       )?.includes(pokemon.base.berry.name) ? 200 : 100,
@@ -206,6 +238,8 @@ class PokemonSimulator {
     skillLv: number,
     eventBonus: boolean = false,
     sleepTime: number,
+    useCandy: number = 0,
+    useShard: number = 0,
   ): SimulatedPokemon {
     const firstFoodEnergy = Food.map[foodNameList[0]].energy * (base.specialty == '食材' ? 2 : 1)
 
@@ -217,6 +251,8 @@ class PokemonSimulator {
       foodProbList: [],
       eventBonus,
       sleepTime,
+      useCandy,
+      useShard,
     }
 
     let foodUnlock = lv >= 60 ? 3 : lv >= 30 ? 2 : 1;

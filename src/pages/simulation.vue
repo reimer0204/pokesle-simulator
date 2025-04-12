@@ -151,7 +151,8 @@ async function simulation() {
 
     simulationResult.value = {
       targetDay: customConfig.teamSimulation.day,
-      teamList: bestResult
+      teamList: bestResult,
+      config: customConfig,
     }
 
     // console.log(performance.now() - startAt);
@@ -333,7 +334,10 @@ async function showEditPopup(pokemon) {
                 </thead>
                 <tbody>
                   <tr>
-                    <th class="vertical" :rowspan="config.teamSimulation.result.detail ? 13 : 10">編成</th>
+                    <th class="vertical" :rowspan="
+                      (config.teamSimulation.result.detail ? 13 : 10)
+                      + (simulationResult.config.simulation.fix && simulationResult.config.simulation.fixResourceMode != 0 ? 2 : 0)
+                    ">編成</th>
                     <th class="white-space-nowrap">名前</th>
                     <td v-for="pokemon in result.pokemonList">
                       <div class="flex-row-start-center gap-5px">
@@ -350,6 +354,19 @@ async function showEditPopup(pokemon) {
                     <td v-for="pokemon in result.pokemonList"><LvLabel :pokemon="pokemon" /></td>
                     <td></td>
                   </tr>
+                  
+                  <template v-if="simulationResult.config.simulation.fix && simulationResult.config.simulation.fixResourceMode != 0">
+                    <tr>
+                      <th>使用アメ</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">{{ pokemon.useCandy?.toLocaleString() }}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <th>使用ゆめのかけら</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">{{ pokemon.useShard?.toLocaleString() }}</td>
+                      <td></td>
+                    </tr>
+                  </template>
 
                   <tr>
                     <th>食材</th>
@@ -419,7 +436,7 @@ async function showEditPopup(pokemon) {
                   <tr>
                     <th>スキル</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.skill?.name">{{ pokemon.skill?.name }}(Lv{{ pokemon.fixedSkillLv }})</template>
+                      <template v-if="pokemon.base.skill?.name">{{ pokemon.base.skill?.name }}(Lv{{ pokemon.fixedSkillLv }})</template>
                     </td>
                     <td class="text-align-right">
                     </td>

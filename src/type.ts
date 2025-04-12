@@ -85,18 +85,27 @@ interface PokemonType {
   berry: BerryType;
   specialty: string;
   skill: SkillType;
-  before?: string | null;
   type?: string;
   evolveLv?: number;
   remainEvolveLv?: number;
   foodNameList: string[];
   bag: number;
   help: number;
+  exp: number;
   foodRate: number;
   skillRate: number;
   afterList: string[];
   seed?: string;
   isLast?: boolean;
+  candyName: string;
+
+  evolve: {
+    before?: string | null;
+    lv?: number | null;
+    candy: number | null;
+    itemList: string[],
+    sleep?: number | null,
+  },
 
   foodNumListMap: { [key: string]: (number | null)[] }
 }

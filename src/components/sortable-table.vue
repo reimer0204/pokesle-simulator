@@ -49,7 +49,7 @@ const convertedDataList = computed(() => {
 
     for(let column of props.columnList) {
       if (column.convert) {
-        newData.$clone[column.key] = column.convert(data);
+        newData.$clone[column.key] = column.convert(newData.$clone);
       }
     }
 

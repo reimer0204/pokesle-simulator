@@ -61,8 +61,8 @@ addEventListener('message', async (event) => {
 
       // 厳選
       if (evaluateTable) {
-        evaluateResult = {}
-        evaluateSpecialty = {}
+        evaluateResult = null
+        evaluateSpecialty = null
         let foodIndexList = pokemonList[i].foodList.map(foodName => base.foodNameList.findIndex(baseFood => baseFood == foodName))
         if (!foodIndexList.includes(-1)) {
 
@@ -70,6 +70,9 @@ addEventListener('message', async (event) => {
             if (!evaluateTable[after]) {
               continue;
             }
+            
+            if (evaluateResult == null) evaluateResult = {}
+            if (evaluateSpecialty == null) evaluateSpecialty = {}
 
             let afterPokemon = Pokemon.map[after];
             let evaluateMaxScore = 0;
@@ -154,8 +157,10 @@ addEventListener('message', async (event) => {
             fix ||= thisFix
 
             // 最終進化想定シミュをする場合、別個体に切り出し
-            if (thisFix && config.simulation.fixEvolve) {
-              addPokemonList.push(after)
+            if (thisFix && (config.simulation.fixEvolve || config.simulation.fixResourceMode == 1)) {
+              if (!config.simulation.fixEvolveExcludeSleep || !Pokemon.map[after].requireSleep[pokemonList[i].name]) {
+                addPokemonList.push(after)
+              }
             }
           }
         }
@@ -165,11 +170,31 @@ addEventListener('message', async (event) => {
         addPokemonList.push(box.name);
       }
 
-      for(let pokemonName of addPokemonList) {
+      let thisResult: SimulatedPokemon[] = [];
+      for(let j = 0; j < addPokemonList.length; j++) {
+        let pokemonName = addPokemonList[j]
+        const base = Pokemon.map[pokemonName];
+        let simulatedPokemon = simulator.fromBox(
+          { ...pokemonList[i], name: pokemonName }, 
+          fix, 
+          config.simulation.fixResourceMode == 0 ? 0 : base.evolveCandyMap[pokemonList[i].name],
+          pokemonList[i].name != pokemonName ? base.evolve.lv : 0,
+        );
 
-        const simulatedPokemon = simulator.fromBox({ ...pokemonList[i], name: pokemonName }, fix);
+        if (pokemonList[i].name != pokemonName && simulatedPokemon.lv < base.evolve.lv) {
+          if (j == addPokemonList.length - 1 && thisResult.length == 0) {
+            simulatedPokemon = simulator.fromBox(
+              { ...pokemonList[i] }, 
+              fix, 
+              0,
+              0,
+            );
+          } else {
+            continue;
+          }
+        }
         simulatedPokemon.beforeName = pokemonList[i].name;
-        result.push(simulatedPokemon)
+        thisResult.push(simulatedPokemon)
 
         if (evaluateResult && evaluateSpecialty) {
           if (pokemonName == box.name) {
@@ -190,7 +215,7 @@ addEventListener('message', async (event) => {
             }
           }
           
-          if (simulatedPokemon.evaluateResult) {
+          if (simulatedPokemon.evaluateResult?.[lvList[0]]) {
             simulatedPokemon.evaluateResult.max = {};
             simulatedPokemon.evaluateSpecialty.max = {};
             for(let after of Object.keys(simulatedPokemon.evaluateResult[lvList[0]])) {
@@ -208,6 +233,7 @@ addEventListener('message', async (event) => {
           }
         }
       }
+      result.push(...thisResult)
     }
     
     if (config.simulation.bagOverOperation) {
@@ -334,12 +360,19 @@ addEventListener('message', async (event) => {
               }
               break;
             }
+
+            case 'みかづきのいのり(げんきオールS)': {
+              let berryEnergySum = [...berryEnergyTop5.filter(x => x.box.index != pokemon.box.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
+              pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
+              break;
+            }
             
             case 'おてつだいサポートS':
-            case 'おてつだいブースト':
+            case 'おてつだいブースト': {
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.box.index != pokemon.box.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
               pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
               break;
+            }
           }
           if (supportSkillEnergy) {
             pokemon.supportEnergyPerDay += supportSkillEnergy * pokemon.skillPerDay * weight

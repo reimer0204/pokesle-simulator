@@ -1,5 +1,7 @@
 <script setup>
-const showingPopup = ref(false);
+import Popup from '@/models/popup/popup.js';
+import SettingButtonPopup from './setting-button-popup.vue';
+
 const props = defineProps({
   title: { type: String },
   important: { type: Boolean },
@@ -7,13 +9,23 @@ const props = defineProps({
 defineOptions({
   inheritAttrs: false
 })
+const emit = defineEmits(['close']);
+
+let popup = ref(null);
+async function showPopup() {
+  const promise = Popup.show(SettingButtonPopup);
+  popup.value = promise.popup;
+  await promise;
+  popup.value = null;
+  emit('close')
+}
 
 </script>
 
 <template>
 
   <button
-    class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : (showingPopup = true)"
+    class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : showPopup()"
     :class="{
       important: props.important,
     }"
@@ -24,28 +36,24 @@ defineOptions({
       <path d="M10,25L50,65L90,25" fill="none" stroke-width="20" stroke="#FFF" />
     </svg>
 
-    <Teleport to="body">
-      <div v-if="showingPopup" class="popup-back" @mousedown.self="showingPopup = false">
-        <div class="popup-wrapper">
-          <div class="popup">
-                    
-            <slot name="header">
-              <div class="header flex-row-start-center gap-15px">
-                <slot name="headerText">{{ title }}</slot>
+    
+    <Teleport defer v-if="popup?.uuid" :to="`#${popup?.uuid}`">
+      <div class="popup">
+        <slot name="header">
+          <div class="header flex-row-start-center gap-15px">
+            <slot name="headerText">{{ title }}</slot>
 
-                <svg viewBox="0 0 100 100" width="20" class="ml-auto" @click="showingPopup = false">
-                  <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888"  />
-                </svg>
-              </div>
-            </slot>
-            
-            <slot name="bodyWrapper">
-              <div class="body-wrapper">
-                <slot></slot>
-              </div>
-            </slot>
+            <svg viewBox="0 0 100 100" width="20" class="ml-auto" @click="popup.close()">
+              <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888"  />
+            </svg>
           </div>
-        </div>
+        </slot>
+        
+        <slot name="bodyWrapper">
+          <div class="body-wrapper">
+            <slot></slot>
+          </div>
+        </slot>
       </div>
     </Teleport>
   </button>
@@ -73,40 +81,20 @@ defineOptions({
   }
 }
 
-.popup-back {
-  display: block;
-  height: 100%;
-  position: fixed;
-  inset: 0;
-  overflow: auto;
-  padding: 70px 0;
-  background-color: rgba(0, 0, 0, 0.2);
-  z-index: 999;
+.popup {
+  pointer-events: auto;
+  background-color: #FFF;
+  border-radius: 10px;
   
-  .popup-wrapper {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
-
-    .popup {
-      pointer-events: auto;
-      background-color: #FFF;
-      border-radius: 10px;
-      
-      .header {
-        padding: 10px 15px;
-        font-size: 20px;
-        font-weight: bold;
-        border-bottom: 1px #CCC solid;
-      }
-      
-      .body-wrapper {
-        padding: 20px;
-      }
-    }
+  .header {
+    padding: 10px 15px;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 1px #CCC solid;
+  }
+  
+  .body-wrapper {
+    padding: 20px;
   }
 }
 </style>

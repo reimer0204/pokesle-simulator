@@ -266,6 +266,9 @@ for(let food of Food.list) {
     'デザート': 1,
   }
   food.bestRate = 0
+  food[`maxAddEnergy_カレー`] = 0;
+  food[`maxAddEnergy_サラダ`] = 0;
+  food[`maxAddEnergy_デザート`] = 0;
 }
 Food.maxEnergy = Math.max(...Food.list.map(x => x.energy))
 Food.averageEnergy = Food.list.reduce((a, x) => a + x.energy, 0) / Food.list.length;
@@ -286,6 +289,7 @@ for(let cooking of Cooking.list) {
     if (Food.map[name].bestTypeRate[cooking.type] == null || Food.map[name].bestTypeRate[cooking.type] < cooking.rate) {
       Food.map[name].bestTypeRate[cooking.type] = cooking.rate;
     }
+    Food.map[name][`maxAddEnergy_${cooking.type}`] = Math.max(Food.map[name][`maxAddEnergy_${cooking.type}`], cooking.maxAddEnergy)
   }
 }
 Cooking.maxFoodNum = Math.max(...Cooking.list.map(x => x.foodNum));

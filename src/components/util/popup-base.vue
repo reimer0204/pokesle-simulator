@@ -1,4 +1,7 @@
 <script setup>
+const props = defineProps({
+  bodyClass: { type: String }
+})
 const $emit = defineEmits(['close'])
 
 </script>
@@ -16,7 +19,7 @@ const $emit = defineEmits(['close'])
     </slot>
 
     <slot name="bodyWrapper">
-      <div class="body-wrapper">
+      <div class="body-wrapper" :class="props.bodyClass">
         <slot></slot>
       </div>
     </slot>
@@ -39,6 +42,8 @@ const $emit = defineEmits(['close'])
 
   .body-wrapper {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
 }
 

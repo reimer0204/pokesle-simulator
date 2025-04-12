@@ -195,6 +195,8 @@ self.addEventListener('message', async (event) => {
         let legendNum = 0;
         let todayShard = 0;
         let todayResearchExp = 0;
+        let useTotalShard = 0;
+        let useCandies = {};
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.subSkillNameList.includes('おてつだいボーナス') ? 1 : 0;
@@ -202,6 +204,12 @@ self.addEventListener('message', async (event) => {
           shardBonusCount += pokemon.subSkillNameList.includes('ゆめのかけらボーナス') ? 1 : 0;
           suiminExpBonusCount += pokemon.subSkillNameList.includes('睡眠EXPボーナス') ? 1 : 0;
           legendNum += pokemon.base.legend;
+          useTotalShard += pokemon.useShard;
+          useCandies[pokemon.base.candyName] = (useCandies[pokemon.base.candyName] ?? 0) + pokemon.useCandy;
+          if (useCandies[pokemon.base.candyName] > (config.candy.bag[pokemon.base.candyName] ?? 0)) {
+            continue combinationLoop;
+          }
+
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.subSkillNameList.includes('リサーチEXPボーナス') ? 1 : 0;
 
           if (typeSetMap[pokemon.type] === undefined) typeSetMap[pokemon.type] = new Set();
@@ -222,6 +230,11 @@ self.addEventListener('message', async (event) => {
 
         // 伝説は2匹以上入れられない
         if (legendNum >= 2) {
+          continue;
+        }
+
+        // 仮定計算をしていて所持ゆめのかけらを超える場合は不採用
+        if (config.simulation.fix && config.simulation.fixResourceMode != 0 && config.candy.shard && useTotalShard > config.candy.shard) {
           continue;
         }
 

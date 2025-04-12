@@ -410,6 +410,13 @@ function changeColor() {
       <div>メモ</div>
       <div></div>
       <label><input class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
+      
+      <div>所持アメ</div>
+      <div></div>
+      <label>
+        <input v-if="basePokemon" class="w-100" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
+        <input v-else class="w-100" type="number" disabled placeholder="アメ数"/>
+      </label>
     </div>
 
     <ToggleArea class="mt-20px" open v-if="simulatedPokemonList">

@@ -71,6 +71,9 @@ export default class EvaluateTable {
     // 最終進化のポケモンだけチェック
     let pokemonList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
 
+    // 特定のポケモンは厳選生成の対象外
+    pokemonList = pokemonList.filter(x => x.name != 'ダークライ')
+
     // スキルが計算しやすいポケモンと、そうでないポケモンの2つに分ける
     let normalPokemonList = pokemonList.filter(pokemon => !pokemon.skill.team && !pokemon.skill.shard)
     let supportPokemonList = pokemonList.filter(pokemon => pokemon.skill.team ||  pokemon.skill.shard)

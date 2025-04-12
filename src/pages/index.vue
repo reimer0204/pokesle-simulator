@@ -68,6 +68,9 @@ const columnList = computed(() => {
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
     { key: 'name', name: '名前', type: String, convert: x => x.box.name },
     { key: 'lv', name: 'Lv', type: Number },
+    // { key: 'useCandy', name: '使用アメ', type: Number },
+    // { key: 'useShard', name: '使用ゆめかけ', type: Number },
+    
     { key: 'foodNameList', name: '食材', type: null, convert: x => x.box.foodList },
     { key: 'skillLv', name: 'ｽｷﾙ\nLv', type: null, convert: x => x.fixedSkillLv },
     { key: 'subSkill', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
@@ -101,7 +104,7 @@ const columnList = computed(() => {
 
   if (config.pokemonList.candy) {
     result.push(
-      { key: 'candy', name: '所持ｱﾒ', convert: x => config.candy.bag[x.base.seed] },
+      { key: 'candy', name: '所持ｱﾒ', convert: x => config.candy.bag[x.base.candyName] },
       { key: 'training', name: '目標Lv', convert: x => x?.box.training },
       { key: 'nextExp', name: '次Lv迄\nのExp', convert: x => x?.box.nextExp },
       { key: 'normalCandyNum', name: '通常\nｱﾒ', type: Number },
@@ -243,7 +246,7 @@ function showSelectDetail(pokemon, after, lv) {
   <div class="page">
 
     <div class="flex-row-start-start flex-wrap gap-5px">
-      <CommonSetting />
+      <CommonSetting @requireReload="createPokemonList(true)" />
       
       <SettingButton title="表示設定">
         <template #label>
@@ -496,7 +499,7 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #candy="{ data, column }">
-            <input type="number" class="w-50px" v-model="config.candy.bag[data.base.seed]" />
+            <input type="number" class="w-50px" v-model="config.candy.bag[data.base.candyName]" />
           </template>
 
           <template #training="{ data, column }">
