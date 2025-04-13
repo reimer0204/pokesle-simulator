@@ -14,7 +14,7 @@ import config from '../models/config.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import PokemonBox from '../models/pokemon-box/pokemon-box.js';
-import Popup from '../models/popup/popup.js';
+import Popup from '../models/popup/popup.ts';
 import EvaluateTable from '../models/simulation/evaluate-table.js';
 import PokemonInfo from './box-summary/pokemon-info.vue';
 

@@ -1,5 +1,5 @@
 <script setup>
-import Popup from '@/models/popup/popup.js';
+import Popup from '@/models/popup/popup.ts';
 import SettingButtonPopup from './setting-button-popup.vue';
 
 const props = defineProps({

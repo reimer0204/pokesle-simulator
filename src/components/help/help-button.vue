@@ -1,5 +1,5 @@
 <script setup>
-import Popup from '../../models/popup/popup.js';
+import Popup from '../../models/popup/popup.ts';
 import HelpPopup from './help-popup.vue';
 
 const props = defineProps({

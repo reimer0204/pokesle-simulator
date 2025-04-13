@@ -7,7 +7,7 @@ import Pokemon from '../data/pokemon';
 import config from '../models/config.js';
 import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
-import Popup from '../models/popup/popup.js';
+import Popup from '../models/popup/popup.ts';
 import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker';
 import SubSkill from '../data/sub-skill';
 import Nature from '@/data/nature';

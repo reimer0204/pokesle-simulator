@@ -92,6 +92,10 @@ interface PokemonType {
   bag: number;
   help: number;
   exp: number;
+  foodList: {
+    name: string;
+    numList: (number | null)[];
+  }[],
   foodRate: number;
   skillRate: number;
   afterList: string[];
@@ -111,7 +115,7 @@ interface PokemonType {
 }
 
 interface SimulatedPokemon {
-  box?: any;
+  box?: PokemonBoxType;
   base: PokemonType;
   lv: number;
   foodList: SimulatedFood[];

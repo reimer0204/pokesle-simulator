@@ -7,7 +7,7 @@ import NightCapPikachu from '../data/nightcap_pikachu';
 import config from '../models/config';
 import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter';
-import Popup from '../models/popup/popup';
+import Popup from '../models/popup/popup.ts';
 import ResourceEditPopup from './resource-edit-popup.vue';
 
 const disabledCookingNum = computed(() => {

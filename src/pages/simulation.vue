@@ -11,7 +11,7 @@ import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter.js';
-import Popup from '../models/popup/popup.js';
+import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';

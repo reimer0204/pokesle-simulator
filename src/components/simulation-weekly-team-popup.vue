@@ -14,7 +14,7 @@ import NatureInfo from './status/nature-info.vue';
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 import SettingList from './util/setting-list.vue';
-import Popup from '../models/popup/popup';
+import Popup from '../models/popup/popup.ts';
 import EditPokemonPopup from './edit-pokemon-popup.vue';
 
 const props = defineProps({

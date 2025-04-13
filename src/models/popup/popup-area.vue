@@ -1,5 +1,5 @@
 <script setup>
-import Popup from './popup.js'
+import Popup from './popup.ts'
 
 </script>
 

@@ -16,6 +16,7 @@ declare module 'vue' {
     DesignTable: typeof import('./src/components/design-table.vue')['default']
     DetailSettingPopup: typeof import('./src/components/detail-setting-popup.vue')['default']
     EditPokemonPopup: typeof import('./src/components/edit-pokemon-popup.vue')['default']
+    EvaluateResult: typeof import('./src/components/page-assist/index/evaluate-result.vue')['default']
     EvaluateTableDetailPopup: typeof import('./src/components/evaluate-table-detail-popup.vue')['default']
     FoodList: typeof import('./src/components/status/food-list.vue')['default']
     GoogleSpreadsheetPopup: typeof import('./src/components/google-spreadsheet-popup.vue')['default']

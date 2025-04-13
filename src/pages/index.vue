@@ -16,8 +16,9 @@ import config from '../models/config.js';
 import EvaluateTable from '../models/simulation/evaluate-table.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box/pokemon-box.js';
-import Popup from '../models/popup/popup.js';
+import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
+import EvaluateResult from '@/components/page-assist/index/evaluate-result.vue';
 
 let evaluateTable = EvaluateTable.load(config);
 
@@ -279,7 +280,7 @@ function showSelectDetail(pokemon, after, lv) {
                 </div>
               </div>
               <div class="mt-5px">
-                <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />厳選詳細</label>
+                <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />最適でない進化先の厳選値も表示</label>
                 <div class="w-300px">
                   <small>進化先が複数あるポケモンについて、最も適正が高い進化先以外の結果もすべて表示します。</small>
                 </div>
@@ -388,114 +389,19 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #evaluate="{ data, column }">
-            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.base.afterList">
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
-                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].score)">-</template>
-                  <template v-else>{{ (data.evaluateResult?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
-                </div>
-              </template>
-            </div>
-            <div v-else style="width: 6em; font-size: 80%;">
-              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
-
-              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.score)">
-                -
-              </template>
-              <template v-else-if="column.lv != 'max'">
-                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
-                  {{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%
-                </div>
-              </template>
-              <template v-else>
-                <div class="text-align-right">{{ (data.evaluateResult?.[column.lv].best.score * 100).toFixed(1) }}%</div>
-              </template>
-
-            </div>
+            <EvaluateResult :pokemon="data" :lv="column.lv" />
           </template>
 
           <template #evaluate_energy="{ data, column }">
-            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.base.afterList">
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateResult?.[column.lv]?.best.score == data.evaluateResult?.[column.lv]?.[after].score }" class="text-align-right">
-                  <template v-if="isNaN(data.evaluateResult?.[column.lv]?.[after].energy)">-</template>
-                  <template v-else>{{ Math.round(data.evaluateResult?.[column.lv]?.[after].energy).toLocaleString() }}</template>
-                </div>
-              </template>
-            </div>
-            <div v-else style="width: 6em; font-size: 80%;">
-              <div>{{ data.evaluateResult?.[column.lv].best.name }}</div>
-
-              <template v-if="isNaN(data.evaluateResult?.[column.lv].best.energy)">-</template>
-              <template v-else-if="column.lv != 'max'">
-                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateResult?.[column.lv].best.name, column.lv)">
-                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
-                </div>
-              </template>
-              <template v-else>
-                <div class="text-align-right">
-                  {{ Math.round(data.evaluateResult?.[column.lv].best.energy).toLocaleString() }}
-                </div>
-              </template>
-
-            </div>
+            <EvaluateResult :pokemon="data" :lv="column.lv" field="energy" />
           </template>
 
           <template #specialty="{ data, column }">
-            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.afterList">
-                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
-                  <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].score)">-</template>
-                  <template v-else>{{ (data.evaluateSpecialty?.[column.lv]?.[after].score * 100).toFixed(1) }}%</template>
-                </div>
-              </template>
-            </div>
-            <div v-else style="width: 6em; font-size: 80%;">
-              <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
-
-              <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.score)">
-                -
-              </template>
-              <template v-else-if="column.lv != 'max'">
-                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
-                  {{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%
-                </div>
-              </template>
-              <template v-else>
-                <div class="text-align-right">{{ (data.evaluateSpecialty?.[column.lv].best.score * 100).toFixed(1) }}%</div>
-              </template>
-            </div>
+            <EvaluateResult :pokemon="data" :lv="column.lv" type="evaluateSpecialty" />
           </template>
 
           <template #specialty_num="{ data, column }">
-            <div v-if="config.pokemonList.selectDetail" class="evaluate-detail">
-              <template v-for="after in data.afterList">
-                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }">{{ after }}</div>
-                <div :class="{ best: data.evaluateSpecialty?.[column.lv]?.best.score == data.evaluateSpecialty?.[column.lv]?.[after].score }" class="text-align-right">
-                  <template v-if="isNaN(data.evaluateSpecialty?.[column.lv]?.[after].num)">-</template>
-                  <template v-else>{{ data.evaluateSpecialty?.[column.lv]?.[after].num.toFixed(1) }}</template>
-                </div>
-              </template>
-            </div>
-            <div v-else style="width: 6em; font-size: 80%;">
-              <div>{{ data.evaluateSpecialty?.[column.lv].best.name }}</div>
-
-              <template v-if="isNaN(data.evaluateSpecialty?.[column.lv].best.num)">-</template>
-              <template v-else-if="column.lv != 'max'">
-                <div class="text-align-right percentile" @click="showSelectDetail(data, data.evaluateSpecialty?.[column.lv].best.name, column.lv)">
-                  {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
-                </div>
-              </template>
-              <template v-else>
-                <div class="text-align-right">
-                  {{ data.evaluateSpecialty?.[column.lv].best.num.toFixed(1) }}
-                </div>
-              </template>
-
-            </div>
+            <EvaluateResult :pokemon="data" :lv="column.lv" type="evaluateSpecialty" field="num" />
           </template>
 
           <template #candy="{ data, column }">

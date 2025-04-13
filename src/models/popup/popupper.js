@@ -1,5 +1,5 @@
 import PopupArea from "./popup-area.vue"
-import PopupList from "./popup";
+import PopupList from "./popup.ts";
 
 export default class Popupper {
 
