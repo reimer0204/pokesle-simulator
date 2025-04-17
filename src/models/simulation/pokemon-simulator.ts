@@ -42,6 +42,7 @@ class PokemonSimulator {
   #probBorder;
   #berryEnergyWeight = 1;
   #skillEnergyIgnore = 0;
+  #freeCandy = 0;
 
 
   static MODE_ABOUT = 1;
@@ -107,6 +108,7 @@ class PokemonSimulator {
     // 期待値計算
     this.#expectType = mode == PokemonSimulator.MODE_SELECT ? config.selectEvaluate.expectType : config.simulation.expectType;
     this.#probBorder = new ProbBorder(this.#expectType.border / 100)
+    this.#freeCandy = config.candy.bag.s * 3 + config.candy.bag.m * 20 + config.candy.bag.l * 100
   }
 
   static get isReady() {
@@ -135,7 +137,7 @@ class PokemonSimulator {
           const requireCandy = Math.ceil((nextTotal - totalExp) / candyExp)
           const requireShard = Exp.list[lv - 1].shard * requireCandy;
           totalExp += candyExp * requireCandy;
-          if (useCandy + requireCandy <= this.config.candy.bag[base.candyName] && (!this.config.candy.shard || requireShard + useShard <= this.config.candy.shard)) {
+          if (useCandy + requireCandy <= this.config.candy.bag[base.candyName] + this.#freeCandy && (!this.config.candy.shard || requireShard + useShard <= this.config.candy.shard)) {
             useCandy += requireCandy
             useShard += requireShard
             lv++;
