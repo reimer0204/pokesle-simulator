@@ -116,6 +116,7 @@ self.addEventListener('message', async (event: {
             if (pokemon.specialty == 'きのみ') specialtyScore = eachResult.berryNumPerDay;
             if (pokemon.specialty == '食材')   specialtyScore = eachResult.foodNumPerDay;
             if (pokemon.specialty == 'スキル') specialtyScore = eachResult.skillPerDay;
+            if (pokemon.specialty == 'オール') specialtyScore = eachResult.skillPerDay;
             specialtyNumList.push({ score: specialtyScore, weight: weight.weight * natureWeight })
 
           }

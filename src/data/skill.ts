@@ -14,6 +14,19 @@ class Skill {
     { name: 'たくわえる(エナジーチャージS)', effect: [579, 823, 1135, 1567, 2163, 2988, 4341], metronome: false, energyOnly: true },
     { name: 'エナジーチャージM',             effect: [800.0, 1251.0,	1726.0,	2383.0,	3290.0,	4546.0,	6409.0], energyOnly: true },
     {
+      name: 'ナイトメア(エナジーチャージM)',
+      effect: [
+        { energy:  2640, other: -12 },
+        { energy:  3753, other: -12 },
+        { energy:  5178, other: -12 },
+        { energy:  7149, other: -12 },
+        { energy:  9870, other: -12 },
+        { energy: 13638, other: -12 },
+      ],
+      metronome: false,
+      genki: true,
+    },
+    {
       name: 'ばけのかわ(きのみバースト)',    
       effect: [
         { self: 8,  other: 1 },
@@ -99,11 +112,11 @@ class Skill {
     },
     { name: '料理パワーアップS',             effect: [  7.0,   10.0,	  12.0,	  17.0,	  22.0,   27.0,   31.0] },
     { name: '料理チャンスS',                 effect: [  4.0,    5.0,    6.0,	   7.0,	   8.0,	  10.0] },
-    { name: 'ゆめのかけらゲットS',           effect: [240.0,  340.0,	 480.0,	 670.0,	 920.0,	1260.0,	1800.0], shard: true },
-    { name: 'ゆめのかけらゲットS(ランダム)', effect: [300.0,  425.0,	 600.0,	 837.5,	1150.0,	1575.0,	2250.0], shard: true },
+    { name: 'ゆめのかけらゲットS',           effect: [240.0,  340.0,	 480.0,	 670.0,	 920.0,	1260.0,	1800.0, 2500.0], shard: true },
+    { name: 'ゆめのかけらゲットS(ランダム)', effect: [300.0,  425.0,	 600.0,	 837.5,	1150.0,	1575.0,	2250.0, 2875.0], shard: true },
     { name: 'へんしん(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
     { name: 'ものまね(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
-    { name: 'ゆびをふる',                    effect: [ null,   null,    null,   null,   null,   null], team: true, },
+    { name: 'ゆびをふる',                    effect: [ null,   null,    null,   null,   null,   null, null], team: true, },
   ];
   static map: { [key: string]: SkillType } = Skill.list.reduce((a: { [key: string]: SkillType }, x) => (a[x.name] = x, a), {});;
   static metronomeTarget = Skill.list.filter(x => x.name != 'ゆびをふる' && x.metronome !== false);

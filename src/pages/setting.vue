@@ -26,7 +26,7 @@ async function save() {
 
 }
 
-const specialtyList = ['きのみ', '食材', 'スキル']
+const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
 
 </script>
 
@@ -150,12 +150,10 @@ const specialtyList = ['きのみ', '食材', 'スキル']
         </div>
         <div>
           <label>おてつだいボーナス評価</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.helpBonus" step="1" min="0" max="25"> %</div>
+          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.teamHelpBonus" step="1" min="0" max="4"> 匹</div>
           <small>
-            おてつだいボーナスが短縮する割合を指定します。<br>
-            25%にした場合、おてつだいスピードMは10%分しか評価されません。<br>
-            25%未満の場合、余りは単に倍率になります。<br>
-            (20%の場合、結果を更に0.95で割る)
+            自分以外の4匹におてつだいボーナスが何匹いるか指定します。<br>
+            3が一番おてつだいボーナス＋おてつだいスピードMを高く評価できます。
           </small>
         </div>
         <div>
@@ -187,9 +185,7 @@ const specialtyList = ['きのみ', '食材', 'スキル']
         <thead>
           <tr>
             <th></th>
-            <th>きのみ</th>
-            <th>食材</th>
-            <th>スキル</th>
+            <th v-for="specialty in specialtyList">{{ specialty }}</th>
             <th>下振れ考慮</th>
             <th>備考</th>
           </tr>

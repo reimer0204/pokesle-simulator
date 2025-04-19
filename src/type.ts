@@ -8,15 +8,15 @@ interface CookingType {
   lv1?: number;
   lv2?: number;
   lv3?: number;
-  rate?: number;
-  recipeLvBonus?: number;
-  fixEnergy?: number;
-  fixAddEnergy?: number;
+  rate: number;
+  recipeLvBonus: number;
+  fixEnergy: number;
+  fixAddEnergy: number;
   enable?: boolean;
-  foodNum?: number;
-  maxEnergy?: number;
-  addEnergy?: number;
-  maxAddEnergy?: number;
+  foodNum: number;
+  maxEnergy: number;
+  addEnergy: number;
+  maxAddEnergy: number;
 }
 
 interface NatureType {
@@ -83,15 +83,16 @@ interface PokemonBoxType {
 interface PokemonType {
   name: string;
   berry: BerryType;
-  specialty: string;
+  specialty: 'きのみ' | '食材' | 'スキル' | 'オール';
   skill: SkillType;
-  type?: string;
+  type: string;
   evolveLv?: number;
   remainEvolveLv?: number;
   foodNameList: string[];
   bag: number;
   help: number;
   exp: number;
+  legend: boolean,
   foodList: {
     name: string;
     numList: (number | null)[];
@@ -102,6 +103,8 @@ interface PokemonType {
   seed?: string;
   isLast?: boolean;
   candyName: string;
+  requireSleep: { [key: string]: number };
+  evolveCandyMap: { [key: string]: number };
 
   evolve: {
     before?: string | null;
@@ -129,69 +132,75 @@ interface SimulatedPokemon {
   sleepTime: number,
   fixable?: boolean,
   beforeName?: string;
+
+  useShard: number;
+  useCandy: number;
   
   subSkillList?: SubSkillType[];
-  subSkillNameList: [string, string, string, string, string];
+  subSkillNameList: string[];
   nextSubSkillList?: boolean[];
-  nature?: NatureType;
-  skillWeightList?: { skill: SkillType, weight: number }[];
+  nature: NatureType;
+  skillWeightList: { skill: SkillType, weight: number }[];
+  healList: { effect: number, time: number, night?: boolean }[],
   
-  cookingPowerUpEffect?: number;
-  cookingChanceEffect?: number;
-  supportScorePerDay?: number;
-  supportEnergyPerDay?: number;
-  shard?: number;
+  cookingPowerUpEffect: number;
+  cookingChanceEffect: number;
+  supportScorePerDay: number;
+  supportEnergyPerDay: number;
+  shard: number;
 
   // 個体から算出できる結果
-  berryNum?: number;
-  berryEnergy?: number;
-  berryEnergyPerHelp?: number;
-  foodRate?: number;
-  foodNum?: number;
-  foodEnergyPerHelp?: number;
-  pickupEnergyPerHelp?: number;
-  bag?: number;
-  bagFullHelpNum?: number;
-  fixedSkillLv?: number;
-  skillRate?: number;
-  skillCeil?: number;
-  ceilSkillRate?: number;
-  natureGenkiMultiplier?: number;
+  berryNum: number;
+  berryEnergy: number;
+  berryEnergyPerHelp: number;
+  foodRate: number;
+  foodNum: number;
+  foodEnergyPerHelp: number;
+  pickupEnergyPerHelp: number;
+  bag: number;
+  bagFullHelpNum: number;
+  fixedSkillLv: number;
+  skillRate: number;
+  skillCeil: number;
+  ceilSkillRate: number;
+  natureGenkiMultiplier: number;
 
   // チームによって決まる
-  speedBonus?: number;
-  speed?: number;
-  baseDayHelpNum?: number;
-  morningHealGenki?: number;
-  selfMorningHealEffect?: number;
-  selfDayHealEffect?: number;
-  otherMorningHealEffect?: number;
-  otherDayHealEffect?: number;
+  speedBonus: number;
+  speed: number;
+  baseDayHelpNum: number;
+  morningHealGenki: number;
+  // selfMorningHealEffect?: number;
+  // selfDayHealEffect?: number;
+  // otherMorningHealEffect?: number;
+  // otherDayHealEffect?: number;
+  selfHeal: number;
+  otherHeal: number;
   
   // 回復量によって決まる
-  morningHealEffect?: number;
-  dayHealEffect?: number;
-  healEffect?: number;
-  dayHelpNum?: number;
-  nightHelpNum?: number;
-  dayHelpRate?: number;
-  nightHelpRate?: number;
-  averageHelpRate?: number;
-  normalDayHelpNum?: number;
-  normalNightHelpNum?: number;
-  normalHelpNum?: number;
-  berryHelpNum?: number;
-  berryEnergyPerDay?: number;
-  berryNumPerDay?: number;
-  foodEnergyPerDay?: number;
-  foodNumPerDay?: number;
-  pickupEnergyPerDay?: number;
-  skillPerDay?: number;
-  skillEnergy?: number;
-  skillEnergyMap?: { [key: string]: number };
-  burstBonus?: number;
-  skillEnergyPerDay?: number;
-  energyPerDay?: number;
+  morningHealEffect: number;
+  dayHealEffect: number;
+  healEffect: number;
+  dayHelpNum: number;
+  nightHelpNum: number;
+  dayHelpRate: number;
+  nightHelpRate: number;
+  averageHelpRate: number;
+  normalDayHelpNum: number;
+  normalNightHelpNum: number;
+  normalHelpNum: number;
+  berryHelpNum: number;
+  berryEnergyPerDay: number;
+  berryNumPerDay: number;
+  foodEnergyPerDay: number;
+  foodNumPerDay: number;
+  pickupEnergyPerDay: number;
+  skillPerDay: number;
+  skillEnergy: number;
+  skillEnergyMap: { [key: string]: number };
+  burstBonus: number;
+  skillEnergyPerDay: number;
+  energyPerDay: number;
 
   // 厳選度
   evaluateResult: { [type: number | string]: { [key: string]: {
@@ -210,6 +219,7 @@ interface SimulatedPokemon {
   }}};
 
   tmpScore?: number;
+  score: number;
 }
 
 interface SimulatedFood {

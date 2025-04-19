@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  plugins
+} from 'chart.js'
 import Berry from '../data/berry';
 import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
@@ -10,6 +22,16 @@ import HelpRate from '../models/help-rate';
 import PokemonSimulator from '../models/simulation/pokemon-simulator';
 import NatureInfo from './status/nature-info.vue';
 import PopupBase from './util/popup-base.vue';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 const props = defineProps({
   name: { type: String, required: true },
@@ -30,8 +52,11 @@ const foodIndexList = computed(() => {
 const percentile = computed(() => {
   return evaluateTable[props.name][props.lv][foodIndexList.value.slice(0, ).join('')].percentile
 })
+const specialtyPercentile = computed(() => {
+  return evaluateTable[props.name][props.lv][foodIndexList.value.slice(0, ).join('')].specialtyNumList
+})
 
-let simulator: PokemonSimulator = null;
+let simulator: PokemonSimulator;
 const simulatorLoaded = ref(false);
 (async () => {
   await PokemonSimulator.isReady
@@ -76,20 +101,130 @@ const result = computed(() => {
     subSkillList.includes('ゆめのかけらボーナス'),
     subSkillList.includes('リサーチEXPボーナス')
   )
+  if (basePokemon.value.specialty == 'きのみ') result.specialtyScore = result.berryNumPerDay;
+  if (basePokemon.value.specialty == '食材')   result.specialtyScore = result.foodNumPerDay;
+  if (basePokemon.value.specialty == 'スキル') result.specialtyScore = result.skillPerDay;
+  if (basePokemon.value.specialty == 'オール') result.specialtyScore = result.skillPerDay;
 
   result.scoreForHealerEvaluate = evaluateTable.scoreForHealerEvaluate[lv]
   result.scoreForSupportEvaluate = evaluateTable.scoreForSupportEvaluate[lv]
 
-  result.healerHelpRate = HelpRate.getHelpRate(Math.min(config.sleepTime / 8.5, 1) * 100, result.otherMorningHealEffect, result.otherDayHealEffect, config)
-  result.defaultHelpRate = HelpRate.getHelpRate(Math.min(config.sleepTime / 8.5, 1) * 100, 0, 0, config)
+  const helpRate = new HelpRate(config)
+  result.healerHelpRate = helpRate.getHelpRate(result.healList)
+  result.defaultHelpRate = helpRate.getHelpRate([])
 
   return result;
 })
 
-const percentilePosition = computed(() => {
+const evaluateGraph = computed(() => {
+  const upper = Math.min(percentile.value.findIndex(x => x >= result.value.score), 100);
+  const lower = Math.max(percentile.value.findLastIndex(x => x <= result.value.score), 0);
+  const thisPercentile = upper == lower ? lower : (result.value.score - percentile.value[lower]) / (percentile.value[upper] - percentile.value[lower]) + lower
+
+  let horizontalLinePlugin = undefined
+  if (config.simulation.selectType == 1) {
+    horizontalLinePlugin = [{
+      id: 'horizontalLine',
+      afterDraw: (chart) => {
+        const yValue = chart.scales.y.getPixelForValue(percentile.value[config.simulation.selectBorder]);
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chart.chartArea.left, yValue);
+        ctx.lineTo(chart.chartArea.right, yValue);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  };
+
   return {
-    upper: Math.min(percentile.value.findIndex(x => x >= result.value.score), 100),
-    lower: Math.max(percentile.value.findLastIndex(x => x <= result.value.score), 0),
+    data: {
+      datasets: [
+        {
+          label: '本個体',
+          backgroundColor: '#E00',
+          data: [{x: thisPercentile, y: result.value.score}],
+        },
+        {
+          label: '厳選度',
+          backgroundColor: '#8DD',
+          data: percentile.value.map((y, x) => ({ x, y })),
+        },
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+        },
+        y: {
+          type: 'linear',
+          // beginAtZero: true,
+        },
+      },
+    },
+    plugins: horizontalLinePlugin,
+  }
+})
+
+const specialtyEvaluateGraph = computed(() => {
+  const upper = Math.min(specialtyPercentile.value.findIndex(x => x >= result.value.specialtyScore), 100);
+  const lower = Math.max(specialtyPercentile.value.findLastIndex(x => x <= result.value.specialtyScore), 0);
+  const thisPercentile = upper == lower ? lower : (result.value.specialtyScore - specialtyPercentile.value[lower]) / (specialtyPercentile.value[upper] - specialtyPercentile.value[lower]) + lower
+
+  let horizontalLinePlugin = undefined
+  if (config.simulation.selectType == 1) {
+    horizontalLinePlugin = [{
+      id: 'horizontalLine',
+      afterDraw: (chart) => {
+        const yValue = chart.scales.y.getPixelForValue(specialtyPercentile.value[config.simulation.selectBorder]);
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chart.chartArea.left, yValue);
+        ctx.lineTo(chart.chartArea.right, yValue);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  };
+
+  return {
+    data: {
+      datasets: [
+        {
+          label: '本個体',
+          backgroundColor: '#E00',
+          data: [{x: thisPercentile, y: result.value.specialtyScore}],
+        },
+        {
+          label: '厳選度',
+          backgroundColor: '#8D8',
+          data: specialtyPercentile.value.map((y, x) => ({ x, y })),
+        },
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+        },
+        y: {
+          type: 'linear',
+          // beginAtZero: true,
+        },
+      },
+    },
+    plugins: horizontalLinePlugin,
   }
 })
 
@@ -105,47 +240,13 @@ const percentilePosition = computed(() => {
       <h2>厳選スコア：{{ Math.round(result.score).toLocaleString() }}</h2>
 
       <ToggleArea class="mt-10px" :open="props.percentile">
-        <template #headerText>パーセンタイル</template>
+        <template #headerText>総合スコアパーセンタイル</template>
+        <div><Line class="w-100 h-300px" v-bind="evaluateGraph" /></div>
+      </ToggleArea>
 
-        <table>
-          <template v-for="i in 101">
-            <template v-for="j in 2">
-              <tr>
-                <th v-if="j == 1" rowspan="2">{{ 101 - i }}%</th>
-                <td v-if="j == 1" rowspan="2">{{ Math.round(percentile[101 - i]).toLocaleString() }}</td>
-
-                <template v-if="percentilePosition.upper != percentilePosition.lower">
-                  <template v-if="i == 1 && j == 1"><td></td></template>
-                  <template v-if="j == 2">
-                    <td :rowspan="i == 101 ? 1 : 2">
-                      <template v-if="percentilePosition.upper == 101 - i">{{ Math.round(result.score).toLocaleString() }}</template>
-                      <template v-else-if="i != 101">&nbsp;</template>
-                    </td>
-                  </template>
-                </template>
-                <template v-else>
-                  <template v-if="j == 1">
-                    <td rowspan="2">
-                      <template v-if="percentilePosition.upper == 101 - i">{{ Math.round(result.energyPerDay).toLocaleString() }}</template>
-                      <template v-else>&nbsp;</template>
-                    </td>
-                  </template>
-                </template>
-
-                <!-- 
-                <td v-if="i == 1"></td>
-                <td v-else rowspan="2"></td> -->
-                <!-- <template v-if="i == 1">
-                  <td :rowspan="(100 - percentilePosition.upper) * 2 + (percentilePosition.upper == percentilePosition.lower ? 0 : 1)"></td>
-                </template>
-                <template v-if="percentilePosition.upper == 101 - i">
-                  <td rowspan="2">{{ Math.round(result.energyPerDay).toLocaleString() }}</td>
-                </template> -->
-              </tr>
-            
-            </template>
-          </template>
-        </table>
+      <ToggleArea class="mt-10px" :open="props.percentile">
+        <template #headerText>とくい分野パーセンタイル</template>
+        <div><Line class="w-100 h-300px" v-bind="specialtyEvaluateGraph" /></div>
       </ToggleArea>
 
       <ToggleArea class="mt-10px" open>
@@ -154,15 +255,15 @@ const percentilePosition = computed(() => {
           <tr>
             <th rowspan="5">個体</th>
             <th>サブスキル</th>
-            <td>
+            <td colspan="2">
               <div class="flex-row-start-center gap-5px">
-              <SubSkillLabel v-for="subSkill in result.subSkillList" :subSkill="subSkill" />
-            </div>
+                <SubSkillLabel v-for="subSkill in result.subSkillList" :subSkill="subSkill" />
+              </div>
             </td>
           </tr>
           <tr>
             <th>せいかく</th>
-            <td>
+            <td colspan="2">
               <NatureInfo v-if="result.nature" :nature="result.nature" />
               <template v-else>無補正</template>
             </td>
@@ -176,19 +277,23 @@ const percentilePosition = computed(() => {
               </template>
               <template v-if="result.nature?.good == '食材お手伝い確率'">× 120% ※せいかく<br></template>
               <template v-if="result.nature?.weak == '食材お手伝い確率'">× 80% ※せいかく<br></template>
-              ＝ {{ (result.foodRate * 100).toFixed(1) }}%
             </td>
+            <td>{{ (result.foodRate * 100).toFixed(1) }}%</td>
           </tr>
           <tr>
             <th>所持数</th>
             <td>
               {{ result.base.bag }}<br>
               <template v-if="result.base.evolveLv > 1">+ 5 × {{ result.base.evolveLv - 1 }} ※進化回数分<br></template>
-              <template v-if="result.subSkillNameList.includes('最大所持数アップS')">+ 6 ※サブスキル<br></template>
-              <template v-if="result.subSkillNameList.includes('最大所持数アップM')">+ 12 ※サブスキル<br></template>
-              <template v-if="result.subSkillNameList.includes('最大所持数アップL')">+ 18 ※サブスキル<br></template>
-              ＝ {{ result.bag }}
+              <template v-if="result.subSkillNameList.includes('最大所持数アップS')">+ 6 ※最大所持数アップS<br></template>
+              <template v-if="result.subSkillNameList.includes('最大所持数アップM')">+ 12 ※最大所持数アップM<br></template>
+              <template v-if="result.subSkillNameList.includes('最大所持数アップL')">+ 18 ※最大所持数アップL<br></template>
+              <template v-if="result.sleepTime >= 2000">+ 8 ※睡眠2000時間<br></template>
+              <template v-else-if="result.sleepTime >= 1000">+ 6 ※睡眠2000時間<br></template>
+              <template v-else-if="result.sleepTime >=  500">+ 3 ※睡眠2000時間<br></template>
+              <template v-else-if="result.sleepTime >=  200">+ 1 ※睡眠2000時間<br></template>
             </td>
+            <td>{{ result.bag }}</td>
           </tr>
           <tr>
             <th>所持数最大まで<br>おてつだい回数</th>
@@ -198,8 +303,8 @@ const percentilePosition = computed(() => {
               &emsp;+ ({{ result.foodList.map(x => x.num).join(' + ') }}) ÷ {{ result.foodList.length }} × {{ (result.foodRate * 100).toFixed(1) }}% ※食材分<br>
               )<br>
               + 4 (おてつだいキュー)<br>
-              ＝ {{ (result.bagFullHelpNum).toFixed(2) }}
             </td>
+            <td>{{ (result.bagFullHelpNum).toFixed(2) }}</td>
           </tr>
 
           <tr>
@@ -211,49 +316,49 @@ const percentilePosition = computed(() => {
               × (100% - {{ (result.speedBonus * 100).toFixed(0) }}%)<br>
               <template v-if="result.nature?.good == '手伝いスピード'">× 90% ※せいかく<br></template>
               <template v-if="result.nature?.weak == '手伝いスピード'">× 107.5% ※せいかく<br></template>
-              ＝ {{ (result.speed).toFixed(0) }}
             </td>
+            <td>{{ (result.speed).toFixed(0) }}</td>
           </tr>
           <tr>
             <th>げんき回復量</th>
             <td>
-              {{ ((result.selfMorningHealEffect || result.otherMorningHealEffect || 0)).toFixed(1) }} ※有効なげんき回復量(増分の面積)<br>
+              {{ result.allHealList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
               <template v-if="result.nature?.good == 'げんき回復量'">× 120% ※せいかく<br></template>
               <template v-else-if="result.nature?.weak == 'げんき回復量'">× 88% ※せいかく<br></template>
               <template v-else>× 100% ※せいかく<br></template>
-              ＝ {{ (result.healEffect).toFixed(1) }}
             </td>
+            <td>{{ (result.allHealList.reduce((a, x) => a + x.effect, 0) * result.natureGenkiMultiplier).toFixed(1) }}</td>
           </tr>
           <tr>
             <th>日中手伝い回数</th>
             <td>
               (24 - {{ config.sleepTime }}) × 3600 ÷ {{ result.speed }}<br>
               × {{ (result.dayHelpNum / (24 - config.sleepTime) / 3600 * result.speed * 100).toFixed(1) }}% ※げんき補正<br>
-              ＝ {{ (result.dayHelpNum).toFixed(2) }}
             </td>
+            <td>{{ (result.dayHelpNum).toFixed(2) }}</td>
           </tr>
           <tr>
             <th>夜間手伝い回数</th>
             <td>
               {{ config.sleepTime }} × 3600 ÷ {{ result.speed }}<br>
               × {{ (result.nightHelpNum / (config.sleepTime) / 3600 * result.speed * 100).toFixed(1) }}% ※げんき補正<br>
-              ＝ {{ (result.nightHelpNum).toFixed(2) }}
             </td>
+            <td>{{ (result.nightHelpNum).toFixed(2) }}</td>
           </tr>
           <tr>
             <th>通常手伝い回数</th>
             <td>
               min({{ result.dayHelpNum.toFixed(2) }} ÷ {{ config.checkFreq - 1 }}, {{ (result.bagFullHelpNum).toFixed(2) }}) × {{ config.checkFreq - 1 }} ※{{ config.checkFreq - 1 }}は日中チェック回数から朝イチの1回を引いた数<br>
               + min({{ result.nightHelpNum.toFixed(2) }}, {{ (result.bagFullHelpNum).toFixed(2) }})<br>
-              ＝ {{ (result.normalHelpNum).toFixed(2) }}
             </td>
+            <td>{{ (result.normalHelpNum).toFixed(2) }}</td>
           </tr>
           <tr>
             <th>いつ育回数</th>
             <td>
               {{ (result.dayHelpNum).toFixed(2) }} + {{ (result.nightHelpNum).toFixed(2) }} - {{ (result.normalHelpNum).toFixed(2) }}<br>
-              ＝ {{ (result.berryHelpNum).toFixed(2) }}
             </td>
+            <td>{{ (result.berryHelpNum).toFixed(2) }}</td>
           </tr>
 
           <tr>
@@ -263,8 +368,8 @@ const percentilePosition = computed(() => {
               × {{ result.berryNum }} ※きのみの数<br>
               <template v-if="config.selectEvaluate.specialty[result.base.specialty].berryEnergyRate != 100">× {{ config.selectEvaluate.specialty[result.base.specialty].berryEnergyRate }}% ※好物補正<br></template>
               × ({{ (result.normalHelpNum).toFixed(2) }} × (100% - {{ (result.foodRate * 100).toFixed(1) }}%) + {{ (result.berryHelpNum).toFixed(2) }}) ※通常手伝い×きのみ率＋いつ育<br>
-              ＝ {{ result.berryEnergyPerDay.toFixed(1) }}
             </td>
+            <td>{{ result.berryEnergyPerDay.toFixed(1) }}</td>
           </tr>
 
           <tr>
@@ -282,12 +387,12 @@ const percentilePosition = computed(() => {
               <template v-else>
                 <template v-for="food in Food.list">
                   <template v-if="result[food.name]">
-                    {{ Food.map[food.name].energy }}エナジー × {{ result[food.name] }}個 × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%) ※{{ food.name }}<br>
+                    {{ Food.map[food.name].energy }}エナジー × {{ result[food.name].toFixed(1) }}個 × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[result.base.specialty].foodEnergyRate }}% + 100%) ※{{ food.name }}<br>
                   </template>
                 </template>
               </template>
-              ＝ {{ result.foodEnergyPerDay.toFixed(1) }}
             </td>
+            <td>{{ result.foodEnergyPerDay.toFixed(1) }}</td>
           </tr>
 
           <tr>
@@ -300,12 +405,12 @@ const percentilePosition = computed(() => {
               </template>
               <template v-if="result.nature?.good == 'メインスキル発生確率'">× 120% ※せいかく<br></template>
               <template v-if="result.nature?.weak == 'メインスキル発生確率'">× 80% ※せいかく<br></template>
-              ＝ {{ (result.skillRate * 100).toFixed(2) }}%
             </td>
+            <td>{{ (result.skillRate * 100).toFixed(2) }}%</td>
           </tr>
           <tr>
             <th>天井</th>
-            <td>
+            <td colspan="2">
               <template v-if="result.specialty == 'スキル'">
                 40 × 3600 ÷ {{ result.help }} ＝ {{ (40 * 3600 / result.help).toFixed(1) }} ※スキルタイプは40時間÷基礎おてつだい時間(小数点以下の扱い不明)
               </template>
@@ -318,15 +423,15 @@ const percentilePosition = computed(() => {
             <th>天井補正後<br>スキル確率</th>
             <td>
               {{ (result.skillRate * 100).toFixed(2) }}% ÷ (100% - (100% - {{ (result.skillRate * 100).toFixed(2) }}%) ^ {{ result.specialty == 'スキル' ? (40 * 3600 / result.help).toFixed(1) : 78 }})<br>
-              ＝ {{ (result.ceilSkillRate * 100).toFixed(2) }}%
             </td>
+            <td>{{ (result.ceilSkillRate * 100).toFixed(2) }}%</td>
           </tr>
           <tr>
             <th>スキル回数</th>
             <td>
               {{ (result.ceilSkillRate * 100).toFixed(2) }}% × {{ (result.normalHelpNum).toFixed(2) }}<br>
-              ＝ {{ (result.skillPerDay).toFixed(2) }}
             </td>
+            <td>{{ (result.skillPerDay).toFixed(2) }}</td>
           </tr>
           <tr>
             <th>スキルLv</th>
@@ -334,8 +439,8 @@ const percentilePosition = computed(() => {
               {{ result.skillLv }}
               <template v-if="result.subSkillNameList.includes('スキルレベルアップS')">+ 1 (サブスキル)<br></template>
               <template v-if="result.subSkillNameList.includes('スキルレベルアップM')">+ 2 (サブスキル)<br></template>
-              <template v-if="result.skillLv != result.fixedSkillLv">＝ {{ result.fixedSkillLv }}</template>
             </td>
+            <td>{{ result.fixedSkillLv }}</td>
           </tr>
           <tr v-for="{ skill, weight } of result.skillWeightList">
             <th>{{ skill.name }}</th>
@@ -368,9 +473,9 @@ const percentilePosition = computed(() => {
               
               <template v-if="skill.genki && skill.team">
                 <template v-if="result.base.skill.name != 'ゆびをふる' || (result.base.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')">
-                  1日の1匹あたりの回復量<br>
-                  起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>
-                  日中：{{ (result.otherDayHealEffect * 100).toFixed(1) }}<br>
+                  1日の1匹あたりの回復量：{{ result.healList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
+                  <!-- 起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>
+                  日中：{{ (result.otherDayHealEffect * 100).toFixed(1) }}<br> -->
                   <br>
                   {{ result.scoreForHealerEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のげんき補正なしエナジーの平均値<br>
                   × (<br>
@@ -412,8 +517,10 @@ const percentilePosition = computed(() => {
                 ÷ ({{ result.skillPerDay.toFixed(2) }} × 7) ※週の発動回数で割って1回あたりの効果にする<br>
               </template>
 
+            </td>
+            <td>
               <template v-if="result.skillEnergyMap[skill.name]">
-                ＝ {{ result.skillEnergyMap[skill.name]?.toFixed(0) }}
+                {{ result.skillEnergyMap[skill.name]?.toFixed(0) }}
               </template>
             </td>
           </tr>
@@ -421,8 +528,8 @@ const percentilePosition = computed(() => {
             <th>スキルエナジー</th>
             <td>
               {{ result.skillEnergy.toFixed(0) }} × {{ result.skillPerDay.toFixed(2) }}<br>
-              ＝{{ result.skillEnergyPerDay.toFixed(1) }}
             </td>
+            <td>{{ result.skillEnergyPerDay.toFixed(1) }}</td>
           </tr>
           <tr>
             <th colspan="2">小計</th>
@@ -430,21 +537,24 @@ const percentilePosition = computed(() => {
               {{ result.berryEnergyPerDay.toFixed(1) }}
               + {{ result.foodEnergyPerDay.toFixed(1) }}
               + {{ result.skillEnergyPerDay.toFixed(1) }}<br>
-              ＝ {{ (result.berryEnergyPerDay + result.foodEnergyPerDay + result.skillEnergyPerDay).toFixed(0) }}<br>
             </td>
+            <td>{{ (result.berryEnergyPerDay + result.foodEnergyPerDay + result.skillEnergyPerDay).toFixed(0) }}</td>
           </tr>
           <tr>
             <th colspan="2">総計</th>
             <td>
-              ({{ result.berryEnergyPerDay.toFixed(1) }}
-              + {{ result.foodEnergyPerDay.toFixed(1) }}
-              + {{ result.skillEnergyPerDay.toFixed(1) }})<br>
-              <template v-if="result.subSkillNameList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template>
+              {{ (result.berryEnergyPerDay + result.foodEnergyPerDay + result.skillEnergyPerDay).toFixed(0) }}<br>
+              <!-- <template v-if="result.subSkillNameList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template> -->
+              <template v-if="result.subSkillNameList.includes('おてつだいボーナス')">× {{
+                (((1 - result.speedBonus) * (
+                  1 / (1 - config.selectEvaluate.teamHelpBonus * 0.05 - 0.05)
+                  - 1 / (1 - config.selectEvaluate.teamHelpBonus * 0.05)
+                ) * 4 + 1) * 100).toFixed(1) }}% ※おてつだいボーナスによる最終補正<br></template>
               <template v-if="result.subSkillNameList.includes('ゆめのかけらボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}%) ※ゆめのかけらボーナス<br></template>
-              <template v-if="result.subSkillNameList.includes('リサーチEXPボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}% ÷ 2) ※リサーチEXPボーナス<br></template>
+              <template v-if="result.subSkillNameList.includes('リサーチEXPボーナス')">× (100% + 9% × {{ config.selectEvaluate.shardBonus }}% ÷ 2) ※リサーチEXPボーナス<br></template>
               <template v-if="result.shard">+ {{ result.shard.toFixed(1) }} × {{ config.selectEvaluate.shardEnergy }} × {{ config.selectEvaluate.shardBonus }}% ※ゆめのかけらゲット<br></template>
-              ＝ {{ result.score.toFixed(0) }}<br>
             </td>
+            <td>{{ result.score.toFixed(0) }}</td>
           </tr>
 
         </table>

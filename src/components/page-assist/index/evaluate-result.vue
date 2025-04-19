@@ -25,7 +25,7 @@ function showSelectDetail(pokemon: SimulatedPokemon, after: string, lv: number) 
 }
 
 const afterList = computed<string[]>(() => {
-  return config.pokemonList.selectDetail ? props.pokemon.base.afterList : [props.pokemon[type.value]?.[props.lv].best.name];
+  return config.pokemonList.selectDetail ? props.pokemon.base.afterList : [props.pokemon[type.value]?.[props.lv]?.best.name];
 })
 const resultList = computed(() => {
   return afterList.value.map(after => {

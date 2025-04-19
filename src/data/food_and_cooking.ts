@@ -113,25 +113,21 @@ class Cooking {
     {type: 'デザート', name: 'はやおきコーヒーゼリー', energy: 6793, foodList: [{name: 'めざましコーヒー', num: 16},{name: 'モーモーミルク', num: 14},{name: 'あまいミツ', num: 12},]},
     {type: 'デザート', name: 'ドオーのエクレア', energy: 20885, foodList: [{name: 'リラックスカカオ', num: 30},{name: 'モーモーミルク', num: 26},{name: 'あまいミツ', num: 22},{name: 'めざましコーヒー', num: 24},]},
     {type: 'デザート', name: 'かたやぶりコーンティラミス', energy: 7125, foodList: [{name: 'モーモーミルク', num: 12},{name: 'ワカクサコーン', num: 14},{name: 'めざましコーヒー', num: 14},]},
-  ];
-	static map = Cooking.list.reduce((a, x) => (a[x.name] = x, a), {});
-	static maxFoodNum;
-	static maxEnergy;
-	static cookingPowerUpEnergy;
-	static recipeLvs = {1: { bonus: 1, totalExp: 0 }, 2: { bonus: 1.02, totalExp: 1080 }, 3: { bonus: 1.04, totalExp: 2324 }, 4: { bonus: 1.06, totalExp: 3936 }, 5: { bonus: 1.08, totalExp: 5545 }, 6: { bonus: 1.09, totalExp: 7341 }, 7: { bonus: 1.11, totalExp: 9712 }, 8: { bonus: 1.13, totalExp: 12760 }, 9: { bonus: 1.16, totalExp: 16426 }, 10: { bonus: 1.18, totalExp: 20791 }, 11: { bonus: 1.19, totalExp: 25639 }, 12: { bonus: 1.21, totalExp: 30911 }, 13: { bonus: 1.23, totalExp: 36621 }, 14: { bonus: 1.24, totalExp: 42922 }, 15: { bonus: 1.26, totalExp: 49882 }, 16: { bonus: 1.28, totalExp: 57551 }, 17: { bonus: 1.3, totalExp: 66001 }, 18: { bonus: 1.31, totalExp: 75131 }, 19: { bonus: 1.33, totalExp: 84981 }, 20: { bonus: 1.35, totalExp: 95642 }, 21: { bonus: 1.37, totalExp: 107159 }, 22: { bonus: 1.4, totalExp: 119576 }, 23: { bonus: 1.42, totalExp: 132938 }, 24: { bonus: 1.45, totalExp: 147309 }, 25: { bonus: 1.47, totalExp: 162621 }, 26: { bonus: 1.5, totalExp: 178929 }, 27: { bonus: 1.52, totalExp: 196563 }, 28: { bonus: 1.55, totalExp: 215605 }, 29: { bonus: 1.58, totalExp: 236149 }, 30: { bonus: 1.61, totalExp: 258299 }, 31: { bonus: 1.64, totalExp: 281955 }, 32: { bonus: 1.67, totalExp: 306759 }, 33: { bonus: 1.7, totalExp: 332769 }, 34: { bonus: 1.74, totalExp: 360469 }, 35: { bonus: 1.77, totalExp: 389943 }, 36: { bonus: 1.81, totalExp: 421521 }, 37: { bonus: 1.84, totalExp: 455380 }, 38: { bonus: 1.88, totalExp: 491055 }, 39: { bonus: 1.92, totalExp: 528663 }, 40: { bonus: 1.96, totalExp: 568918 }, 41: { bonus: 2, totalExp: 611541 }, 42: { bonus: 2.04, totalExp: 656646 }, 43: { bonus: 2.08, totalExp: 704344 }, 44: { bonus: 2.13, totalExp: 754748 }, 45: { bonus: 2.17, totalExp: 807184 }, 46: { bonus: 2.22, totalExp: 862205 }, 47: { bonus: 2.27, totalExp: 920936 }, 48: { bonus: 2.32, totalExp: 983590 }, 49: { bonus: 2.37, totalExp: 1050391 }, 50: { bonus: 2.42, totalExp: 1121582 }, 51: { bonus: 2.48, totalExp: 1196687 }, 52: { bonus: 2.53, totalExp: 1319485 }, 53: { bonus: 2.59, totalExp: 1471363 }, 54: { bonus: 2.65, totalExp: 1672589 }, 55: { bonus: 2.71, totalExp: 1930878 }, 56: { bonus: 2.77, totalExp: 2231322 }, 57: { bonus: 2.83, totalExp: 2579312 }, 58: { bonus: 2.9, totalExp: 2977994 }, 59: { bonus: 2.97, totalExp: 3413120 }, 60: { bonus: 3.03, totalExp: 3891145 },};
+  ].map(x => ({
+    ...x,
+  } as CookingType));
+	static map = Cooking.list.reduce((a, x) => (a[x.name] = x, a), {} as { [key: string]: CookingType });
+	static maxFoodNum: number;
+	static maxEnergy: number;
+	static cookingPowerUpEnergy: number;
+	static recipeLvs = {1: { bonus: 1, totalExp: 0 }, 2: { bonus: 1.02, totalExp: 1080 }, 3: { bonus: 1.04, totalExp: 2324 }, 4: { bonus: 1.06, totalExp: 3936 }, 5: { bonus: 1.08, totalExp: 5545 }, 6: { bonus: 1.09, totalExp: 7341 }, 7: { bonus: 1.11, totalExp: 9712 }, 8: { bonus: 1.13, totalExp: 12760 }, 9: { bonus: 1.16, totalExp: 16426 }, 10: { bonus: 1.18, totalExp: 20791 }, 11: { bonus: 1.19, totalExp: 25639 }, 12: { bonus: 1.21, totalExp: 30911 }, 13: { bonus: 1.23, totalExp: 36621 }, 14: { bonus: 1.24, totalExp: 42922 }, 15: { bonus: 1.26, totalExp: 49882 }, 16: { bonus: 1.28, totalExp: 57551 }, 17: { bonus: 1.3, totalExp: 66001 }, 18: { bonus: 1.31, totalExp: 75131 }, 19: { bonus: 1.33, totalExp: 84981 }, 20: { bonus: 1.35, totalExp: 95642 }, 21: { bonus: 1.37, totalExp: 107159 }, 22: { bonus: 1.4, totalExp: 119576 }, 23: { bonus: 1.42, totalExp: 132938 }, 24: { bonus: 1.45, totalExp: 147309 }, 25: { bonus: 1.47, totalExp: 162621 }, 26: { bonus: 1.5, totalExp: 178929 }, 27: { bonus: 1.52, totalExp: 196563 }, 28: { bonus: 1.55, totalExp: 215605 }, 29: { bonus: 1.58, totalExp: 236149 }, 30: { bonus: 1.61, totalExp: 258299 }, 31: { bonus: 1.64, totalExp: 281955 }, 32: { bonus: 1.67, totalExp: 306759 }, 33: { bonus: 1.7, totalExp: 332769 }, 34: { bonus: 1.74, totalExp: 360469 }, 35: { bonus: 1.77, totalExp: 389943 }, 36: { bonus: 1.81, totalExp: 421521 }, 37: { bonus: 1.84, totalExp: 455380 }, 38: { bonus: 1.88, totalExp: 491055 }, 39: { bonus: 1.92, totalExp: 528663 }, 40: { bonus: 1.96, totalExp: 568918 }, 41: { bonus: 2, totalExp: 611541 }, 42: { bonus: 2.04, totalExp: 656646 }, 43: { bonus: 2.08, totalExp: 704344 }, 44: { bonus: 2.13, totalExp: 754748 }, 45: { bonus: 2.17, totalExp: 807184 }, 46: { bonus: 2.22, totalExp: 862205 }, 47: { bonus: 2.27, totalExp: 920936 }, 48: { bonus: 2.32, totalExp: 983590 }, 49: { bonus: 2.37, totalExp: 1050391 }, 50: { bonus: 2.42, totalExp: 1121582 }, 51: { bonus: 2.48, totalExp: 1196687 }, 52: { bonus: 2.53, totalExp: 1319485 }, 53: { bonus: 2.59, totalExp: 1471363 }, 54: { bonus: 2.65, totalExp: 1672589 }, 55: { bonus: 2.71, totalExp: 1930878 }, 56: { bonus: 2.77, totalExp: 2231322 }, 57: { bonus: 2.83, totalExp: 2579312 }, 58: { bonus: 2.9, totalExp: 2977994 }, 59: { bonus: 2.97, totalExp: 3413120 }, 60: { bonus: 3.03, totalExp: 3891145 }, 61: { bonus: 3.09, totalExp: 4433557 }, 62: { bonus: 3.15, totalExp: 5054788 }, 63: { bonus: 3.21, totalExp: 5773019 }, 64: { bonus: 3.27, totalExp: 6606405 }, 65: { bonus: 3.34, totalExp: 7599103 },};
   static maxRecipeLv: number;
   static potMax = 69;
   static maxRecipeBonus: number;
 
-  constructor(x) {
-    for(let key in x) {
-      this[key] = x[key];
-    }
-  }
-
   // 週に料理チャンスでn%上がる時、どのくらい期待値があるか
   // TODO: こんなfor回さんでも計算できない？頑張ってみたけど無理だった…
-  static getChanceWeekEffect(effect, day = null) {
+  static getChanceWeekEffect(effect: number, day = null) {
     if (effect == 0) {
       if (day == null) {
   
@@ -216,11 +212,11 @@ class Cooking {
       if (cooking.rate > 1) {
         if (config.simulation.cookingRecipeLvType1) {
           cooking.lv1 = config.simulation.cookingSettings[cooking.name].lv;
-          cooking.lv = Math.max(cooking.lv, cooking.lv1);
+          cooking.lv = Math.max(cooking.lv, cooking.lv1!);
         }
         if (config.simulation.cookingRecipeLvType2) {
           cooking.lv2 = config.simulation.cookingRecipeFixLv;
-          cooking.lv = Math.max(cooking.lv, cooking.lv2);
+          cooking.lv = Math.max(cooking.lv, cooking.lv2!);
         }
         if (config.simulation.cookingRecipeLvType3) {
           let exp = 0;

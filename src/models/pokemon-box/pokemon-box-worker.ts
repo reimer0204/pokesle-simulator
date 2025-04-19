@@ -16,7 +16,6 @@ addEventListener('message', async (event) => {
   let type = event.data.type;
 
   if (type == 'config') {
-    await PokemonSimulator.isReady;
     config = event.data.config;
     simulator = new PokemonSimulator(config, PokemonSimulator.MODE_ABOUT);
     evaluateSimulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT);
@@ -112,6 +111,7 @@ addEventListener('message', async (event) => {
               if (afterPokemon.specialty == 'きのみ') specialtyScore = selectEvaluate.berryNumPerDay;
               if (afterPokemon.specialty == '食材')   specialtyScore = selectEvaluate.foodNumPerDay;
               if (afterPokemon.specialty == 'スキル') specialtyScore = selectEvaluate.skillPerDay;
+              if (afterPokemon.specialty == 'オール') specialtyScore = selectEvaluate.skillPerDay;
 
               function getRate(list: number[], num: number) {
                 let max = list.length - 1;
@@ -150,7 +150,7 @@ addEventListener('message', async (event) => {
               evaluateSpecialtyMaxScore = Math.max(evaluateSpecialtyMaxScore, specialtyItem.score)
             }
 
-            let thisFix = config.simulation.fix && fixablePokemonIndexSet.has(box.index) && (
+            let thisFix = config.simulation.fix && fixablePokemonIndexSet!.has(box.index) && (
               evaluateMaxScore >= config.simulation.fixBorder / 100
               || evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100
             );
@@ -178,10 +178,12 @@ addEventListener('message', async (event) => {
           { ...pokemonList[i], name: pokemonName }, 
           fix, 
           config.simulation.fixResourceMode == 0 ? 0 : base.evolveCandyMap[pokemonList[i].name],
-          pokemonList[i].name != pokemonName ? base.evolve.lv : 0,
+          pokemonList[i].name != pokemonName ? (base.evolve.lv || undefined) : 0,
         );
 
-        if (pokemonList[i].name != pokemonName && simulatedPokemon.lv < base.evolve.lv) {
+        // 進化仮定を計算しても必要レベルに達していない場合はキャンセル
+        // 進化仮定に誰も届かないなら進化前のまま計算
+        if (pokemonList[i].name != pokemonName && base.evolve.lv != null && simulatedPokemon.lv < base.evolve.lv) {
           if (j == addPokemonList.length - 1 && thisResult.length == 0) {
             simulatedPokemon = simulator.fromBox(
               { ...pokemonList[i] }, 
@@ -239,7 +241,7 @@ addEventListener('message', async (event) => {
     if (config.simulation.bagOverOperation) {
       result.push(
         ...result
-        .filter(x => x.base.specialty == 'きのみ' || x.subSkillNameList?.includes('きのみの数S'))
+        .filter(x => x.base.specialty == 'きのみ' || x.base.specialty == 'オール' || x.subSkillNameList?.includes('きのみの数S'))
         .map(pokemon => {
           return {
             ...pokemon,
@@ -260,11 +262,9 @@ addEventListener('message', async (event) => {
         pokemon.subSkillNameList?.includes('げんき回復ボーナス') ? 1 : 0,
       )
 
-      simulator.calcHelp(
-        pokemon,
-        0,
-        0,
-      )
+      simulator.calcTeamHeal([pokemon])
+
+      simulator.calcHelp(pokemon)
 
       pokemon.tmpScore = pokemon.energyPerDay * (100 + config.simulation.fieldBonus) / 100;
       pokemon.tmpScore += (
@@ -272,6 +272,8 @@ addEventListener('message', async (event) => {
         + pokemon.shard * config.selectEvaluate.shardEnergyRate / 4
       ) * config.simulation.shardWeight / 100;
     }
+
+    simulator.dump()
     
     postMessage({
       status: 'success',
@@ -280,10 +282,8 @@ addEventListener('message', async (event) => {
   }
 
   if (type == 'assist') {
-    let {
-      pickupEnergyPerHelpTop5,
-      healCheckTarget,
-    } = event.data;
+    let pickupEnergyPerHelpTop5: SimulatedPokemon[] = event.data.pickupEnergyPerHelpTop5;
+    let healCheckTarget: SimulatedPokemon[] = event.data.healCheckTarget;
     let pokemonList: SimulatedPokemon[] = event.data.pokemonList;
     let helpBonusTop6: SimulatedPokemon[] = event.data.helpBonusTop6;
     let berryEnergyTop5: SimulatedPokemon[] = event.data.berryEnergyTop5;
@@ -297,7 +297,7 @@ addEventListener('message', async (event) => {
   
       if (pokemon.subSkillNameList?.includes('おてつだいボーナス')) {
         // 概算日給の高い上位6匹から自身を除外し、上位4匹のおてスピが70%→65%になった時の増加量をおてボの効果とする
-        for(let subPokemon of helpBonusTop6.filter(x => x.box.index != pokemon.box.index).slice(0, 4)) {
+        for(let subPokemon of helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)) {
           pokemon.supportEnergyPerDay += subPokemon.energyPerDay * (0.70 / 0.65 - 1)
   
           pokemon.supportScorePerDay += subPokemon.shard * (0.70 / 0.65 - 1) * config.simulation.shardWeight / 100
@@ -306,36 +306,29 @@ addEventListener('message', async (event) => {
   
       if (pokemon.subSkillNameList?.includes('ゆめのかけらボーナス')) {
         // 概算日給の高い上位6匹から自身を除外した上位4匹＋自身の6%分のエナジーをゆめボの効果とする
-        for(let subPokemon of [...helpBonusTop6.filter(x => x.box.index != pokemon.box.index).slice(0, 4), pokemon]) {
+        for(let subPokemon of [...helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
           pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.06 * config.simulation.shardWeight / 100
         }
       }
   
       if (config.simulation.researchRankMax && pokemon.subSkillNameList?.includes('リサーチEXPボーナス')) {
         // 概算日給の高い上位6匹から自身を除外し、上位4匹の3%分のエナジーをリサボの効果とする
-        for(let subPokemon of [...helpBonusTop6.filter(x => x.box.index != pokemon.box.index).slice(0, 4), pokemon]) {
-          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.03 * config.simulation.shardWeight / 100
+        for(let subPokemon of [...helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
+          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.09 * config.simulation.shardWeight / 100 / 2
         }
       }
 
       // げんき回復系スキル評価
-      if (pokemon.otherMorningHealEffect > 0 || pokemon.otherDayHealEffect > 0) {
+      if (pokemon.otherHeal) {
 
         let healedAddEnergyList = healCheckTarget.map(subPokemon => {
-          if (subPokemon.box.index == pokemon.box.index) return 0;
-
-          let totalMorningHealEffect = subPokemon.morningHealEffect + pokemon.otherMorningHealEffect * subPokemon.natureGenkiMultiplier;
-          let totalDayHealEffect = subPokemon.dayHealEffect + pokemon.otherDayHealEffect * subPokemon.natureGenkiMultiplier;
-          let cacheKey = `${subPokemon.morningHealGenki.toFixed(8)}_${totalMorningHealEffect.toFixed(8)}_${totalDayHealEffect.toFixed(8)}`
-          let helpRate = helpRateCache.get(cacheKey);
-          if(helpRate == null) {
-            helpRate = HelpRate.getHelpRate(subPokemon.morningHealGenki, totalMorningHealEffect, totalDayHealEffect, config)
-            helpRateCache.set(cacheKey, helpRate)
-          }
+          if (subPokemon.box!.index == pokemon.box!.index) return 0;
+          
+          let helpRate = simulator.getHelpRate(pokemon.healList)
 
           let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
-          let healedAddEnergy = subPokemon.tmpScore * Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
+          let healedAddEnergy = subPokemon.tmpScore! * Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
           
           return healedAddEnergy;
         });
@@ -350,10 +343,10 @@ addEventListener('message', async (event) => {
           switch(skill.name) {
             case 'ばけのかわ(きのみバースト)':
             case 'きのみバースト': {
-              let berryEnergySum = [...berryEnergyTop5.filter(x => x.box.index != pokemon.box.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
+              let berryEnergySum = [...berryEnergyTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
 
               if (skill.name == 'ばけのかわ(きのみバースト)') {
-                let success = 1 - ((1 - skill.success) ** pokemon.skillPerDay);
+                let success = 1 - ((1 - skill.success!) ** pokemon.skillPerDay);
                 pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
               } else {
                 pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
@@ -362,14 +355,14 @@ addEventListener('message', async (event) => {
             }
 
             case 'みかづきのいのり(げんきオールS)': {
-              let berryEnergySum = [...berryEnergyTop5.filter(x => x.box.index != pokemon.box.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
+              let berryEnergySum = [...berryEnergyTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
               pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
               break;
             }
             
             case 'おてつだいサポートS':
             case 'おてつだいブースト': {
-              let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.box.index != pokemon.box.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
+              let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
               pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
               break;
             }
