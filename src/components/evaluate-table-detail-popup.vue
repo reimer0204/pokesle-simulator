@@ -77,15 +77,6 @@ const result = computed(() => {
   let subSkillList: string[] = props.subSkillList;
   subSkillList = (config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(subSkillList) : subSkillList).slice(0, subSkillNum);
 
-  // console.log(subSkillList)
-  // console.log(foodIndexList.value.map(f => basePokemon.value.foodList[f]))
-  // console.log(
-  //   basePokemon.value,
-  //   props.lv,
-  //   foodIndexList.value.map(f => basePokemon.value.foodList[f].name),
-  //   subSkillList.map(x => SubSkill.map[x]), props.nature,
-  // )
-
   const simulatedPokemon = simulator.fromEvaluate(
     basePokemon.value,
     props.lv,
@@ -115,6 +106,15 @@ const result = computed(() => {
 
   return result;
 })
+
+const skillWeightList = computed(() => {
+  return result.value.skillWeightList.map(x => {
+    return {
+      ...x,
+      lv: Math.min(result.value.fixedSkillLv , x.skill.effect.length),
+    }
+  })
+});
 
 const evaluateGraph = computed(() => {
   let upper = Math.min(percentile.value.findIndex(x => x >= result.value.score), 100);
@@ -444,11 +444,11 @@ const specialtyEvaluateGraph = computed(() => {
             </td>
             <td>{{ result.fixedSkillLv }}</td>
           </tr>
-          <tr v-for="{ skill, weight } of result.skillWeightList">
+          <tr v-for="{ skill, weight, lv } of skillWeightList">
             <th>{{ skill.name }}</th>
             <td>
               <template v-if="skill.name == 'エナジーチャージS' || skill.name == 'エナジーチャージS(ランダム)' || skill.name == 'エナジーチャージM'">
-                {{ skill.effect[result.fixedSkillLv - 1] }}<br>
+                {{ skill.effect[lv - 1] }}<br>
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               <template v-if="skill.name == '食材ゲットS'">
@@ -458,7 +458,7 @@ const specialtyEvaluateGraph = computed(() => {
                 </template>
                 )<br>
                 ÷ {{ Food.list.length }}<br>
-                × {{ skill.effect[result.fixedSkillLv - 1] }}<br>
+                × {{ skill.effect[lv - 1] }}<br>
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               
@@ -468,8 +468,8 @@ const specialtyEvaluateGraph = computed(() => {
               
               <template v-if="skill.name == 'おてつだいサポートS' || skill.name == 'おてつだいブースト'">
                 {{ result.scoreForSupportEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のおてつだいあたりのエナジーの平均値<br>
-                <template v-if="skill.name == 'おてつだいブースト'">× {{ skill.effect[result.fixedSkillLv - 1].max }} × 5</template>
-                <template v-else>× {{ skill.effect[result.fixedSkillLv - 1] }}</template><br>
+                <template v-if="skill.name == 'おてつだいブースト'">× {{ skill.effect[lv - 1].max }} × 5</template>
+                <template v-else>× {{ skill.effect[lv - 1] }}</template><br>
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               
@@ -494,26 +494,26 @@ const specialtyEvaluateGraph = computed(() => {
               </template>
 
               <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">
-                {{ skill.effect[result.fixedSkillLv - 1] }}
+                {{ skill.effect[lv - 1] }}
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
-                ＝ {{ (skill.effect[result.fixedSkillLv - 1] * weight).toFixed(1) }}
+                ＝ {{ (skill.effect[lv - 1] * weight).toFixed(1) }}
               </template>
 
               <template v-if="skill.name == '料理パワーアップS'">
                 (<br>
-                &emsp;{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × {{ skill.effect[result.fixedSkillLv - 1] }} × {{ Math.min(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1), Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[result.fixedSkillLv - 1]) * 3).toFixed(2) }} ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は最良エナジーと{{ Cooking.potMax }}以下の最良エナジー差を食材数で割った値<br>
-                &emsp;+ {{ Food.averageEnergy.toFixed(1) }} × {{ skill.effect[result.fixedSkillLv - 1] }} × {{ Math.max(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) - Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[result.fixedSkillLv - 1]) * 3, 0).toFixed(2) }}<br>
+                &emsp;{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × {{ skill.effect[lv - 1] }} × {{ Math.min(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1), Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[lv - 1]) * 3).toFixed(2) }} ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は最良エナジーと{{ Cooking.potMax }}以下の最良エナジー差を食材数で割った値<br>
+                &emsp;+ {{ Food.averageEnergy.toFixed(1) }} × {{ skill.effect[lv - 1] }} × {{ Math.max(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) - Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[lv - 1]) * 3, 0).toFixed(2) }}<br>
                 )<br>
                 ÷ {{ result.skillPerDay.toFixed(2) }}<br>
               </template>
 
               <template v-if="skill.name == '料理チャンスS'">
                 週の効果量<br>
-                {{ skill.effect[result.fixedSkillLv - 1] }} × {{ result.skillPerDay.toFixed(2) }} × 7<br>
+                {{ skill.effect[lv - 1] }} × {{ result.skillPerDay.toFixed(2) }} × 7<br>
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
-                ＝{{ (skill.effect[result.fixedSkillLv - 1] * result.skillPerDay * 7 / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1)).toFixed(1) }}<br>
+                ＝{{ (skill.effect[lv - 1] * result.skillPerDay * 7 / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1)).toFixed(1) }}<br>
                 <br>
-                ({{ Cooking.getChanceWeekEffect(skill.effect[result.fixedSkillLv - 1] * result.skillPerDay * 7 / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) / 100).total.toFixed(2) }}
+                ({{ Cooking.getChanceWeekEffect(skill.effect[lv - 1] * result.skillPerDay * 7 / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) / 100).total.toFixed(2) }}
                 - 24.6) ※週の効果量から料理倍率の期待値を計算し、通常時からの増分を計算<br>
                 × {{ Cooking.maxEnergy.toFixed(0) }} ※今一番いい料理<br>
                 ÷ ({{ result.skillPerDay.toFixed(2) }} × 7) ※週の発動回数で割って1回あたりの効果にする<br>
