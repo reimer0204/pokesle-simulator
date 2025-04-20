@@ -1,6 +1,7 @@
 // import * as tf from '@tensorflow/tfjs';
 // import GenkiSimulator from "../worker/genki-simulator?worker";
 import type { SimulatedPokemon } from '../type';
+import PokemonSimulator from './simulation/pokemon-simulator';
 // tf.setBackend('cpu');
 
 class HelpRate {
@@ -22,9 +23,11 @@ class HelpRate {
     { border: 0, effect: 0.66 },
   ]
   #helpRateCount = 0;
+  #mode: number;
 
-  constructor(config: any) {
+  constructor(config: any, mode: number = 0) {
     this.#config = config;
+    this.#mode = mode;
     this.#nightLength = Math.round(config.sleepTime * 3600);
     this.#dayLength = 86400 - this.#nightLength;
 
@@ -314,7 +317,9 @@ class HelpRate {
       const result = {
         day: dayHelpRate / this.#dayLength,
         night: nightHelpRate / this.#nightLength,
-        healList,
+      }
+      if (this.#mode == PokemonSimulator.MODE_SELECT) {
+        result.healList = healList;
       }
       this.#helpRateCache[cacheKey] = result;
       return result;
