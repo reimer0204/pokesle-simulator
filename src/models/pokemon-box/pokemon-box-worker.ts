@@ -347,23 +347,23 @@ addEventListener('message', async (event) => {
 
               if (skill.name == 'ばけのかわ(きのみバースト)') {
                 let success = 1 - ((1 - skill.success!) ** pokemon.skillPerDay);
-                pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
+                supportSkillEnergy += berryEnergySum * pokemon.burstBonus * (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
               } else {
-                pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
+                supportSkillEnergy += berryEnergySum * pokemon.burstBonus;
               }
               break;
             }
 
             case 'みかづきのいのり(げんきオールS)': {
               let berryEnergySum = [...berryEnergyTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)].reduce((a, x) => a + x.berryEnergy, 0)
-              pokemon.supportEnergyPerDay += berryEnergySum * pokemon.burstBonus;
+              supportSkillEnergy += berryEnergySum * pokemon.burstBonus;
               break;
             }
             
             case 'おてつだいサポートS':
             case 'おてつだいブースト': {
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
-              pokemon.supportEnergyPerDay += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
+              supportSkillEnergy += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
               break;
             }
           }

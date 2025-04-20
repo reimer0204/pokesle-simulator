@@ -94,7 +94,24 @@ async function simulation() {
     const pickup = 5 - fixedPokemonList.length;
 
     // スコアの高い上位のみをピックアップ
-    targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)));
+    targetPokemonList = targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)
+
+    // げんき計算のキャッシュを効かせるため、ヒーラー、自身回復、その他の順にソート
+    let healerTargetPokemonList = []
+    let selfHealerTargetPokemonList = []
+    let nonHealerTargetPokemonList = []
+    for(let pokemon of targetPokemonList) {
+      if (pokemon.otherHeal) {
+        healerTargetPokemonList.push(pokemon)
+      } else if (pokemon.selfHeal) {
+        selfHealerTargetPokemonList.push(pokemon)
+      } else {
+        nonHealerTargetPokemonList.push(pokemon)
+      }
+    }
+    targetPokemonList = [...healerTargetPokemonList, ...selfHealerTargetPokemonList, ...nonHealerTargetPokemonList]
+
+    targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
 
     let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
       sum: 0,

@@ -101,7 +101,7 @@ class PokemonSimulator {
 
     // this.calcStatusCache = new Map();
 
-    this.#helpRate = new HelpRate(this.config);
+    this.#helpRate = new HelpRate(this.config, mode);
     this.defaultHelpRate = this.#helpRate.getHelpRate([])
 
     if (config.simulation.berryEnergyWeight != null) {

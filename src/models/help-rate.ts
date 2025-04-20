@@ -9,10 +9,9 @@ class HelpRate {
   #config: any = null;
   #dayLength: number;
   #nightLength: number;
-  #teamHealCache: { [key: string]: any[] };
+  #teamHealCache: any[];
   #teamHealHelpRateCache: { [key: string]: { day: number, night: number } };
   #helpRateCache: { [key: string]: { day: number, night: number } };
-  #teamHealCacheCount = 0;
   #teamHealHelpRateCacheCount = 0;
   #helpRateCacheCount = 0;
 
@@ -31,12 +30,16 @@ class HelpRate {
     this.#nightLength = Math.round(config.sleepTime * 3600);
     this.#dayLength = 86400 - this.#nightLength;
 
-    this.#teamHealCache = {}
+    this.#teamHealCache = [{ key: null, healList: [] }, { key: null, healList: [] }]
     this.#teamHealHelpRateCache = {}
     this.#helpRateCache = {}
   }
 
   dump() {
+    // console.log('teamHealCache', JSON.stringify(this.#teamHealCache).length);
+    // console.log(this.#teamHealCache);
+    // console.log('teamHealHelpRateCache', JSON.stringify(this.#teamHealHelpRateCache).length);
+    // console.log('helpRateCache', JSON.stringify(this.#helpRateCache).length);
     // console.log(`teamHealCache: ${Object.keys(this.#teamHealCache).length}/${this.#teamHealCacheCount}`)
     // console.log(`teamHealHelpRateCache: ${Object.keys(this.#teamHealHelpRateCache).length}/${this.#teamHealHelpRateCacheCount}`)
     // console.log(`helpRateCache: ${Object.keys(this.#helpRateCache).length}/${this.#helpRateCacheCount}`)
@@ -45,14 +48,24 @@ class HelpRate {
 
   // チーム全員のげんき回復量を計算
   calcTeamHeal(pokemonList: SimulatedPokemon[], addHeal?: { effect: number, time: number, night?: boolean }[]) {
+
+    // for(let pokemon of pokemonList) {
+    //   pokemon.healList = [];
+    //   pokemon.dayHelpRate = 1.5;
+    //   pokemon.nightHelpRate = 1.5;
+    // }
+    // return;
+
     let infoList = []
     let cacheKey = '';
+    let cacheKey2 = '';
+    let otherHealerList = [];
+    let selfHealerList = [];
     for(let pokemon of pokemonList) {
       pokemon.healList = [];
       const info = {
         skill: pokemon.base.skill,
         stockLimit: pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール' ? 2 : 1,
-        // healList: [] as { effect: number, time: number, night?: boolean }[],
         hasHeal: pokemon.selfHeal || pokemon.otherHeal,
         morningGenki: 0,
         beforeNightHelp: Math.floor(this.#nightLength / pokemon.speed),
@@ -61,133 +74,146 @@ class HelpRate {
       infoList.push(info)
 
       if (info.hasHeal) {
-        cacheKey += `${pokemon.base.name},${pokemon.base.type},${pokemon.morningHealGenki},${pokemon.natureGenkiMultiplier},${pokemon.selfHeal},${pokemon.otherHeal},${pokemon.speed},${pokemon.ceilSkillRate},${pokemon.bagFullHelpNum},${info.morningLimit},`
+        const key = `${pokemon.base.name},${pokemon.base.type},${pokemon.morningHealGenki.toFixed(3)},${pokemon.natureGenkiMultiplier.toFixed(2)},${pokemon.selfHeal.toFixed(3)},${pokemon.otherHeal.toFixed(3)},${pokemon.speed},${pokemon.ceilSkillRate.toFixed(3)},${pokemon.bagFullHelpNum.toFixed(3)},${info.morningLimit},`
+        if (pokemon.otherHeal) {
+          cacheKey += key;
+          otherHealerList.push({ pokemon, info })
+        } else {
+          selfHealerList.push({ pokemon, info })
+        }
+        cacheKey2 += key;
       }
     }
-    const teamHealCache = this.#teamHealCache[cacheKey]
-    this.#teamHealCacheCount++;
 
-    if (teamHealCache === undefined) {
-      // 3回くらいループさせるとほぼ収束する
-      for(let i = 0; i < 3; i++) {
-        for(let j = 0; j < infoList.length; j++) {
-          let info = infoList[j]
-          let pokemon = pokemonList[j];
+    for(let loop = 0; loop < 2; loop++) {
+      let key, healerList
+      if (loop == 0) {
+        key = cacheKey;
+        healerList = otherHealerList;
+      } else {
+        key = cacheKey2;
+        healerList = selfHealerList;
+      }
+      
+      if (this.#teamHealCache[loop].key != key) {
+        // 3回くらいループさせるとほぼ収束する
+        let allHealList;
 
-          // 他のポケモンのげんきを変動させるスキルを持っていないポケモンは計算しない
-          if (!info.hasHeal) {
-            continue;
-          }
+        for(let i = 0; i < 3; i++) {
+          for(let { pokemon, info} of healerList) {
+            pokemon.healList = []
 
-          pokemon.healList = []
-          const allHealList = infoList.flatMap((x, k) => {
-            if (pokemonList[k].base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
-              return []
-            }
-            return pokemonList[k].healList
-          }).sort((a, b) => a.time - b.time)
-          
-          let unPickHelpNum = info.beforeNightHelp;  // 昨日の夜の手伝い回数で初期化
-          let beforeHelp = 0; // 前回のおてつだい時刻
-          let checkNum = 0;   // タップ回数
-          let nextCheck = pokemon.otherHeal ? 0 : 86400;  // 次のタップ時刻
-          let nextHeal = allHealList[0]?.time ?? 86400;
-          let time = 0;       // 前回のイベント発生時刻
-          let genki = Math.max(info.morningGenki, Math.min(info.morningGenki + pokemon.morningHealGenki * pokemon.natureGenkiMultiplier!, info.morningLimit)); // 起床時のげんき
-   
-          while(true) {
-            // this.#helpRateCount++;
-            let nextTime = Math.min(nextCheck, nextHeal, 86400)
-            let beforeGenki = genki;
-            genki = Math.max(genki - (nextTime - time) / 600, 0)
+            allHealList = infoList.flatMap((x, k) => {
+              if (pokemonList[k].base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
+                return []
+              }
+              return pokemonList[k].healList
+            }).sort((a, b) => a.time - b.time)
+            
+            let unPickHelpNum = info.beforeNightHelp;  // 昨日の夜の手伝い回数で初期化
+            let beforeHelp = 0; // 前回のおてつだい時刻
+            let checkNum = 0;   // タップ回数
+            let nextCheck = pokemon.otherHeal ? 0 : 86400;  // 次のタップ時刻
+            let nextHeal = allHealList[0]?.time ?? 86400;
+            let time = 0;       // 前回のイベント発生時刻
+            let genki = Math.max(info.morningGenki, Math.min(info.morningGenki + pokemon.morningHealGenki * pokemon.natureGenkiMultiplier!, info.morningLimit)); // 起床時のげんき
+    
+            while(true) {
+              // this.#helpRateCount++;
+              let nextTime = Math.min(nextCheck, nextHeal, 86400)
+              let beforeGenki = genki;
+              genki = Math.max(genki - (nextTime - time) / 600, 0)
 
-            // 次のイベントの時間までおてつだい回数を加算
-            for(let { border, effect } of HelpRate.GENKI_LIST) {
-              // げんきが足りなければ次のげんきボーダーチェックに進む
-              if (beforeGenki <= border) continue;
+              // 次のイベントの時間までおてつだい回数を加算
+              for(let { border, effect } of HelpRate.GENKI_LIST) {
+                // げんきが足りなければ次のげんきボーダーチェックに進む
+                if (beforeGenki <= border) continue;
 
-              let fixedSpeed = pokemon.speed * effect;
-              if (beforeHelp + fixedSpeed <= nextTime) {
-                // 次イベントか、次おてつだいのペースが変わる時間か
-                const remainTime = Math.min(nextTime, time + (beforeGenki - border) * 600 + fixedSpeed) - beforeHelp
-                const num = Math.floor(remainTime / fixedSpeed);
-                const pastTime = num * fixedSpeed;
+                let fixedSpeed = pokemon.speed * effect;
+                if (beforeHelp + fixedSpeed <= nextTime) {
+                  // 次イベントか、次おてつだいのペースが変わる時間か
+                  const remainTime = Math.min(nextTime, time + (beforeGenki - border) * 600 + fixedSpeed) - beforeHelp
+                  const num = Math.floor(remainTime / fixedSpeed);
+                  const pastTime = num * fixedSpeed;
+                  unPickHelpNum += num;
+                  beforeHelp += pastTime
+                  beforeGenki = Math.max(beforeGenki - pastTime / 600, 0);
+                  time = beforeHelp
+                } else {
+                  break;
+                }
+              }
+              // げんきが空になってもまだ時間があるならお手伝い
+              if (beforeHelp + pokemon.speed <= nextTime) {
+                const remainTime = nextTime - beforeHelp
+                const num = Math.floor(remainTime / pokemon.speed);
+                const pastTime = num * pokemon.speed;
                 unPickHelpNum += num;
                 beforeHelp += pastTime
-                beforeGenki = Math.max(beforeGenki - pastTime / 600, 0);
-                time = beforeHelp
-              } else {
+              }
+
+              time = nextTime;
+
+              // 1日の最後だったら、これを翌日起床時(リサーチによる回復前)のげんきとする
+              if (time == 86400) {
+                info.morningGenki = genki;
                 break;
               }
-            }
-            // げんきが空になってもまだ時間があるならお手伝い
-            if (beforeHelp + pokemon.speed <= nextTime) {
-              const remainTime = nextTime - beforeHelp
-              const num = Math.floor(remainTime / pokemon.speed);
-              const pastTime = num * pokemon.speed;
-              unPickHelpNum += num;
-              beforeHelp += pastTime
-            }
+      
+              if (time >= nextCheck && checkNum < this.#config.checkFreq && pokemon.otherHeal) {
+                const skillableHelpNum = Math.min(unPickHelpNum, pokemon.bagFullHelpNum! + 4)
 
-            time = nextTime;
+                let nightNoHit = (1 - pokemon.ceilSkillRate!) ** skillableHelpNum;
+                let skillNum;
+                if (info.stockLimit == 2) {
+                  let nightOneHit = skillableHelpNum >= 1 ? (1 - pokemon.ceilSkillRate!) ** (skillableHelpNum - 1) * pokemon.ceilSkillRate! * skillableHelpNum : 0;
+                  let nightTwoHit = skillableHelpNum >= 2 ? 1 - nightNoHit - nightOneHit : 0
+                  skillNum = nightTwoHit * 2 + nightOneHit;
+                } else {
+                  skillNum = 1 - nightNoHit;
+                }
 
-            // 1日の最後だったら、これを翌日起床時(リサーチによる回復前)のげんきとする
-            if (time == 86400) {
-              info.morningGenki = genki;
-              break;
-            }
-    
-            if (time >= nextCheck && checkNum < this.#config.checkFreq && pokemon.otherHeal) {
-              const skillableHelpNum = Math.min(unPickHelpNum, pokemon.bagFullHelpNum! + 4)
+                // ナイトメアなど、自分にはかからないスキルを除いてげんきを加算
+                if (pokemon.base.skill.name != 'ナイトメア(エナジーチャージM)') {
+                  genki = Math.max(Math.min(genki + skillNum * (pokemon.selfHeal + pokemon.otherHeal) * pokemon.natureGenkiMultiplier!, 150), 0)
+                }
 
-              let nightNoHit = (1 - pokemon.ceilSkillRate!) ** skillableHelpNum;
-              let skillNum;
-              if (info.stockLimit == 2) {
-                let nightOneHit = skillableHelpNum >= 1 ? (1 - pokemon.ceilSkillRate!) ** (skillableHelpNum - 1) * pokemon.ceilSkillRate! * skillableHelpNum : 0;
-                let nightTwoHit = skillableHelpNum >= 2 ? 1 - nightNoHit - nightOneHit : 0
-                skillNum = nightTwoHit * 2 + nightOneHit;
-              } else {
-                skillNum = 1 - nightNoHit;
+                // 他のポケモンを回復する
+                if (pokemon.otherHeal) {
+                  pokemon.healList.push({ effect: skillNum * pokemon.otherHeal, time })
+                }
+      
+                unPickHelpNum = 0;
+                
+                checkNum++;
+                if (checkNum < this.#config.checkFreq) {
+                  nextCheck = this.#dayLength * checkNum / (this.#config.checkFreq - 1)
+                } else  {
+                  // 規定回数チェックしたら、1日の最後にトリガーを設定
+                  nextCheck = 86400;
+                }
               }
 
-              // ナイトメアなど、自分にはかからないスキルを除いてげんきを加算
-              if (pokemon.base.skill.name != 'ナイトメア(エナジーチャージM)') {
-                genki = Math.max(Math.min(genki + skillNum * (pokemon.selfHeal + pokemon.otherHeal) * pokemon.natureGenkiMultiplier!, 150), 0)
-              }
+              if (time >= nextHeal) {
+                const { effect } = allHealList.shift()!
 
-              // 他のポケモンを回復する
-              if (pokemon.otherHeal) {
-                pokemon.healList.push({ effect: skillNum * pokemon.otherHeal, time })
-              }
-    
-              unPickHelpNum = 0;
-              
-              checkNum++;
-              if (checkNum < this.#config.checkFreq) {
-                nextCheck = this.#dayLength * checkNum / (this.#config.checkFreq - 1)
-              } else  {
-                // 規定回数チェックしたら、1日の最後にトリガーを設定
-                nextCheck = 86400;
+                genki = Math.max(Math.min(genki + effect * pokemon.natureGenkiMultiplier!, 150), 0)
+
+                nextHeal = allHealList[0]?.time ?? 86400;
               }
             }
-
-            if (time >= nextHeal) {
-              const { effect } = allHealList.shift()!
-
-              genki = Math.max(Math.min(genki + effect * pokemon.natureGenkiMultiplier!, 150), 0)
-
-              nextHeal = allHealList[0]?.time ?? 86400;
-            }
+      
+            info.beforeNightHelp = unPickHelpNum
           }
-    
-          info.beforeNightHelp = unPickHelpNum
         }
-      }
 
-      this.#teamHealCache[cacheKey] = pokemonList.map(p => p.healList);
-    } else {
-      for(let i = 0; i < pokemonList.length; i++) {
-        pokemonList[i].healList = teamHealCache[i]
+        this.#teamHealCache[loop].key = key
+        this.#teamHealCache[loop].healList = healerList.map(x => x.pokemon.healList);
+        this.#teamHealHelpRateCache = {}
+      } else {
+        for(let i = 0; i < healerList.length; i++) {
+          healerList[i].pokemon.healList = this.#teamHealCache[loop].healList[i]
+        }
       }
     }
     

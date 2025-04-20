@@ -74,8 +74,8 @@ class Diff {
     let sleepTime = 8.5;
     let checkFreq = 10;
     let morningHealGenki = 100
-    let p = 0.04;
-    let speed = 2400;
+    let p = 0.0455;
+    let speed = 1693;
     let effect = 18;
     let bagSize = 30;
     let stockLimit = skillTokui ? 2 : 1;

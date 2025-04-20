@@ -494,7 +494,10 @@ self.addEventListener('message', async (event) => {
             shardBonusCount,
             researchExpBonusCount,
             // baseScoreList: pokemonList.map(pokemon => (pokemon['きのみ期待値/日'] + pokemon['自己完結スキル期待値/日']) * helpBonus + pokemon['手伝期待値/回'] * otesapo / 5),
-            pokemonList,
+            pokemonList: pokemonList.map(x => ({
+              ...x,
+              healList: undefined,
+            })),
             useFoodNum,
             addFoodNum,
             defaultFoodNum,
