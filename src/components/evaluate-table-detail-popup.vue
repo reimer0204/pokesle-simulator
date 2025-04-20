@@ -117,7 +117,8 @@ const result = computed(() => {
 })
 
 const evaluateGraph = computed(() => {
-  const upper = Math.min(percentile.value.findIndex(x => x >= result.value.score), 100);
+  let upper = Math.min(percentile.value.findIndex(x => x >= result.value.score), 100);
+  if (upper == -1) upper = 100
   const lower = Math.max(percentile.value.findLastIndex(x => x <= result.value.score), 0);
   const thisPercentile = upper == lower ? lower : (result.value.score - percentile.value[lower]) / (percentile.value[upper] - percentile.value[lower]) + lower
 
@@ -173,7 +174,8 @@ const evaluateGraph = computed(() => {
 })
 
 const specialtyEvaluateGraph = computed(() => {
-  const upper = Math.min(specialtyPercentile.value.findIndex(x => x >= result.value.specialtyScore), 100);
+  let upper = Math.min(specialtyPercentile.value.findIndex(x => x >= result.value.specialtyScore), 100);
+  if (upper == -1) upper = 100
   const lower = Math.max(specialtyPercentile.value.findLastIndex(x => x <= result.value.specialtyScore), 0);
   const thisPercentile = upper == lower ? lower : (result.value.specialtyScore - specialtyPercentile.value[lower]) / (specialtyPercentile.value[upper] - specialtyPercentile.value[lower]) + lower
 

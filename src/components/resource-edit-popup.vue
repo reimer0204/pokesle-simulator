@@ -26,12 +26,16 @@ const seedPokemonList = computed(() => {
       <label>ゆめのかけら</label>
       <InputNumber v-model.number="config.candy.shard" placeholder="未入力の場合は無制限" />
     </div>
-    <!-- <div class="flex-row-start-center gap-5px mt-10px">
+    <div class="flex-row-start-center gap-5px mt-10px">
       <label>ばんのうアメ</label>
       S: <input type="number" class="w-50px" v-model.number="config.candy.bag.s" placeholder="">
       M: <input type="number" class="w-50px" v-model.number="config.candy.bag.m" placeholder="">
       L: <input type="number" class="w-50px" v-model.number="config.candy.bag.l" placeholder="">
-    </div> -->
+    </div>
+    <small class="mt-5px">
+      ばんのうアメは各ポケモンに使用できる量を指定してください。<br>
+      Sを10個指定した場合、チームシミュレーションではSを10個使用した個体を複数編成したものがレコメンドされる可能性があります。
+    </small>
     
     <SortableTable class="mt-10px" :dataList="seedPokemonList" :columnList="[
       { key: 'type', name: 'タイプ' },

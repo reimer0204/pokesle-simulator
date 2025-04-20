@@ -81,6 +81,8 @@ self.addEventListener('message', async (event) => {
       };
       const helpRate = new HelpRate(config);
       
+      const freeCandy = config.candy.bag.s * 3 + config.candy.bag.m * 20 + config.candy.bag.l * 100
+      
       // 組み合わせを列挙
       let combinationList = [];
       if (pickup > 0) {
@@ -208,7 +210,7 @@ self.addEventListener('message', async (event) => {
           legendNum += pokemon.base.legend as unknown as number;
           useTotalShard += pokemon.useShard;
           useCandies[pokemon.base.candyName] = (useCandies[pokemon.base.candyName] ?? 0) + pokemon.useCandy;
-          if (useCandies[pokemon.base.candyName] > (config.candy.bag[pokemon.base.candyName] ?? 0)) {
+          if (useCandies[pokemon.base.candyName] > (config.candy.bag[pokemon.base.candyName] ?? 0) + freeCandy * 5) {
             continue combinationLoop;
           }
 

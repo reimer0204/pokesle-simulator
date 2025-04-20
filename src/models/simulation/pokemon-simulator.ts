@@ -43,6 +43,7 @@ class PokemonSimulator {
   #berryEnergyWeight = 1;
   #skillEnergyIgnore = 0;
   #helpRate: HelpRate;
+  #freeCandy = 0;
 
   static MODE_ABOUT = 1;
   static MODE_TEAM = 2;
@@ -50,7 +51,7 @@ class PokemonSimulator {
   static FOOD_NUM_RESET = Object.fromEntries(Food.list.map(x => [x.name, 0]));
   #nightLength: number;
   #dayLength: number;
-  #addHeal: { effect: number; time: number; }[];
+  #addHeal?: { effect: number; time: number; }[];
 
   constructor(config: any, mode: number) {
     if (!mode) throw 'モードが指定されていません'
@@ -113,6 +114,7 @@ class PokemonSimulator {
     // 期待値計算
     this.#expectType = mode == PokemonSimulator.MODE_SELECT ? config.selectEvaluate.expectType : config.simulation.expectType;
     this.#probBorder = new ProbBorder(this.#expectType.border / 100)
+    this.#freeCandy = config.candy.bag.s * 3 + config.candy.bag.m * 20 + config.candy.bag.l * 100
 
     if (mode == PokemonSimulator.MODE_SELECT) {
       this.#addHeal = new Array(this.config.checkFreq).fill(0).map((_, i) => {
@@ -148,7 +150,7 @@ class PokemonSimulator {
           const requireCandy = Math.ceil((nextTotal - totalExp) / candyExp)
           const requireShard = Exp.list[lv - 1].shard * requireCandy;
           totalExp += candyExp * requireCandy;
-          if (useCandy + requireCandy <= this.config.candy.bag[base.candyName] && (!this.config.candy.shard || requireShard + useShard <= this.config.candy.shard)) {
+          if (useCandy + requireCandy <= this.config.candy.bag[base.candyName] + this.#freeCandy && (!this.config.candy.shard || requireShard + useShard <= this.config.candy.shard)) {
             useCandy += requireCandy
             useShard += requireShard
             lv++;
