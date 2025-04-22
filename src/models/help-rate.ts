@@ -9,7 +9,7 @@ class HelpRate {
   #config: any = null;
   #dayLength: number;
   #nightLength: number;
-  #teamHealCache: any[];
+  #teamHealCache: any;
   #teamHealHelpRateCache: { [key: string]: { day: number, night: number } };
   #helpRateCache: { [key: string]: { day: number, night: number } };
   #teamHealHelpRateCacheCount = 0;
@@ -30,7 +30,8 @@ class HelpRate {
     this.#nightLength = Math.round(config.sleepTime * 3600);
     this.#dayLength = 86400 - this.#nightLength;
 
-    this.#teamHealCache = [{ key: null, healList: [] }, { key: null, healList: [] }]
+    // this.#teamHealCache = [{ key: null, healList: [] }, { key: null, healList: [] }]
+    this.#teamHealCache = {}
     this.#teamHealHelpRateCache = {}
     this.#helpRateCache = {}
   }
@@ -57,8 +58,11 @@ class HelpRate {
     // return;
 
     let infoList = []
-    let cacheKey = '';
-    let cacheKey2 = '';
+
+    let healerKey = '';
+    let healerFullKey = '';
+    let subHealerKey = '';
+
     let otherHealerList = [];
     let selfHealerList = [];
     for(let pokemon of pokemonList) {
@@ -74,32 +78,62 @@ class HelpRate {
       infoList.push(info)
 
       if (info.hasHeal) {
-        const key = `${pokemon.base.name},${pokemon.base.type},${pokemon.morningHealGenki.toFixed(3)},${pokemon.natureGenkiMultiplier.toFixed(2)},${pokemon.selfHeal.toFixed(3)},${pokemon.otherHeal.toFixed(3)},${pokemon.speed},${pokemon.ceilSkillRate.toFixed(3)},${pokemon.bagFullHelpNum.toFixed(3)},${info.morningLimit},`
+        const key = `${pokemon.base.name},${pokemon.base.type},${pokemon.natureGenkiMultiplier.toFixed(2)},${pokemon.selfHeal.toFixed(3)},${pokemon.otherHeal.toFixed(3)},${pokemon.ceilSkillRate.toFixed(3)},${pokemon.bagFullHelpNum.toFixed(3)},${info.morningLimit},`
+        const subKey = `${pokemon.morningHealGenki.toFixed(3)},${pokemon.speed},`
         if (pokemon.otherHeal) {
-          cacheKey += key;
+          healerKey += key;
+          healerFullKey += key + subKey;
           otherHealerList.push({ pokemon, info })
         } else {
+          subHealerKey += key + subKey;
           selfHealerList.push({ pokemon, info })
         }
-        cacheKey2 += key;
       }
     }
+
+    /*
+    // キャッシュの構造
+    cache: {
+      key: healerShortKey
+      cache: {
+        [healerFullKey]: {
+          result: []
+          subCache: {
+            [subHealerKey]: {
+              result: []
+            }
+          }
+        }
+      }
+    }
+    */
+
+    if (this.#teamHealCache.key != healerKey) {
+      this.#teamHealCache = {
+        key: healerKey,
+        cache: {},
+      }
+      this.#teamHealHelpRateCache = {}
+    }
+    let caches = this.#teamHealCache.cache
 
     for(let loop = 0; loop < 2; loop++) {
       let key, healerList
       if (loop == 0) {
-        key = cacheKey;
+        key = healerFullKey;
         healerList = otherHealerList;
       } else {
-        key = cacheKey2;
+        key = subHealerKey;
         healerList = selfHealerList;
       }
-      
-      if (this.#teamHealCache[loop].key != key) {
-        // 3回くらいループさせるとほぼ収束する
-        let allHealList;
 
-        for(let i = 0; i < 3; i++) {
+      const cacheValue = caches[key];
+      
+      if (cacheValue === undefined) {
+        let allHealList;
+        
+        // 3回くらいループさせるとほぼ収束する
+        for(let i = 0; i < 2; i++) {
           for(let { pokemon, info} of healerList) {
             pokemon.healList = []
 
@@ -196,9 +230,7 @@ class HelpRate {
 
               if (time >= nextHeal) {
                 const { effect } = allHealList.shift()!
-
                 genki = Math.max(Math.min(genki + effect * pokemon.natureGenkiMultiplier!, 150), 0)
-
                 nextHeal = allHealList[0]?.time ?? 86400;
               }
             }
@@ -207,14 +239,16 @@ class HelpRate {
           }
         }
 
-        this.#teamHealCache[loop].key = key
-        this.#teamHealCache[loop].healList = healerList.map(x => x.pokemon.healList);
-        this.#teamHealHelpRateCache = {}
+        caches[key] = {
+          result: healerList.map(x => x.pokemon.healList),
+          subCache: {},
+        }
       } else {
         for(let i = 0; i < healerList.length; i++) {
-          healerList[i].pokemon.healList = this.#teamHealCache[loop].healList[i]
+          healerList[i].pokemon.healList = caches[key].result[i]
         }
       }
+      caches = caches[key].subCache;
     }
     
     // 手伝い回数の増加率を計算
@@ -222,7 +256,7 @@ class HelpRate {
       const info = infoList[j];
       const pokemon = pokemonList[j];
 
-      const cacheKey2 = `${cacheKey}/${pokemon.base.type}/${pokemon.morningHealGenki}/${pokemon.natureGenkiMultiplier}/${info.morningLimit}/${addHeal != null}`
+      const cacheKey2 = `${healerFullKey}/${pokemon.base.type}/${pokemon.morningHealGenki}/${pokemon.natureGenkiMultiplier}/${info.morningLimit}/${addHeal != null}`
       let result = this.#teamHealHelpRateCache[cacheKey2]
       this.#teamHealHelpRateCacheCount++;
 

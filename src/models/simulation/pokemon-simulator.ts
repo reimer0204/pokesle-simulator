@@ -321,6 +321,9 @@ class PokemonSimulator {
       evaluateResult: {},
       evaluateSpecialty: {},
       score: 0,
+      nature: undefined,
+      skillWeightList: [],
+      healList: []
     }
 
     let foodUnlock = lv >= 60 ? 3 : lv >= 30 ? 2 : 1;
