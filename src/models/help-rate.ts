@@ -21,7 +21,7 @@ class HelpRate {
     { border: 40, effect: 0.58 },
     { border: 0, effect: 0.66 },
   ]
-  #helpRateCount = 0;
+  // #helpRateCount = 0;
   #mode: number;
 
   constructor(config: any, mode: number = 0) {
@@ -30,7 +30,6 @@ class HelpRate {
     this.#nightLength = Math.round(config.sleepTime * 3600);
     this.#dayLength = 86400 - this.#nightLength;
 
-    // this.#teamHealCache = [{ key: null, healList: [] }, { key: null, healList: [] }]
     this.#teamHealCache = {}
     this.#teamHealHelpRateCache = {}
     this.#helpRateCache = {}
@@ -66,7 +65,8 @@ class HelpRate {
     let otherHealerList = [];
     let selfHealerList = [];
     for(let pokemon of pokemonList) {
-      pokemon.healList = [];
+      pokemon.selfHealList = [];
+      pokemon.otherHealList = [];
       const info = {
         skill: pokemon.base.skill,
         stockLimit: pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール' ? 2 : 1,
@@ -135,19 +135,20 @@ class HelpRate {
         // 3回くらいループさせるとほぼ収束する
         for(let i = 0; i < 2; i++) {
           for(let { pokemon, info} of healerList) {
-            pokemon.healList = []
+            pokemon.selfHealList = []
+            pokemon.otherHealList = []
 
             allHealList = infoList.flatMap((x, k) => {
               if (pokemonList[k].base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
                 return []
               }
-              return pokemonList[k].healList
+              return pokemonList[k].otherHealList
             }).sort((a, b) => a.time - b.time)
             
             let unPickHelpNum = info.beforeNightHelp;  // 昨日の夜の手伝い回数で初期化
             let beforeHelp = 0; // 前回のおてつだい時刻
             let checkNum = 0;   // タップ回数
-            let nextCheck = pokemon.otherHeal ? 0 : 86400;  // 次のタップ時刻
+            let nextCheck = 0;  // 次のタップ時刻
             let nextHeal = allHealList[0]?.time ?? 86400;
             let time = 0;       // 前回のイベント発生時刻
             let genki = Math.max(info.morningGenki, Math.min(info.morningGenki + pokemon.morningHealGenki * pokemon.natureGenkiMultiplier!, info.morningLimit)); // 起床時のげんき
@@ -157,6 +158,7 @@ class HelpRate {
               let nextTime = Math.min(nextCheck, nextHeal, 86400)
               let beforeGenki = genki;
               genki = Math.max(genki - (nextTime - time) / 600, 0)
+              // console.log(time, pokemon, nextTime)
 
               // 次のイベントの時間までおてつだい回数を加算
               for(let { border, effect } of HelpRate.GENKI_LIST) {
@@ -194,7 +196,7 @@ class HelpRate {
                 break;
               }
       
-              if (time >= nextCheck && checkNum < this.#config.checkFreq && pokemon.otherHeal) {
+              if (time >= nextCheck && checkNum < this.#config.checkFreq && info.hasHeal) {
                 const skillableHelpNum = Math.min(unPickHelpNum, pokemon.bagFullHelpNum! + 4)
 
                 let nightNoHit = (1 - pokemon.ceilSkillRate!) ** skillableHelpNum;
@@ -214,7 +216,10 @@ class HelpRate {
 
                 // 他のポケモンを回復する
                 if (pokemon.otherHeal) {
-                  pokemon.healList.push({ effect: skillNum * pokemon.otherHeal, time })
+                  pokemon.otherHealList.push({ effect: skillNum * pokemon.otherHeal, time })
+                }
+                if (pokemon.base.skill.name != 'ナイトメア(エナジーチャージM)') {
+                  pokemon.selfHealList.push({ effect: skillNum * (pokemon.selfHeal + pokemon.otherHeal), time })
                 }
       
                 unPickHelpNum = 0;
@@ -240,12 +245,14 @@ class HelpRate {
         }
 
         caches[key] = {
-          result: healerList.map(x => x.pokemon.healList),
+          self: healerList.map(x => x.pokemon.selfHealList),
+          other: healerList.map(x => x.pokemon.otherHealList),
           subCache: {},
         }
       } else {
         for(let i = 0; i < healerList.length; i++) {
-          healerList[i].pokemon.healList = caches[key].result[i]
+          healerList[i].pokemon.selfHealList = caches[key].self[i]
+          healerList[i].pokemon.otherHealList = caches[key].other[i]
         }
       }
       caches = caches[key].subCache;
@@ -263,10 +270,14 @@ class HelpRate {
       if (result === undefined) {
         const allHealList = [];
         for(let subPokemon of pokemonList) {
-          if (subPokemon.base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
-            continue
+          if (pokemon === subPokemon) {
+            allHealList.push(...subPokemon.selfHealList);
+          } else {
+            if (subPokemon.base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
+              continue
+            }
+            allHealList.push(...subPokemon.otherHealList);
           }
-          allHealList.push(...subPokemon.healList);
         };
         if (addHeal && (pokemon.selfHeal <= 0 && pokemon.otherHeal <= 0)) {
           allHealList.push(...addHeal)

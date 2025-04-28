@@ -324,7 +324,7 @@ addEventListener('message', async (event) => {
         let healedAddEnergyList = healCheckTarget.map(subPokemon => {
           if (subPokemon.box!.index == pokemon.box!.index) return 0;
           
-          let helpRate = simulator.getHelpRate(pokemon.healList)
+          let helpRate = simulator.getHelpRate(pokemon.otherHealList)
 
           let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;

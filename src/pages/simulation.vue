@@ -46,12 +46,11 @@ const simulationResult = ref({
   teamList: [],
 })
 
-const multiWorker = new MultiWorker(TeamSimulator, config.workerNum)
 const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
-
+const teamMultiWorker = new MultiWorker(TeamSimulator, config.workerNum)
 onBeforeUnmount(() => {
-  multiWorker.close();
   pokemonMultiWorker.close();
+  teamMultiWorker.close();
 })
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
@@ -77,6 +76,7 @@ async function simulation() {
     if (config.simulation.mode == 2) {
       customConfig.simulation.berryEnergyWeight = 0;
       customConfig.simulation.skillEnergyIgnore = 0;
+      customConfig.simulation.shardWeight = 0;
     }
 
     if (targetDay.value != -1) {
@@ -136,7 +136,7 @@ async function simulation() {
 
     let bestResult = [];
     let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);
-    await multiWorker.call(
+    await teamMultiWorker.call(
       stepC,
       (i) => {
         return {

@@ -142,7 +142,7 @@ class PokemonSimulator {
       }
       if (this.config.simulation.fixResourceMode == 1 || this.config.simulation.fixResourceMode == 2) {
         const lvLimit = this.config.simulation.fixResourceMode == 1 ? Exp.list.length : Math.max(this.config.simulation.fixLv, requireLv);
-        let totalExp = box.nextExp ? Math.round(Exp.list[box.lv].total * base.exp) - box.nextExp : Math.round(Exp.list[box.lv - 1].total * base.exp)
+        let totalExp = box.nextExp ? Math.round(Exp.list[Math.min(box.lv + 1, Exp.list.length) - 1].total * base.exp) - box.nextExp : Math.round(Exp.list[Math.min(box.lv, Exp.list.length) - 1].total * base.exp)
         let candyExp = nature.good == 'EXP獲得量' ? 30 : nature.weak == 'EXP獲得量' ? 21 : 25;
         
         while(lv < lvLimit) {
@@ -323,7 +323,8 @@ class PokemonSimulator {
       score: 0,
       nature: undefined,
       skillWeightList: [],
-      healList: []
+      selfHealList: [],
+      otherHealList: [],
     }
 
     let foodUnlock = lv >= 60 ? 3 : lv >= 30 ? 2 : 1;
@@ -931,7 +932,7 @@ class PokemonSimulator {
     // チーム全体のげんき回復による増加エナジーを計算
     if (pokemon.otherHeal > 0 && this.mode == PokemonSimulator.MODE_SELECT) {
 
-      let helpRate = this.#helpRate.getHelpRate(pokemon.healList)
+      let helpRate = this.#helpRate.getHelpRate(pokemon.otherHealList)
 
       // 一番つよいポケモンが4匹いるとして、それらのげんきオールによる増分を効果とする
       const energy =

@@ -62,7 +62,12 @@ class Exp {
 		{total: 43488, shard: 486},
 		{total: 46021, shard: 538},
 		{total: 48687, shard: 593},
-		{total: 51493, shard: null},
+		{total: 51493, shard: 651},
+		{total: 54358, shard: 698},
+		{total: 57280, shard: 750},
+		{total: 60257, shard: 804},
+		{total: 63286, shard: 866},
+		{total: 66363, shard: null},
 	];
 
 	static calcRequireInfo(pokemon, nature, config) {

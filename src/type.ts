@@ -141,7 +141,8 @@ interface SimulatedPokemon {
   nextSubSkillList?: boolean[];
   nature: NatureType;
   skillWeightList: { skill: SkillType, weight: number }[];
-  healList: { effect: number, time: number, night?: boolean }[],
+  selfHealList: { effect: number, time: number, night?: boolean }[],
+  otherHealList: { effect: number, time: number, night?: boolean }[],
   
   cookingPowerUpEffect: number;
   cookingChanceEffect: number;

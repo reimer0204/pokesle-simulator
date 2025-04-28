@@ -136,7 +136,9 @@ const columnList = computed(() => {
   if (config.pokemonList.simulatedInfo) {
     result.push(
       { key: 'speed', name: 'おてつだい\n時間', type: Number },
+      // { key: 'dayHelpRate', name: '日中おてつ\nだい倍率', type: Number, percent: true },
       { key: 'dayHelpNum', name: '日中おてつ\nだい回数', type: Number, fixed: 2 },
+      // { key: 'nightHelpRate', name: '夜間おてつ\nだい倍率', type: Number, percent: true },
       { key: 'nightHelpNum', name: '夜間おてつ\nだい回数', type: Number, fixed: 2 },
       { key: 'berryNum', name: 'きのみ\n個数', type: Number },
       { key: 'berryEnergyPerHelp', name: 'きのみ\n/手伝い', type: Number, fixed: 1 },

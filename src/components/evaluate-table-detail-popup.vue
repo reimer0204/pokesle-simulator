@@ -101,7 +101,7 @@ const result = computed(() => {
   result.scoreForSupportEvaluate = evaluateTable.scoreForSupportEvaluate[lv]
 
   const helpRate = new HelpRate(config)
-  result.healerHelpRate = helpRate.getHelpRate(result.healList)
+  result.healerHelpRate = helpRate.getHelpRate(result.otherHealList)
   result.defaultHelpRate = helpRate.getHelpRate([])
 
   return result;
@@ -475,7 +475,7 @@ const specialtyEvaluateGraph = computed(() => {
               
               <template v-if="skill.genki && skill.team">
                 <template v-if="result.base.skill.name != 'ゆびをふる' || (result.base.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')">
-                  1日の1匹あたりの回復量：{{ result.healList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
+                  1日の1匹あたりの回復量：{{ result.otherHealList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
                   <!-- 起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>
                   日中：{{ (result.otherDayHealEffect * 100).toFixed(1) }}<br> -->
                   <br>
