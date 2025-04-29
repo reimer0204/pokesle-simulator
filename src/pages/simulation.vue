@@ -88,13 +88,38 @@ async function simulation() {
 
     // 固定のポケモンと推論対象を選ぶ
     const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
-    let targetPokemonList = pokemonList.filter(x => x.box?.fix == null);
+    let filteredTargetPokemonList = pokemonList.filter(x => x.box?.fix == null);
 
-    const rankMax = Math.min(customConfig.teamSimulation.maxRank, targetPokemonList.length);
     const pickup = 5 - fixedPokemonList.length;
 
     // スコアの高い上位のみをピックアップ
-    targetPokemonList = targetPokemonList.sort((a, b) => b.score - a.score).slice(0, rankMax)
+    let sortedPokemonList;
+    let targetPokemonList = [];
+    
+    if (config.simulation.mode != 2) {
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
+      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
+      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
+
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
+      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
+
+    } else {
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
+      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
+    }
+
+    sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.score - a.score)
+    targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankAll))
+    filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankAll)
+
+    sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.energyPerDay - a.energyPerDay)
+    targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankNotSupport))
+    filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankNotSupport)
+
+    let targetNum = targetPokemonList.length
 
     // げんき計算のキャッシュを効かせるため、ヒーラー、自身回復、その他の順にソート
     let healerTargetPokemonList = []
@@ -117,10 +142,10 @@ async function simulation() {
       sum: 0,
       topList: [],
     }));
-    for(let i = 0; i <= rankMax - pickup; i++) {
+    for(let i = 0; i <= targetNum - pickup; i++) {
       let combinationSize = 1;
       for(let j = 1; j <= pickup - 1; j++) {
-        combinationSize *= rankMax - i - j;
+        combinationSize *= targetNum - i - j;
         combinationSize /= j;
       }
 
@@ -141,7 +166,7 @@ async function simulation() {
       (i) => {
         return {
           type: 'simulate',
-          rankMax,
+          targetNum,
           pickup,
           pattern: combinationWorkerParameterList[i].sum,
           topList: combinationWorkerParameterList[i].topList,
@@ -203,13 +228,43 @@ async function showEditPopup(pokemon) {
 
         <SettingTable>
           <tr>
-            <th>対象ポケモン</th>
+            <th rowspan="5">対象ポケモン</th>
+            <th>きのみスコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRank" class="w-50px"> 匹</div>
+              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px"> 匹</div>
             </td>
           </tr>
           <tr>
-            <th>結果表示</th>
+            <th>食材スコア</th>
+            <td>
+              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px"> 匹</div>
+            </td>
+          </tr>
+          <tr>
+            <th>総合スコア</th>
+            <td>
+              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px"> 匹</div>
+            </td>
+          </tr>
+          <tr>
+            <th>サポート抜きスコア</th>
+            <td>
+              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px"> 匹</div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <div class="w-250px">
+                <small>
+                  上記設定は重複しては選ばれず、例えばきのみスコアで選ばれたポケモンは後の3つにはヒットしません。<br>
+                  必ず上記設定の合計の数が対象になります。<br>
+                  ヒーラーなどは総合スコアが高く出ますが、ヒーラーばかりを対象にしても良い結果にならないので総合スコアの件数は少なめにした方が良い結果になりやすいです。
+                </small>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th colspan="2">結果表示</th>
             <td>
               <div>上位 <input type="number" v-model="config.teamSimulation.resultNum" class="w-50px"> 件</div>
             </td>

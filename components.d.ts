@@ -38,8 +38,6 @@ declare module 'vue' {
     SettingButtonPopup: typeof import('./src/components/design/setting-button-popup.vue')['default']
     SettingList: typeof import('./src/components/util/setting-list.vue')['default']
     SettingTable: typeof import('./src/components/design/setting-table.vue')['default']
-    SimulationPrepareTeamPopup: typeof import('./src/components/simulation-prepare-team-popup.vue')['default']
-    SimulationWeeklyTeamPopup: typeof import('./src/components/simulation-weekly-team-popup.vue')['default']
     SkillLvLabel: typeof import('./src/components/status/skill-lv-label.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']
     SubSkillLabel: typeof import('./src/components/status/sub-skill-label.vue')['default']

@@ -1,11 +1,5 @@
 <script setup>
 import { Food } from '@/data/food_and_cooking';
-import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
-import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vue';
-import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
-import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
-import SimulationPrepareTeamPopup from '../components/simulation-prepare-team-popup.vue';
-import SimulationWeeklyTeamPopup from '../components/simulation-weekly-team-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import Berry from '../data/berry';
@@ -14,7 +8,6 @@ import config from '../models/config.js';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import PokemonBox from '../models/pokemon-box/pokemon-box.js';
-import Popup from '../models/popup/popup.ts';
 import EvaluateTable from '../models/simulation/evaluate-table.js';
 import PokemonInfo from './box-summary/pokemon-info.vue';
 

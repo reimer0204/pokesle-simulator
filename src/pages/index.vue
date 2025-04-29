@@ -3,8 +3,6 @@ import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
 import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vue';
-import SimulationPrepareTeamPopup from '../components/simulation-prepare-team-popup.vue';
-import SimulationWeeklyTeamPopup from '../components/simulation-weekly-team-popup.vue';
 import SortableTable from '../components/sortable-table.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
@@ -158,10 +156,10 @@ const columnList = computed(() => {
       { key: 'ceilSkillRate', name: '天井補正\nスキル確率', type: Number, percent: true, fixed: 2 },
       { key: 'skillPerDay', name: 'スキル\n回数/日', type: Number, fixed: 2 },
       { key: 'skillEnergyPerDay', name: 'スキル\nエナジー/日', type: Number, fixed: 1 },
-      { key: 'shard', name: 'ゆめの\nかけら/日', type: Number, fixed: 1 },
+      { key: 'shard', name: 'スキル\nゆめかけ/日', type: Number, fixed: 1 },
       { key: 'energyPerDay', name: 'エナジー\n/日', type: Number, fixed: 1 },
       { key: 'supportEnergyPerDay', name: 'サポート\nエナジー/日', type: Number, fixed: 1 },
-      { key: 'supportScorePerDay', name: 'サポート\nスコア/日', type: Number, fixed: 1 },
+      { key: 'supportShardPerDay', name: 'サポート\nゆめかけ/日', type: Number, fixed: 1 },
     )
   }
 
@@ -192,19 +190,6 @@ async function showGoogleSpreadsheetPopup() {
   if(await Popup.show(GoogleSpreadsheetPopup)) {
     createPokemonList()
   }
-}
-
-async function simulationWeeklyTeam() {
-  Popup.show(SimulationWeeklyTeamPopup, { defaultTargetDay: -1 })
-}
-
-
-async function simulationDailyTeam() {
-  Popup.show(SimulationWeeklyTeamPopup)
-}
-
-async function simulationPrepareTeam() {
-  Popup.show(SimulationPrepareTeamPopup)
 }
 
 function deletePokemon(index) {
@@ -349,6 +334,32 @@ function showSelectDetail(pokemon, after, lv) {
 
           <template #header.edit>
             <help-button style="color: #FFF;" title="この列について" markdown="この列でソートするとPTシミュへの固定/除外でソートできます。"></help-button>
+          </template>
+
+          <template #header.energyPerDay>
+            エナジー<br>/日
+            <help-button
+              style="color: #FFF;" title="エナジー/日"
+              markdown="おてつだいボーナスや他ポケモンに影響を与えるスキルの効果を抜きにして、自分自身だけで稼げるエナジーです。"
+            />
+          </template>
+
+          <template #header.supportEnergyPerDay>
+            サポート<br>エナジー/日
+            <help-button
+              style="color: #FFF;" title="サポートスコア/日"
+              markdown="おてつだいボーナスやげんき回復系スキル、おてつだいサポートなどによる他ポケモンの効率上昇によって、追加で得られるであろうエナジーです。"
+            />
+          </template>
+
+          <template #header.supportShardPerDay>
+            サポート<br>ゆめかけ/日
+            <help-button
+              style="color: #FFF;" title="サポートゆめかけ/日"
+              markdown="おてつだいボーナスやげんき回復系スキルによる他ポケモンの効率上昇、もしくはゆめのかけらボーナスやリサーチEXPボーナスによって、得られるであろうゆめのかけらの量です。
+                現状の実装ではリサーチEXPボーナスもゆめのかけらとして扱ってこの値に含めています。
+              "
+            />
           </template>
 
           <template #index="{ data }">

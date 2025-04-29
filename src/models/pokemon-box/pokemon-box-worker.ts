@@ -266,10 +266,11 @@ addEventListener('message', async (event) => {
 
       simulator.calcHelp(pokemon)
 
+      // スコアを一旦計算する
       pokemon.tmpScore = pokemon.energyPerDay * (100 + config.simulation.fieldBonus) / 100;
       pokemon.tmpScore += (
         pokemon.tmpScore * (config.simulation.researchRankMax ? 0.5 : 0)
-        + pokemon.shard * config.selectEvaluate.shardEnergyRate / 4
+        + pokemon.shard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
       ) * config.simulation.shardWeight / 100;
     }
 
@@ -282,58 +283,73 @@ addEventListener('message', async (event) => {
   }
 
   if (type == 'assist') {
-    let pickupEnergyPerHelpTop5: SimulatedPokemon[] = event.data.pickupEnergyPerHelpTop5;
-    let healCheckTarget: SimulatedPokemon[] = event.data.healCheckTarget;
     let pokemonList: SimulatedPokemon[] = event.data.pokemonList;
-    let helpBonusTop6: SimulatedPokemon[] = event.data.helpBonusTop6;
-    let berryEnergyTop5: SimulatedPokemon[] = event.data.berryEnergyTop5;
+    let basedPokemonList: SimulatedPokemon[] = event.data.basedPokemonList;
 
-    let helpRateCache = new Map();
+    // ゆめボ/リサボ用
+    let energyTop5 = basedPokemonList.toSorted((a, b) => b.energyPerDay! - a.energyPerDay!).slice(0, 5);
+
+    // おてボ用に概算日給の高い上位5匹をリストアップしておく
+    let helpBonusTop5 = basedPokemonList.toSorted((a, b) => b.tmpScore! - a.tmpScore!).slice(0, 5);
+
+    // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
+    let berryEnergyTop5 = basedPokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
+
+    // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
+    let pickupEnergyPerHelpTop5 = basedPokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
+
+    // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
+    let healCheckTarget = basedPokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore! - a.tmpScore!).slice(0, 6)
+    healCheckTarget.push(...basedPokemonList.filter(x => x.healEffect != 0 && x.tmpScore! > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
+
 
     // 他メンバーに影響を与える要素について計算
     for(const pokemon of pokemonList) {
-      pokemon.supportScorePerDay = 0;
       pokemon.supportEnergyPerDay = 0;
+      pokemon.supportShardPerDay = 0;
   
       if (pokemon.subSkillNameList?.includes('おてつだいボーナス')) {
         // 概算日給の高い上位6匹から自身を除外し、上位4匹のおてスピが70%→65%になった時の増加量をおてボの効果とする
-        for(let subPokemon of helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)) {
-          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * (0.70 / 0.65 - 1)
-  
-          pokemon.supportScorePerDay += subPokemon.shard * (0.70 / 0.65 - 1) * config.simulation.shardWeight / 100
+        for(let subPokemon of helpBonusTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4)) {
+          // 素のおてスピ補正をかけて補正なしの能力にし、そこに65%時-70%時の倍率をかける
+          let effect = (1 - subPokemon.speedBonus) * (1 / 0.65 - 1 / 0.7);
+          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * effect
+          pokemon.supportShardPerDay += subPokemon.shard * (1 - effect) * (1 / 0.65 - 1 / 0.7);// * config.simulation.shardWeight / 100
         }
       }
   
       if (pokemon.subSkillNameList?.includes('ゆめのかけらボーナス')) {
         // 概算日給の高い上位6匹から自身を除外した上位4匹＋自身の6%分のエナジーをゆめボの効果とする
-        for(let subPokemon of [...helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
-          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.06 * config.simulation.shardWeight / 100
+        for(let subPokemon of [...energyTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
+          pokemon.supportShardPerDay += subPokemon.energyPerDay / config.selectEvaluate.shardEnergyRate * 0.06
         }
       }
   
       if (config.simulation.researchRankMax && pokemon.subSkillNameList?.includes('リサーチEXPボーナス')) {
         // 概算日給の高い上位6匹から自身を除外し、上位4匹の3%分のエナジーをリサボの効果とする
-        for(let subPokemon of [...helpBonusTop6.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
-          pokemon.supportEnergyPerDay += subPokemon.energyPerDay * 0.09 * config.simulation.shardWeight / 100 / 2
+        for(let subPokemon of [...helpBonusTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon]) {
+          pokemon.supportShardPerDay += subPokemon.energyPerDay / config.selectEvaluate.shardEnergyRate / 2 * 0.09
         }
       }
 
       // げんき回復系スキル評価
       if (pokemon.otherHeal) {
 
-        let healedAddEnergyList = healCheckTarget.map(subPokemon => {
-          if (subPokemon.box!.index == pokemon.box!.index) return 0;
-          
+        let healedAddEnergyList = healCheckTarget.filter(subPokemon => subPokemon.box!.index != pokemon.box!.index).map(subPokemon => {
           let helpRate = simulator.getHelpRate(pokemon.otherHealList)
 
           let dayHelpNum = (24 - config.sleepTime) * 3600 / subPokemon.speed * helpRate.day;
           let nightHelpNum = config.sleepTime  * 3600 / subPokemon.speed * helpRate.night;
-          let healedAddEnergy = subPokemon.tmpScore! * Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
+          let addEffect = Math.max((dayHelpNum + nightHelpNum) / (subPokemon.dayHelpNum + subPokemon.nightHelpNum) - 1, 0);
+          let score = subPokemon.tmpScore! * addEffect;
+          let energy = subPokemon.energyPerDay * addEffect;
+          let shard = subPokemon.shard * addEffect;
           
-          return healedAddEnergy;
-        });
+          return { score, energy, shard };
+        }).sort((a, b) => b.score - a.score).slice(0, 4);
 
-        pokemon.supportScorePerDay += healedAddEnergyList.sort((a, b) => b - a).slice(0, 4).reduce((a, x) => a + x, 0);
+        pokemon.supportEnergyPerDay += healedAddEnergyList.reduce((a, x) => a + x.energy, 0);
+        pokemon.supportShardPerDay += healedAddEnergyList.reduce((a, x) => a + x.shard, 0);
       }
   
       if (pokemon.bag > 0) {
@@ -378,10 +394,8 @@ addEventListener('message', async (event) => {
 
       pokemon.score += (
         pokemon.score * (config.simulation.researchRankMax ? 0.5 : 0)
-        + pokemon.shard * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
+        + (pokemon.shard + pokemon.supportShardPerDay) * (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)
       ) * config.simulation.shardWeight / 100;
-
-      pokemon.score += pokemon.supportScorePerDay
     }
 
     postMessage({

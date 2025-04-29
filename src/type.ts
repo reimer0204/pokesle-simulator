@@ -1,8 +1,10 @@
+type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー'
+
 interface CookingType {
   name: string;
   type: string;
   energy: number;
-	foodList: { name: string, num: number }[];
+	foodList: { name: FoodName, num: number }[];
   rawEnergy?: number;
   lv?: number;
   lv1?: number;
@@ -28,7 +30,7 @@ interface NatureType {
 }
 
 interface FoodType {
-  name: string;
+  name: FoodName;
   energy: number;
   img: any;
   bestTypeRate?: { [key: string]: number };
@@ -114,10 +116,29 @@ interface PokemonType {
     sleep?: number | null,
   },
 
-  foodNumListMap: { [key: string]: (number | null)[] }
+  foodNumListMap: { [key: string]: (number | null)[] },
+
+  'ふといながねぎ': number,
+  'あじわいキノコ': number,
+  'とくせんエッグ': number,
+  'ほっこりポテト': number,
+  'とくせんリンゴ': number,
+  'げきからハーブ': number,
+  'マメミート': number,
+  'モーモーミルク': number,
+  'あまいミツ': number,
+  'ピュアなオイル': number,
+  'あったかジンジャー': number,
+  'あんみんトマト': number,
+  'リラックスカカオ': number,
+  'おいしいシッポ': number,
+  'ワカクサ大豆': number,
+  'ワカクサコーン': number,
+  'めざましコーヒー': number,
 }
 
-interface SimulatedPokemon {
+type FoodNames = { [key in FoodName]: number };
+interface SimulatedPokemon extends FoodNames {
   box?: PokemonBoxType;
   base: PokemonType;
   lv: number;
@@ -146,8 +167,8 @@ interface SimulatedPokemon {
   
   cookingPowerUpEffect: number;
   cookingChanceEffect: number;
-  supportScorePerDay: number;
   supportEnergyPerDay: number;
+  supportShardPerDay: number;
   shard: number;
 
   // 個体から算出できる結果
@@ -224,12 +245,13 @@ interface SimulatedPokemon {
 }
 
 interface SimulatedFood {
-  name: string;
+  name: FoodName;
   num: number;
   energy: number;
 }
 
 export type {
+  FoodName,
   CookingType,
   FoodType,
   SubSkillType,

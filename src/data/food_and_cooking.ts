@@ -15,7 +15,7 @@ import slowpoketailImg from '../img/food/slowpoketail.png'
 import greengrasssoybeansImg from '../img/food/greengrasssoybeans.png'
 import greengrasscornImg from '../img/food/greengrasscorn.png'
 import coffeeImg from '../img/food/coffee.png'
-import type { CookingType, FoodType } from '../type'
+import type { FoodName, CookingType, FoodType } from '../type'
 
 class Food {
   static list: FoodType[] = [
@@ -37,7 +37,7 @@ class Food {
     { name: 'ワカクサコーン',     energy: 140, img: greengrasscornImg },
     { name: 'めざましコーヒー',   energy: 153, img: coffeeImg },
   ];
-  static map = Food.list.reduce((a, x) => (a[x.name] = x, a), {});
+  static map = Food.list.reduce((a, x) => (a[x.name] = x, a), {} as { [key in FoodName]: FoodType });
   static maxEnergy: number;
   static averageEnergy: number;
   static averageMaxCookedEnergy: number;

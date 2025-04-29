@@ -271,20 +271,6 @@ class PokemonBox {
       }
     )).flat(1);
 
-    /* ここからおてボとかげんき回復系の計算 */
-    // おてボ用に概算日給の高い上位6匹をリストアップしておく
-    let helpBonusTop6 = pokemonList.toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6);
-
-    // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
-    let berryEnergyTop5 = pokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
-
-    // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
-    let pickupEnergyPerHelpTop5 = pokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
-
-    // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
-    let healCheckTarget = pokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore - a.tmpScore).slice(0, 6)
-    healCheckTarget.push(...pokemonList.filter(x => x.healEffect != 0 && x.tmpScore > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
-
     return (await multiWorker.call(
       stepB,
       (i) => {
@@ -294,10 +280,7 @@ class PokemonBox {
             Math.floor(pokemonList.length * i / config.workerNum),
             Math.floor(pokemonList.length * (i + 1) / config.workerNum),
           ),
-          helpBonusTop6,
-          berryEnergyTop5,
-          pickupEnergyPerHelpTop5,
-          healCheckTarget,
+          basedPokemonList: pokemonList,
         }
       }
     )).flat(1);

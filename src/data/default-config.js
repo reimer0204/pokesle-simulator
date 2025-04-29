@@ -122,7 +122,10 @@ const defaultConfig = {
   },
 
   teamSimulation: {
-    maxRank: 30,
+    maxRankBerry: 5,
+    maxRankFood: 10,
+    maxRankNotSupport: 20,
+    maxRankAll: 15,
     resultNum: 10,
     cookingNum: 3,
     nightCapPikachu: 0,

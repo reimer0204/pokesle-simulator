@@ -13,55 +13,6 @@ self.addEventListener('message', async (event) => {
   const { type, ...body } = event.data
 
   try {
-    if (type == 'combination') {
-      const { rankMax, pickup, topList, targetPokemonList, pattern } = event.data
-
-      // 組み合わせを列挙
-      let combinationList = [];
-      let count = 0;
-      for(let top of topList) {
-        let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
-        let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
-        combinationLoop: while(true) {
-          let aboutScore = 0;
-          if (targetPokemonList) {
-            for(let index of combination) {
-              aboutScore += targetPokemonList[index].score
-            }
-          }
-
-          combinationList.push({ combination: [...combination], aboutScore })
-
-          if (++count % 10000 == 0) {
-            postMessage({
-              status: 'progress',
-              body: count / pattern,
-            })
-          }
-
-          for(let i = pickup - 1; i >= 0; i--) {
-            combination[i]++;
-            if(combination[i] > combinationLimit[i]) {
-              if (i == 0) {
-                break combinationLoop;
-              }
-            } else {
-              for(let j = i + 1; j < pickup; j++) {
-                combination[j] = combination[j - 1] + 1;
-              }
-              break;
-            }
-          }
-        }
-      }
-
-      postMessage({
-        status: 'success',
-        body: combinationList,
-      })
-
-      return;
-    }
 
     if (type == 'border') {
       borderScore = Math.max(borderScore, body.border);
@@ -71,8 +22,8 @@ self.addEventListener('message', async (event) => {
     if (type == 'simulate') {
       let bestResult = [];
       borderScore = -1;
-      let { rankMax, pickup, topList, pattern, fixedPokemonList, targetPokemonList, config } = body as {
-        rankMax: number,
+      let { targetNum, pickup, topList, pattern, fixedPokemonList, targetPokemonList, config } = body as {
+        targetNum: number,
         pickup: number,
         topList: number[],
         pattern: number,
@@ -88,7 +39,7 @@ self.addEventListener('message', async (event) => {
       if (pickup > 0) {
         for(let top of topList) {
           let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
-          let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? rankMax - pickup + i : top);
+          let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? targetNum - pickup + i : top);
           combinationLoop: while(true) {
             let aboutScore = 0;
             if (targetPokemonList) {
@@ -163,13 +114,11 @@ self.addEventListener('message', async (event) => {
       let defaultFoodNum = { ...food0Map, ...config.foodDefaultNum };
 
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
-        // aboutScore *= dayLength;
 
-        // TODO: できれば途中で概算値が下回ったら抜けたい
-        // if (aboutScore < borderScore) {
-        //   console.log('break', aboutScore, borderScore);
-        //   break;
-        // }
+        // 概算値の時点でボーダーを超えていなければこの組み合わせは計算するまでもないのでスキップ
+        if (aboutScore * dayLength < borderScore) {
+          continue;
+        }
 
         const pokemonList = [...fixedPokemonList];
         for(let index of combination) {

@@ -32,9 +32,9 @@ class PokemonSimulator {
   helpEffectCache = new Map<string, [number, number]>();
   helpRateCache = new Map<string, any>();
   // calcStatusCache = new Map<string, any>();
-  fixedPotSize: number;
+  #fixedPotSize: number;
   cookingList: CookingType[];
-  defaultBestCooking: BestCookingType;
+  #defaultBestCooking: BestCookingType;
   foodEnergyMap: {[key: string]: number};
   defaultHelpRate: { day: number, night: number };
 
@@ -61,7 +61,7 @@ class PokemonSimulator {
     this.#nightLength = Math.round(this.config.sleepTime * 3600)
     this.#dayLength = 86400 - this.#nightLength
 
-    this.fixedPotSize =
+    this.#fixedPotSize =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.potMax
       : Math.round(this.config.simulation.potSize * (this.config.simulation.campTicket ? 1.5 : 1))
 
@@ -91,11 +91,11 @@ class PokemonSimulator {
     }
 
     // 現状の鍋のサイズでできる一番いい料理
-    this.defaultBestCooking = this.cookingList
-      .filter(cooking => cooking.foodNum <= this.fixedPotSize)
+    this.#defaultBestCooking = this.cookingList
+      .filter(cooking => cooking.foodNum <= this.#fixedPotSize)
       .map(cooking => ({
         ...cooking,
-        lastEnergy: cooking.fixEnergy + (this.fixedPotSize - cooking.foodNum) * Food.maxEnergy,
+        lastEnergy: cooking.fixEnergy + (this.#fixedPotSize - cooking.foodNum) * Food.averageEnergy,
       }))
       .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 
@@ -272,8 +272,8 @@ class PokemonSimulator {
       subSkillNameList: [],
       cookingPowerUpEffect: 0,
       cookingChanceEffect: 0,
-      supportScorePerDay: 0,
       supportEnergyPerDay: 0,
+      supportShardPerDay: 0,
       shard: 0,
       berryNum: 0,
       berryEnergy: 0,
@@ -373,7 +373,6 @@ class PokemonSimulator {
   ) {
     pokemon.cookingPowerUpEffect = 0;
     pokemon.cookingChanceEffect = 0;
-    pokemon.supportScorePerDay = 0;
     pokemon.shard = 0;
     pokemon.subSkillList = subSkillList;
     pokemon.subSkillNameList = subSkillList.map(x => x.name);
@@ -721,7 +720,7 @@ class PokemonSimulator {
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             energy = 0
-            for(let subPokemon of pokemonList) {
+            for(let subPokemon of pokemonList!) {
               energy += pokemon.berryEnergy * (pokemon == subPokemon ? effect.self : effect.other);
             }
 
@@ -732,7 +731,7 @@ class PokemonSimulator {
           }
 
           if (skill.name == 'ばけのかわ(きのみバースト)') {
-            let success = 1 - ((1 - skill.success) ** pokemon.skillPerDay);
+            let success = 1 - ((1 - skill.success!) ** pokemon.skillPerDay);
             energy *= (success * (pokemon.skillPerDay + 2) + (1 - success) * pokemon.skillPerDay) / pokemon.skillPerDay;
           }
 
@@ -740,24 +739,24 @@ class PokemonSimulator {
         }
         
         case 'みかづきのいのり(げんきオールS)': {
-          if (this.mode == PokemonSimulator.MODE_ABOUT) {
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            const { self, other } = effect.team[helpBoostCount! - 1]
+            energy = 
+              pokemon.berryEnergy * self
+              + Math.max(Berry.map['マゴ'].energy + pokemon.lv - 1, Berry.map['マゴ'].energy * (1.025 ** (pokemon.lv - 1))) * other * 4;
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
             const { self, other } = effect.team.at(-1)
             energy = pokemon.berryEnergy * self
             // 他メンバーのエナジーはあとで計算
             pokemon.burstBonus = other;
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            const { self, other } = effect.team[helpBoostCount - 1]
+            const { self, other } = effect.team[helpBoostCount! - 1]
             energy = 0
-            for(let subPokemon of pokemonList) {
+            for(let subPokemon of pokemonList!) {
               energy += pokemon.berryEnergy * (pokemon == subPokemon ? self : other);
             }
-
-          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
-            const { self, other } = effect.team[helpBoostCount - 1]
-            energy = 
-              pokemon.berryEnergy * self
-              + Math.max(Berry.map['マゴ'].energy + pokemon.lv - 1, Berry.map['マゴ'].energy * (1.025 ** (pokemon.lv - 1))) * other * 4;
           }
 
           break;
@@ -766,7 +765,7 @@ class PokemonSimulator {
         case 'おてつだいサポートS':
         case 'おてつだいブースト':
           if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energy = scoreForSupportEvaluate * (skill.name == 'おてつだいブースト' ? effect.max * 5 : effect);
+            energy = scoreForSupportEvaluate! * (skill.name == 'おてつだいブースト' ? effect.max * 5 : effect);
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
             // あとで概算値計算
@@ -779,11 +778,11 @@ class PokemonSimulator {
             }
             if (skill.name == 'おてつだいブースト') {
               helpCount = effect.fix;
-              helpCount += effect.team[helpBoostCount - 1]
+              helpCount += effect.team[helpBoostCount! - 1]
             }
 
             energy = 0;
-            for(let subPokemon of pokemonList) {
+            for(let subPokemon of pokemonList!) {
               energy += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.foodRate);
               for(let food of subPokemon.foodList) {
                 pokemon[food.name] = (pokemon[food.name] ?? 0) + food.num / subPokemon.foodList.length * helpCount * subPokemon.foodRate * pokemon.skillPerDay * weight;
@@ -846,24 +845,24 @@ class PokemonSimulator {
             ) / skillPerDay;
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            if (!this.config.simulation.sundayPrepare) {
-              // 拡張後と拡張前で出来る料理の差を計算
-              let afterPotSize = Math.round(
-                (this.config.simulation.potSize + effect)
-                * (this.config.simulation.campTicket ? 1.5 : 1)
-              );
 
-              let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
-                .map(cooking => ({
-                  ...cooking,
-                  lastEnergy: cooking.fixEnergy + (afterPotSize - cooking.foodNum) * Food.maxEnergy,
-                }))
-                .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+            // 料理は1日3回までしかできないので、3回以上発動するなら特殊補正
+            let fixedRate = pokemon.skillPerDay > 3 ? pokemon.skillPerDay / 3 : 1;
 
-              energy = (afterBestCooking.lastEnergy - this.defaultBestCooking.lastEnergy) * this.config.simulation.cookingWeight;
-            } else {
-              energy = Food.averageEnergy * effect
-            }
+            // 拡張後と拡張前で出来る料理の差を計算
+            let afterPotSize = Math.round(
+              (this.config.simulation.potSize + effect * fixedRate)
+              * (this.config.simulation.campTicket ? 1.5 : 1)
+            );
+
+            let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
+              .map(cooking => ({
+                ...cooking,
+                lastEnergy: cooking.fixEnergy + (afterPotSize - cooking.foodNum) * Food.averageEnergy,
+              }))
+              .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+
+            energy = (afterBestCooking.lastEnergy - this.#defaultBestCooking.lastEnergy) * this.config.simulation.cookingWeight / fixedRate;
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // 効果量だけ記憶しておく
@@ -882,7 +881,7 @@ class PokemonSimulator {
               // チームシミュレーションの際は後で正確に評価、そうでなければ概算評価する
               if (pokemon.skillPerDay) {
                 let totalEffect = effect / 100 * pokemon.skillPerDay * weight * 7;
-                energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * this.defaultBestCooking.lastEnergy / pokemon.skillPerDay * this.config.simulation.cookingWeight / weight
+                energy = (Cooking.getChanceWeekEffect(totalEffect).total - 24.6) / 7 * this.#defaultBestCooking.lastEnergy / pokemon.skillPerDay * this.config.simulation.cookingWeight / weight
               }
             }
 
