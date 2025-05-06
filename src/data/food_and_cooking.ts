@@ -88,7 +88,7 @@ class Cooking {
     {type: 'サラダ', name: 'みだれづきコーンサラダ', energy: 2785, foodList: [{name: 'ワカクサコーン', num: 9},{name: 'ピュアなオイル', num: 8},]},
     {type: 'サラダ', name: 'まけんきコーヒーサラダ', energy: 20218, foodList: [{name: 'めざましコーヒー', num: 28},{name: 'マメミート', num: 28},{name: 'ピュアなオイル', num: 22},{name: 'ほっこりポテト', num: 22},]},
     {type: 'サラダ', name: 'クロスチョップドサラダ', energy: 8755, foodList: [{name: 'とくせんエッグ', num: 20},{name: 'マメミート', num: 15},{name: 'ワカクサコーン', num: 11},{name: 'あんみんトマト', num: 10},]},
-    {type: 'サラダ', name: 'はなふぶきミモザサラダ', energy: 11811, foodList: [{name: 'とくせんエッグ', num: 25},{name: 'ピュアなオイル', num: 17},{name: 'ほっこりポテト', num: 15},{name: 'マメミート', num: 12},]},
+    {type: 'サラダ', name: 'はなふぶきミモザサラダ', energy: 11881, foodList: [{name: 'とくせんエッグ', num: 25},{name: 'ピュアなオイル', num: 17},{name: 'ほっこりポテト', num: 15},{name: 'マメミート', num: 12},]},
     {type: 'サラダ', name: 'りんごさんヨーグルトサラダ', energy: 19293, foodList: [{name: 'とくせんエッグ', num: 35},{name: 'とくせんリンゴ', num: 28},{name: 'あんみんトマト', num: 23},{name: 'モーモーミルク', num: 18},]},
     {type: 'デザート', name: 'ごちゃまぜジュース', energy: 0, foodList: []},
     {type: 'デザート', name: 'じゅくせいスイートポテト', energy: 1907, foodList: [{name: 'ほっこりポテト', num: 9},{name: 'モーモーミルク', num: 5},]},

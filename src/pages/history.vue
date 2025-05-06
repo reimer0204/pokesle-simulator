@@ -10,6 +10,12 @@ config.version.history = Version.HISTORY;
 
     <h2>更新履歴</h2>
 
+    <h3>2025/05/06</h3>
+    <ul>
+      <li>ピンプク、ラッキー、ハピナスを追加</li>
+      <li>はなふぶきミモザサラダのエナジー修正を反映</li>
+    </ul>
+
     <h3>2025/05/01</h3>
     <ul>
       <li>

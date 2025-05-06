@@ -177,14 +177,16 @@ async function simulation() {
         }
       },
       (i, body, workerList) => {
-        workerResultList[i] = body.bestResult;
+        if (body.bestResult !== undefined) {
+          workerResultList[i] = body.bestResult;
 
-        bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, customConfig.teamSimulation.resultNum);
-        for(let worker of workerList) {
-          worker.postMessage({
-            type: 'border',
-            border: bestResult.score
-          })
+          bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, customConfig.teamSimulation.resultNum);
+          for(let worker of workerList) {
+            worker.postMessage({
+              type: 'border',
+              border: bestResult[0].score
+            })
+          }
         }
 
         return body.progress;
