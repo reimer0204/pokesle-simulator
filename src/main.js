@@ -23,6 +23,7 @@ import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
 import BoxSummaryPage from './pages/box-summary.vue'
 import SimulationPage from './pages/simulation.vue'
+import FoodPreparePage from './pages/food_prepare.vue'
 import DataPage from './pages/data.vue'
 import DataFoodPage from './pages/data/food.vue'
 import DataCookingPage from './pages/data/cooking.vue'
@@ -40,6 +41,7 @@ const router = createRouter({
     { path: '/', component: IndexPage },
     { path: '/box-summary', component: BoxSummaryPage },
     { path: '/simulation', component: SimulationPage },
+    { path: '/food-prepare', component: FoodPreparePage },
     { path: '/data', component: DataPage,
       children: [
         { path: 'food', component: DataFoodPage },

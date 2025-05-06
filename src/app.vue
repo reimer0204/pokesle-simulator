@@ -49,6 +49,7 @@ document.addEventListener("visibilitychange", () => {
       <h1>ポケスリシミュ</h1>
       <router-link to="/">ボックス</router-link>
       <router-link to="/simulation">チームシミュ</router-link>
+      <router-link to="/food-prepare">食材準備</router-link>
       <router-link to="/box-summary">ボックス<br>サマリー</router-link>
       <router-link to="/data/pokemon">データ</router-link>
       <router-link to="/setting">厳選情報<br>生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
