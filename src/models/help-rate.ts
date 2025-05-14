@@ -263,9 +263,9 @@ class HelpRate {
       const info = infoList[j];
       const pokemon = pokemonList[j];
 
-      const cacheKey2 = `${healerFullKey}/${pokemon.base.type}/${pokemon.morningHealGenki}/${pokemon.natureGenkiMultiplier}/${info.morningLimit}/${addHeal != null}`
+      const cacheKey2 = `${healerFullKey}/${pokemon.selfHeal.toFixed(1)}/${pokemon.base.type}/${pokemon.morningHealGenki}/${pokemon.natureGenkiMultiplier}/${info.morningLimit}/${addHeal != null}`
       let result = this.#teamHealHelpRateCache[cacheKey2]
-      this.#teamHealHelpRateCacheCount++;
+      // this.#teamHealHelpRateCacheCount++;
 
       if (result === undefined) {
         const allHealList = [];
