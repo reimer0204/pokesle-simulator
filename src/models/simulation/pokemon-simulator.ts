@@ -41,6 +41,7 @@ class PokemonSimulator {
   #expectType;
   #probBorder;
   #berryEnergyWeight = 1;
+  #foodEnergyWeight = 1;
   #skillEnergyIgnore = 0;
   #helpRate: HelpRate;
   #freeCandy = 0;
@@ -106,6 +107,9 @@ class PokemonSimulator {
 
     if (config.simulation.berryEnergyWeight != null) {
       this.#berryEnergyWeight = config.simulation.berryEnergyWeight;
+    }
+    if (config.simulation.foodEnergyWeight != null) {
+      this.#foodEnergyWeight = config.simulation.foodEnergyWeight;
     }
     if (config.simulation.skillEnergyIgnore != null) {
       this.#skillEnergyIgnore = config.simulation.skillEnergyIgnore;
@@ -407,7 +411,8 @@ class PokemonSimulator {
 
     // 食材エナジー/手伝い
     pokemon.foodEnergyPerHelp = pokemon.foodList.reduce((a, x) => a + x.energy, 0)
-      / pokemon.foodList.length;
+      / pokemon.foodList.length
+      * this.#foodEnergyWeight;
 
     if (this.mode != PokemonSimulator.MODE_SELECT) {
       pokemon.foodEnergyPerHelp *= this.config.simulation.cookingWeight;
@@ -803,7 +808,7 @@ class PokemonSimulator {
             ) / Food.list.length * effect;
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            if (!this.config.simulation.sundayPrepare) {
+            if (this.#foodEnergyWeight > 0) {
               let num = effect / Food.list.length * pokemon.skillPerDay * weight;
               let foodEnergy = 0;
               for(let food of Food.list) {
@@ -816,7 +821,7 @@ class PokemonSimulator {
                   * this.config.simulation.cookingWeight
               }
 
-              energy = foodEnergy / Food.list.length * effect;
+              energy = foodEnergy / Food.list.length * effect * this.#foodEnergyWeight;
             }
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
