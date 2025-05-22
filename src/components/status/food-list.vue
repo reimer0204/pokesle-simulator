@@ -17,8 +17,10 @@ const props = defineProps({
         error: pokemon.base?.foodNumListMap[food]?.[i] == null,
       }"
     >
-      <img :src="Food.map[food].img" />
-      <div class="num">{{ pokemon.base?.foodNumListMap[food]?.[i] }}</div>
+      <template v-if="food">
+        <img :src="Food.map[food].img" />
+        <div class="num">{{ pokemon.base?.foodNumListMap[food]?.[i] }}</div>
+      </template>
     </div>
   </div>
 </template>

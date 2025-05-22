@@ -43,6 +43,9 @@ let pokemon = reactive({
 const basePokemon = computed(() => {
   return Pokemon.map[pokemon.name]
 })
+const kaihouPokemon = computed(() => {
+  return basePokemon.value.name == 'ダークライ'
+})
 
 let assist = reactive({
   name: null,
@@ -55,7 +58,7 @@ let assist = reactive({
 });
 
 const pokemonFoodABC = computed(() => {
-  return pokemon.foodList.map(f => String.fromCharCode(65 + Math.max(basePokemon.value?.foodList.findIndex(x => x.name == f) ?? 0, 0))).join('');
+  return pokemon.foodList.map(f => f ? String.fromCharCode(65 + Math.max(basePokemon.value?.foodList.findIndex(x => x.name == f) ?? 0, 0)) : '').join('');
 })
 
 // 編集ならデフォルト値を設定
@@ -76,9 +79,9 @@ let subSkillNameSort = SubSkill.list.toSorted((a, b) => a.name > b.name ? 1 : a.
 const foodSelectList = computed(() => {
   if (basePokemon.value == null) return [[], [], []];
   return [
-    basePokemon.value.foodList.map(x => x?.name).slice(0, 1).filter(x => x),
-    basePokemon.value.foodList.map(x => x?.name).slice(0, 2).filter(x => x),
-    basePokemon.value.foodList.map(x => x?.name).slice(0, 3).filter(x => x),
+    basePokemon.value.foodList.filter(x => x?.name && x.numList[0]).map(x => x?.name),
+    basePokemon.value.foodList.filter(x => x?.name && x.numList[1]).map(x => x?.name),
+    basePokemon.value.foodList.filter(x => x?.name && x.numList[2]).map(x => x?.name),
   ]
 })
 
@@ -108,19 +111,25 @@ watch(() => assist.name, inferName)
 function convertFoodABC() {
   if (basePokemon.value == null || assist.foodABC == null) return;
 
-  assist.foodABC.slice(0, 3).split('').forEach((letter, i) => {
+  (assist.foodABC + '   ').slice(0, 3).split('').forEach((letter, i) => {
     let charCode = letter.toUpperCase().charCodeAt(0);
-    if (65 <= charCode && charCode <= 67) charCode -= 65;
-    if (49 <= charCode && charCode <= 51) charCode -= 49;
-    let foodIndex = Math.min(Math.max(charCode, 0), 2);
-    pokemon.foodList[i] = basePokemon.value.foodList[foodIndex].name;
+    if (65 <= charCode && charCode <= 90) charCode -= 65;
+    else if (49 <= charCode && charCode <= 64) charCode -= 49;
+    else charCode = 99;
+    let foodIndex = Math.max(charCode, 0);
+    pokemon.foodList[i] = basePokemon.value.foodList[foodIndex]?.name;
   })
 }
 watch(() => assist.foodABC, convertFoodABC)
 watch(() => pokemon.name, convertFoodABC)
 
 function convertSubSkill(index) {
-  if (assist.subSkillList[index] == null) return;
+  if (assist.subSkillList[index] == null || assist.subSkillList[index] == '') {
+    if (kaihouPokemon.value) {
+      pokemon.subSkillList[index] = null;
+    }
+    return;
+  }
 
   let name = convertRomaji(assist.subSkillList[index])
     .toUpperCase()
@@ -148,7 +157,10 @@ function convertNature() {
 watch(() => assist.name, inferName)
 
 const saveDisabled = computed(() => {
-  return basePokemon.value == null || !pokemon.lv || pokemon.foodList.some(x => !x) || pokemon.subSkillList.some(x => !x) || !pokemon.nature
+  return basePokemon.value == null || !pokemon.lv
+    || (pokemon.foodList.some(x => !x) && !kaihouPokemon.value)
+    || (pokemon.subSkillList.some(x => !x) && !kaihouPokemon.value)
+    || !pokemon.nature
 })
 
 function save(requireContinue) {
@@ -341,16 +353,17 @@ function changeColor() {
       />
       <div>
         <div v-if="basePokemon" class="food-sample flex-row-start-center gap-5px">
-          <div v-for="(abc, i) in ['A', 'B', 'C']" class="flex-row-start-center">
-            <div>{{ abc }}:</div>
-            <template v-if="basePokemon.foodList[i]">
-              <img :src="Food.map[basePokemon.foodList[i].name].img" />
+          <div v-for="(food, i) in basePokemon.foodList" class="flex-row-start-center">
+            <div>{{ String.fromCharCode(65 + i) }}:</div>
+            <template v-if="food">
+              <img :src="Food.map[food.name].img" />
             </template>
             <template v-else>-</template>
           </div>
         </div>
         <div class="flex-row-start-center gap-5px">
-          <select v-for="i in 3" v-model="pokemon.foodList[i - 1]" class="w-140px">
+          <select v-for="i in 3" :value="pokemon.foodList[i - 1] ?? ''" @input="pokemon.foodList[i - 1] = $event.target.value || null" class="w-140px">
+            <option value="" v-if="kaihouPokemon">未開放</option>
             <option v-for="food in foodSelectList[i - 1]" :value="food">
               <img :src="Food.map[food].img">
               {{ food }}
@@ -370,7 +383,8 @@ function changeColor() {
 
         <div class="flex-row-start-center">
           <div class="w-40px text-align-right">{{ lv }}：</div>
-          <select v-model="pokemon.subSkillList[i]">
+          <select :value="pokemon.subSkillList[i] || ''" @input="pokemon.subSkillList[i] = $event.target.value || null">
+            <option value="" v-if="kaihouPokemon">未開放</option>
             <option v-for="subSkill in subSkillNameSort" :value="subSkill.name">{{ subSkill.name }}</option>
           </select>
         </div>
@@ -419,7 +433,7 @@ function changeColor() {
       </label>
     </div>
 
-    <ToggleArea class="mt-20px" open v-if="simulatedPokemonList">
+    <ToggleArea class="mt-20px" open v-if="simulatedPokemonList && !kaihouPokemon">
       <template #headerText>厳選情報</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">

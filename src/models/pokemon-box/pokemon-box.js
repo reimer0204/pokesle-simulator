@@ -27,10 +27,10 @@ class PokemonBox {
   static check(pokemon) {
     if (Pokemon.map[pokemon.name] == null) throw '知らないポケモン';
     if (!(0 < pokemon.lv)) throw '知らないレベル';
-    if (pokemon.foodList.some(food => Food.map[food] == null)) throw '知らない食材';
-    if (pokemon.foodList.length != 3) throw '食材が3つじゃない';
-    if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null)) throw '知らないサブスキル';
-    if (pokemon.subSkillList.length != 5) throw 'サブスキルが5つじゃない';
+    if (pokemon.foodList.some(food => Food.map[food] == null) && !Pokemon.map[pokemon.name].kaihou) throw '知らない食材';
+    if (pokemon.foodList.length != 3 && !Pokemon.map[pokemon.name].kaihou) throw '食材が3つじゃない';
+    if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null) && !Pokemon.map[pokemon.name].kaihou) throw '知らないサブスキル';
+    if (pokemon.subSkillList.length != 5 && !Pokemon.map[pokemon.name].kaihou) throw 'サブスキルが5つじゃない';
     if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
 
     return true;
@@ -39,8 +39,8 @@ class PokemonBox {
   static post(pokemon, index = null) {
     if (Pokemon.map[pokemon.name] == null) throw '知らないポケモン';
     if (!(0 < pokemon.lv)) throw '知らないレベル';
-    if (pokemon.foodList.some(food => Food.map[food] == null)) throw '知らない食材';
-    if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null)) throw '知らない食材';
+    if (pokemon.foodList.some(food => Food.map[food] == null) && !Pokemon.map[pokemon.name].kaihou) throw '知らない食材';
+    if (pokemon.subSkillList.some(subSkill => SubSkill.map[subSkill] == null) && !Pokemon.map[pokemon.name].kaihou) throw '知らないサブスキル';
     if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
 
     pokemon = JSON.parse(JSON.stringify(pokemon));

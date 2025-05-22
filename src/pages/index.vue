@@ -380,11 +380,13 @@ function showSelectDetail(pokemon, after, lv) {
                 class="food"
                 :class="{
                   disabled: i >= data.foodList.length,
-                  error: data.base.foodNumListMap[food]?.[i] == null,
+                  error: data.base.foodNumListMap[food]?.[i] == null && food != null,
                 }"
               >
-                <img :src="Food.map[food].img" />
-                <div class="num">{{ data.base.foodNumListMap[food]?.[i] }}</div>
+                <template v-if="food">
+                  <img :src="Food.map[food].img" />
+                  <div class="num">{{ data.base.foodNumListMap[food]?.[i] }}</div>
+                </template>
               </div>
             </div>
           </template>

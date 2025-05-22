@@ -95,6 +95,7 @@ interface PokemonType {
   help: number;
   exp: number;
   legend: boolean,
+  kaihou: boolean,
   foodList: {
     name: string;
     numList: (number | null)[];

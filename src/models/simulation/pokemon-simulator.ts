@@ -330,6 +330,7 @@ class PokemonSimulator {
     let foodUnlock = lv >= 60 ? 3 : lv >= 30 ? 2 : 1;
 
     for(let [index, name] of foodNameList.slice(0, foodUnlock).entries()) {
+      if (!name) continue;
       const food = Food.map[name];
       if (food == null) throw `${pokemon.base.name}:不正な食べ物(${name})`
       let num = Math.round(firstFoodEnergy * [1, 2.25, 3.6][index] / food.energy);
@@ -375,7 +376,7 @@ class PokemonSimulator {
     pokemon.cookingChanceEffect = 0;
     pokemon.shard = 0;
     pokemon.subSkillList = subSkillList;
-    pokemon.subSkillNameList = subSkillList.map(x => x.name);
+    pokemon.subSkillNameList = subSkillList.map(x => x?.name);
     pokemon.nature = nature;
 
     // きのみの個数

@@ -10,13 +10,16 @@ const props = defineProps<{
 
 <template>
   <div class="sub-skill-label-list" v-if="props.pokemon.box">
-    <SubSkillLabel 
-      v-for="(subSkill, i) in props.pokemon.box.subSkillList"
-      :subSkill="props.pokemon.subSkillList[i] ?? SubSkill.map[subSkill]"
-      :short="config.pokemonList.subSkillShort"
-      :class="{ disabled: i >= props.pokemon.subSkillList.length }"
-      :fix="props.pokemon.subSkillNameList[i] != null && props.pokemon.subSkillNameList[i] != subSkill"
-      :silverSeed="props.pokemon.nextSubSkillList?.[i]" />
+    <template v-for="(subSkill, i) in props.pokemon.box.subSkillList">
+      <SubSkillLabel 
+        v-if="subSkill"
+        :subSkill="props.pokemon.subSkillList[i] ?? SubSkill.map[subSkill]"
+        :short="config.pokemonList.subSkillShort"
+        :class="{ disabled: i >= props.pokemon.subSkillList.length }"
+        :fix="props.pokemon.subSkillNameList[i] != null && props.pokemon.subSkillNameList[i] != subSkill"
+        :silverSeed="props.pokemon.nextSubSkillList?.[i]"
+      />
+    </template>
   </div>
 </template>
 
