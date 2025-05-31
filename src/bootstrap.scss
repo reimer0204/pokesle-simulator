@@ -78,6 +78,7 @@ $i: 1;
   @else if $i < 100 { $i: $i + 5; }
   @else { $i: $i + 10; }
 }
+.w-auto { width: auto !important; }
 .ml-auto { margin-left: auto !important; }
 .mr-auto { margin-right: auto !important; }
 .ml-0 { margin-left: 0px !important; }

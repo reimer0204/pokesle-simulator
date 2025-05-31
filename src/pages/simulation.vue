@@ -1,6 +1,6 @@
 <script setup>
 import CommonSetting from '../components/common-setting.vue';
-import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
+import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import SettingList from '../components/util/setting-list.vue';

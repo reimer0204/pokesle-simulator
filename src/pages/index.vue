@@ -1,5 +1,5 @@
 <script setup>
-import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
+import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
 import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vue';

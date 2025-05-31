@@ -53,6 +53,7 @@ interface SkillType {
   genki?: boolean;
   shard?: boolean;
   energyOnly?: boolean;
+  foodList?: FoodType[];
 }
 
 interface SubSkillType {

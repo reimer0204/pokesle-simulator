@@ -834,6 +834,46 @@ class PokemonSimulator {
           }
           break;
 
+
+        case 'きょううん(食材セレクトS)':
+          pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
+
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            energy = skill.foodList.reduce((a, food) =>
+              a + food.energy * (
+                (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.specialty[pokemon.base.specialty].foodGetRate / 100 + 1
+              )
+              , 0
+            ) / skill.foodList.length * effect.food;
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            if (this.#foodEnergyWeight > 0) {
+              let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
+              console.log(num)
+              let foodEnergy = 0;
+              for(let food of skill.foodList) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+                foodEnergy +=
+                  (
+                    this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
+                    + food.energy * (100 - this.config.simulation.foodGetRate) / 100
+                  )
+                  * this.config.simulation.cookingWeight
+              }
+
+              energy = foodEnergy / skill.foodList.length * effect.food * this.#foodEnergyWeight;
+            }
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            if (!this.config.simulation.sundayPrepare) {
+              let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
+              for(let food of skill.foodList) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+              }
+            }
+          }
+          break;
+
         case 'ゆめのかけらゲットS':
         case 'ゆめのかけらゲットS(ランダム)':
           pokemon.shard += effect * pokemon.skillPerDay * weight;

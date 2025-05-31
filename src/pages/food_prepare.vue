@@ -1,6 +1,6 @@
 <script setup>
 import CommonSetting from '../components/common-setting.vue';
-import EditPokemonPopup from '../components/edit-pokemon-popup.vue';
+import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import SettingList from '../components/util/setting-list.vue';
@@ -80,6 +80,12 @@ function makeCombinationList(target, num) {
 }
 
 async function simulation() {
+  if (enableCookingTypes.value.length * cookingNum.value > 18) {
+    if (!confirm('料理回数と有効な種類が多いため、分析がかなり重くなるかもしれません。このまま実行してもよろしいですか？')) {
+      return;
+    }
+  }
+
   asyncWatcher.run(async (progressCounter) => {
     const subProgressCounters = progressCounter.split(...new Array(enableCookingTypes.value.length).fill(1))
     let customConfig = JSON.parse(JSON.stringify({
@@ -243,7 +249,6 @@ async function simulation() {
         cookingRankList: Cooking.list.filter(cooking => cooking.type == cookingType && cooking.foodNum == 0)
       }
     }
-    console.log(result)
 
     const curryCombinationList = makeCombinationList(result['カレー'].cookingRankList.length, cookingNum.value);
     const saladCombinationList = makeCombinationList(result['サラダ'].cookingRankList.length, cookingNum.value);
@@ -453,27 +458,30 @@ async function showEditPopup(pokemon) {
 
         <div class="flex-column-start-stretch">
           <label>種類別重み設定</label>
-          <div class="flex-row-start-center gap-10px">
-            <div class="flex-row-start-center gap-3px">
-              <label>カレー：</label>
-              <input type="number" class="w-50px" :value="weights['カレー']" @input="weights['カレー'] = Number($event.target.value) || 0">
-              %
+          <div>
+            <div class="flex-row-start-center gap-10px">
+              <div class="flex-row-start-center gap-3px">
+                <label>カレー：</label>
+                <input type="number" class="w-50px" :value="weights['カレー']" @input="weights['カレー'] = Number($event.target.value) || 0">
+                %
+              </div>
+              <div class="flex-row-start-center gap-3px">
+                <label>サラダ：</label>
+                <input type="number" class="w-50px" :value="weights['サラダ']" @input="weights['サラダ'] = Number($event.target.value) || 0">
+                %
+              </div>
+              <div class="flex-row-start-center gap-3px">
+                <label>デザート：</label>
+                <input type="number" class="w-50px" :value="weights['デザート']" @input="weights['デザート'] = Number($event.target.value) || 0">
+                %
+              </div>
             </div>
-            <div class="flex-row-start-center gap-3px">
-              <label>サラダ：</label>
-              <input type="number" class="w-50px" :value="weights['サラダ']" @input="weights['サラダ'] = Number($event.target.value) || 0">
-              %
-            </div>
-            <div class="flex-row-start-center gap-3px">
-              <label>デザート：</label>
-              <input type="number" class="w-50px" :value="weights['デザート']" @input="weights['デザート'] = Number($event.target.value) || 0">
-              %
-            </div>
+            <small class="mt-5px">同じ種類は連続して出にくいことを考慮して今週の種類を50%にしたり、<br>不要な料理を0%にしてください。</small>
           </div>
         </div>
         <div>
           <label>料理候補</label>
-          <div>上位<input type="number" class="w-50px" v-model="top">件</div>
+          <div class="flex-row-start-center gap-2px">上位<input type="number" class="w-50px" v-model="top">件</div>
         </div>
         <div>
           <label>食材バッグ</label>
@@ -490,13 +498,13 @@ async function showEditPopup(pokemon) {
           </template>
           <template v-else-if="simulationResult.teamList.length">
             
-            <table>
+            <table class="w-auto mr-auto">
               <thead>
                 <tr>
                   <th></th>
                   <th></th>
                   <th></th>
-                  <th v-for="food of Food.list"><img :src="food.img" /></th>
+                  <th v-for="food of Food.list"><img :src="food.img" :alt="food.name" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -519,7 +527,7 @@ async function showEditPopup(pokemon) {
                   </tr>
                 </template>
                 <tr>
-                  <th colspan="3">必要食材量</th>
+                  <th colspan="3">準備食材量</th>
                   <td v-for="food of Food.list" class="text-align-right">
                     <template v-if="simulationResult.bestResult.foodNumMap[food.name]">
                       {{ simulationResult.bestResult.foodNumMap[food.name]?.toFixed(0) }}
@@ -533,7 +541,7 @@ async function showEditPopup(pokemon) {
             <template v-for="({ cookingType, result }, i) in simulationResult.teamList">
               <ToggleArea :open="false" class="w-100">
                 <template #headerText>
-                  {{ cookingType }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy).toLocaleString() }})
+                  {{ cookingType }}時チーム: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy).toLocaleString() }})
                   <HelpButton class="ml-5px" title="スコア" markdown="
                     スコアは「エナジー✕(100% + 追加ゆめのかけら ÷ エナジーによるゆめのかけら ✕ ゆめのかけら評価倍率)」です。
                   " />
