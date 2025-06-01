@@ -200,7 +200,7 @@ class Pokemon {
         name: food.name,
         numList: 
           [
-            foodNameList.length > 3 || i <= 0 ? 2 : null,
+            foodNameList.length > 3 || i <= 0 ? Math.round(firstFoodEnergy / food.energy) : null,
             foodNameList.length > 3 || i <= 1 ? Math.round(firstFoodEnergy * 2.25 / food.energy) : null,
             foodNameList.length > 3 || i <= 2 ? Math.round(firstFoodEnergy * 3.6 / food.energy) : null,
           ]
