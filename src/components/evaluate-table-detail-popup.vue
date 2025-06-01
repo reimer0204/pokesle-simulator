@@ -412,19 +412,23 @@ const specialtyEvaluateGraph = computed(() => {
           </tr>
           <tr>
             <th>天井</th>
-            <td colspan="2">
+            <td>
               <template v-if="result.base.specialty == 'スキル'">
-                40 × 3600 ÷ {{ result.base.help }} ＝ {{ (40 * 3600 / result.base.help).toFixed(1) }} ※スキルタイプは40時間÷基礎おてつだい時間(小数点以下の扱い不明)
+                40 × 3600 ÷ {{ result.base.help }}<br>
+                ※スキルタイプは40時間÷基礎おてつだい時間(小数点以下の扱い不明)
               </template>
               <template v-else>
-                78 ※スキルタイプ以外は78回固定
+                スキルタイプ以外は78回固定
               </template>
+            </td>
+            <td>
+              {{ result.skillCeil }}
             </td>
           </tr>
           <tr>
             <th>天井補正後<br>スキル確率</th>
             <td>
-              {{ (result.skillRate * 100).toFixed(2) }}% ÷ (100% - (100% - {{ (result.skillRate * 100).toFixed(2) }}%) ^ {{ result.specialty == 'スキル' ? (40 * 3600 / result.help).toFixed(1) : 78 }})<br>
+              {{ (result.skillRate * 100).toFixed(2) }}% ÷ (100% - (100% - {{ (result.skillRate * 100).toFixed(2) }}%) ^ {{ result.skillCeil }})<br>
             </td>
             <td>{{ (result.ceilSkillRate * 100).toFixed(2) }}%</td>
           </tr>
