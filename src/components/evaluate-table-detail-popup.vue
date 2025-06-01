@@ -413,8 +413,8 @@ const specialtyEvaluateGraph = computed(() => {
           <tr>
             <th>天井</th>
             <td colspan="2">
-              <template v-if="result.specialty == 'スキル'">
-                40 × 3600 ÷ {{ result.help }} ＝ {{ (40 * 3600 / result.help).toFixed(1) }} ※スキルタイプは40時間÷基礎おてつだい時間(小数点以下の扱い不明)
+              <template v-if="result.base.specialty == 'スキル'">
+                40 × 3600 ÷ {{ result.base.help }} ＝ {{ (40 * 3600 / result.base.help).toFixed(1) }} ※スキルタイプは40時間÷基礎おてつだい時間(小数点以下の扱い不明)
               </template>
               <template v-else>
                 78 ※スキルタイプ以外は78回固定

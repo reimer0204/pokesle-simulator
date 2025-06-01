@@ -482,7 +482,7 @@ class PokemonSimulator {
     }
 
     // 天井を考慮したスキル確率
-    pokemon.skillCeil = pokemon.base.specialty == 'スキル' ? 40 * 3600 / pokemon.base.help : 78;
+    pokemon.skillCeil = (pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール') ? 40 * 3600 / pokemon.base.help : 78;
     pokemon.ceilSkillRate =
       pokemon.skillRate > 0
       ? pokemon.skillRate / (1 - Math.pow(1 - pokemon.skillRate, pokemon.skillCeil))
@@ -676,7 +676,7 @@ class PokemonSimulator {
       let daySkillableNum = Math.min(pokemon.dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum);
       let nightSkillableNum = Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum);
 
-      if (pokemon.base.specialty == 'スキル') {
+      if (pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール') {
         let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
         let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
         let dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0
