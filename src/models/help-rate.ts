@@ -49,12 +49,14 @@ class HelpRate {
   // チーム全員のげんき回復量を計算
   calcTeamHeal(pokemonList: SimulatedPokemon[], addHeal?: { effect: number, time: number, night?: boolean }[]) {
 
-    // for(let pokemon of pokemonList) {
-    //   pokemon.healList = [];
-    //   pokemon.dayHelpRate = 1.5;
-    //   pokemon.nightHelpRate = 1.5;
-    // }
-    // return;
+    // げんき100%前提計算ならスキップ
+    if (this.#mode != PokemonSimulator.MODE_SELECT && this.#config.simulation.genkiFull) {
+      for(let pokemon of pokemonList) {
+        pokemon.dayHelpRate = 2.22;
+        pokemon.nightHelpRate = 2.22;
+      }
+      return;
+    }
 
     let infoList = []
 
@@ -298,8 +300,6 @@ class HelpRate {
       pokemon.nightHelpRate = result.night;
       pokemon.allHealList = result.healList
     }
-
-    // healListの最初にヒーラー分だけでなく朝イチの回復量もいれる
   }
 
   // 
@@ -310,6 +310,9 @@ class HelpRate {
     morningLimit: number = 100, 
     genkiMultiplier: number = 1
   ) {
+    if (this.#mode != PokemonSimulator.MODE_SELECT && this.#config.simulation.genkiFull) {
+      return { day: 2.22, night: 2.22 };
+    }
 
     let cacheKey = `${morningGenki},${morningHealGenki},${morningLimit},${genkiMultiplier},`
     for(let { effect, time } of healList) {

@@ -129,7 +129,7 @@ class Cooking {
 
   // 週に料理チャンスでn%上がる時、どのくらい期待値があるか
   // TODO: こんなfor回さんでも計算できない？頑張ってみたけど無理だった…
-  static getChanceWeekEffect(effect: number, day = null) {
+  static getChanceWeekEffect(effect: number, day = null, initial = 0) {
     if (effect == 0) {
       if (day == null) {
   
@@ -163,7 +163,9 @@ class Cooking {
   
         // pの積算
         for(let j = 1; j <= i; j++) {
-          let rate = ((i <= 18 ? 0.1 : 0.3) + p * j) * pList[i - j];
+          // i回目の料理時にj回料理チャンスが効いている場合の確率
+          // i回目の時にj回料理チャンスが効いている＝1回も成功していないので初期値も加算
+          let rate = ((i <= 18 ? 0.1 : 0.3) + Math.min(i == j ? p * j + initial : p * j, 0.7)) * pList[i - j];
   
           for(let k = i - j + 1; k < i; k++) {
             rate *= 1 - pList[k]
@@ -187,11 +189,14 @@ class Cooking {
   
       // 料理回数
       for(let i = 1; i <= 3; i++) {
+        // i回目の成功確率
         let thisP = 0;
   
         // pの積算
         for(let j = 1; j <= i; j++) {
-          let rate = ((day == 6 ? 0.3 : 0.1) + p * j) * pList[i - j];
+          // i回目の料理時にj回料理チャンスが効いている場合の確率
+          // i回目の時にj回料理チャンスが効いている＝1回も成功していないので初期値も加算
+          let rate = ((day == 6 ? 0.3 : 0.1) + Math.min(i == j ? p * j + initial : p * j, 0.7)) * pList[i - j];
   
           for(let k = i - j + 1; k < i; k++) {
             rate *= 1 - pList[k]

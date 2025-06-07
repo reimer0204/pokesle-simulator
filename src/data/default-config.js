@@ -75,6 +75,7 @@ const defaultConfig = {
     shardWeight: 30,
     foodGetRate: 30,
     campTicket: false,
+    genkiFull: false,
     eventBonusType: null,
     eventBonusTypeFood: 1,
     eventBonusTypeSkillRate: 1.5,

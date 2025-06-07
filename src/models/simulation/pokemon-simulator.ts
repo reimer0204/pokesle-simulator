@@ -62,6 +62,16 @@ class PokemonSimulator {
     this.#nightLength = Math.round(this.config.sleepTime * 3600)
     this.#dayLength = 86400 - this.#nightLength
 
+    if (this.config.teamSimulation.timeLength != null && this.mode != PokemonSimulatorMode.SELECT) {
+      const length = 86400 * this.config.teamSimulation.timeLength;
+      if (this.#dayLength > length) {
+        this.#dayLength = length;
+        this.#nightLength = 0;
+      } else {
+        this.#nightLength = length - this.#dayLength;
+      }
+    }
+
     this.#fixedPotSize =
       mode == PokemonSimulator.MODE_SELECT ? Cooking.potMax
       : Math.round(this.config.simulation.potSize * (this.config.simulation.campTicket ? 1.5 : 1))
@@ -79,6 +89,25 @@ class PokemonSimulator {
       this.cookingList = this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0));
     }
 
+    let foodCommonRate = config.teamSimulation.day == null ? (0.2 / 7 + 1.1)
+      : config.teamSimulation.day == 6 ? 1.3
+      : 1.1;
+    if (config.teamSimulation.initialCookingChange) {
+      foodCommonRate = 0;
+      let length = config.teamSimulation.day != null ? 3 : 21;
+      let noSuccessRate = 1;
+      for(let i = 0; i < length; i++) {
+        let success = ((i >= 18 || config.teamSimulation.day == 6) ? 0.3 : 0.1) + config.teamSimulation.initialCookingChange * noSuccessRate;
+        noSuccessRate *= 1 - success;
+        foodCommonRate += success
+      }
+      foodCommonRate /= length;
+    }
+
+    if (mode == PokemonSimulatorMode.ABOUT) {
+      foodCommonRate *= config.simulation.cookingWeight
+    }
+
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};
     for(const food of Food.list) this.foodEnergyMap[food.name] = food.energy;
@@ -86,7 +115,7 @@ class PokemonSimulator {
       for(const cookingFood of cooking.foodList) {
         this.foodEnergyMap[cookingFood.name] = Math.max(
           this.foodEnergyMap[cookingFood.name],
-          Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus
+          Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus * foodCommonRate
         )
       }
     }
@@ -215,7 +244,7 @@ class PokemonSimulator {
       enableSubSkillList.map(x => SubSkill.map[x]),
       nature,
       (
-        this.config.simulation.field == 'ワカクサ本島' ? this.config.simulation.berryList : Field.map[this.config.simulation.field].berryList
+        this.config.simulation.field == 'ワカクサ本島' ? this.config.simulation.berryList : (Field.map[this.config.simulation.field]?.berryList ?? [])
       )?.includes(pokemon.base.berry.name) ? 200 : 100,
     )
 
@@ -414,10 +443,6 @@ class PokemonSimulator {
       / pokemon.foodList.length
       * this.#foodEnergyWeight;
 
-    if (this.mode != PokemonSimulator.MODE_SELECT) {
-      pokemon.foodEnergyPerHelp *= this.config.simulation.cookingWeight;
-    }
-
     // きのみor食材エナジー/手伝い
     pokemon.pickupEnergyPerHelp =
       pokemon.berryEnergyPerHelp * (1 - pokemon.foodRate)
@@ -524,7 +549,7 @@ class PokemonSimulator {
 
     // 日中の基本手伝い回数(げんき回復なし)
     let baseDayHelpNum = 0;
-    let dayRemainTime = (24 - this.config.sleepTime) * 3600;
+    let dayRemainTime = this.#dayLength;
 
     for(let i = 0; i < 4; i++) {
       if (dayRemainTime > 0) {
@@ -609,8 +634,8 @@ class PokemonSimulator {
   ) {
     let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
 
-    pokemon.dayHelpNum   = (24 - this.config.sleepTime) * 3600 / pokemon.speed * pokemon.dayHelpRate;
-    pokemon.nightHelpNum =       this.config.sleepTime  * 3600 / pokemon.speed * pokemon.nightHelpRate;
+    pokemon.dayHelpNum   = this.#dayLength / pokemon.speed * pokemon.dayHelpRate;
+    pokemon.nightHelpNum = this.#nightLength / pokemon.speed * pokemon.nightHelpRate;
 
     pokemon.averageHelpRate = (pokemon.dayHelpNum + pokemon.nightHelpNum) / (24 * 3600 / pokemon.speed)
 
@@ -818,7 +843,6 @@ class PokemonSimulator {
                     this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
                     + food.energy * (100 - this.config.simulation.foodGetRate) / 100
                   )
-                  * this.config.simulation.cookingWeight
               }
 
               energy = foodEnergy / Food.list.length * effect * this.#foodEnergyWeight;
@@ -849,7 +873,6 @@ class PokemonSimulator {
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
             if (this.#foodEnergyWeight > 0) {
               let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
-              console.log(num)
               let foodEnergy = 0;
               for(let food of skill.foodList) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
@@ -858,7 +881,6 @@ class PokemonSimulator {
                     this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
                     + food.energy * (100 - this.config.simulation.foodGetRate) / 100
                   )
-                  * this.config.simulation.cookingWeight
               }
 
               energy = foodEnergy / skill.foodList.length * effect.food * this.#foodEnergyWeight;

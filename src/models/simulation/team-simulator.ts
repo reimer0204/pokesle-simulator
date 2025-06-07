@@ -328,7 +328,7 @@ self.addEventListener('message', async (event) => {
           // 料理チャンスによる倍率を計算
           let chanceWeekEffect = cookingChangeCache.get(totalCookingChanceEffect)
           if (chanceWeekEffect == null) {
-            chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect, config.teamSimulation.day)
+            chanceWeekEffect = Cooking.getChanceWeekEffect(totalCookingChanceEffect, config.teamSimulation.day, config.teamSimulation.initialCookingChange)
             cookingChangeCache.set(totalCookingChanceEffect, chanceWeekEffect)
           }
 

@@ -26,6 +26,8 @@ const $emit = defineEmits(['close']);
 
 // シミュレーション設定
 const targetDay = ref(props.defaultTargetDay ?? (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()))
+const targetHour = ref(24);
+const initialCookingChange = ref(0);
 const beforeEnergy = ref(0);
 
 const loadedPokemonBoxList = ref(PokemonBox.list);
@@ -82,7 +84,9 @@ async function simulation() {
     if (targetDay.value != -1) {
       customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / (7 - targetDay.value);
       customConfig.teamSimulation.day = targetDay.value;
+      customConfig.teamSimulation.timeLength = targetHour.value != 24 ? targetHour.value / 24 : null;
     }
+    customConfig.teamSimulation.initialCookingChange = initialCookingChange.value / 100
 
     let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
 
@@ -181,11 +185,13 @@ async function simulation() {
           workerResultList[i] = body.bestResult;
 
           bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, customConfig.teamSimulation.resultNum);
-          for(let worker of workerList) {
-            worker.postMessage({
-              type: 'border',
-              border: bestResult[0].score
-            })
+          if (bestResult[0]) {
+            for(let worker of workerList) {
+              worker.postMessage({
+                type: 'border',
+                border: bestResult[0].score
+              })
+            }
           }
         }
 
@@ -339,6 +345,17 @@ async function showEditPopup(pokemon) {
         </div>
 
         <div>
+          <label>時間</label>
+          <div>
+            <div>
+              <input v-if="targetDay != -1" type="number" v-model="targetHour" class="w-40px">
+              <input v-if="targetDay == -1" type="number" value="168" class="w-40px" disabled>
+                時間
+            </div>
+          </div>
+        </div>
+
+        <div>
           <label>料理</label>
           <div>
             <div>
@@ -346,9 +363,21 @@ async function showEditPopup(pokemon) {
               <input v-if="targetDay == -1" type="number" value="21" class="w-50px" disabled>
                 食分
             </div>
-            <small>
-              翌朝の料理分も集めておきたい場合は4にしてください
-            </small>
+            <div class="w-150px">
+              <small>
+                翌朝の料理分も集めておきたい場合は4にしてください
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label>料理チャンス</label>
+          <div>
+            <div>
+              <input type="number" v-model="initialCookingChange" class="w-50px">
+              %
+            </div>
           </div>
         </div>
 

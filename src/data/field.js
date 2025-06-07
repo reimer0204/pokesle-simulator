@@ -5,7 +5,7 @@ const list = [
   { name: 'ウノハナ雪原',     berryList: ['チーゴ', 'キー', 'ウイ']},
   { name: 'ラピスラズリ湖畔', berryList: ['ドリ', 'マゴ', 'クラボ']},
   { name: 'ゴールド旧発電所', berryList: ['ウブ', 'ベリブ', 'ブリー']},
-  // { name: '？？？', berryList: ['カゴ', 'ラム', 'ヤチェ']},
+  { name: '？？？', berryList: ['カゴ', 'ラム', 'ヤチェ']},
 ];
 
 class Field {

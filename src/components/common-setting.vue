@@ -26,7 +26,7 @@ function showResourceEditPopup() {
 <template>
   <SettingButton title="フィールド">
     <template #label>
-      <div class="inline-flex-row-center">
+      <div class="inline-flex-row-center" style="gap: 0.25em;">
         今週：{{ config.simulation.field }}
         <template v-if="config.simulation.field == 'ワカクサ本島'">
           (
@@ -37,9 +37,12 @@ function showResourceEditPopup() {
         </template>
         FB:{{ config.simulation.fieldBonus }}
 
-        {{ config.simulation.cookingType }}<template v-if="config.simulation.cookingWeight != 1">(x{{ config.simulation.cookingWeight }})</template>
+        <span>
+          {{ config.simulation.cookingType }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
+        </span>
 
-        <template v-if="config.simulation.campTicket"> キャンチケ</template>
+        <span v-if="config.simulation.campTicket" class="caution">キャンチケ</span>
+        <span v-if="config.simulation.genkiFull" class="caution">げんき100%</span>
       </div>
     </template>
 
@@ -55,6 +58,7 @@ function showResourceEditPopup() {
               <option value="ウノハナ雪原">ウノハナ雪原</option>
               <option value="ラピスラズリ湖畔">ラピスラズリ湖畔</option>
               <option value="ゴールド旧発電所">ゴールド旧発電所</option>
+              <option value="？？？">？？？</option>
             </select>
           </td>
         </tr>
@@ -70,7 +74,7 @@ function showResourceEditPopup() {
               </template>
             </div>
             <div v-else class="flex-row-start-center gap-5px">
-              <template v-for="berry in Field.map[config.simulation.field].berryList">
+              <template v-for="berry in Field.map[config.simulation.field]?.berryList ?? []">
                 <select disabled>
                   <option value="">{{ berry }}</option>
                 </select>
@@ -109,6 +113,18 @@ function showResourceEditPopup() {
           <th>キャンプチケット</th>
           <td><label><input type="checkbox" v-model="config.simulation.campTicket">使う</label></td>
         </tr>
+        
+        <tr>
+          <th>げんき</th>
+          <td>
+            <label><input type="checkbox" v-model="config.simulation.genkiFull">常に100%として計算</label>
+            <div class="w-400px">
+              <small>
+                げんきマクラを使用する週や、笛使用時の編成を検討する場合に使用してください。
+              </small>
+            </div>
+          </td>
+        </tr>
       </SettingTable>
     </div>
 
@@ -116,13 +132,18 @@ function showResourceEditPopup() {
 
   <SettingButton title="イベントボーナス">
     <template #label>
-      <div class="inline-flex-row-center">
-        イベントボーナス：<template v-if="config.simulation.eventBonusType == 'all'">全員</template><template v-else>{{ config.simulation.eventBonusType || 'なし' }}</template>
-        <template v-if="config.simulation.eventBonusType">
+      <div class="inline-flex-row-center" style="gap: 0.25em;">
+        <span class="inline-flex-row-center">
+          イベントボーナス：
+          <span v-if="!config.simulation.eventBonusType">なし</span>
+          <span v-else-if="config.simulation.eventBonusType == 'all'" class="caution">全員</span>
+          <span v-else class="caution">{{ config.simulation.eventBonusType }}</span>
+        </span>
+        <span v-if="config.simulation.eventBonusType" class="caution">
           <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
-        </template>
+        </span>
       </div>
     </template>
 
@@ -430,5 +451,9 @@ function showResourceEditPopup() {
     line-height: 0;
     margin: 0;
   }
+}
+
+.caution {
+  color: yellow;
 }
 </style>

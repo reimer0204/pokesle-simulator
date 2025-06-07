@@ -505,12 +505,14 @@ async function showEditPopup(pokemon) {
                   <th></th>
                   <th></th>
                   <th v-for="food of Food.list"><img :src="food.img" :alt="food.name" /></th>
+                  <th>合計</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <th colspan="3">当日取得量</th>
                   <td v-for="food of Food.list" class="text-align-right"><template v-if="simulationResult.teamFoodNum[food.name]">{{ simulationResult.teamFoodNum[food.name].toFixed(0) }}</template></td>
+                  <td>-</td>
                 </tr>
                 <template v-for="cookingType in ['カレー', 'サラダ', 'デザート']">
                   <template v-for="({ cooking, num, foodMap }, i) in simulationResult.bestResult[cookingType].cookingList">
@@ -519,11 +521,13 @@ async function showEditPopup(pokemon) {
                       <th>{{ cooking.name }}</th>
                       <th><template v-if="num">{{ num }}食</template></th>
                       <td v-for="food of Food.list" class="text-align-right">{{ foodMap[food.name]?.toFixed(0) }}</td>
+                      <td>-</td>
                     </tr>
                   </template>
                   <tr>
                     <th class="text-align-right" colspan="2">小計</th>
                     <td v-for="food of Food.list" class="text-align-right">{{ simulationResult.bestResult[cookingType].foodNumMap[food.name]?.toFixed(0) }}</td>
+                    <td>-</td>
                   </tr>
                 </template>
                 <tr>
@@ -533,6 +537,7 @@ async function showEditPopup(pokemon) {
                       {{ simulationResult.bestResult.foodNumMap[food.name]?.toFixed(0) }}
                     </template>
                   </td>
+                  <td class="text-align-right">{{ Food.list.reduce((a, food) => a + Math.round(simulationResult.bestResult.foodNumMap[food.name] ?? 0), 0) }}</td>
                 </tr>
                 
               </tbody>

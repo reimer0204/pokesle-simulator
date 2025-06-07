@@ -333,7 +333,7 @@ addEventListener('message', async (event) => {
       }
 
       // げんき回復系スキル評価
-      if (pokemon.otherHeal) {
+      if (pokemon.otherHeal && !config.simulation.genkiFull) {
 
         let healedAddEnergyList = healCheckTarget.filter(subPokemon => subPokemon.box!.index != pokemon.box!.index).map(subPokemon => {
           let helpRate = simulator.getHelpRate(pokemon.otherHealList)
