@@ -10,6 +10,11 @@ config.version.history = Version.HISTORY;
 
     <h2>更新履歴</h2>
 
+    <h3>2025/06/14</h3>
+    <ul>
+      <li>クチート追加</li>
+    </ul>
+
     <h3>2025/06/07</h3>
     <ul>
       <li>一部ポケモンのステータス変更を反映</li>

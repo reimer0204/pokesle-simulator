@@ -859,8 +859,11 @@ class PokemonSimulator {
           break;
 
 
+        case 'かいりきバサミ(食材セレクトS)':
         case 'きょううん(食材セレクトS)':
-          pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
+          if (skill.name == 'きょううん(食材セレクトS)') {
+            pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
+          }
 
           if (this.mode == PokemonSimulator.MODE_SELECT) {
             energy = skill.foodList.reduce((a, food) =>
