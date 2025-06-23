@@ -66,6 +66,7 @@ class Cooking {
     {type: 'カレー', name: 'れんごくコーンキーマカレー', energy: 13690, foodList: [{name: 'げきからハーブ', num: 27},{name: 'マメミート', num: 24},{name: 'ワカクサコーン', num: 14},{name: 'あったかジンジャー', num: 12},]},
     {type: 'カレー', name: 'めざめるパワーシチュー', energy: 19061, foodList: [{name: 'ワカクサ大豆', num: 28},{name: 'あんみんトマト', num: 25},{name: 'あじわいキノコ', num: 23},{name: 'めざましコーヒー', num: 16},]},
     {type: 'カレー', name: 'ピヨピヨパンチ辛口カレー', energy: 5702, foodList: [{name: 'めざましコーヒー', num: 11},{name: 'げきからハーブ', num: 11},{name: 'あまいミツ', num: 11},]},
+    {type: 'カレー', name: 'いあいぎりすき焼きカレー', energy: 20655, foodList: [{name: 'ふといながねぎ', num: 27},{name: 'マメミート', num: 26},{name: 'あまいミツ', num: 26},{name: 'とくせんエッグ', num: 22},]},
     {type: 'サラダ', name: 'ごちゃまぜサラダ', energy: 0, foodList: []},
     {type: 'サラダ', name: 'ヤドンテールのペッパーサラダ', energy: 8169, foodList: [{name: 'げきからハーブ', num: 10},{name: 'ピュアなオイル', num: 15},{name: 'おいしいシッポ', num: 10},]},
     {type: 'サラダ', name: 'キノコのほうしサラダ', energy: 5859, foodList: [{name: 'あじわいキノコ', num: 17},{name: 'ピュアなオイル', num: 8},{name: 'あんみんトマト', num: 8},]},

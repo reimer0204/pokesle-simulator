@@ -10,6 +10,11 @@ config.version.history = Version.HISTORY;
 
     <h2>更新履歴</h2>
 
+    <h3>2025/06/23</h3>
+    <ul>
+      <li>いあいぎりすき焼きカレーとカモネギを追加</li>
+    </ul>
+
     <h3>2025/06/14</h3>
     <ul>
       <li>クチート追加</li>
