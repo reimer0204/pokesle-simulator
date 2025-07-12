@@ -169,13 +169,29 @@ addEventListener('message', async (event) => {
       if (addPokemonList.length == 0) {
         addPokemonList.push(box.name);
       }
+      
+      // スキルレベル未指定の場合のスキルレベルを計算
+      let original = simulator.fromBox({ ...pokemonList[i], skillLv: undefined });
 
       let thisResult: SimulatedPokemon[] = [];
       for(let j = 0; j < addPokemonList.length; j++) {
         let pokemonName = addPokemonList[j]
         const base = Pokemon.map[pokemonName];
+        let skillLv = box.skillLv
+        if (skillLv != null) {
+          // 進化後でスキルレベルが未指定の場合のスキルレベルを計算
+          let simulatedPokemon = simulator.fromBox(
+            { ...pokemonList[i], name: pokemonName, skillLv: undefined }, 
+            fix, 
+            config.simulation.fixResourceMode == 0 ? 0 : base.evolveCandyMap[pokemonList[i].name],
+            pokemonList[i].name != pokemonName ? (base.evolve.lv || undefined) : 0,
+          );
+
+          skillLv += simulatedPokemon.fixedSkillLv - original.fixedSkillLv
+        }
+
         let simulatedPokemon = simulator.fromBox(
-          { ...pokemonList[i], name: pokemonName }, 
+          { ...pokemonList[i], name: pokemonName, skillLv }, 
           fix, 
           config.simulation.fixResourceMode == 0 ? 0 : base.evolveCandyMap[pokemonList[i].name],
           pokemonList[i].name != pokemonName ? (base.evolve.lv || undefined) : 0,

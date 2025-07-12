@@ -18,6 +18,9 @@ class PokemonBox {
       let obj = JSON.parse(localStorage.getItem('pokemonBox'))
       this._time = obj.time ? new Date(obj.time) : new Date(),
       this._list = obj.list ?? [];
+      for(let item of this._list) {
+        delete item.original;
+      }
     } catch(e) {
       this._list = [];
     }
@@ -264,6 +267,7 @@ class PokemonBox {
         let startIndex = Math.floor(boxPokemonList.length * i / config.workerNum);
         let endIndex = Math.floor(boxPokemonList.length * (i + 1) / config.workerNum);
         return {
+          i,
           type: 'basic',
           pokemonList: boxPokemonList.slice(startIndex, endIndex),
           evaluateTable,

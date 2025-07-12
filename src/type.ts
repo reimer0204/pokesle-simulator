@@ -89,8 +89,8 @@ interface PokemonType {
   specialty: 'きのみ' | '食材' | 'スキル' | 'オール';
   skill: SkillType;
   type: string;
-  evolveLv?: number;
-  remainEvolveLv?: number;
+  evolveLv: number;
+  remainEvolveLv: number;
   foodNameList: string[];
   bag: number;
   help: number;

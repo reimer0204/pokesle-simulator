@@ -82,32 +82,110 @@ class Exp {
 			bestNormalCandyShard: null,
 		}
 		
-		if (pokemon.training != null && pokemon.lv < pokemon.training && 1 < pokemon.training && pokemon.training <= this.list.length + 1) {
+		if (pokemon.training != null && pokemon.lv < pokemon.training && pokemon.lv < this.list.length && 1 < pokemon.training) {
 			const pokemonInfo = Pokemon.map[pokemon.name];
-			let lv = pokemon.lv;
-			let lastTotal = Math.round(this.list[pokemon.training - 1].total * pokemonInfo.exp)
+			let lv = Math.min(pokemon.lv, this.list.length);
+
+			// 最終的に必要な経験値
+			let lastTotal = Math.round(this.list[Math.min(pokemon.training, this.list.length) - 1].total * pokemonInfo.exp)
+
+			// 次のレベルまでの経験値
 			let nextTotal = Math.round(this.list[lv].total * pokemonInfo.exp)
+
+			// 今ある経験値(次までの経験値があるならそれを使って計算、そうでないなら現Lvの経験値)
 			let normalTotal = pokemon.nextExp ? nextTotal - pokemon.nextExp : Math.round(this.list[lv - 1].total * pokemonInfo.exp)
+
 			let boostTotal = normalTotal;
 			let minBoostTotal = normalTotal;
 			
-			let candyExp = nature.good == 'EXP獲得量' ? 30 : nature.weak == 'EXP獲得量' ? 21 : 25;
-			let boostedCandyExp = candyExp * config.candy.boostMultiply;
+			// アメ1個あたりの経験値
+			let candyExp25 = nature.good == 'EXP獲得量' ? 41 : nature.weak == 'EXP獲得量' ? 29 : 35;
+			let candyExp30 = nature.good == 'EXP獲得量' ? 35 : nature.weak == 'EXP獲得量' ? 25 : 30;
+			let candyExp99 = nature.good == 'EXP獲得量' ? 30 : nature.weak == 'EXP獲得量' ? 21 : 25;
 
+			// 必要な経験値
 			const requireExp = lastTotal - normalTotal;
-			let minBoostCandyNum = Math.max(Math.ceil((requireExp / candyExp - config.candy.bag[pokemonInfo.seed]) / (config.candy.boostMultiply - 1)), 0)
-			const canMinBoost = config.candy.bag[pokemonInfo.seed] - minBoostCandyNum >= 1
+
+			// 最適なアメ数 = (必要なアメ数 - 所持アメ数) / (追加の倍率)
+
+			// 全部通常アメで出来るか
+			// アメのEXPが変わる区間のすべてをブーストするパターンから、すべてブーストしないパターンまで走査
+			let minBoostCandyNum = 0;
+			let tmpMinBoostCandyNum = null;
+			while(true) {
+				let tmpLv = lv;
+				let tmpExp = normalTotal
+				let useCandy = 0;
+
+				let useBoost = 0;
+				for(let { exp, border } of [{ exp: candyExp25, border: 25 }, { exp: candyExp30, border: 30 }, { exp: candyExp99, border: this.list.length }]) {
+					if (border <= tmpLv) continue;
+
+					if (tmpLv < pokemon.training) {
+						const targetLv = Math.min(pokemon.training, border);
+
+						if (tmpMinBoostCandyNum != null && useBoost < tmpMinBoostCandyNum) {
+							const thisCandy = Math.min(Math.ceil((this.list[targetLv - 1].total - tmpExp) / (exp * config.candy.boostMultiply)), tmpMinBoostCandyNum - useBoost)
+							tmpExp += thisCandy * exp * config.candy.boostMultiply
+							useCandy += thisCandy
+							useBoost += thisCandy;
+						}
+						const thisCandy = Math.ceil((this.list[targetLv - 1].total - tmpExp) / exp)
+						tmpExp += thisCandy * exp
+						tmpLv = targetLv;
+						useCandy += thisCandy
+					} else {
+						break;
+					}
+				}
+
+				if (tmpMinBoostCandyNum == null) {
+					if (useCandy > config.candy.bag[pokemonInfo.seed]) {
+
+						// 最小ブースト数の計算
+						// 足りない分を補えるだけ(足りない分÷(倍率-1))、もしくは必要アメ数/倍率の小さい方
+						tmpMinBoostCandyNum = Math.min(
+							Math.ceil((useCandy - (config.candy.bag[pokemonInfo.seed] ?? 0)) / (config.candy.boostMultiply - 1)),
+							Math.ceil(useCandy / config.candy.boostMultiply),
+							config.candy.bag[pokemonInfo.seed]
+						)
+					} else {
+						result.bestBoostCandyNum = null;
+						result.bestNormalCandyNum = useCandy;
+						break;
+					}
+				} else {
+					if (useCandy <= config.candy.bag[pokemonInfo.seed]) {
+						result.bestBoostCandyNum = tmpMinBoostCandyNum;
+						result.bestNormalCandyNum = useCandy - tmpMinBoostCandyNum;
+						minBoostCandyNum = tmpMinBoostCandyNum;
+						tmpMinBoostCandyNum--;
+					} else {
+						break;
+					}
+				}
+			}
+
+			const canMinBoost = result.bestBoostCandyNum && result.bestNormalCandyNum;
 			if (canMinBoost) {
-				result.bestBoostCandyNum = minBoostCandyNum;
 				result.bestBoostCandyShard = 0;
-				result.bestNormalCandyNum = Math.min(config.candy.bag[pokemonInfo.seed], Math.ceil(requireExp / candyExp)) - minBoostCandyNum;
 				result.bestNormalCandyShard = 0;
+			} else {
+				result.bestBoostCandyNum = null;
+				result.bestBoostCandyShard = null;
+				result.bestNormalCandyNum = null;
+				result.bestNormalCandyShard = null;
 			}
 
 			result.normalCandyNum = 0
 			result.normalCandyShard = 0
 
 			while(lv < pokemon.training && nextTotal) {
+				let candyExp = lv < 25 ? candyExp25 : 
+					lv < 30 ? candyExp30 :
+					candyExp99;
+				let boostedCandyExp = candyExp * config.candy.boostMultiply;
+				
 				const requireCandyNum = Math.ceil((nextTotal - normalTotal) / candyExp);
 				result.normalCandyNum += requireCandyNum;
 				result.normalCandyShard += this.list[lv - 1].shard * requireCandyNum;

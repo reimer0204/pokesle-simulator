@@ -20,6 +20,7 @@ const props = defineProps({
   defaultTargetDay: { type: Number },
 })
 
+const addFood = ref(true)
 const cookingNum = ref(6)
 const weights = reactive({'カレー': 100, 'サラダ': 100, 'デザート': 100})
 const enableCookingTypes = computed(() => {
@@ -47,9 +48,7 @@ const requireText = computed(() => {
 });
 
 // シミュレーション実施関連
-const simulationResult = ref({
-  teamList: [],
-})
+const simulationResult = ref(null)
 
 const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
 const teamMultiWorker = new MultiWorker(TeamSimulator, config.workerNum)
@@ -103,146 +102,159 @@ async function simulation() {
 
     for(const [index, cookingType] of enableCookingTypes.value.entries()) {
       result[cookingType] = {}
-
-      const subProgressCounter = subProgressCounters[index];
-
-      let [stepA, stepC] = subProgressCounter.split(1, 8);
-
-      customConfig.simulation.foodEnergyWeight = 0;
-      for(let food of Food.list) {
-        customConfig.foodDefaultNum[food.name] = 9999;
-      }
-
-      customConfig.simulation.cookingType = cookingType;
-      customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / 7;
-      customConfig.teamSimulation.day = 0;
-      customConfig.teamSimulation.resultNum = 1;
-      customConfig.teamSimulation.cookingNum = 3;
-
-      let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
-
-      // 固定のポケモンと推論対象を選ぶ
-      const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
-      let filteredTargetPokemonList = pokemonList.filter(x => x.box?.fix == null);
-
-      const pickup = 5 - fixedPokemonList.length;
-
-      // スコアの高い上位のみをピックアップ
-      let sortedPokemonList;
-      let targetPokemonList = [];
       
-      if (config.simulation.mode != 2) {
-        sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
-        targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
-        filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
+      if (addFood.value) {
 
-        sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
-        targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
-        filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
+        const subProgressCounter = subProgressCounters[index];
 
-      } else {
-        sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
-        targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
-        filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
-      }
+        let [stepA, stepC] = subProgressCounter.split(1, 8);
 
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.score - a.score)
-      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankAll))
-      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankAll)
+        customConfig.simulation.foodEnergyWeight = 0;
+        for(let food of Food.list) {
+          customConfig.foodDefaultNum[food.name] = 9999;
+        }
 
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.energyPerDay - a.energyPerDay)
-      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankNotSupport))
-      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankNotSupport)
+        customConfig.simulation.cookingType = cookingType;
+        customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / 7;
+        customConfig.teamSimulation.day = 0;
+        customConfig.teamSimulation.resultNum = 1;
+        customConfig.teamSimulation.cookingNum = 3;
 
-      let targetNum = targetPokemonList.length
+        let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
 
-      // げんき計算のキャッシュを効かせるため、ヒーラー、自身回復、その他の順にソート
-      let healerTargetPokemonList = []
-      let selfHealerTargetPokemonList = []
-      let nonHealerTargetPokemonList = []
-      for(let pokemon of targetPokemonList) {
-        if (pokemon.otherHeal) {
-          healerTargetPokemonList.push(pokemon)
-        } else if (pokemon.selfHeal) {
-          selfHealerTargetPokemonList.push(pokemon)
+        // 固定のポケモンと推論対象を選ぶ
+        const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
+        let filteredTargetPokemonList = pokemonList.filter(x => x.box?.fix == null);
+
+        const pickup = 5 - fixedPokemonList.length;
+
+        // スコアの高い上位のみをピックアップ
+        let sortedPokemonList;
+        let targetPokemonList = [];
+        
+        if (config.simulation.mode != 2) {
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
+          targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
+          filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
+
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+          targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
+          filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
+
         } else {
-          nonHealerTargetPokemonList.push(pokemon)
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+          targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
+          filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
         }
+
+        sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.score - a.score)
+        targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankAll))
+        filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankAll)
+
+        sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.energyPerDay - a.energyPerDay)
+        targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankNotSupport))
+        filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankNotSupport)
+
+        let targetNum = targetPokemonList.length
+
+        // げんき計算のキャッシュを効かせるため、ヒーラー、自身回復、その他の順にソート
+        let healerTargetPokemonList = []
+        let selfHealerTargetPokemonList = []
+        let nonHealerTargetPokemonList = []
+        for(let pokemon of targetPokemonList) {
+          if (pokemon.otherHeal) {
+            healerTargetPokemonList.push(pokemon)
+          } else if (pokemon.selfHeal) {
+            selfHealerTargetPokemonList.push(pokemon)
+          } else {
+            nonHealerTargetPokemonList.push(pokemon)
+          }
+        }
+        targetPokemonList = [...healerTargetPokemonList, ...selfHealerTargetPokemonList, ...nonHealerTargetPokemonList]
+
+        targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
+
+        let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
+          sum: 0,
+          topList: [],
+        }));
+        for(let i = 0; i <= targetNum - pickup; i++) {
+          let combinationSize = 1;
+          for(let j = 1; j <= pickup - 1; j++) {
+            combinationSize *= targetNum - i - j;
+            combinationSize /= j;
+          }
+
+          let min = null;
+          for(let combinationWorkerParameter of combinationWorkerParameterList) {
+            if(min == null || combinationWorkerParameter.sum < min.sum) {
+              min = combinationWorkerParameter;
+            }
+          }
+          min.sum += combinationSize;
+          min.topList.push(i);
+        }
+
+        let bestResult = null;
+        let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);
+        await teamMultiWorker.call(
+          stepC,
+          (i) => {
+            return {
+              type: 'simulate',
+              targetNum,
+              pickup,
+              pattern: combinationWorkerParameterList[i].sum,
+              topList: combinationWorkerParameterList[i].topList,
+
+              fixedPokemonList,
+              targetPokemonList,
+              config: customConfig,
+            }
+          },
+          (i, body, workerList) => {
+          if (body.bestResult !== undefined) {
+            workerResultList[i] = body.bestResult;
+
+            bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score)[0]
+            for(let worker of workerList) {
+              worker.postMessage({
+                type: 'border',
+                border: bestResult.score
+              })
+            }
+          }
+
+            return body.progress;
+          }
+        );
+
+        result.teamList.push({
+          cookingType,
+          result: bestResult,
+        })
       }
-      targetPokemonList = [...healerTargetPokemonList, ...selfHealerTargetPokemonList, ...nonHealerTargetPokemonList]
-
-      targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
-
-      let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
-        sum: 0,
-        topList: [],
-      }));
-      for(let i = 0; i <= targetNum - pickup; i++) {
-        let combinationSize = 1;
-        for(let j = 1; j <= pickup - 1; j++) {
-          combinationSize *= targetNum - i - j;
-          combinationSize /= j;
-        }
-
-        let min = null;
-        for(let combinationWorkerParameter of combinationWorkerParameterList) {
-          if(min == null || combinationWorkerParameter.sum < min.sum) {
-            min = combinationWorkerParameter;
-          }
-        }
-        min.sum += combinationSize;
-        min.topList.push(i);
-      }
-
-      let bestResult = null;
-      let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);
-      await teamMultiWorker.call(
-        stepC,
-        (i) => {
-          return {
-            type: 'simulate',
-            targetNum,
-            pickup,
-            pattern: combinationWorkerParameterList[i].sum,
-            topList: combinationWorkerParameterList[i].topList,
-
-            fixedPokemonList,
-            targetPokemonList,
-            config: customConfig,
-          }
-        },
-        (i, body, workerList) => {
-        if (body.bestResult !== undefined) {
-          workerResultList[i] = body.bestResult;
-
-          bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score)[0]
-          for(let worker of workerList) {
-            worker.postMessage({
-              type: 'border',
-              border: bestResult.score
-            })
-          }
-        }
-
-          return body.progress;
-        }
-      );
-
-      result.teamList.push({
-        cookingType,
-        result: bestResult,
-      })
     }
 
-    result.teamFoodNum = Food.list.reduce((a, x) => (a[x.name] = 9999, a), {});
-    for(const team of result.teamList) {
-      Food.list.forEach(x => result.teamFoodNum[x.name] = Math.min(Math.floor(team.result.addFoodNum[x.name] * cookingNum.value / 3), result.teamFoodNum[x.name]));
-      const maxFoodNum = Math.max(...team.result.cookingList.map(cooking => cooking.cooking.foodNum));
-      const thisTypeCookingList = Cooking.list.filter(cooking => cooking.type == team.cookingType && cooking.foodNum <= maxFoodNum).sort((a, b) => {
+    if (addFood.value) {
+      result.teamFoodNum = Food.list.reduce((a, x) => (a[x.name] = 9999, a), {});
+    } else {
+      result.teamFoodNum = Food.list.reduce((a, x) => (a[x.name] = 0, a), {});
+    }
+
+    for(const cookingType of enableCookingTypes.value) {
+      const team = result.teamList.find(x => x.cookingType == cookingType)
+      if (addFood.value) {
+        Food.list.forEach(x => result.teamFoodNum[x.name] = Math.min(Math.floor(team.result.addFoodNum[x.name] * cookingNum.value / 3), result.teamFoodNum[x.name]));
+      }
+
+      const maxFoodNum = addFood.value ? Math.max(...team.result.cookingList.map(cooking => cooking.cooking.foodNum)) : 
+        Math.round(config.simulation.potSize * (config.simulation.campTicket ? 1.5 : 1));
+      const thisTypeCookingList = Cooking.list.filter(cooking => cooking.type == cookingType && cooking.foodNum <= maxFoodNum).sort((a, b) => {
         return b.maxEnergy - a.maxEnergy
       }).slice(0, top.value);
 
-      result[team.cookingType].cookingRankList = thisTypeCookingList;
+      result[cookingType].cookingRankList = thisTypeCookingList;
     }
     for(const cookingType of ['カレー', 'サラダ', 'デザート']) {
       result[cookingType] ??= {
@@ -452,6 +464,14 @@ async function showEditPopup(pokemon) {
     <div class="flex-column-start-start w-100 flex-110 mt-5px gap-5px">
       <SettingList class="align-self-stretch">
         <div>
+          <label>当日食材取得量</label>
+          <div>
+            <label><input type="checkbox" v-model="addFood">当日拾う食材を加味する</label>
+            <small class="mt-5px">ワカクサに行く場合など、来週のチームが<br>確定しない場合はチェックを外してください。</small>
+          </div>
+        </div>
+
+        <div>
           <label>料理回数</label>
           <div><input type="number" v-model="cookingNum"></div>
         </div>
@@ -493,10 +513,13 @@ async function showEditPopup(pokemon) {
 
       <AsyncWatcherArea class="flex-column-start-stretch w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
         <div class="scroll-area flex-column-start-stretch w-100 gap-20px">
-          <template v-if="simulationResult.teamList.length && simulationResult.bestResult == null">
+          <template v-if="simulationResult == null">
+            シミュレーション実行ボタンを押してください
+          </template>
+          <template v-else-if="simulationResult.bestResult == null">
             シミュレーション結果が得られませんでした。料理回数などを減らして再度お試しください。
           </template>
-          <template v-else-if="simulationResult.teamList.length">
+          <template v-else>
             
             <table class="w-auto mr-auto">
               <thead>
@@ -778,9 +801,6 @@ async function showEditPopup(pokemon) {
                 </table>
               </ToggleArea>
             </template>
-          </template>
-          <template v-else-if="simulationResult.teamList.length == 0">
-            シミュレーション実行ボタンを押してください
           </template>
         </div>
       </AsyncWatcherArea>

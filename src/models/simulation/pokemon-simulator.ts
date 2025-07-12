@@ -161,7 +161,7 @@ class PokemonSimulator {
     }
   }
 
-  fromBox(box: PokemonBoxType, fixable: boolean, useCandy: number = 0, requireLv: number = 0) {
+  fromBox(box: PokemonBoxType, fixable: boolean = false, useCandy: number = 0, requireLv: number = 0) {
     const base = Pokemon.map[box.name];
     let lv = box.lv;
     let useShard = 0;
@@ -480,7 +480,7 @@ class PokemonSimulator {
         pokemon.base.evolveLv
         + (pokemon.subSkillNameList.includes('スキルレベルアップS') ? 1 : 0)
         + (pokemon.subSkillNameList.includes('スキルレベルアップM') ? 2 : 0)
-      )
+      );
     }
 
     if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
