@@ -213,30 +213,34 @@ async function simulation() {
             }
           },
           (i, body, workerList) => {
-          if (body.bestResult !== undefined) {
-            workerResultList[i] = body.bestResult;
+            if (body.bestResult !== undefined) {
+              workerResultList[i] = body.bestResult;
 
-            bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score)[0]
-            for(let worker of workerList) {
-              worker.postMessage({
-                type: 'border',
-                border: bestResult.score
-              })
+              bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score)[0]
+              if (bestResult) {
+                for(let worker of workerList) {
+                  worker.postMessage({
+                    type: 'border',
+                    border: bestResult.score
+                  })
+                }
+              }
             }
-          }
 
             return body.progress;
           }
         );
 
-        result.teamList.push({
-          cookingType,
-          result: bestResult,
-        })
+        if (bestResult) {
+          result.teamList.push({
+            cookingType,
+            result: bestResult,
+          })
+        }
       }
     }
 
-    if (addFood.value) {
+    if (addFood.value && result.teamList.some(x => x.result)) {
       result.teamFoodNum = Food.list.reduce((a, x) => (a[x.name] = 9999, a), {});
     } else {
       result.teamFoodNum = Food.list.reduce((a, x) => (a[x.name] = 0, a), {});
@@ -244,11 +248,11 @@ async function simulation() {
 
     for(const cookingType of enableCookingTypes.value) {
       const team = result.teamList.find(x => x.cookingType == cookingType)
-      if (addFood.value) {
+      if (addFood.value && team?.result) {
         Food.list.forEach(x => result.teamFoodNum[x.name] = Math.min(Math.floor(team.result.addFoodNum[x.name] * cookingNum.value / 3), result.teamFoodNum[x.name]));
       }
 
-      const maxFoodNum = addFood.value ? Math.max(...team.result.cookingList.map(cooking => cooking.cooking.foodNum)) : 
+      const maxFoodNum = addFood.value && team?.result ? Math.max(...team.result.cookingList.map(cooking => cooking.cooking.foodNum)) : 
         Math.round(config.simulation.potSize * (config.simulation.campTicket ? 1.5 : 1));
       const thisTypeCookingList = Cooking.list.filter(cooking => cooking.type == cookingType && cooking.foodNum <= maxFoodNum).sort((a, b) => {
         return b.maxEnergy - a.maxEnergy
@@ -343,6 +347,7 @@ async function simulation() {
       }
     }
     result.bestResult = bestResult;
+    result.enableCookingTypes = enableCookingTypes.value
 
 
     simulationResult.value = result;
@@ -537,7 +542,7 @@ async function showEditPopup(pokemon) {
                   <td v-for="food of Food.list" class="text-align-right"><template v-if="simulationResult.teamFoodNum[food.name]">{{ simulationResult.teamFoodNum[food.name].toFixed(0) }}</template></td>
                   <td>-</td>
                 </tr>
-                <template v-for="cookingType in ['カレー', 'サラダ', 'デザート']">
+                <template v-for="cookingType in simulationResult.enableCookingTypes">
                   <template v-for="({ cooking, num, foodMap }, i) in simulationResult.bestResult[cookingType].cookingList">
                     <tr>
                       <th v-if="i == 0" style="writing-mode: vertical-rl" :rowspan="simulationResult.bestResult[cookingType].cookingList.length + 1">{{ cookingType }}</th>
