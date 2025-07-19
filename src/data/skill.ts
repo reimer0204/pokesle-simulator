@@ -99,6 +99,18 @@ class Skill {
     },
     { name: '食材ゲットS',                   effect: [  6.0,    8.0,	  11.0,	  14.0,	  17.0,   21.0,   24.0] },
     {
+      name: 'プラス(食材ゲットS)',
+      effect: [
+        { main:  5, sub:  6 },
+        { main:  7, sub:  7 },
+        { main:  9, sub:  8 },
+        { main: 11, sub:  9 },
+        { main: 13, sub: 10 },
+        { main: 16, sub: 11 },
+        { main: 18, sub: 12 },
+      ],
+    },
+    {
       name: 'きょううん(食材セレクトS)',
       effect: [
         { food:  5 * 0.84, shard:  500 * 2 * 0.16 }, // 少ない方:多い方(5倍)が3:1っぽいので(1 * 75% + 5 * 25%) = 2
@@ -138,6 +150,20 @@ class Skill {
       team: true,
     },
     { name: '料理パワーアップS',             effect: [  7.0,   10.0,	  12.0,	  17.0,	  22.0,   27.0,   31.0] },
+    {
+      name: 'マイナス(料理パワーアップS)',
+      effect: [
+        { main:  5, other:  8 / 5 },
+        { main:  7, other: 10 / 5 },
+        { main:  9, other: 13 / 5 },
+        { main: 12, other: 17 / 5 },
+        { main: 16, other: 23 / 5 },
+        { main: 20, other: 30 / 5 },
+        { main: 24, other: 35 / 5 },
+      ],
+      team: true,
+      genki: true,
+    },
     { name: '料理チャンスS',                 effect: [  4.0,    5.0,    6.0,	   7.0,	   8.0,	  10.0] },
     { name: 'ゆめのかけらゲットS',           effect: [240.0,  340.0,	 480.0,	 670.0,	 920.0,	1260.0,	1800.0, 2500.0], shard: true },
     { name: 'ゆめのかけらゲットS(ランダム)', effect: [300.0,  425.0,	 600.0,	 837.5,	1150.0,	1575.0,	2250.0, 2875.0], shard: true },

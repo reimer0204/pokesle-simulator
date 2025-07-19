@@ -13,10 +13,10 @@ import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worke
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 
+let evaluateTable = EvaluateTable.load(config);
+
 const props = defineProps({
   index: { type: Number },
-  evaluateTable: {},
-  simulatedPokemonList: {},
 })
 
 const $emit = defineEmits(['close', 'input']);
@@ -56,6 +56,89 @@ let assist = reactive({
   subSkillList: [null, null, null, null, null],
   nature: null,
 });
+
+// 厳選情報計算
+let selectAsyncWatcher = AsyncWatcher.init();
+let boxMultiWorker = new MultiWorker(PokemonListSimulator)
+let singleMultiWorker = new MultiWorker(PokemonListSimulator, 1)
+onBeforeUnmount(() => {
+  boxMultiWorker.close();
+  singleMultiWorker.close();
+})
+const simulatedPokemonList = ref([]);
+let boxLoading;
+async function loadBoxInfo(setConfig = false) {
+  boxLoading = selectAsyncWatcher.run(async (progressCounter) => {
+    simulatedPokemonList.value = await PokemonBox.simulation(
+      PokemonBox.list,
+      boxMultiWorker, evaluateTable, 
+      config,
+      progressCounter, setConfig
+    )
+  })
+  await boxLoading;
+}
+loadBoxInfo(true)
+
+let selectResult = ref(null);
+let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()]
+
+watch(pokemon, async () => {
+  await boxLoading;
+
+  try {
+    PokemonBox.check(pokemon)
+    selectAsyncWatcher.run(async (progressCounter) => {
+      await singleMultiWorker.call(
+        null,
+        () => ({ type: 'config', config: JSON.parse(JSON.stringify(config)) })
+      )
+
+      selectResult.value = (await singleMultiWorker.call(
+        progressCounter,
+        () => {
+          return {
+            type: 'basic',
+            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
+            evaluateTable,
+          }
+        }
+      )).flat(1)[0];
+
+      if (simulatedPokemonList.value) {
+        selectResult.value.box = {};
+        for(let selectLv of selectLvList) {
+          selectResult.value.box[selectLv] = {};
+          for(let after of selectResult.value.base.afterList) {
+            let targetList = simulatedPokemonList.value.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
+            let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f.name))
+
+            let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+            let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
+            let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
+            let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
+
+            selectResult.value.box[selectLv][after] = {
+              same: sameList.length ? Math.max(...sameList) : null,
+              food: sameFoodList.length ? Math.max(...sameFoodList) : null,
+              sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
+              foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
+            }
+          }
+        }
+      }
+
+      // console.log(selectResult.value);
+    })
+  } catch(e) {
+    selectResult.value = null;
+    // console.log(e);
+    // ignore
+  }
+
+}, {
+  immediate: true,
+})
 
 const pokemonFoodABC = computed(() => {
   return pokemon.foodList.map(f => f ? String.fromCharCode(65 + Math.max(basePokemon.value?.foodList.findIndex(x => x.name == f) ?? 0, 0)) : '').join('');
@@ -163,7 +246,7 @@ const saveDisabled = computed(() => {
     || !pokemon.nature
 })
 
-function save(requireContinue) {
+async function save(requireContinue) {
   if (saveDisabled.value) {
     return;
   }
@@ -174,6 +257,7 @@ function save(requireContinue) {
     PokemonBox.post(sanitizedPokemon)
 
     if (requireContinue) {
+      await loadBoxInfo()
       reset();
       $emit('input', true)
 
@@ -192,71 +276,6 @@ function deletePokemon() {
     $emit('close', true);
   }
 }
-
-let multiWorker = new MultiWorker(PokemonListSimulator, 1)
-let selectAsyncWatcher = AsyncWatcher.init();
-let multiWorkerConfig = (async () => {
-  await multiWorker.call(
-    null,
-    () => ({ type: 'config', config: JSON.parse(JSON.stringify(config)) })
-  )
-})()
-let selectResult = ref(null);
-
-let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()]
-
-watch(pokemon, async () => {
-
-  try {
-    PokemonBox.check(pokemon)
-    selectAsyncWatcher.run(async (progressCounter) => {
-      await multiWorkerConfig;
-
-      selectResult.value = (await multiWorker.call(
-        progressCounter,
-        () => {
-          return {
-            type: 'basic',
-            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
-            evaluateTable: EvaluateTable.load(config),
-          }
-        }
-      )).flat(1)[0];
-
-      if (props.simulatedPokemonList) {
-        selectResult.value.box = {};
-        for(let selectLv of selectLvList) {
-          selectResult.value.box[selectLv] = {};
-          for(let after of selectResult.value.base.afterList) {
-            let targetList = props.simulatedPokemonList.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
-            let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f.name))
-
-            let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-            let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
-            let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-            let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
-
-            selectResult.value.box[selectLv][after] = {
-              same: sameList.length ? Math.max(...sameList) : null,
-              food: sameFoodList.length ? Math.max(...sameFoodList) : null,
-              sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
-              foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
-            }
-          }
-        }
-      }
-
-      // console.log(selectResult.value);
-    })
-  } catch(e) {
-    selectResult.value = null;
-    // console.log(e);
-    // ignore
-  }
-
-}, {
-  immediate: true,
-})
 
 // 表示時に名前入力欄にフォーカスをあわせる
 onMounted(() => {

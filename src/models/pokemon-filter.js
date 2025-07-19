@@ -42,7 +42,7 @@ class PokemonFilter {
         }
 
         if (condition.type == 'skill') {
-          func = x => Pokemon.map[x.name]?.skill == condition.value
+          func = x => Pokemon.map[x.name]?.skill.name == condition.value
           stepName = `スキルが${condition.value}のポケモンを${modeName}`
         }
 

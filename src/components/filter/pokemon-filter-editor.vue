@@ -127,12 +127,12 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
         display: flex;
         align-items: center;
         gap: 5px;
-        height: 20px;
+        min-height: 20px;
         flex: 1 1 0;
 
         background-color: #EEE;
         border-radius: 10px;
-        padding: 0px 10px;
+        padding: 2px 10px;
 
         &.add {
           background-color: #EFD;

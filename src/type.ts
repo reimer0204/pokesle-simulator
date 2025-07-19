@@ -107,7 +107,7 @@ interface PokemonType {
   seed?: string;
   isLast?: boolean;
   candyName: string;
-  requireSleep: { [key: string]: number };
+  requireSleep: { [key: string]: boolean };
   evolveCandyMap: { [key: string]: number };
 
   evolve: {
