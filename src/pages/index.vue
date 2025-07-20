@@ -17,11 +17,13 @@ import PokemonBox from '../models/pokemon-box/pokemon-box.js';
 import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import EvaluateResult from '@/components/page-assist/index/evaluate-result.vue';
+import SettingList from '@/components/util/setting-list.vue';
 
 let evaluateTable = EvaluateTable.load(config);
 
 const simulatedPokemonList = ref([])
 const asyncWatcher = AsyncWatcher.init();
+const mode = ref('normal')
 
 let multiWorker = new MultiWorker(PokemonListSimulator)
 onBeforeUnmount(() => {
@@ -35,7 +37,10 @@ async function createPokemonList(setConfig = false) {
     simulatedPokemonList.value = await PokemonBox.simulation(
       PokemonBox.list,
       multiWorker, evaluateTable, 
-      config,
+      {
+        ...config,
+        pureMint: mode.value == 'pureMint',
+      },
       progressCounter, setConfig
     )
     processSimulatedPokemonList();
@@ -58,6 +63,10 @@ watch(() => config.checkFreq, () => {
   evaluateTable = EvaluateTable.load(config);
   createPokemonList(true);
 })
+watch(mode, () => {
+  createPokemonList(true);
+})
+
 watch(config.simulation, () => createPokemonList(true), { immediate: true })
 watch(config.candy, processSimulatedPokemonList)
 
@@ -296,9 +305,23 @@ function showSelectDetail(pokemon, after, lv) {
           </tr>
         </SettingTable>
       </SettingButton>
+      
     </div>
 
-    <div class="pokemon-list mt-10px">
+    <SettingList class="align-self-stretch mt-5px">
+      <div>
+        <label>表示モード</label>
+        <div>
+          <select v-model.number="mode">
+            <option value="normal">通常</option>
+            <option value="cleaning" disabled>ボックス整理(そのうち)</option>
+            <option value="pureMint">まっしろミント</option>
+          </select>
+        </div>
+      </div>
+    </SettingList>
+
+    <div class="pokemon-list mt-5px">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
         <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
