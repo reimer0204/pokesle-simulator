@@ -735,7 +735,7 @@ class PokemonSimulator {
     pokemon.shard = 0;
     pokemon.skillEnergyMap = {};
 
-    let cookingPowerUpEffect = 0;
+    let totalCookingPowerUpEffect = 0;
     
     for(let { skill, weight } of pokemon.skillWeightList) {
       const skillLv = (skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1;
@@ -743,6 +743,7 @@ class PokemonSimulator {
       let energyPerSkill = 0;
 
       let foodGet;
+      let cookingPowerUpEffect = 0;
 
       switch(skill.name) {
         case 'エナジーチャージS':
@@ -913,11 +914,11 @@ class PokemonSimulator {
           break;
 
         case '料理パワーアップS':
-          cookingPowerUpEffect = effect * pokemon.skillPerDay * weight;
+          cookingPowerUpEffect = effect;
           break;
 
         case 'マイナス(料理パワーアップS)':
-          cookingPowerUpEffect = effect.main * pokemon.skillPerDay * weight;
+          cookingPowerUpEffect = effect.main;
           break;
 
         case '料理チャンスS':
@@ -1009,7 +1010,7 @@ class PokemonSimulator {
       // 料理パワーアップの処理
       if (cookingPowerUpEffect) {
         const cookingPowerUpEffectNum = pokemon.skillPerDay * weight;
-        const oneCookingPowerUpEffect = cookingPowerUpEffect / cookingPowerUpEffectNum
+        const oneCookingPowerUpEffect = cookingPowerUpEffect * pokemon.skillPerDay * weight / cookingPowerUpEffectNum
         
         if (this.mode == PokemonSimulator.MODE_SELECT) {
           // 鍋拡張の意味がある幅を計算
@@ -1070,7 +1071,7 @@ class PokemonSimulator {
 
         } else if (this.mode == PokemonSimulator.MODE_TEAM) {
           // 効果量だけ記憶しておく
-          pokemon.cookingPowerUpEffect += cookingPowerUpEffect;
+          totalCookingPowerUpEffect += cookingPowerUpEffect;
         }
         
         // 1回あたりの量に均す
@@ -1083,6 +1084,7 @@ class PokemonSimulator {
         pokemon.skillEnergy += energyPerSkill;
       }
     }
+    pokemon.cookingPowerUpEffect = totalCookingPowerUpEffect;
 
     // チーム全体のげんき回復による増加エナジーを計算
     if (pokemon.otherHeal > 0 && this.mode == PokemonSimulator.MODE_SELECT) {
