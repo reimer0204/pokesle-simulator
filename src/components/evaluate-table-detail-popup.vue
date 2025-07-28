@@ -291,9 +291,9 @@ const specialtyEvaluateGraph = computed(() => {
               <template v-if="result.subSkillNameList.includes('最大所持数アップM')">+ 12 ※最大所持数アップM<br></template>
               <template v-if="result.subSkillNameList.includes('最大所持数アップL')">+ 18 ※最大所持数アップL<br></template>
               <template v-if="result.sleepTime >= 2000">+ 8 ※睡眠2000時間<br></template>
-              <template v-else-if="result.sleepTime >= 1000">+ 6 ※睡眠2000時間<br></template>
-              <template v-else-if="result.sleepTime >=  500">+ 3 ※睡眠2000時間<br></template>
-              <template v-else-if="result.sleepTime >=  200">+ 1 ※睡眠2000時間<br></template>
+              <template v-else-if="result.sleepTime >= 1000">+ 6 ※睡眠1000時間<br></template>
+              <template v-else-if="result.sleepTime >=  500">+ 3 ※睡眠500時間<br></template>
+              <template v-else-if="result.sleepTime >=  200">+ 1 ※睡眠200時間<br></template>
             </td>
             <td>{{ result.bag }}</td>
           </tr>
@@ -477,7 +477,7 @@ const specialtyEvaluateGraph = computed(() => {
                 <template v-if="result.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
               
-              <template v-if="skill.genki && skill.team">
+              <div v-if="skill.genki && skill.team" class="skill-description">
                 <template v-if="result.base.skill.name != 'ゆびをふる' || (result.base.skill.name == 'ゆびをふる' && skill.name == 'げんきエールS')">
                   1日の1匹あたりの回復量：{{ result.otherHealList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
                   <!-- 起床時：{{ (result.otherMorningHealEffect * 100).toFixed(1) }}<br>
@@ -495,7 +495,7 @@ const specialtyEvaluateGraph = computed(() => {
                 <template v-else>
                   げんきエールSに含む
                 </template>
-              </template>
+              </div>
 
               <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">
                 {{ skill.effect[lv - 1] }}
@@ -503,13 +503,47 @@ const specialtyEvaluateGraph = computed(() => {
                 ＝ {{ (skill.effect[lv - 1] * weight).toFixed(1) }}
               </template>
 
-              <template v-if="skill.name == '料理パワーアップS'">
-                (<br>
-                &emsp;{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × {{ skill.effect[lv - 1] }} × {{ Math.min(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1), Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[lv - 1]) * 3).toFixed(2) }} ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は最良エナジーと{{ Cooking.potMax }}以下の最良エナジー差を食材数で割った値<br>
-                &emsp;+ {{ Food.averageEnergy.toFixed(1) }} × {{ skill.effect[lv - 1] }} × {{ Math.max(result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1) - Math.ceil((Cooking.maxFoodNum - Cooking.potMax) / skill.effect[lv - 1]) * 3, 0).toFixed(2) }}<br>
-                )<br>
-                ÷ {{ result.skillPerDay.toFixed(2) }}<br>
-              </template>
+              <div v-if="skill.name == '料理パワーアップS' || skill.name == 'マイナス(料理パワーアップS)'" class="skill-description">
+                <template v-for="{ effect, num } in [
+                  (() => {
+                    let effect = (skill.name == '料理パワーアップS' ? skill.effect[lv - 1] : skill.effect[lv - 1].main)
+                    let num = result.skillPerDay / (result.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1)
+                    return {
+                      effect,
+                      num,
+                    }
+                  })()
+                ]">
+                  <template v-for="{ i, name, eachNum, limit, mainEffect, remainEffect } in [0, 1, 2].map(i => {
+                    let eachNum = Math.floor(num / 3) + Math.min(Math.max(0, num - Math.floor(num / 3) * 3 - i), 1);
+                    let limit = Cooking.maxFoodNum - Cooking.potMax;
+                    let mainEffect = Cooking.cookingPowerUpEnergy * Math.min(limit, effect * eachNum)
+                    let remainEffect = Food.averageEnergy * Math.max(effect * eachNum - limit, 0)
+                    return {
+                      i,
+                      name: '朝昼晩'[i],
+                      eachNum,
+                      limit,
+                      mainEffect,
+                      remainEffect,
+                    }
+                  })">
+                    <br v-if="i">
+                    <div>{{ name }}：{{ effect }} × {{ eachNum.toFixed(2) }}回＝{{ (effect * eachNum).toFixed(1) }}</div>
+                    <div>有効範囲エナジー：{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × min({{ limit }}, {{ (effect * eachNum).toFixed(1) }})＝{{ mainEffect.toFixed(1) }}</div>
+                    <div>&emsp;余剰分エナジー：{{ Food.averageEnergy.toFixed(1) }} × max({{ (effect * eachNum).toFixed(1) }} - {{ limit }}, 0)＝{{ remainEffect.toFixed(1) }}</div>
+                  </template>
+
+                  <br>
+                  <div>計：{{ result.skillEnergyPerDay.toFixed(1) }}</div>
+                  <div>1回あたりのエナジー：{{ result.skillEnergyPerDay.toFixed(1) }} ÷ {{ num.toFixed(2) }}＝{{ (result.skillEnergyPerDay / num).toFixed(1) }}</div>
+
+                  <br>
+                  <div>
+                    ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は全料理中の最大エナジーと食材数{{ Cooking.potMax }}以下の最大エナジーの差を食材数の差で割った値
+                  </div>
+                </template>
+              </div>
 
               <template v-if="skill.name == '料理チャンスS'">
                 週の効果量<br>
@@ -589,6 +623,10 @@ const specialtyEvaluateGraph = computed(() => {
   td, th {
     padding: 5px 5px;
     border: 1px #CCC solid;
+  }
+
+  .skill-description + .skill-description {
+    margin-top: 1em;
   }
 }
 </style>

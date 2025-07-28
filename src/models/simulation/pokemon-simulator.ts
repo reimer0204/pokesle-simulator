@@ -1010,7 +1010,7 @@ class PokemonSimulator {
       // 料理パワーアップの処理
       if (cookingPowerUpEffect) {
         const cookingPowerUpEffectNum = pokemon.skillPerDay * weight;
-        const oneCookingPowerUpEffect = cookingPowerUpEffect * pokemon.skillPerDay * weight / cookingPowerUpEffectNum
+        const oneCookingPowerUpEffect = cookingPowerUpEffect
         
         if (this.mode == PokemonSimulator.MODE_SELECT) {
           // 鍋拡張の意味がある幅を計算
@@ -1030,7 +1030,7 @@ class PokemonSimulator {
             }
 
             // 拡張して意味がある範囲の増分エナジーを計算
-            energyPerSkill += Cooking.cookingPowerUpEnergy * Math.min(addPotSize, limit) / limit
+            energyPerSkill += Cooking.cookingPowerUpEnergy * Math.min(addPotSize, limit)
             
             // 余剰は食材の平均エナジーで計算
             if (addPotSize > limit) {
@@ -1066,7 +1066,9 @@ class PokemonSimulator {
               }))
               .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
 
-            energyPerSkill += (afterBestCooking.lastEnergy - this.#defaultBestCooking.lastEnergy) * this.config.simulation.cookingWeight;
+            if (afterBestCooking) {
+              energyPerSkill += (afterBestCooking.lastEnergy - this.#defaultBestCooking.lastEnergy) * this.config.simulation.cookingWeight;
+            }
           }
 
         } else if (this.mode == PokemonSimulator.MODE_TEAM) {
