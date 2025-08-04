@@ -45,19 +45,6 @@ export default class EvaluateTable {
   static async simulation(newConfig = null, progressCounter) {
     const fixedConfig = JSON.parse(JSON.stringify(newConfig ?? config));
 
-    function combination(r, n, s = 0) {
-      if (n == 0) return [[]];
-      let result = [];
-
-      for(let i = s; i < r - n + 1; i++) {
-        for(let subList of combination(r, n - 1, i + 1)) {
-          result.push([i, ...subList])
-        }
-      }
-
-      return result;
-    }
-
     const multiWorker = new MultiWorker(EvaluateTableWorker, fixedConfig.workerNum)
 
     let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).flatMap(([lv, enable]) => enable ? [Number(lv)] : [])
@@ -155,6 +142,8 @@ export default class EvaluateTable {
     }
 
     localStorage.setItem('evaluateTable', JSON.stringify(result))
+
+    multiWorker.close()
 
     return result;
   }
