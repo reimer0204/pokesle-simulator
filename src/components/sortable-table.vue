@@ -45,11 +45,17 @@ const columnMap = computed(() => {
 
 const convertedDataList = computed(() => {
   return props.dataList.map(data => {
-    let newData = { $original: data, $clone: { ...data } };
+    let newData = { $original: data, $clone: { ...data }, $sortKey: { ...data } };
 
     for(let column of props.columnList) {
       if (column.convert) {
         newData.$clone[column.key] = column.convert(newData.$clone);
+      }
+
+      if (column.type === String) {
+        newData.$sortKey[column.key] = newData.$clone[column.key] ?? ''
+      } else {
+        newData.$sortKey[column.key] = newData.$clone[column.key] || 0
       }
     }
 
@@ -74,8 +80,8 @@ const sortedDataList = computed(() => {
     // ソート
     result = convertedDataList.value.toSorted((a, b) => {
       for(let sort of sortInfo.value) {
-        if ((a.$clone[sort.key] || 0) > (b.$clone[sort.key] || 0)) return sort.direction;
-        if ((a.$clone[sort.key] || 0) < (b.$clone[sort.key] || 0)) return -sort.direction;
+        if ((a.$sortKey[sort.key]) > (b.$sortKey[sort.key])) return sort.direction;
+        if ((a.$sortKey[sort.key]) < (b.$sortKey[sort.key])) return -sort.direction;
       }
       return 0;
     });
@@ -86,9 +92,9 @@ const sortedDataList = computed(() => {
     for(let data of result) {
       for(let sort of sortInfo.value) {
         if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key]?.percent) {
-          minmax[sort.key] ??= { min: data.$clone[sort.key] ?? 0, max: data.$clone[sort.key] ?? 0 };
-          minmax[sort.key].min = Math.min(minmax[sort.key].min, data.$clone[sort.key] ?? 0)
-          minmax[sort.key].max = Math.max(minmax[sort.key].max, data.$clone[sort.key] ?? 0)
+          minmax[sort.key] ??= { min: data.$sortKey[sort.key], max: data.$sortKey[sort.key] };
+          minmax[sort.key].min = Math.min(minmax[sort.key].min, data.$sortKey[sort.key] ?? 0)
+          minmax[sort.key].max = Math.max(minmax[sort.key].max, data.$sortKey[sort.key] ?? 0)
         }
       }
     }

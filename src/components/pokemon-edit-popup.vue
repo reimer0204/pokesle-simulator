@@ -13,6 +13,31 @@ import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worke
 import AsyncWatcherArea from './util/async-watcher-area.vue';
 import PopupBase from './util/popup-base.vue';
 
+import { Radar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  // CategoryScale,
+  // LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Title,
+  Tooltip,
+  Legend,
+  // plugins
+} from 'chart.js'
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Title,
+  Tooltip,
+  Legend,
+)
+
 let evaluateTable = EvaluateTable.load(config);
 
 const props = defineProps({
@@ -277,6 +302,71 @@ function deletePokemon() {
   }
 }
 
+const raderChart = computed(() => {
+  return {
+    data: {
+      labels: [
+        '総合',
+        'スキル',
+        '食材',
+        'きのみ',
+      ],
+      datasets: [
+        {
+          label: '本個体',
+          data: [65, 59, 90, 30],
+          fill: true,
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderColor: 'rgb(255, 99, 132)',
+          pointBackgroundColor: 'rgb(255, 99, 132)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgb(255, 99, 132)'
+        },
+        {
+          label: '同種族',
+          data: [28, 48, 40, 19],
+          fill: true,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgb(54, 162, 235)',
+          pointBackgroundColor: 'rgb(54, 162, 235)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgb(54, 162, 235)'
+        },
+        {
+          label: '同種族同食材',
+          data: [18, 38, 30, 19],
+          fill: true,
+          backgroundColor: 'rgba(162, 235, 54, 0.2)',
+          borderColor: 'rgb(162, 235, 54)',
+          pointBackgroundColor: 'rgb(162, 235, 54)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgb(162, 235, 54)'
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: true,
+      responsive: true,
+      resizeDelay: 10,
+      elements: {
+        line: {
+          borderWidth: 3
+        }
+      },
+      scales: {
+        r: {
+          ticks: {
+            stepSize: 20,
+          }
+        },
+      }
+    },
+  }
+})
+
 // 表示時に名前入力欄にフォーカスをあわせる
 onMounted(() => {
   nameInput.value.focus();
@@ -341,10 +431,9 @@ function changeColor() {
     <template #headerText>ポケモン編集</template>
 
     <BaseAlert>
-      キーボードだけで入力可能です。<br>
-      「raru」まで入れると「ラルトス」が出てきたりするので、入れたいデータが出てきたらエンターキーで次の入力欄に移動し、続けて情報を入力してください。<br>
-      せいかくまで入力した状態でエンターすると保存され、新規登録の場合は次の新規登録が始まります。<br>
-      所持数とスキルLv、色違いはキーボード入力の対象外なので、進化後の直取り個体や、金種を与えた個体については別途右列の情報を直接操作してください。
+      入力アシスト欄を使用するとキーボードだけで入力可能です。<br>
+      名前: ローマ字で入力可能　/　Enter: 次の欄に移動(せいかく欄でEnterすると保存)　/　ESC: 全てクリア<br>
+      ※スキルLvは入力アシストの対象外のため注意
     </BaseAlert>
 
     <div class="edit-area mt-10px">
@@ -452,8 +541,25 @@ function changeColor() {
       </label>
     </div>
 
+    <!-- 良い表示方法を検討中
+    <ToggleArea class="mt-20px" open v-if="raderChart">
+      <template #headerText>厳選情報(レーダーチャート)</template>
+
+      <div class="flex-row gap-10px">
+        <InputRadio v-model="config.pokemonEdit.rader.type" :value="0">レベルごとに表示</InputRadio>
+        <InputRadio v-model="config.pokemonEdit.rader.type" :value="1">分野ごとに表示</InputRadio>
+      </div>
+      <div class="flex-row flex-wrap gap-10px">
+        <div v-for="i in 4" class="flex-column-start-center" :key="i">
+          <div>Lv30</div>
+          <div class="position-relative w-350px h-350px"><Radar v-bind="raderChart" /></div>
+        </div>
+      </div>
+    </ToggleArea>
+    -->
+
     <ToggleArea class="mt-20px" open v-if="simulatedPokemonList && !kaihouPokemon">
-      <template #headerText>厳選情報</template>
+      <template #headerText>厳選情報(表)</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
         <table v-if="selectResult">
@@ -538,7 +644,7 @@ function changeColor() {
 
 <style lang="scss" scoped>
 .edit-pokemon-popup {
-  width: 770px;
+  width: 780px;
 
   .edit-area {
     width: 100%;

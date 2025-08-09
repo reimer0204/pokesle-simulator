@@ -5,7 +5,7 @@ import SettingList from '../components/util/setting-list.vue';
 import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
 import config from '../models/config.js';
-import EvaluateTable from '../models/simulation/evaluate-table.js';
+import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import MultiWorker from '../models/multi-worker.js';
 import Popup from '../models/popup/popup.ts';
 import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker';
@@ -16,15 +16,21 @@ let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable
 let lv = ref(lvList.at(-1))
 let step = ref(5);
 
-let evaluateTable = EvaluateTable.load(config);
+let evaluateTable = ref(null);
+let evaluateTablePromise = (async () => {
+  evaluateTable.value = await EvaluateTable.load(config);
+})()
 let evaluateTablePokemonList = computed(() => {
+  if (evaluateTable.value == null) return []
+
   let result = [];
-  for(let pokemonName in evaluateTable) {
-    let lvInfo = evaluateTable[pokemonName][lv.value];
+  for(let pokemonName in evaluateTable.value) {
+    let lvInfo = evaluateTable.value[pokemonName][lv.value];
     let pokemon = Pokemon.map[pokemonName];
 
     for(let food in lvInfo) {
-      let percentile = lvInfo[food].percentile;
+      if (food == '') continue;
+      let percentile = lvInfo[food].energy;
 
       result.push({
         name: pokemonName,
@@ -53,8 +59,8 @@ let columnList = computed(() => {
 async function showDetail(pokemon, p) {
   
   asyncWatcher.run(async (progressCounter) => {
+    await evaluateTablePromise
 
-    const evaluateTable = EvaluateTable.load(config);
     const multiWorker = new MultiWorker(EvaluateTableWorker, 1)
 
     let result = (await multiWorker.call(
@@ -65,11 +71,15 @@ async function showDetail(pokemon, p) {
           config: JSON.parse(JSON.stringify(config)),
           pokemonList: [Pokemon.map[pokemon.name]],
           foodCombinationList: [pokemon.foodIndexList],
-          scoreForHealerEvaluate: evaluateTable.scoreForHealerEvaluate[lv.value],
-          scoreForSupportEvaluate: evaluateTable.scoreForSupportEvaluate[lv.value],
+          scoreForHealerEvaluate: evaluateTable.value.scoreForHealerEvaluate[lv.value][''].energy,
+          scoreForSupportEvaluate: evaluateTable.value.scoreForSupportEvaluate[lv.value][''].energy,
         }
       }
-    ))[0].result[pokemon.name][pokemon.foodIndexList].percentile[p]
+    ))[0].result[pokemon.name][pokemon.foodIndexList].energy[p]
+
+    console.log(result)
+
+    multiWorker.close()
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,

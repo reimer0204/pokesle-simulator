@@ -85,6 +85,7 @@ interface PokemonBoxType {
 
 interface PokemonType {
   name: string;
+  no: number;
   berry: BerryType;
   specialty: 'きのみ' | '食材' | 'スキル' | 'オール';
   skill: SkillType;
@@ -140,6 +141,25 @@ interface PokemonType {
 }
 
 type FoodNames = { [key in FoodName]: number };
+
+interface EvaluateResultInfo {
+  name?: string,
+  rate: number, ratio: number, score: number, value: number,
+  pureMint?: EvaluateResultInfo
+}
+interface EvaluateResult {
+  [type: number | string]: {
+    [key: string]: {
+      energy: EvaluateResultInfo,
+      berry: EvaluateResultInfo,
+      food: EvaluateResultInfo,
+      skill: EvaluateResultInfo,
+      specialty: EvaluateResultInfo,
+    }
+  }
+};
+type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty'
+
 interface SimulatedPokemon extends FoodNames {
   box?: PokemonBoxType;
   base: PokemonType;
@@ -227,20 +247,7 @@ interface SimulatedPokemon extends FoodNames {
   energyPerDay: number;
 
   // 厳選度
-  evaluateResult: { [type: number | string]: { [key: string]: {
-    name: string,
-    rate: number,
-    ratio: number,
-    score: number,
-    energy: number,
-  }}};
-  evaluateSpecialty: { [type: number | string]: { [key: string]: {
-    name: string,
-    rate: number,
-    ratio: number,
-    score: number,
-    num: number,
-  }}};
+  evaluateResult: EvaluateResult;
 
   tmpScore?: number;
   score: number;
@@ -263,4 +270,25 @@ export type {
   PokemonType,
   PokemonBoxType,
   SimulatedPokemon,
+  EvaluateResultInfo,
+  EvaluateResult,
+  EvaluateResultKey,
 }
+
+/*
+interface EvaluateResultInfo {
+  rate: number, ratio: number, score: number, value: number,
+  pureMint?: EvaluateResultInfo
+}
+interface EvaluateResult {
+  [type: number | string]: {
+    [key: string]: {
+      energy: EvaluateResultInfo,
+      berry: EvaluateResultInfo,
+      food: EvaluateResultInfo,
+      skill: EvaluateResultInfo,
+    }
+  }
+};
+type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill'
+*/

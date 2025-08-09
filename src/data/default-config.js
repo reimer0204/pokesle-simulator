@@ -26,8 +26,10 @@ const defaultConfig = {
   genkiSimulationDiffMax: null,
 
   pokemonList: {
+    memo: false,
     selectDetail: false,
     selectEnergy: false,
+    evaluateList: 2,
     baseInfo: true,
     subSkillShort: true,
     foodInfo: false,

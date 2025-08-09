@@ -8,6 +8,35 @@ import config from "../config";
 import MultiWorker from "../multi-worker";
 import Version from "../version";
 
+const DB_NAME = 'evaluateTable';
+const DB_VERSION = 1;
+
+const dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
+  try {
+    const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBRequest).result as IDBDatabase;
+      if (!db.objectStoreNames.contains('evaluate')) {
+        const evaluateStore = db.createObjectStore('evaluate', { keyPath: 'keyPath' });
+        evaluateStore.createIndex("pokemonName", "name", { unique: false });
+        evaluateStore.createIndex("pokemonFood", ["name", "lv", "foodCombination"], { unique: false });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBRequest).result as IDBDatabase;
+      resolve(db);
+    };
+
+    request.onerror = (event) => {
+      reject((event.target as IDBRequest).error);
+    };
+  } catch (error) {
+    reject(error);
+  }
+})
+
 export default class EvaluateTable {
 
   static VERSION = Version.EVALUATE;
@@ -18,12 +47,44 @@ export default class EvaluateTable {
       && config.checkFreq == config.version.evaluateTableCheckFreq
   }
 
-  static load(config) {
+  static async canUseEvaluateTable() {
+    try {
+      await dbPromise
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  static async load(config, full = false) {
     if (!this.isEnableEvaluateTable(config)) {
       return null
     }
     try {
-      return JSON.parse(localStorage.getItem('evaluateTable'))
+      const db = await dbPromise
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction('evaluate')
+        const store = transaction.objectStore('evaluate')
+        const request = store.getAll()
+        request.onerror = () => {
+          reject(false)
+        }
+        request.onsuccess = (event) => {
+          let result = {}
+          for(const record of request.result) {
+            if (result[record.name] === undefined) result[record.name] = {}
+            if (result[record.name][record.lv] === undefined) result[record.name][record.lv] = {}
+            result[record.name][record.lv][record.foodCombination] = {
+              energy: record.energy,
+              berry: record.berry,
+              food: record.food,
+              skill: record.skill,
+            }
+          }
+          resolve(result);
+        }
+      })
+      // return JSON.parse(localStorage.getItem('evaluateTable'))
     } catch(e) {
       return null
     }
@@ -65,10 +126,7 @@ export default class EvaluateTable {
     let normalPokemonList = pokemonList.filter(pokemon => !pokemon.skill.team && !pokemon.skill.shard)
     let supportPokemonList = pokemonList.filter(pokemon => pokemon.skill.team ||  pokemon.skill.shard)
 
-    let result = {
-      scoreForHealerEvaluate: {},
-      scoreForSupportEvaluate: {},
-    };
+    let result = [];
     let progressCounterIndex = 0;
     for(let lv of lvList) {
       const foodCombinationList = lv < 30 ? ['0'] : lv < 60 ? [ '00', '01' ] : [ '000', '001', '002', '010', '011', '012' ];
@@ -101,11 +159,11 @@ export default class EvaluateTable {
       let scoreForHealerEvaluate = scoreForHealerEvaluateList.reduce((a, x) => a + x, 0) / scoreForHealerEvaluateList.length;
       let scoreForSupportEvaluate = scoreForSupportEvaluateList.reduce((a, x) => a + x, 0) / scoreForSupportEvaluateList.length;
 
-      result.scoreForHealerEvaluate[lv] = scoreForHealerEvaluate;
-      result.scoreForSupportEvaluate[lv] = scoreForSupportEvaluate;
+      result.push({ name: 'scoreForHealerEvaluate',  lv, foodCombination: '', energy: scoreForHealerEvaluate });
+      result.push({ name: 'scoreForSupportEvaluate', lv, foodCombination: '', energy: scoreForSupportEvaluate });
 
       subProgressCounterList[progressCounterIndex].setName(`Lv${lv}のサポート系スキルポケモンの厳選情報を作成しています…`)
-      
+
       let supportPokemonResult = await multiWorker.call(
         subProgressCounterList[progressCounterIndex++],
         (i, length) => {
@@ -126,22 +184,60 @@ export default class EvaluateTable {
       let pokemonEvaluateTable = { ...normalPokemonEvaluateTable, ...supportPokemonEvaluateTable };
 
       for(let pokemonName in pokemonEvaluateTable) {
-        if(result[pokemonName] == null) result[pokemonName] = {};
-        result[pokemonName][lv] = {};
 
         for(let foodCombination in pokemonEvaluateTable[pokemonName]) {
-          let pokemonResult = pokemonEvaluateTable[pokemonName][foodCombination].percentile;
-          result[pokemonName][lv][foodCombination] = {
-            baseScore: Number(pokemonResult[fixedConfig.selectEvaluate.supportBorder].baseScore.toFixed(3)),
-            pickupEnergyPerHelp: Number(pokemonResult[fixedConfig.selectEvaluate.supportBorder].pickupEnergyPerHelp.toFixed(3)),
-            percentile: pokemonResult.map(x => Number(x.score.toFixed(3))),
-            specialtyNumList: pokemonEvaluateTable[pokemonName][foodCombination].specialtyNumList.map(x => Number(x.toFixed(3))),
-          }
+          let pokemonResult = pokemonEvaluateTable[pokemonName][foodCombination];
+          result.push({
+            name: pokemonName, 
+            lv,
+            foodCombination,
+            energy: pokemonResult.energy.map(x => x.score),
+            berry: pokemonResult.berry.map(x => x.score),
+            food: pokemonResult.food.map(x => x.score),
+            skill: pokemonResult.skill.map(x => x.score),
+          })
         }
       }
     }
 
-    localStorage.setItem('evaluateTable', JSON.stringify(result))
+    // localStorage.setItem('evaluateTable', JSON.stringify(result))
+
+    await new Promise(async (resolve, reject) => {
+      try {
+        const db = await dbPromise;
+        const transaction = db.transaction("evaluate", "readwrite");
+        const store = transaction.objectStore("evaluate");
+
+        await new Promise((resolve, reject) => {
+          const clearRequest = store.clear()
+          clearRequest.onsuccess = (event) => {
+            resolve(true);
+          }
+          clearRequest.onerror = (event) => {
+            reject(false)
+          }
+        })
+
+        for(let item of result) {
+          const add = store.add({
+            keyPath: `${item.name}_${item.lv}_${item.foodCombination}`,
+            ...item
+          });
+          add.onerror = (event) => {
+            console.error(item)
+            reject(event)
+          }
+        }
+        transaction.oncomplete = (event) => {
+          resolve(true);
+        }
+        transaction.onerror = (event) => {
+          reject(true);
+        }
+      } catch(e) {
+        reject(e)
+      }
+    })
 
     multiWorker.close()
 

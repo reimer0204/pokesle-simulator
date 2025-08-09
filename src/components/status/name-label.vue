@@ -1,6 +1,7 @@
 <script setup>
 const props = defineProps({
-  pokemon: { required: true }
+  pokemon: { required: true },
+  memoHidden: { type: Boolean, default: false }
 })
 </script>
 
@@ -10,7 +11,7 @@ const props = defineProps({
     <template v-else>{{ props.pokemon.base.name }}</template>
     <template v-if="pokemon.bagOverOperation">(いつ育)</template>
     
-    <div v-if="pokemon.memo?.length" class="memo">{{ pokemon.memo }}</div>
+    <div v-if="!props.memoHidden && pokemon.box.memo?.length" class="memo">{{ pokemon.box.memo }}</div>
   </span>
 </template>
 

@@ -11,7 +11,7 @@ import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.js';
-import EvaluateTable from '../models/simulation/evaluate-table.js';
+import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box/pokemon-box.js';
 import Popup from '../models/popup/popup.ts';
@@ -36,7 +36,8 @@ async function createPokemonList(setConfig = false) {
   asyncWatcher.run(async (progressCounter) => {
     simulatedPokemonList.value = await PokemonBox.simulation(
       PokemonBox.list,
-      multiWorker, evaluateTable, 
+      multiWorker, 
+      await evaluateTable, 
       {
         ...config,
         pureMint: mode.value == 'pureMint',
@@ -75,6 +76,13 @@ const columnList = computed(() => {
     { key: 'edit', name: '', type: Number, convert: item => item.box?.fix == -1 ? 2 : item.box?.fix },
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
     { key: 'name', name: '名前', type: String, convert: x => x.box.name },
+  ]
+
+  if (config.pokemonList.memo) {
+    result.push({ key: 'memo', name: 'メモ', type: String, convert: x => x.box.memo ?? '' })
+  }
+
+  result.push(
     { key: 'lv', name: 'Lv', type: Number },
     // { key: 'useCandy', name: '使用アメ', type: Number },
     // { key: 'useShard', name: '使用ゆめかけ', type: Number },
@@ -84,28 +92,82 @@ const columnList = computed(() => {
     { key: 'subSkill', name: 'サブスキル', type: null, convert: x => x.box.subSkillList },
     { key: 'natureName', name: '性格', type: null, convert: x => x.box.nature },
     { key: 'score', name: 'スコア', type: Number, fixed: 1 },
-  ]
+  )
 
-  if (config.simulation.selectInfo) {
-    let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    result.push({ key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true })
-    for(let lv of lvList) {
-      result.push({ key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true })
+  const evaluateList = []
+  if (config.pokemonList.evaluateList >= 1) {
+    evaluateList.push({ key: 'energy', name: '' })
+    // let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+    // result.push({
+    //   key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true, 
+    //   convert: x => x.evaluateResult.max.best.energy.score
+    // })
+    // for(let lv of lvList) {
+    //   result.push({
+    //     key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true, 
+    //     convert: x => x.evaluateResult[lv].best.energy.score
+    //   })
 
-      if (config.pokemonList.selectEnergy) {
-        result.push({ key: `evaluate_energy_${lv}`, name: `エナジー\n(${lv})`, template: 'evaluate_energy', lv, type: Number })
-      }
-    }
-
+    //   if (config.pokemonList.selectEnergy) {
+    //     result.push({
+    //       key: `evaluate_energy_${lv}`, name: `エナジー\n(${lv})`, template: 'evaluate_energy', lv, type: Number,
+    //       convert: x => x.evaluateResult[lv].best.energy.value
+    //     })
+    //   }
+    // }
   }
-  if (config.simulation.specialtySelectInfo) {
+
+  if (config.pokemonList.evaluateList == 2) {
+    evaluateList.push({ key: 'specialty', name: '得意' })
+
+    // let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+    // result.push({
+    //   key: `specialty_percentile_max`, name: `得意厳選\n(最大)`, template: 'specialty', lv: 'max', percent: true,
+    //   convert: x => x.evaluateResult.max.best.specialty.score
+    // })
+    // for(let lv of lvList) {
+    //   result.push({
+    //     key: `specialty_percentile_${lv}`, name: `得意厳選\n(${lv})`, template: 'specialty', lv, percent: true,
+    //     convert: x => x.evaluateResult[lv].best.specialty.score
+    //   })
+
+    //   if (config.pokemonList.selectEnergy) {
+    //     result.push({
+    //       key: `specialty_num_${lv}`, name: `得意数量\n(${lv})`, template: 'specialty_num', lv, type: Number,
+    //       convert: x => x.evaluateResult[lv].best.specialty.value
+    //     })
+    //   }
+    // }
+  }
+  
+  if (config.pokemonList.evaluateList == 3) {
+    evaluateList.push(
+      { key: 'berry', name: 'きのみ' },
+      { key: 'food', name: '食材' },
+      { key: 'skill', name: 'スキル' },
+    )
+  }
+  
+  for(let { key, name } of evaluateList) {
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    result.push({ key: `specialty_percentile_max`, name: `得意厳選\n(最大)`, template: 'specialty', lv: 'max', percent: true })
+    result.push({
+      key: `${key}_percentile_max`, name: `${name}厳選\n(最大)`, lv: 'max', percent: true,
+      template: 'evaluate', templateType: key, templateField: 'score',
+      convert: x => x.evaluateResult.max.best[key].score
+    })
     for(let lv of lvList) {
-      result.push({ key: `specialty_percentile_${lv}`, name: `得意厳選\n(${lv})`, template: 'specialty', lv, percent: true })
+      result.push({
+        key: `${key}_percentile_${lv}`, name: `${name}厳選\n(${lv})`, lv, percent: true,
+        template: 'evaluate', templateType: key, templateField: 'score',
+        convert: x => x.evaluateResult[lv].best[key].score
+      })
 
       if (config.pokemonList.selectEnergy) {
-        result.push({ key: `specialty_num_${lv}`, name: `得意数量\n(${lv})`, template: 'specialty_num', lv, type: Number })
+        result.push({
+          key: `${key}_value_${lv}`, name: `${name}${key == 'energy' ? 'エナジー' : '数量'}\n(${lv})`, lv, type: Number,
+          template: 'evaluate', templateType: key, templateField: 'value',
+          convert: x => x.evaluateResult[lv].best[key].value
+        })
       }
     }
   }
@@ -128,6 +190,7 @@ const columnList = computed(() => {
 
   if (config.pokemonList.baseInfo) {
     result.push(
+      { key: 'no', name: '図鑑\nNo', convert: x => x.base.no },
       { key: 'afterList', name: '最終進化', convert: x => x.base.afterList },
       { key: 'berryName', name: 'きのみ', convert: x => x.base.berry.name },
       { key: 'skillName', name: 'スキル', convert: x => x.base.skill.name },
@@ -177,14 +240,14 @@ const columnList = computed(() => {
 
 async function showEditPopup(pokemon) {
   await asyncWatcher.wait;
-  if(await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
+  if(await Popup.show(EditPokemonPopup, { index: pokemon.box.index })) {
     createPokemonList()
   }
 }
 
 async function addPokemon() {
   await asyncWatcher.wait;
-  if(await Popup.show(EditPokemonPopup, { evaluateTable, simulatedPokemonList: simulatedPokemonList.value })) {
+  if(await Popup.show(EditPokemonPopup)) {
     createPokemonList()
   }
 }
@@ -254,19 +317,19 @@ function showSelectDetail(pokemon, after, lv) {
 
         <SettingTable>
           <tr><th>サブスキル名省略</th><td><label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label></td></tr>
+          <tr><th>メモ</th><td><label><input type="checkbox" v-model="config.pokemonList.memo" />メモを列として表示</label></td></tr>
           <tr>
             <th>厳選</th>
             <td>
-              <div>
-                <label><input type="checkbox" v-model="config.simulation.selectInfo" />厳選度</label>
-                <div class="w-300px">
-                  <small>厳選設定に基づいて計算されたエナジーでの厳選度を表示します。</small>
-                </div>
-              </div>
               <div class="mt-5px">
-                <label><input type="checkbox" v-model="config.simulation.specialtySelectInfo" />とくい厳選度</label>
+                <div class="flex-column gap-5px">
+                  <InputRadio v-model="config.pokemonList.evaluateList" :value="0">非表示</InputRadio>
+                  <InputRadio v-model="config.pokemonList.evaluateList" :value="1">総合スコアのみ</InputRadio>
+                  <InputRadio v-model="config.pokemonList.evaluateList" :value="2">総合スコア＆とくい</InputRadio>
+                  <InputRadio v-model="config.pokemonList.evaluateList" :value="3">総合スコア＆きのみ＆食材＆スキル</InputRadio>
+                </div>
                 <div class="w-300px">
-                  <small>とくい分野の数値だけに限り評価した値です。<br>きのみ得意の場合はきのみの数、食材得意の場合は食材の数、スキル得意の場合はスキルの発動期待値で評価しています。</small>
+                  <small>きのみはきのみの数、食材は食材の数、スキルは発動期待値で評価しています。</small>
                 </div>
               </div>
               <div class="mt-5px">
@@ -390,7 +453,7 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #name="{ data }">
-            <NameLabel :pokemon="data" />
+            <NameLabel :pokemon="data" :memoHidden="config.pokemonList.memo" />
           </template>
 
           <template #lv="{ data }">
@@ -427,19 +490,19 @@ function showSelectDetail(pokemon, after, lv) {
           </template>
 
           <template #evaluate="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" />
+            <EvaluateResult :pokemon="data" :lv="column.lv" :type="column.templateType" :field="column.templateField" />
           </template>
 
           <template #evaluate_energy="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" field="energy" />
+            <EvaluateResult :pokemon="data" :lv="column.lv" field="value" />
           </template>
 
           <template #specialty="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" type="evaluateSpecialty" />
+            <EvaluateResult :pokemon="data" :lv="column.lv" type="specialty" />
           </template>
 
           <template #specialty_num="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" type="evaluateSpecialty" field="num" />
+            <EvaluateResult :pokemon="data" :lv="column.lv" type="specialty" field="value" />
           </template>
 
           <template #candy="{ data, column }">

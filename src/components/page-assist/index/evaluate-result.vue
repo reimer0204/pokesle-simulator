@@ -1,17 +1,20 @@
 <script lang="ts" setup>
-import type { SimulatedPokemon } from '../../../type.ts';
+import { SimulatedPokemon } from '../../../type.ts';
 import config from '@/models/config.js';
 import Popup from '@/models/popup/popup.ts';
 import EvaluateTableDetailPopup from '@/components/evaluate-table-detail-popup.vue';
 import { computed } from 'vue';
+import { EvaluateResult, EvaluateResultKey } from '../../../type';
 
 const props = defineProps<{
   pokemon: SimulatedPokemon,
   lv: number | string,
-  type?: 'evaluateSpecialty',
-  field?: 'energy' | 'num',
+  type?: EvaluateResultKey,
+  field?: 'score' | 'value',
 }>()
-const type = computed<'evaluateResult' | 'evaluateSpecialty'>(() => props.type ?? 'evaluateResult')
+const type = computed<EvaluateResultKey>(() => props.type ?? 'energy')
+const score = computed<'score' | 'value'>(() => props.field ?? 'score')
+const evaluateResult = computed<EvaluateResult>(() => props.pokemon.evaluateResult)
 
 // 厳選詳細ポップアップを表示
 function showSelectDetail(pokemon: SimulatedPokemon, after: string, lv: number) {
@@ -25,40 +28,40 @@ function showSelectDetail(pokemon: SimulatedPokemon, after: string, lv: number) 
 }
 
 const afterList = computed<string[]>(() => {
-  return config.pokemonList.selectDetail ? props.pokemon.base.afterList : [props.pokemon[type.value]?.[props.lv]?.best.name];
+  return config.pokemonList.selectDetail ? props.pokemon.base.afterList : [evaluateResult.value?.[props.lv]?.best?.[type.value]?.name];
 })
 const resultList = computed(() => {
   return afterList.value.map(after => {
     let value: number;
     let diff;
 
-    if (props.pokemon[type.value]?.[props.lv]?.[after]?.pureMint) {
-      value = props.pokemon[type.value]?.[props.lv]?.[after]?.pureMint?.[props.field ?? 'score'];
-      const original = props.pokemon[type.value]?.[props.lv]?.[after]?.[props.field ?? 'score'];
+    if (evaluateResult.value?.[props.lv]?.[after]?.[type.value]?.pureMint) {
+      value = evaluateResult.value?.[props.lv]?.[after]?.[type.value]?.pureMint?.[score.value];
+      const original = evaluateResult.value?.[props.lv]?.[after]?.[type.value]?.[score.value];
       if (value != null && original != null) {
         diff = value - original;
       }
     } else {
-      value = props.pokemon[type.value]?.[props.lv]?.[after]?.[props.field ?? 'score'];
+      value = evaluateResult.value?.[props.lv]?.[after]?.[type.value]?.[score.value];
     }
 
     let result = null;
     if (value != null) {
-      if (props.field == null)       result = `${(value * 100).toFixed(1)}%`
-      else if (props.field == 'num') result = `${value.toFixed(1)}`
-      else                           result = Math.round(value).toLocaleString();
+      if (score.value == 'score')      result = `${(value * 100).toFixed(1)}%`
+      else if (type.value != 'energy') result = `${value.toFixed(1)}`
+      else                             result = Math.round(value).toLocaleString();
     }
 
     return {
       after,
-      isBest: (afterList.value.length > 1) && props.pokemon[type.value]?.[props.lv]?.best.name == after,
+      isBest: (afterList.value.length > 1) && evaluateResult.value?.[props.lv]?.best?.[type.value]?.name == after,
       result,
       diff,
     }
   })
 })
 
-const numWidth = computed(() => props.field == 'energy' ? 40 : 35)
+const numWidth = computed(() => type.value == 'energy' && score.value == 'value' ? 40 : 35)
 
 </script>
 
@@ -79,9 +82,9 @@ const numWidth = computed(() => props.field == 'energy' ? 40 : 35)
         <template v-else>{{ result }}</template>
       </div>
       <div v-if="diff != null" class="diff" :class="{ plus: diff > 0, minus: diff < 0 }">
-        <template v-if="props.field == null"      >{{ `${(diff > 0 ? '+' : '')}${(diff * 100).toFixed(1)}%` }}</template>
-        <template v-else-if="props.field == 'num'">{{ `${(diff > 0 ? '+' : '')}${diff.toFixed(1)}` }}</template>
-        <template v-else                          >{{ `${(diff > 0 ? '+' : '')}` + Math.round(diff).toLocaleString() }}</template>
+        <template v-if="score == 'score'"     >{{ `${(diff > 0 ? '+' : '')}${(diff * 100).toFixed(1)}%` }}</template>
+        <template v-else-if="type != 'energy'">{{ `${(diff > 0 ? '+' : '')}${diff.toFixed(1)}` }}</template>
+        <template v-else                      >{{ `${(diff > 0 ? '+' : '')}` + Math.round(diff).toLocaleString() }}</template>
       </div>
     </div>
   </div>

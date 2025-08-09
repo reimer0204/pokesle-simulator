@@ -1195,7 +1195,7 @@ class PokemonSimulator {
     return pokemon;
   }
 
-  selectEvaluateToScore(pokemon, yumebo, risabo) {
+  selectEvaluateToScore(pokemon: SimulatedPokemon, yumebo: boolean, risabo: boolean) {
     let score = pokemon.energyPerDay;
 
     if (yumebo) {

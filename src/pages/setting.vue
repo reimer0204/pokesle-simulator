@@ -2,7 +2,7 @@
 import SettingList from '../components/util/setting-list.vue';
 import Skill from '../data/skill';
 import config from '../models/config';
-import EvaluateTable from '../models/simulation/evaluate-table';
+import EvaluateTable from '../models/simulation/evaluate-table.ts';
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
