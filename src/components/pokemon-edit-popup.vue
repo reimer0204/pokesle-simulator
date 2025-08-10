@@ -38,7 +38,10 @@ ChartJS.register(
   Legend,
 )
 
-let evaluateTable = EvaluateTable.load(config);
+let evaluateTable;
+const evaluateTablePromise = (async () => {
+  evaluateTable = await EvaluateTable.load(config);
+})();
 
 const props = defineProps({
   index: { type: Number },
@@ -82,89 +85,6 @@ let assist = reactive({
   nature: null,
 });
 
-// 厳選情報計算
-let selectAsyncWatcher = AsyncWatcher.init();
-let boxMultiWorker = new MultiWorker(PokemonListSimulator)
-let singleMultiWorker = new MultiWorker(PokemonListSimulator, 1)
-onBeforeUnmount(() => {
-  boxMultiWorker.close();
-  singleMultiWorker.close();
-})
-const simulatedPokemonList = ref([]);
-let boxLoading;
-async function loadBoxInfo(setConfig = false) {
-  boxLoading = selectAsyncWatcher.run(async (progressCounter) => {
-    simulatedPokemonList.value = await PokemonBox.simulation(
-      PokemonBox.list,
-      boxMultiWorker, evaluateTable, 
-      config,
-      progressCounter, setConfig
-    )
-  })
-  await boxLoading;
-}
-loadBoxInfo(true)
-
-let selectResult = ref(null);
-let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()]
-
-watch(pokemon, async () => {
-  await boxLoading;
-
-  try {
-    PokemonBox.check(pokemon)
-    selectAsyncWatcher.run(async (progressCounter) => {
-      await singleMultiWorker.call(
-        null,
-        () => ({ type: 'config', config: JSON.parse(JSON.stringify(config)) })
-      )
-
-      selectResult.value = (await singleMultiWorker.call(
-        progressCounter,
-        () => {
-          return {
-            type: 'basic',
-            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
-            evaluateTable,
-          }
-        }
-      )).flat(1)[0];
-
-      if (simulatedPokemonList.value) {
-        selectResult.value.box = {};
-        for(let selectLv of selectLvList) {
-          selectResult.value.box[selectLv] = {};
-          for(let after of selectResult.value.base.afterList) {
-            let targetList = simulatedPokemonList.value.filter(x => x.evaluateResult?.[selectLv]?.[after]?.score != null);
-            let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f.name))
-
-            let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-            let sameListSpecialty = targetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
-            let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.score);
-            let sameFoodListSpecialty = sameFoodTargetList.map(x => x.evaluateSpecialty?.[selectLv]?.[after]?.score);
-
-            selectResult.value.box[selectLv][after] = {
-              same: sameList.length ? Math.max(...sameList) : null,
-              food: sameFoodList.length ? Math.max(...sameFoodList) : null,
-              sameSpecialty: sameListSpecialty.length ? Math.max(...sameListSpecialty) : null,
-              foodSpecialty: sameFoodListSpecialty.length ? Math.max(...sameFoodListSpecialty) : null,
-            }
-          }
-        }
-      }
-
-      // console.log(selectResult.value);
-    })
-  } catch(e) {
-    selectResult.value = null;
-    // console.log(e);
-    // ignore
-  }
-
-}, {
-  immediate: true,
-})
-
 const pokemonFoodABC = computed(() => {
   return pokemon.foodList.map(f => f ? String.fromCharCode(65 + Math.max(basePokemon.value?.foodList.findIndex(x => x.name == f) ?? 0, 0)) : '').join('');
 })
@@ -181,6 +101,30 @@ if (props.index != null) {
   assist.subSkillList = [...pokemon.subSkillList]
   assist.nature = pokemon.nature
 }
+
+// 厳選情報計算
+let selectAsyncWatcher = AsyncWatcher.init();
+let boxMultiWorker = new MultiWorker(PokemonListSimulator)
+let singleMultiWorker = new MultiWorker(PokemonListSimulator, 1)
+onBeforeUnmount(() => {
+  boxMultiWorker.close();
+  singleMultiWorker.close();
+})
+const simulatedPokemonList = ref([]);
+let boxLoading;
+async function loadBoxInfo(setConfig = false) {
+  boxLoading = selectAsyncWatcher.run(async (progressCounter) => {
+    await evaluateTablePromise
+    simulatedPokemonList.value = await PokemonBox.simulation(
+      PokemonBox.list,
+      boxMultiWorker, evaluateTable, 
+      config,
+      progressCounter, setConfig
+    )
+  })
+  await boxLoading;
+}
+loadBoxInfo(true)
 
 let subSkillNameSort = SubSkill.list.toSorted((a, b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
 
@@ -263,6 +207,81 @@ function convertNature() {
   }
 }
 watch(() => assist.name, inferName)
+
+// 厳選情報
+let selectResult = ref(null);
+let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()];
+
+async function calcSelectScore() {
+  console.log('calcSelectScore')
+
+  await boxLoading;
+  await evaluateTablePromise
+
+  try {
+    PokemonBox.check(pokemon)
+    selectAsyncWatcher.run(async (progressCounter) => {
+      await singleMultiWorker.call(
+        null,
+        () => ({ type: 'config', config: JSON.parse(JSON.stringify(config)) })
+      )
+
+      const result = (await singleMultiWorker.call(
+        progressCounter,
+        () => {
+          return {
+            type: 'basic',
+            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
+            evaluateTable,
+          }
+        }
+      )).flat(1)[0];
+
+      if (simulatedPokemonList.value && result) {
+        result.box = {};
+        for(let selectLv of selectLvList) {
+          result.box[selectLv] = {};
+          for(let after of result.base.afterList) {
+
+            result.box[selectLv][after] = {}
+            for(let { key } of selectResultColumns.value) {
+              let targetList = simulatedPokemonList.value.filter(x => x.evaluateResult?.[selectLv]?.[after]?.[key]?.score != null);
+              let sameFoodTargetList = targetList.filter(x => x.box?.foodList.every((f, i) => pokemon.foodList[i] == f))
+              let sameList = targetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.[key]?.score);
+              let sameFoodList = sameFoodTargetList.map(x => x.evaluateResult?.[selectLv]?.[after]?.[key]?.score);
+
+              result.box[selectLv][after][key] = {
+                same: sameList.length ? Math.max(...sameList) : null,
+                food: sameFoodList.length ? Math.max(...sameFoodList) : null,
+              }
+            }
+          }
+        }
+      }
+
+      selectResult.value = result
+
+      // console.log(selectResult.value);
+    })
+  } catch(e) {
+    selectResult.value = null;
+    console.log(e);
+    // ignore
+  }
+}
+calcSelectScore();
+watch(pokemon, calcSelectScore)
+
+const selectResultColumns = computed(() => {
+  const result = [
+    { key: 'energy', name: '総合スコア', color: 'rgb(220, 48, 50)', order: 1 },
+    { key: 'berry' , name: 'きのみ'    , color: 'rgb(32, 212, 102)', order: basePokemon.value?.specialty == 'きのみ' ? 2 : 3 },
+    { key: 'food'  , name: '食材'      , color: 'rgb(245, 183, 72)', order: basePokemon.value?.specialty == '食材'   ? 2 : 4 },
+    { key: 'skill' , name: 'スキル'    , color: 'rgb(70, 159, 253)', order: basePokemon.value?.specialty == 'スキル' ? 2 : 5 },
+  ]
+  result.sort((a, b) => a.order - b.order)
+  return result;
+})
 
 const saveDisabled = computed(() => {
   return basePokemon.value == null || !pokemon.lv
@@ -559,75 +578,69 @@ function changeColor() {
     -->
 
     <ToggleArea class="mt-20px" open v-if="simulatedPokemonList && !kaihouPokemon">
-      <template #headerText>厳選情報(表)</template>
+      <template #headerText>厳選情報</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
-        <table v-if="selectResult">
-          <thead>
-            <tr>
-              <th></th>
-              <th></th>
-              <th :colspan="selectLvList.length + 1">総合スコア</th>
-              <th :colspan="selectLvList.length + 1">得意分野</th>
-            </tr>
-            <tr>
-              <th>最終進化</th>
-              <th></th>
-              <th v-for="lv in selectLvList" class="text-align-right">
-                <template v-if="lv == 'max'">最大</template>
-                <template v-else>Lv{{ lv }}</template>
-              </th>
-              <th v-for="lv in selectLvList" class="text-align-right">
-                <template v-if="lv == 'max'">最大</template>
-                <template v-else>Lv{{ lv }}</template>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="after in selectResult.base.afterList">
+        <div v-if="selectResult" style="overflow-x: auto; white-space: nowrap;">
+          <table>
+            <thead>
               <tr>
-                <th rowspan="3">{{ after }}</th>
-                <th>本個体</th>
-                <td v-for="lv in selectLvList"
-                  :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
-                  class="text-align-right"
-                >
-                  <template v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after].score)">-</template>
-                  <template v-else>{{ (selectResult.evaluateResult?.[lv]?.[after].score * 100).toFixed(1) }}%</template>
-                </td>
-                <td v-for="lv in selectLvList"
-                  :class="{ best: selectResult.evaluateResult?.[lv]?.best.score == selectResult.evaluateResult?.[lv]?.[after].score }"
-                  class="text-align-right"
-                >
-                  <template v-if="isNaN(selectResult.evaluateSpecialty?.[lv]?.[after].score)">-</template>
-                  <template v-else>{{ (selectResult.evaluateSpecialty?.[lv]?.[after].score * 100).toFixed(1) }}%</template>
-                </td>
+                <th></th>
+                <th></th>
+                <th
+                  v-for="{ name, color } in selectResultColumns"
+                  :colspan="selectLvList.length"
+                  :style="{ backgroundColor: color }"
+                >{{ name }}</th>
               </tr>
               <tr>
-                <th>同種族</th>
-                <td v-for="lv in selectLvList" class="text-align-right">
-                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].same)">-</template>
-                  <template v-else>{{ (selectResult.box?.[lv]?.[after].same * 100).toFixed(1) }}%</template>
-                </td>
-                <td v-for="lv in selectLvList" class="text-align-right">
-                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].sameSpecialty)">-</template>
-                  <template v-else>{{ (selectResult.box?.[lv]?.[after].sameSpecialty * 100).toFixed(1) }}%</template>
-                </td>
+                <th>最終進化</th>
+                <th></th>
+                <template v-for="{ color } in selectResultColumns">
+                  <th v-for="lv in selectLvList" class="text-align-right" :style="{ backgroundColor: color }">
+                    <template v-if="lv == 'max'">最大</template>
+                    <template v-else>Lv{{ lv }}</template>
+                  </th>
+                </template>
               </tr>
-              <tr>
-                <th>同種族<br>同食材</th>
-                <td v-for="lv in selectLvList" class="text-align-right">
-                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].food)">-</template>
-                  <template v-else>{{ (selectResult.box?.[lv]?.[after].food * 100).toFixed(1) }}%</template>
-                </td>
-                <td v-for="lv in selectLvList" class="text-align-right">
-                  <template v-if="isNaN(selectResult.box?.[lv]?.[after].foodSpecialty)">-</template>
-                  <template v-else>{{ (selectResult.box?.[lv]?.[after].foodSpecialty * 100).toFixed(1) }}%</template>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <template v-for="after in selectResult.base.afterList">
+                <tr>
+                  <th rowspan="3">{{ after }}</th>
+                  <th>本個体</th>
+                  <template v-for="{ key } in selectResultColumns">
+                    <td v-for="lv in selectLvList"
+                      :class="{ best: selectResult.evaluateResult?.[lv]?.best[key].score == selectResult.evaluateResult?.[lv]?.[after][key].score }"
+                      class="text-align-right"
+                    >
+                      <template v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after][key].score)">-</template>
+                      <template v-else>{{ (selectResult.evaluateResult?.[lv]?.[after][key].score * 100).toFixed(1) }}%</template>
+                    </td>
+                  </template>
+                </tr>
+                <tr>
+                  <th>同種族</th>
+                  <template v-for="{ key } in selectResultColumns">
+                    <td v-for="lv in selectLvList" class="text-align-right">
+                      <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.same)">-</template>
+                      <template v-else>{{ (selectResult.box?.[lv]?.[after]?.[key]?.same * 100).toFixed(1) }}%</template>
+                    </td>
+                  </template>
+                </tr>
+                <tr>
+                  <th>同種族<br>同食材</th>
+                  <template v-for="{ key } in selectResultColumns">
+                    <td v-for="lv in selectLvList" class="text-align-right">
+                      <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.food)">-</template>
+                      <template v-else>{{ (selectResult.box?.[lv]?.[after]?.[key]?.food * 100).toFixed(1) }}%</template>
+                    </td>
+                  </template>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
         <div v-else>せいかくまで入力すると表示されます</div>
       </AsyncWatcherArea>
     </ToggleArea>

@@ -27,7 +27,7 @@ function showResourceEditPopup() {
   <SettingButton title="フィールド">
     <template #label>
       <div class="inline-flex-row-center" style="gap: 0.25em;">
-        今週：{{ config.simulation.field }}
+        今週：{{ config.simulation.field }}<template v-if="config.simulation.fieldEx">(EX)</template>
         <template v-if="config.simulation.field == 'ワカクサ本島'">
           (
             <template v-if="config.simulation.berryList[0]"><img :src="Berry.map[config.simulation.berryList[0]]?.img"></template><template v-else>?</template>
@@ -35,7 +35,9 @@ function showResourceEditPopup() {
             <template v-if="config.simulation.berryList[2]"><img :src="Berry.map[config.simulation.berryList[2]]?.img"></template><template v-else>?</template>
           )
         </template>
+        
         FB:{{ config.simulation.fieldBonus }}
+        
 
         <span>
           {{ config.simulation.cookingType }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
@@ -60,6 +62,7 @@ function showResourceEditPopup() {
               <option value="ゴールド旧発電所">ゴールド旧発電所</option>
               <option value="？？？">？？？</option>
             </select>
+            <InputCheckbox class="mt-5px" v-model="config.simulation.fieldEx">EXモード</InputCheckbox>
           </td>
         </tr>
         <tr>

@@ -59,7 +59,9 @@ onBeforeUnmount(() => {
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   return await PokemonBox.simulation(
-    filterResult.value.pokemonList, pokemonMultiWorker, evaluateTable, 
+    filterResult.value.pokemonList, 
+    pokemonMultiWorker, 
+    await evaluateTable, 
     customConfig,
     progressCounter
   )
@@ -357,7 +359,7 @@ async function simulation() {
 }
 
 async function showEditPopup(pokemon) {
-  await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: null })
+  await Popup.show(EditPokemonPopup, { index: pokemon.box.index })
 
   loadedPokemonBoxList.value = PokemonBox.list;
 }

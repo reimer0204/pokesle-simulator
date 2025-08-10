@@ -11,7 +11,14 @@ import PokemonBox from '../models/pokemon-box/pokemon-box.js';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import PokemonInfo from './box-summary/pokemon-info.vue';
 
-let evaluateTable = EvaluateTable.load(config);
+let evaluateTable;
+let evaluateTablePromise;
+function loadEvaluateTable() {
+  evaluateTablePromise = (async () => {
+    evaluateTable = await EvaluateTable.load(config);
+  })();
+}
+loadEvaluateTable();
 
 const berryList = ref([])
 const foodList = ref([])
@@ -26,6 +33,7 @@ async function createPokemonList(setConfig = false) {
   multiWorker.reject();
 
   asyncWatcher.run(async (progressCounter) => {
+    await evaluateTablePromise;
     let simulatedPokemonList = [];
 
     const progressList = progressCounter.split(1, 1, 1, 1, 1);
@@ -80,11 +88,11 @@ async function createPokemonList(setConfig = false) {
 
 // 設定が変わる度に再計算する
 watch(() => config.sleepTime, () => {
-  evaluateTable = EvaluateTable.load(config);
+  loadEvaluateTable();
   createPokemonList(true);
 })
 watch(() => config.checkFreq, () => {
-  evaluateTable = EvaluateTable.load(config);
+  loadEvaluateTable();
   createPokemonList(true);
 })
 watch(config.simulation, () => createPokemonList(true), { immediate: true })

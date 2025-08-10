@@ -20,7 +20,13 @@ const props = defineProps({
   defaultTargetDay: { type: Number },
 })
 
-let evaluateTable = EvaluateTable.load(config);
+let evaluateTableLoaded = ref(false);
+let evaluateTable;
+const evaluateTablePromise = (async () => {
+  evaluateTableLoaded.value = false;
+  evaluateTable = await EvaluateTable.load(config);
+  evaluateTableLoaded.value = true;
+})();
 const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
 
@@ -56,6 +62,8 @@ onBeforeUnmount(() => {
 })
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
+  await evaluateTablePromise;
+  
   return await PokemonBox.simulation(
     filterResult.value.pokemonList, pokemonMultiWorker, evaluateTable, 
     customConfig,
@@ -212,6 +220,7 @@ async function simulation() {
 }
 
 async function showEditPopup(pokemon) {
+  await evaluateTablePromise
   await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: null })
 
   loadedPokemonBoxList.value = PokemonBox.list;

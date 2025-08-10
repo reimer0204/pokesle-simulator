@@ -547,6 +547,17 @@ class PokemonSimulator {
     if (pokemon.base.remainEvolveLv == 2 && pokemon.sleepTime >=  500) pokemon.speed *= 0.89
     if (pokemon.base.remainEvolveLv == 2 && pokemon.sleepTime >= 2000) pokemon.speed *= 0.75
 
+    // EXモードによるデバフ
+    if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.fieldEx) {
+      if(!(
+        this.config.simulation.field == 'ワカクサ本島'
+          ? this.config.simulation.berryList
+          : (Field.map[this.config.simulation.field]?.berryList ?? [])
+      )?.includes(pokemon.base.berry.name)) {
+        pokemon.speed *= 1.2;
+      }
+    }
+
     // 日中の基本手伝い回数(げんき回復なし)
     let baseDayHelpNum = 0;
     let dayRemainTime = this.#dayLength;

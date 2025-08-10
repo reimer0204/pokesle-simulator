@@ -77,8 +77,6 @@ async function showDetail(pokemon, p) {
       }
     ))[0].result[pokemon.name][pokemon.foodIndexList].energy[p]
 
-    console.log(result)
-
     multiWorker.close()
 
     Popup.show(SelectTableDetailPopup, {

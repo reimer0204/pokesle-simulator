@@ -125,14 +125,14 @@ const skillWeightList = computed(() => {
 
 const graphList = computed(() => {
   let result = [
-    { key: 'energy', name: '総合スコア' }
+    { key: 'energy', name: '総合スコア', open: true }
   ]
-  if(basePokemon.value.specialty == 'きのみ') result.push({ key: 'berry', name: 'きのみ' })
-  if(basePokemon.value.specialty == '食材'  ) result.push({ key: 'food', name: '食材' })
-  if(basePokemon.value.specialty == 'スキル') result.push({ key: 'skill', name: 'スキル' })
-  if(result.every(x => x.key != 'berry')) result.push({ key: 'berry', name: 'きのみ' })
-  if(result.every(x => x.key != 'food' )) result.push({ key: 'food', name: '食材' })
-  if(result.every(x => x.key != 'skill')) result.push({ key: 'skill', name: 'スキル' })
+  if(basePokemon.value.specialty == 'きのみ') result.push({ key: 'berry', name: 'きのみ', open: true })
+  if(basePokemon.value.specialty == '食材'  ) result.push({ key: 'food' , name: '食材'  , open: true })
+  if(basePokemon.value.specialty == 'スキル') result.push({ key: 'skill', name: 'スキル', open: true })
+  if(result.every(x => x.key != 'berry')) result.push({ key: 'berry', name: 'きのみ', open: false })
+  if(result.every(x => x.key != 'food' )) result.push({ key: 'food' , name: '食材'  , open: false })
+  if(result.every(x => x.key != 'skill')) result.push({ key: 'skill', name: 'スキル', open: false })
   return result;
 })
 
@@ -190,6 +190,9 @@ const evaluateGraph = computed(() => {
         scales: {
           x: {
             type: 'linear',
+            ticks: {
+              stepSize: 10,
+            }
           },
           y: {
             type: 'linear',
@@ -272,12 +275,16 @@ const specialtyEvaluateGraph = computed(() => {
     <template v-if="evaluateResult">
       <h2>厳選スコア：{{ Math.round(evaluateResult.score).toLocaleString() }}</h2>
 
-      <template v-for="{key, name} in graphList">
-        <ToggleArea class="mt-10px" :open="props.percentile">
-          <template #headerText>{{ name }}パーセンタイル</template>
-          <div><Line class="w-100 h-300px" v-bind="evaluateGraph[key]" v-if="evaluateGraph?.[key]" /></div>
-        </ToggleArea>
-      </template>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="mt-10px">
+        <template v-for="{key, name, open} in graphList">
+          <div>
+            <ToggleArea :open="props.percentile && open">
+              <template #headerText>{{ name }}パーセンタイル</template>
+              <div class="position-relative w-100 h-300px"><Line v-bind="evaluateGraph[key]" v-if="evaluateGraph?.[key]" /></div>
+            </ToggleArea>
+          </div>
+        </template>
+      </div>
 
       <ToggleArea class="mt-10px" open>
         <template #headerText>エナジー期待値計算</template>
