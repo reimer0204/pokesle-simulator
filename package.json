@@ -4,14 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build --base=/pokesle-simulator/",
-    "build-beta": "vite build --base=/pokesle-simulator-beta/",
+    "dev": "cross-env SITE_PATH=pokesle-simulator vite",
+    "build": "cross-env SITE_PATH=pokesle-simulator vite build --base=/pokesle-simulator/",
+    "build-beta": "cross-env SITE_PATH=pokesle-simulator-beta vite build --base=/pokesle-simulator-beta/",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.20.0",
     "chart.js": "^4.4.9",
+    "cross-env": "^10.0.0",
     "marked": "^13.0.2",
     "typescript": "^5.8.2",
     "unplugin-auto-import": "^0.17.5",

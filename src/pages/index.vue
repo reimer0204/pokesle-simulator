@@ -97,47 +97,10 @@ const columnList = computed(() => {
   const evaluateList = []
   if (config.pokemonList.evaluateList >= 1) {
     evaluateList.push({ key: 'energy', name: '' })
-    // let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    // result.push({
-    //   key: `evaluate_max`, name: `厳選\n(最大)`, template: 'evaluate', lv: 'max', percent: true, 
-    //   convert: x => x.evaluateResult.max.best.energy.score
-    // })
-    // for(let lv of lvList) {
-    //   result.push({
-    //     key: `evaluate_${lv}`, name: `厳選\n(${lv})`, template: 'evaluate', lv, percent: true, 
-    //     convert: x => x.evaluateResult[lv].best.energy.score
-    //   })
-
-    //   if (config.pokemonList.selectEnergy) {
-    //     result.push({
-    //       key: `evaluate_energy_${lv}`, name: `エナジー\n(${lv})`, template: 'evaluate_energy', lv, type: Number,
-    //       convert: x => x.evaluateResult[lv].best.energy.value
-    //     })
-    //   }
-    // }
   }
 
   if (config.pokemonList.evaluateList == 2) {
     evaluateList.push({ key: 'specialty', name: '得意' })
-
-    // let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    // result.push({
-    //   key: `specialty_percentile_max`, name: `得意厳選\n(最大)`, template: 'specialty', lv: 'max', percent: true,
-    //   convert: x => x.evaluateResult.max.best.specialty.score
-    // })
-    // for(let lv of lvList) {
-    //   result.push({
-    //     key: `specialty_percentile_${lv}`, name: `得意厳選\n(${lv})`, template: 'specialty', lv, percent: true,
-    //     convert: x => x.evaluateResult[lv].best.specialty.score
-    //   })
-
-    //   if (config.pokemonList.selectEnergy) {
-    //     result.push({
-    //       key: `specialty_num_${lv}`, name: `得意数量\n(${lv})`, template: 'specialty_num', lv, type: Number,
-    //       convert: x => x.evaluateResult[lv].best.specialty.value
-    //     })
-    //   }
-    // }
   }
   
   if (config.pokemonList.evaluateList == 3) {
@@ -153,20 +116,20 @@ const columnList = computed(() => {
     result.push({
       key: `${key}_percentile_max`, name: `${name}厳選\n(最大)`, lv: 'max', percent: true,
       template: 'evaluate', templateType: key, templateField: 'score',
-      convert: x => x.evaluateResult.max.best[key].score
+      convert: x => x.evaluateResult?.max?.best?.[key].score
     })
     for(let lv of lvList) {
       result.push({
         key: `${key}_percentile_${lv}`, name: `${name}厳選\n(${lv})`, lv, percent: true,
         template: 'evaluate', templateType: key, templateField: 'score',
-        convert: x => x.evaluateResult[lv].best[key].score
+        convert: x => x.evaluateResult?.[lv]?.best?.[key].score
       })
 
       if (config.pokemonList.selectEnergy) {
         result.push({
           key: `${key}_value_${lv}`, name: `${name}${key == 'energy' ? 'エナジー' : '数量'}\n(${lv})`, lv, type: Number,
           template: 'evaluate', templateType: key, templateField: 'value',
-          convert: x => x.evaluateResult[lv].best[key].value
+          convert: x => x.evaluateResult?.[lv]?.best?.[key].value
         })
       }
     }
