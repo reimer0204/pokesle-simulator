@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env SITE_PATH=pokesle-simulator vite",
-    "build": "cross-env SITE_PATH=pokesle-simulator vite build --base=/pokesle-simulator/",
-    "build-beta": "cross-env SITE_PATH=pokesle-simulator-beta vite build --base=/pokesle-simulator-beta/",
+    "dev": "cross-env SITE_PATH= vite",
+    "build": "cross-env SITE_PATH=pokesle-simulator/ vite build --base=/pokesle-simulator/",
+    "build-beta": "cross-env SITE_PATH=pokesle-simulator-beta/ vite build --base=/pokesle-simulator-beta/",
     "preview": "vite preview"
   },
   "dependencies": {

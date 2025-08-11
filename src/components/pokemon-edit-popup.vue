@@ -213,8 +213,6 @@ let selectResult = ref(null);
 let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()];
 
 async function calcSelectScore() {
-  console.log('calcSelectScore')
-
   await boxLoading;
   await evaluateTablePromise
 
@@ -260,12 +258,9 @@ async function calcSelectScore() {
       }
 
       selectResult.value = result
-
-      // console.log(selectResult.value);
     })
   } catch(e) {
     selectResult.value = null;
-    console.log(e);
     // ignore
   }
 }

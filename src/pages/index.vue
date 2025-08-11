@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import GoogleSpreadsheetPopup from '../components/google-spreadsheet-popup.vue';
 import PokemonBoxTsvPopup from '../components/pokemon-box-tsv-popup.vue';
@@ -18,10 +18,13 @@ import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import EvaluateResult from '@/components/page-assist/index/evaluate-result.vue';
 import SettingList from '@/components/util/setting-list.vue';
+import type { SimulatedPokemon } from '@/type.ts';
+import SubSkill from '@/data/sub-skill.ts';
 
 let evaluateTable = EvaluateTable.load(config);
 
-const simulatedPokemonList = ref([])
+const simulatedPokemonList = ref<SimulatedPokemon[]>([])
+const keyword = ref('')
 const asyncWatcher = AsyncWatcher.init();
 const mode = ref('normal')
 
@@ -30,23 +33,57 @@ onBeforeUnmount(() => {
   multiWorker.close();
 })
 
+let simulatingCount = 0
+let simulatingPromise: Promise<SimulatedPokemon[]>;
 async function createPokemonList(setConfig = false) {
-  multiWorker.reject();
+  if (simulatingCount > 1) return;
 
-  asyncWatcher.run(async (progressCounter) => {
-    simulatedPokemonList.value = await PokemonBox.simulation(
-      PokemonBox.list,
-      multiWorker, 
-      await evaluateTable, 
-      {
-        ...config,
-        pureMint: mode.value == 'pureMint',
-      },
-      progressCounter, setConfig
-    )
-    processSimulatedPokemonList();
-  })
+  simulatingCount++;
+  try {
+    await simulatingPromise;
+  } finally {}
+
+  try {
+    simulatingPromise = asyncWatcher.run(async (progressCounter) => {
+      simulatedPokemonList.value = await PokemonBox.simulation(
+        PokemonBox.list,
+        multiWorker, 
+        await evaluateTable, 
+        {
+          ...config,
+          pureMint: mode.value == 'pureMint',
+        },
+        progressCounter, setConfig
+      )
+      processSimulatedPokemonList();
+    })
+  } finally {
+    simulatingCount--;
+  }
 }
+
+const filteredPokemonList = computed(() => {
+  if (!keyword?.value.length) return simulatedPokemonList.value;
+
+  return simulatedPokemonList.value.filter(x => {
+    let result = true;
+    let keywords = keyword.value.split(/'[\s　]'/g);
+    for(const keyword of keywords) {
+      let or = false;
+      if(x.box?.name?.includes(keyword)) or = true;
+      if(x.box?.memo?.includes(keyword)) or = true;
+      if(x.base.afterList?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.subSkillList?.map(x => SubSkill.map[x].short)?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.nature?.includes(keyword)) or = true;
+      if(x.base.skill.name.includes(keyword)) or = true;
+
+      result &&= or;
+    }
+    return result;
+  })
+})
 
 // 必要アメ数の計算
 function processSimulatedPokemonList() {
@@ -345,12 +382,19 @@ function showSelectDetail(pokemon, after, lv) {
           </select>
         </div>
       </div>
+      
+      <div>
+        <label>キーワード</label>
+        <div>
+          <input type="text" class="w-200px" v-model="keyword" placeholder="名前、食材名、スキル名など" />
+        </div>
+      </div>
     </SettingList>
 
     <div class="pokemon-list mt-5px">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
-        <SortableTable :dataList="simulatedPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
+        <SortableTable :dataList="filteredPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
           :fixColumn="config.pokemonList.fixScore ? 10 : 4"
           :pager="config.pokemonList.pageUnit"
           scroll

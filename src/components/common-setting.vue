@@ -27,7 +27,7 @@ function showResourceEditPopup() {
   <SettingButton title="フィールド">
     <template #label>
       <div class="inline-flex-row-center" style="gap: 0.25em;">
-        今週：{{ config.simulation.field }}<template v-if="config.simulation.fieldEx">(EX)</template>
+        今週：{{ config.simulation.field }}
         <template v-if="config.simulation.field == 'ワカクサ本島'">
           (
             <template v-if="config.simulation.berryList[0]"><img :src="Berry.map[config.simulation.berryList[0]]?.img"></template><template v-else>?</template>
@@ -38,6 +38,9 @@ function showResourceEditPopup() {
         
         FB:{{ config.simulation.fieldBonus }}
         
+        <span v-if="config.simulation.fieldEx == 1" class="caution">EXきのみ</span>
+        <span v-if="config.simulation.fieldEx == 2" class="caution">EX食材</span>
+        <span v-if="config.simulation.fieldEx == 3" class="caution">EXスキル</span>
 
         <span>
           {{ config.simulation.cookingType }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
@@ -62,7 +65,6 @@ function showResourceEditPopup() {
               <option value="ゴールド旧発電所">ゴールド旧発電所</option>
               <option value="？？？">？？？</option>
             </select>
-            <InputCheckbox class="mt-5px" v-model="config.simulation.fieldEx">EXモード</InputCheckbox>
           </td>
         </tr>
         <tr>
@@ -82,6 +84,25 @@ function showResourceEditPopup() {
                   <option value="">{{ berry }}</option>
                 </select>
               </template>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th>モード</th>
+          <td>
+            <div class="flex-column-start-start gap-3px">
+              <InputRadio v-model="config.simulation.fieldEx" :value="null">通常モード</InputRadio>
+              <InputRadio v-model="config.simulation.fieldEx" :value="1">EXモード(きのみx2.4)</InputRadio>
+              <InputRadio v-model="config.simulation.fieldEx" :value="2">EXモード(食材+1/+2)</InputRadio>
+              <InputRadio v-model="config.simulation.fieldEx" :value="3">EXモード(スキルx1.25)</InputRadio>
+              
+              <div class="flex-row-start-center gap-5px">
+                EXメイン：
+                <select :value="config.simulation.fieldExMainBerry" @input="config.simulation.fieldExMainBerry = $event.target.value || null">
+                  <option value="">-</option>
+                  <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}({{ berry.type }})</option>
+                </select>
+              </div>
             </div>
           </td>
         </tr>

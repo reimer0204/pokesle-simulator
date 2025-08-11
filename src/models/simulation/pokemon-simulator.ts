@@ -217,6 +217,14 @@ class PokemonSimulator {
       } while(hit)
     }
     let enableSubSkillList = subSkillNameList.slice(0, enableSubSkillLength);
+    
+    // きのみ倍率
+    const berryMatch = ((this.config.simulation.field == 'ワカクサ本島'
+      ? this.config.simulation.berryList
+      : Field.map[this.config.simulation.field]?.berryList) ?? []).includes(base.berry.name);
+    let berryRate = berryMatch
+      ? (this.config.simulation.fieldEx == 1 ? 240 : 200)
+      : 100;
 
     const pokemon = this.initSimulatedPokemon(
       base,
@@ -229,6 +237,7 @@ class PokemonSimulator {
       box.sleepTime,
       useCandy,
       useShard,
+      berryMatch,
     );
     pokemon.box = box;
     pokemon.fixable = fixable;
@@ -243,9 +252,8 @@ class PokemonSimulator {
       pokemon,
       enableSubSkillList.map(x => SubSkill.map[x]),
       nature,
-      (
-        this.config.simulation.field == 'ワカクサ本島' ? this.config.simulation.berryList : (Field.map[this.config.simulation.field]?.berryList ?? [])
-      )?.includes(pokemon.base.berry.name) ? 200 : 100,
+      berryRate,
+      berryMatch,
     )
 
     return pokemon;
@@ -288,6 +296,7 @@ class PokemonSimulator {
     sleepTime: number,
     useCandy: number = 0,
     useShard: number = 0,
+    berryMatch: boolean = false
   ): SimulatedPokemon {
     const firstFoodEnergy = Food.map[foodNameList[0]].energy * ((base.specialty == '食材' || base.specialty == 'オール') ? 2 : 1)
 
@@ -370,6 +379,19 @@ class PokemonSimulator {
       if (eventBonus) {
         num += this.config.simulation.eventBonusTypeFood;
       }
+
+      // EXモードの食材+1
+      if (
+        this.mode != PokemonSimulator.MODE_SELECT
+        && this.config.simulation.fieldEx == 2
+        && berryMatch
+      ) {
+        num += 1;
+        if (pokemon.base.specialty == '食材') {
+          num += 0.3;
+        }
+      }
+
       pokemon.foodList.push({
         name: food.name,
         num,
@@ -404,6 +426,7 @@ class PokemonSimulator {
     subSkillList: SubSkillType[],
     nature: NatureType,
     berryRate: number,
+    berryMatch: boolean,
   ) {
     pokemon.cookingPowerUpEffect = 0;
     pokemon.cookingChanceEffect = 0;
@@ -481,6 +504,13 @@ class PokemonSimulator {
         + (pokemon.subSkillNameList.includes('スキルレベルアップS') ? 1 : 0)
         + (pokemon.subSkillNameList.includes('スキルレベルアップM') ? 2 : 0)
       );
+
+      // メインのきのみならメインスキルレベル+1
+      if (this.config.simulation.fieldEx 
+        && this.config.simulation.fieldExMainBerry == pokemon.base.berry.name
+      ) {
+        pokemon.fixedSkillLv++;
+      }
     }
 
     if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
@@ -500,6 +530,9 @@ class PokemonSimulator {
 
     if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
       pokemon.skillRate *= this.config.simulation.eventBonusTypeSkillRate;
+    }
+    if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.fieldEx == 3 && berryMatch) {
+      pokemon.skillRate *= 1.25;
     }
     
     if (this.#skillEnergyIgnore && pokemon.base.skill.energyOnly) {
@@ -547,14 +580,21 @@ class PokemonSimulator {
     if (pokemon.base.remainEvolveLv == 2 && pokemon.sleepTime >=  500) pokemon.speed *= 0.89
     if (pokemon.base.remainEvolveLv == 2 && pokemon.sleepTime >= 2000) pokemon.speed *= 0.75
 
-    // EXモードによるデバフ
+    // EXモードによるバフ・デバフ
     if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.fieldEx) {
-      if(!(
+
+      if(this.config.simulation.fieldExMainBerry == pokemon.base.berry.name) {
+        // メインのきのみなら0.9倍
+        pokemon.speed *= 0.9;
+
+      } else if(!(
         this.config.simulation.field == 'ワカクサ本島'
           ? this.config.simulation.berryList
           : (Field.map[this.config.simulation.field]?.berryList ?? [])
       )?.includes(pokemon.base.berry.name)) {
-        pokemon.speed *= 1.2;
+        // 好みのきのみでないなら1.15倍
+
+        pokemon.speed *= 1.15;
       }
     }
 
