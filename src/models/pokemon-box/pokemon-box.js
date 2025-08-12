@@ -60,6 +60,7 @@ class PokemonBox {
         subSkillList: pokemon.subSkillList,
         nature: pokemon.nature,
         shiny: pokemon.shiny,
+        memo: pokemon.memo,
       })
     } else if (0 <= index && index < this._list.length) {
       this._list[index] = pokemon;

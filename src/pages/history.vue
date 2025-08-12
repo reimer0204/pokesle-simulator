@@ -9,6 +9,11 @@ config.version.history = Version.HISTORY;
   <div class="page">
 
     <h2>更新履歴</h2>
+    
+    <h3>2025/08/12</h3>
+    <ul>
+      <li>新規登録時にメモが保存されない不具合を修正</li>
+    </ul>
 
     <h3>2025/08/11</h3>
     <ul>
