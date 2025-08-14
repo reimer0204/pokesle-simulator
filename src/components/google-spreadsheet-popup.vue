@@ -17,6 +17,10 @@ async function importSpreadsheet() {
   })
 }
 
+function copyUrl() {
+  navigator.clipboard.writeText(config.pokemonBox.gs.url);
+}
+
 </script>
 
 <template>
@@ -45,7 +49,10 @@ const doGet = (e) => {
         <li>表示されたウェブアプリのURLと、やり取りに使用するシート名を下記に入力</li>
       </ol>
 
-      <input type="password" v-model="config.pokemonBox.gs.url" placeholder="ウェブアプリのURLを入力">
+      <div class="flex-row-start-center gap-5px">
+        <input class="flex-110" type="password" v-model="config.pokemonBox.gs.url" placeholder="ウェブアプリのURLを入力">
+        <button @click="copyUrl">コピー</button>
+      </div>
       <input type="text" v-model="config.pokemonBox.gs.sheet" placeholder="連携用シート名">
       <small>エクスポート時に一度シートの内容はクリアされるので、連携用のまっさらなシートを用意してください。</small>
 

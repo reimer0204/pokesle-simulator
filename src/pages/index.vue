@@ -473,7 +473,7 @@ function showSelectDetail(pokemon, after, lv) {
                 class="food"
                 :class="{
                   disabled: i >= data.foodList.length,
-                  error: data.base.foodNumListMap[food]?.[i] == null && food != null,
+                  error: food?.length && data.base.foodNumListMap[food]?.[i] == null && food != null,
                 }"
               >
                 <template v-if="food">

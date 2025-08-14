@@ -14,7 +14,7 @@ const props = defineProps({
       class="food"
       :class="{
         disabled: i >= pokemon.foodList.length,
-        error: pokemon.base?.foodNumListMap[food]?.[i] == null,
+        error: food?.length && pokemon.base?.foodNumListMap[food]?.[i] == null,
       }"
     >
       <template v-if="food">

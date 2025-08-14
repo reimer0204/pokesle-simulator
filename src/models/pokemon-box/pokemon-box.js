@@ -3,11 +3,13 @@ import Nature from '../../data/nature';
 import Pokemon from '../../data/pokemon';
 import SubSkill from '../../data/sub-skill';
 import config from '../config';
+import { PromiseLocker } from '../promise-locker'
 
 class PokemonBox {
   static _time = null;
   static _list = [];  // ポケモン一覧
   static watch = ref(0);
+  static promiseLocker = new PromiseLocker()
 
   static get list() {
     return [...this._list.map((x,i ) => ({ ...x, index: i, original: x }))];
@@ -39,7 +41,7 @@ class PokemonBox {
     return true;
   }
 
-  static post(pokemon, index = null) {
+  static post(pokemon, index = null, insertTo = null) {
     if (Pokemon.map[pokemon.name] == null) throw '知らないポケモン';
     if (!(0 < pokemon.lv)) throw '知らないレベル';
     if (pokemon.foodList.some(food => Food.map[food] == null) && !Pokemon.map[pokemon.name].kaihou) throw '知らない食材';
@@ -50,8 +52,12 @@ class PokemonBox {
     pokemon.bag = Number(pokemon.bag) || null
     pokemon.skillLv = Number(pokemon.skillLv) || null
 
+    let newIndex = index ?? this._list.length;
+    if (insertTo != null && insertTo !== '') {
+      newIndex = Math.max(0, Math.min(insertTo - 1, this._list.length))
+    }
     if (index == null) {
-      this._list.push({
+      pokemon = {
         name: pokemon.name,
         lv: pokemon.lv,
         bag: pokemon.bag,
@@ -61,10 +67,11 @@ class PokemonBox {
         nature: pokemon.nature,
         shiny: pokemon.shiny,
         memo: pokemon.memo,
-      })
+      };
     } else if (0 <= index && index < this._list.length) {
-      this._list[index] = pokemon;
+      this._list.splice(index, 1)
     }
+    this._list.splice(newIndex, 0, pokemon)
     this.save();
   }
 
@@ -140,8 +147,10 @@ class PokemonBox {
       }
 
       if (!boxPokemon.lv) return null;
-      if (!boxPokemon.foodList.every(x => Food.map[x])) return null;
-      if (!boxPokemon.subSkillList.every(x => SubSkill.map[x])) return null;
+      if (!pokemon.kaihou) {
+        if (!boxPokemon.foodList.every(x => Food.map[x])) return null;
+        if (!boxPokemon.subSkillList.every(x => SubSkill.map[x])) return null;
+      }
       if (!boxPokemon.nature) return null;
 
       return boxPokemon;
@@ -152,36 +161,38 @@ class PokemonBox {
   
   static async exportGoogleSpreadsheet() {
     if (config.pokemonBox.gs.url) {
-      const form = new FormData();
-      form.append('json', JSON.stringify({
-        sheet: config.pokemonBox.gs.sheet,
-        pokemonList: [
-          // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
-          [this._time.toISOString(), ...new Array(18).fill('')],
-          ...this.list.map(pokemon => [
-            pokemon.name,
-            pokemon.lv,
-            pokemon.bag,
-            pokemon.skillLv,
-            ...[...pokemon.foodList, '', '', ''].slice(0, 3),
-            ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
-            pokemon.nature,
-            pokemon.shiny ? 1 : null,
-            pokemon.fix,
-            pokemon.sleepTime,
-            pokemon.training ?? null,
-            pokemon.nextExp ?? null,
-            pokemon.memo ?? null,
-          ])
-        ],
-      }))
-  
-      try {
-        await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
-      } catch(e) {
-        console.error(e);
-        alert('エクスポートに失敗しました');
-      }
+      this.promiseLocker.wait(async () => {
+        const form = new FormData();
+        form.append('json', JSON.stringify({
+          sheet: config.pokemonBox.gs.sheet,
+          pokemonList: [
+            // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
+            [this._time.toISOString(), ...new Array(18).fill('')],
+            ...this.list.map(pokemon => [
+              pokemon.name,
+              pokemon.lv,
+              pokemon.bag,
+              pokemon.skillLv,
+              ...[...pokemon.foodList, '', '', ''].slice(0, 3),
+              ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
+              pokemon.nature,
+              pokemon.shiny ? 1 : null,
+              pokemon.fix,
+              pokemon.sleepTime,
+              pokemon.training ?? null,
+              pokemon.nextExp ?? null,
+              pokemon.memo ?? null,
+            ])
+          ],
+        }))
+    
+        try {
+          await fetch(config.pokemonBox.gs.url, { method: "post", body: form });
+        } catch(e) {
+          console.error(e);
+          alert('エクスポートに失敗しました');
+        }
+      })
     }
   }
 
@@ -224,8 +235,10 @@ class PokemonBox {
       if (!pokemon) return null;
 
       if (!boxPokemon.lv) return null;
-      if (!boxPokemon.foodList.every(x => Food.map[x])) return null;
-      if (!boxPokemon.subSkillList.every(x => SubSkill.map[x])) return null;
+      if (!pokemon.kaihou) {
+        if (!boxPokemon.foodList.every(x => Food.map[x])) return null;
+        if (!boxPokemon.subSkillList.every(x => SubSkill.map[x])) return null;
+      }
       if (!boxPokemon.nature) return null;
 
       return boxPokemon;

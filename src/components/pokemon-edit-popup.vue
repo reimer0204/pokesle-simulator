@@ -67,6 +67,7 @@ let pokemon = reactive({
   nature: null,
   shiny: false,
 })
+const insertTo = ref(null)
 
 const basePokemon = computed(() => {
   return Pokemon.map[pokemon.name]
@@ -293,7 +294,7 @@ async function save(requireContinue) {
   let sanitizedPokemon = JSON.parse(JSON.stringify(pokemon));
 
   if (props.index == null) {
-    PokemonBox.post(sanitizedPokemon)
+    PokemonBox.post(sanitizedPokemon, null, insertTo.value)
 
     if (requireContinue) {
       await loadBoxInfo()
@@ -304,7 +305,7 @@ async function save(requireContinue) {
       $emit('close', true);
     }
   } else {
-    PokemonBox.post(sanitizedPokemon, props.index)
+    PokemonBox.post(sanitizedPokemon, props.index, insertTo.value)
     $emit('close', true);
   }
 }
@@ -404,6 +405,8 @@ function reset() {
   assist.subSkillList = ['', '', '', '', ''];
   assist.nature = '';
   assist.shiny = false;
+
+  insertTo.value = null;
 
   nameInput.value.focus();
 }
@@ -552,6 +555,12 @@ function changeColor() {
       <label>
         <input v-if="basePokemon" class="w-100" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
         <input v-else class="w-100" type="number" disabled placeholder="アメ数"/>
+      </label>
+      
+      <div>追加先No</div>
+      <div></div>
+      <label>
+        <input class="w-100" type="number" v-model.number="insertTo" placeholder="追加先No"/>
       </label>
     </div>
 
