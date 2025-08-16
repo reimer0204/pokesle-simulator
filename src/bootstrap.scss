@@ -52,27 +52,29 @@
 
 $i: 1;
 @while $i <= 600 {
-  .w-#{$i}px { width: #{$i}px !important; }
-  .minw-#{$i}px { min-width: #{$i}px !important; }
-  .maxw-#{$i}px { max-width: #{$i}px !important; }
-  .h-#{$i}px { height: #{$i}px !important; }
-  .minh-#{$i}px { min-height: #{$i}px !important; }
-  .maxh-#{$i}px { max-height: #{$i}px !important; }
+  @each $unit in ['px', 'em'] {
+    .w-#{$i}#{$unit} { width: #{$i}#{$unit} !important; }
+    .minw-#{$i}#{$unit} { min-width: #{$i}#{$unit} !important; }
+    .maxw-#{$i}#{$unit} { max-width: #{$i}#{$unit} !important; }
+    .h-#{$i}#{$unit} { height: #{$i}#{$unit} !important; }
+    .minh-#{$i}#{$unit} { min-height: #{$i}#{$unit} !important; }
+    .maxh-#{$i}#{$unit} { max-height: #{$i}#{$unit} !important; }
 
-  .p-#{$i}px { padding: #{$i}px !important; }
-  .pl-#{$i}px { padding-left: #{$i}px !important; }
-  .pr-#{$i}px { padding-right: #{$i}px !important; }
-  .pt-#{$i}px { padding-top: #{$i}px !important; }
-  .pb-#{$i}px { padding-bottom: #{$i}px !important; }
+    .p-#{$i}#{$unit} { padding: #{$i}#{$unit} !important; }
+    .pl-#{$i}#{$unit} { padding-left: #{$i}#{$unit} !important; }
+    .pr-#{$i}#{$unit} { padding-right: #{$i}#{$unit} !important; }
+    .pt-#{$i}#{$unit} { padding-top: #{$i}#{$unit} !important; }
+    .pb-#{$i}#{$unit} { padding-bottom: #{$i}#{$unit} !important; }
 
-  .m-#{$i}px { margin: #{$i}px !important; }
-  .ml-#{$i}px { margin-left: #{$i}px !important; }
-  .mr-#{$i}px { margin-right: #{$i}px !important; }
-  .mt-#{$i}px { margin-top: #{$i}px !important; }
-  .mb-#{$i}px { margin-bottom: #{$i}px !important; }
+    .m-#{$i}#{$unit} { margin: #{$i}#{$unit} !important; }
+    .ml-#{$i}#{$unit} { margin-left: #{$i}#{$unit} !important; }
+    .mr-#{$i}#{$unit} { margin-right: #{$i}#{$unit} !important; }
+    .mt-#{$i}#{$unit} { margin-top: #{$i}#{$unit} !important; }
+    .mb-#{$i}#{$unit} { margin-bottom: #{$i}#{$unit} !important; }
 
-  .gap-#{$i}px { gap: #{$i}px !important; }
-  .fs-#{$i}px { font-size: #{$i}px !important; }
+    .gap-#{$i}#{$unit} { gap: #{$i}#{$unit} !important; }
+    .fs-#{$i}#{$unit} { font-size: #{$i}#{$unit} !important; }
+  }
 
   @if $i < 20 { $i: $i + 1; }
   @else if $i < 100 { $i: $i + 5; }

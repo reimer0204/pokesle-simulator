@@ -10,9 +10,7 @@ class HelpRate {
   #dayLength: number;
   #nightLength: number;
   #teamHealCache: any;
-  #teamHealHelpRateCache: { [key: string]: { day: number, night: number } };
   #helpRateCache: { [key: string]: { day: number, night: number } };
-  #teamHealHelpRateCacheCount = 0;
   #helpRateCacheCount = 0;
 
   static GENKI_LIST = [
@@ -31,7 +29,6 @@ class HelpRate {
     this.#dayLength = 86400 - this.#nightLength;
 
     this.#teamHealCache = {}
-    this.#teamHealHelpRateCache = {}
     this.#helpRateCache = {}
   }
 
@@ -76,7 +73,6 @@ class HelpRate {
         morningGenki: 0,
         beforeNightHelp: Math.floor(this.#nightLength / pokemon.speed),
         morningLimit: pokemon.subSkillNameList.includes('げんき回復ボーナス') ? 105 : 100,
-        selfHealerKey: '',
       };
       infoList.push(info)
 
@@ -88,9 +84,7 @@ class HelpRate {
           healerFullKey += key + subKey;
           otherHealerList.push({ pokemon, info })
         } else {
-          let selfHealerKey = key + subKey;
-          info.selfHealerKey = selfHealerKey;
-          subHealerKey += selfHealerKey;
+          subHealerKey += key + subKey;
           selfHealerList.push({ pokemon, info })
         }
       }
@@ -118,7 +112,6 @@ class HelpRate {
         key: healerKey,
         cache: {},
       }
-      this.#teamHealHelpRateCache = {}
     }
     let caches = this.#teamHealCache.cache
 
@@ -268,36 +261,29 @@ class HelpRate {
       const info = infoList[j];
       const pokemon = pokemonList[j];
 
-      const cacheKey2 = `${healerFullKey}/${info.selfHealerKey}/${pokemon.base.type}/${pokemon.morningHealGenki}/${pokemon.natureGenkiMultiplier}/${info.morningLimit}/${addHeal != null}`
-      let result = this.#teamHealHelpRateCache[cacheKey2]
-      // this.#teamHealHelpRateCacheCount++;
-
-      if (result === undefined) {
-        const allHealList = [];
-        for(let subPokemon of pokemonList) {
-          if (pokemon === subPokemon) {
-            allHealList.push(...subPokemon.selfHealList);
-          } else {
-            if (subPokemon.base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
-              continue
-            }
-            allHealList.push(...subPokemon.otherHealList);
+      const allHealList = [];
+      for(let subPokemon of pokemonList) {
+        if (pokemon === subPokemon) {
+          allHealList.push(...subPokemon.selfHealList);
+        } else {
+          if (subPokemon.base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
+            continue
           }
-        };
-        if (addHeal && (pokemon.selfHeal <= 0 && pokemon.otherHeal <= 0)) {
-          allHealList.push(...addHeal)
+          allHealList.push(...subPokemon.otherHealList);
         }
-        allHealList.sort((a, b) => a.time - b.time)
-
-        result = this.getHelpRate(
-          allHealList,
-          0,
-          pokemon.morningHealGenki,
-          info.morningLimit,
-          pokemon.natureGenkiMultiplier
-        )
-        this.#teamHealHelpRateCache[cacheKey2] = result;
+      };
+      if (addHeal && (pokemon.selfHeal <= 0 && pokemon.otherHeal <= 0)) {
+        allHealList.push(...addHeal)
       }
+      allHealList.sort((a, b) => a.time - b.time)
+
+      let result = this.getHelpRate(
+        allHealList,
+        0,
+        pokemon.morningHealGenki,
+        info.morningLimit,
+        pokemon.natureGenkiMultiplier
+      )
 
       pokemon.dayHelpRate = result.day;
       pokemon.nightHelpRate = result.night;

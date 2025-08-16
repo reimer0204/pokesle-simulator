@@ -15,14 +15,6 @@ const pokemonList = computed(() => {
 
 <template>
   <div class="page">
-    <div>
-      出典
-      <ul>
-        <li>ポケモンスリープ攻略・検証Wiki (<a href="https://wikiwiki.jp/poke_sleep/" target="_blank">https://wikiwiki.jp/poke_sleep/</a>)</li>
-        <li>RP Collection (<a href="https://docs.google.com/spreadsheets/d/1kBrPl0pdAO8gjOf_NrTgAPseFtqQA27fdfEbMBBeAhs" target="_blank">https://docs.google.com/spreadsheets/d/1kBrPl0pdAO8gjOf_NrTgAPseFtqQA27fdfEbMBBeAhs</a>)</li>
-      </ul>
-    </div>
-
     <div class="flex-row-start-center gap-10px">
       <label><input type="checkbox" v-model="pokemonListLastOnly" />最終進化のみ</label>
     </div>

@@ -33,6 +33,7 @@ import DataPokemonSkillPage from './pages/data/pokemon-skill.vue'
 import SettingPage from './pages/setting.vue'
 import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
+import CreditPage from './pages/credit.vue'
 import EvaluateTable from './pages/evaluate-table.vue'
 import PokemonBox from './models/pokemon-box/pokemon-box';
 const router = createRouter({
@@ -54,6 +55,7 @@ const router = createRouter({
     { path: '/setting', component: SettingPage },
     { path: '/faq', component: FaqPage },
     { path: '/history', component: HistoryPage },
+    { path: '/credit', component: CreditPage },
     { path: '/evaluate-table', component: EvaluateTable },
   ]
 });

@@ -8,7 +8,27 @@ config.version.history = Version.HISTORY;
 <template>
   <div class="page">
 
-    <h2>更新履歴</h2>
+    <div class="senden">
+      ポケスリシミュは広告や寄付等による収益化は一切行っていません。<br>
+      もし応援していただける方がいらっしゃいましたら、作者の他の活動についてチャンネル登録やフォロー等いただけるとげんきが回復するのでよろしくお願いします🙇‍♂️<br>
+      <div class="flex-row flex-wrap gap-1em mt-5px">
+        <a href="https://www.youtube.com/@harezora_lueur" target="_blank">YouTube</a>
+        <a href="https://x.com/harezora_lueur"            target="_blank">X(メイン)</a>
+        <a href="https://x.com/hiyashi_exit"              target="_blank">X(サブ1)</a>
+        <a href="https://x.com/reimer0204"                target="_blank">X(サブ2)</a>
+        <a href="https://misskey.io/@harezora_lueur"      target="_blank">misskey.io(避難用)</a>
+        
+      </div>
+    </div>
+
+    <h2 class="mt-1em">更新履歴</h2>
+    
+    <h3>2025/08/16</h3>
+    <ul>
+      <li>
+        前回の修正で厳選情報生成のメモリ使用量が増大したため、速度の代わりにメモリ使用量を削減
+      </li>
+    </ul>
     
     <h3>2025/08/16</h3>
     <ul>
@@ -633,6 +653,21 @@ config.version.history = Version.HISTORY;
 <style lang="scss" scoped>
 .page {
   padding: 20px;
+
+  .senden {
+    // font-weight: ;
+    font-size: 110%;
+    padding: 1em;
+
+    border: 1px #EEE solid;
+    border-radius: 10px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+
+    a {
+      color: #08C;
+      font-weight: bold;
+    }
+  }
 
   h2 {
     font-size: 24px;
