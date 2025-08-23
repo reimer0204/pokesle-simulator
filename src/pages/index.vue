@@ -75,7 +75,7 @@ const filteredPokemonList = computed(() => {
       if(x.base.afterList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
-      if(x.box?.subSkillList?.map(x => SubSkill.map[x].short)?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.subSkillList?.map(x => SubSkill.map[x]?.short)?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.nature?.includes(keyword)) or = true;
       if(x.base.skill.name.includes(keyword)) or = true;
 

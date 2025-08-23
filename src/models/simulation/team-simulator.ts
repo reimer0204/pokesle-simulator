@@ -181,6 +181,16 @@ self.addEventListener('message', async (event) => {
           continue;
         }
 
+        // タイプの匹数が指定されているならチェック
+        for(let berry of Berry.list) {
+          if(
+            config.teamSimulation.require.typeNum[berry.type] > 0
+            && pokemonList.filter(pokemon => pokemon.base.type == berry.type).length < config.teamSimulation.require.typeNum[berry.type]
+          ) {
+            continue combinationLoop;
+          }
+        }
+
         // 伝説は2匹以上入れられない
         if (legendNum >= 2) {
           continue;
@@ -245,6 +255,9 @@ self.addEventListener('message', async (event) => {
 
           // 料理チャンスの効果量を加算
           totalCookingChanceEffect += pokemon.cookingChanceEffect;
+        }
+        if (config.teamSimulation.initialCookingPowerUp) {
+          cookingPowerUpEffectList[0] += config.teamSimulation.initialCookingPowerUp
         }
 
         if (nightCapPikachu) {

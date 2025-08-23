@@ -1,4 +1,5 @@
 import SortableTable from "../components/sortable-table.vue";
+import Berry from "./berry";
 import { Food, Cooking } from './food_and_cooking'
 import Pokemon from "./pokemon";
 import Skill from "./skill";
@@ -139,6 +140,7 @@ const defaultConfig = {
       dayHelpRate: 0,
       nightHelpRate: 0,
       suiminExp: 0,
+      typeNum: Berry.list.reduce((a, x) => (a[x.type] = 0, a), {})
     },
 
     result: {

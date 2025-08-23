@@ -396,6 +396,7 @@ function reset() {
   pokemon.subSkillList = [null, null, null, null, null];
   pokemon.nature = null;
   pokemon.shiny = false;
+  pokemon.memo = null;
 
   assist.name = '';
   assist.lv = null;

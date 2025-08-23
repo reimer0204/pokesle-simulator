@@ -41,6 +41,7 @@ interface BerryType {
   name: string;
   energy: number,
   type: string,
+  typeColor: string,
   img: any;
 }
 

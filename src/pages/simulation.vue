@@ -15,6 +15,7 @@ import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';
+import Berry from '@/data/berry.ts';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
@@ -34,6 +35,7 @@ const $emit = defineEmits(['close']);
 const targetDay = ref(props.defaultTargetDay ?? (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()))
 const targetHour = ref(24);
 const initialCookingChange = ref(0);
+const initialCookingPowerUp = ref(0);
 const beforeEnergy = ref(0);
 
 const loadedPokemonBoxList = ref(PokemonBox.list);
@@ -42,11 +44,15 @@ const filterResult = computed(() => PokemonFilter.filter(toRaw(loadedPokemonBoxL
 
 const requireText = computed(() => {
   let result = [];
-  if (config.teamSimulation.require.dayHelpRate > 0) result.push(` 日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`)
-  if (config.teamSimulation.require.nightHelpRate > 0) result.push(` 夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`)
-  if (config.teamSimulation.require.suiminExp > 0) result.push(` 睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`)
+  if (config.teamSimulation.require.dayHelpRate > 0) result.push(`日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`)
+  if (config.teamSimulation.require.nightHelpRate > 0) result.push(`夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`)
+  if (config.teamSimulation.require.suiminExp > 0) result.push(`睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`)
+  for(const berry of Berry.typeList) {
+    if (config.teamSimulation.require.typeNum[berry.type] > 0) result.push(`${berry.type}1匹以上`)
+  }
+
   if (result.length == 0) return 'なし';
-  return result.join('');
+  return result.join(' ');
 });
 
 // シミュレーション実施関連
@@ -95,6 +101,7 @@ async function simulation() {
       customConfig.teamSimulation.timeLength = targetHour.value != 24 ? targetHour.value / 24 : null;
     }
     customConfig.teamSimulation.initialCookingChange = initialCookingChange.value / 100
+    customConfig.teamSimulation.initialCookingPowerUp = initialCookingPowerUp.value
 
     let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
 
@@ -147,6 +154,25 @@ async function simulation() {
       }
     }
     targetPokemonList = [...healerTargetPokemonList, ...selfHealerTargetPokemonList, ...nonHealerTargetPokemonList]
+
+    // タイプ指定があるのに対象ポケモンがターゲットに居なければ追加
+    for(let berry of Berry.list) {
+      if(
+        customConfig.teamSimulation.require.typeNum[berry.type]
+        && !targetPokemonList.some(x => x.base.type == berry.type)
+      ) {
+        const top = filteredTargetPokemonList.find(x => x.base.type == berry.type);
+        if (!top) {
+          simulationResult.value = {
+            targetDay: customConfig.teamSimulation.day,
+            teamList: [],
+            config: customConfig,
+          }
+          return;
+        }
+        targetPokemonList.push(top)
+      }
+    }
 
     targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
 
@@ -293,7 +319,7 @@ async function showEditPopup(pokemon) {
         <template #label>
           <div class="inline-flex-row-center">
             <template v-if="filterResult.excludeList.length == 0">除外なし</template>
-            <template v-else>除外：{{ filterResult.excludeList.length }}匹</template>
+            <template v-else>除外条件：{{ filterResult.excludeList.length }}匹</template>
           </div>
         </template>
 
@@ -302,10 +328,10 @@ async function showEditPopup(pokemon) {
         </div>
       </SettingButton>
 
-      <SettingButton title="条件">
+      <SettingButton title="チーム条件">
         <template #label>
           <div class="inline-flex-row-center">
-            条件：{{ requireText }}
+            チーム条件：<span :class="{ caution: requireText != 'なし' }">{{ requireText }}</span>
           </div>
         </template>
 
@@ -313,6 +339,15 @@ async function showEditPopup(pokemon) {
           <tr><th>日中手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222"> %以上(最大222%)</div></td></tr>
           <tr><th>夜間手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222"> %以上(最大222%)</div></td></tr>
           <tr><th>睡眠EXPボーナス</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp"> 匹以上</div></td></tr>
+          <tr v-for="berry in Berry.typeList">
+            <th :style="{ color: berry.typeColor }">{{ berry.type }}</th>
+            <td>
+              <InputCheckbox
+                :modelValue="config.teamSimulation.require.typeNum[berry.type] == 1"
+                @update:modelValue="config.teamSimulation.require.typeNum[berry.type] = $event ? 1 : 0"
+              >1匹以上編成する</InputCheckbox>
+            </td>
+          </tr>
         </SettingTable>
       </SettingButton>
       
@@ -391,6 +426,15 @@ async function showEditPopup(pokemon) {
         </div>
 
         <div>
+          <label>料理パワーアップ</label>
+          <div>
+            <div>
+              <input type="number" v-model="initialCookingPowerUp" class="w-50px">
+            </div>
+          </div>
+        </div>
+
+        <div>
           <label>モード</label>
           <div>
             <div class="flex-row gap-10px">
@@ -454,6 +498,7 @@ async function showEditPopup(pokemon) {
                     <td v-for="pokemon in result.pokemonList">
                       <div class="flex-row-start-center gap-5px">
                         <NameLabel :pokemon="pokemon" />
+                        <template v-if="pokemon.box?.fix == 1">(固定)</template>
                         <svg v-if="pokemon.box?.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
                           <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
                         </svg>
@@ -684,6 +729,10 @@ async function showEditPopup(pokemon) {
       height: 1.2em;
       line-height: 0;
       margin: 0;
+    }
+
+    .caution {
+      color: yellow;
     }
   }
 

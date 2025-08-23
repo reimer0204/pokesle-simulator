@@ -233,7 +233,12 @@ class PokemonSimulator {
       fixable && this.config.simulation.fixSkillSeed ? base.skill.effect.length : box.skillLv,
       this.config.simulation.eventBonusType == 'all'
         || this.config.simulation.eventBonusType == base.type
-        || this.config.simulation.eventBonusType == base.specialty,
+        || this.config.simulation.eventBonusType == base.specialty
+        || (base.specialty == 'オール' && (
+          this.config.simulation.eventBonusType == 'きのみ'
+          || this.config.simulation.eventBonusType == '食材'
+          || this.config.simulation.eventBonusType == 'スキル'
+        )),
       box.sleepTime,
       useCandy,
       useShard,
@@ -388,7 +393,7 @@ class PokemonSimulator {
       ) {
         num += 1;
         if (pokemon.base.specialty == '食材') {
-          num += 0.3;
+          num += 0.5;
         }
       }
 
