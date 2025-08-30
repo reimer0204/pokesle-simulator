@@ -153,7 +153,7 @@ addEventListener('message', async (event) => {
                 
                 evaluateMaxScore = Math.max(evaluateMaxScore, evaluateResult[lv][after].energy.score)
                 if (evaluateResult[lv][after].specialty) {
-                  evaluateSpecialtyMaxScore = Math.max(evaluateMaxScore, evaluateResult[lv][after].specialty.score)
+                  evaluateSpecialtyMaxScore = Math.max(evaluateSpecialtyMaxScore, evaluateResult[lv][after].specialty.score)
                 }
               }
             }
