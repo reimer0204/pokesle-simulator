@@ -64,7 +64,13 @@ let simulator: PokemonSimulator;
 const simulatorLoaded = ref(false);
 (async () => {
   await PokemonSimulator.isReady
-  simulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT)
+  simulator = new PokemonSimulator({
+    ...config,
+    simulation: {
+      ...config.simulation,
+      requireFoodNum: true,
+    }
+  }, PokemonSimulator.MODE_SELECT)
   simulatorLoaded.value = true;
 })()
 
@@ -412,22 +418,23 @@ const specialtyEvaluateGraph = computed(() => {
           <tr>
             <th>食材エナジー</th>
             <td>
-              <template v-if="config.selectEvaluate.expectType.food == 0">
-                {{ (evaluateResult.normalHelpNum).toFixed(2) }} × {{ (evaluateResult.foodRate * 100).toFixed(1) }}% ※通常手伝い×食材率<br>
-                × (<br>
-                <template v-for="(food, i) in evaluateResult.foodList">
-                &emsp;<template v-if="i">+ </template>{{ Food.map[food.name].energy }} × {{ food.num }} × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[evaluateResult.base.specialty].foodEnergyRate }}% + 100%)<br>
-                </template>
-                )<br>
-                ÷ {{ evaluateResult.foodList.length }}<br>
-              </template>
-              <template v-else>
+              <div class="flex-column gap-1em">
                 <template v-for="food in Food.list">
-                  <template v-if="evaluateResult[food.name]">
-                    {{ Food.map[food.name].energy }}エナジー × {{ evaluateResult[food.name].toFixed(1) }}個 × (({{ (Food.map[food.name].bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[evaluateResult.base.specialty].foodEnergyRate }}% + 100%) ※{{ food.name }}<br>
-                  </template>
+                  <div v-if="evaluateResult[food.name]">
+                    <div><b>{{ food.name }}</b></div>
+                    {{ Food.map[food.name].energy }}エナジー<br>
+                    × {{ evaluateResult[food.name].toFixed(1) }}個<br>
+                    × (<br>
+                    &emsp;(<br>
+                    &emsp;&emsp;{{(Food.map[food.name].bestRate * 100).toFixed(0) }}% ({{ Food.map[food.name].bestCooking.name }})<br>
+                    &emsp;&emsp;× {{ Cooking.maxRecipeBonus * 100 }}% (最大レシピボーナス)<br>
+                    &emsp;) × {{ config.selectEvaluate.specialty[evaluateResult.base.specialty].foodEnergyRate }}% ※最良の料理に使える割合<br>
+                    &emsp;+ 100% × {{ 100 - config.selectEvaluate.specialty[evaluateResult.base.specialty].foodEnergyRate }}% ※隙間に詰めるだけの割合<br>
+                    )<br>
+                    × (110%×18 ＋ 160%×3) ÷ 21 ※週平均の大成功の倍率
+                  </div>
                 </template>
-              </template>
+              </div>
             </td>
             <td>{{ evaluateResult.foodEnergyPerDay.toFixed(1) }}</td>
           </tr>

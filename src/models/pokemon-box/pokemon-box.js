@@ -1,3 +1,4 @@
+import { reactive } from 'vue';
 import { Food, Cooking } from '../../data/food_and_cooking';
 import Nature from '../../data/nature';
 import Pokemon from '../../data/pokemon';
@@ -9,7 +10,7 @@ class PokemonBox {
   static _time = null;
   static _list = [];  // ポケモン一覧
   static watch = ref(0);
-  static promiseLocker = new PromiseLocker()
+  static gsExportPromiseLocker = reactive(new PromiseLocker())
 
   static get list() {
     return [...this._list.map((x,i ) => ({ ...x, index: i, original: x }))];
@@ -161,7 +162,7 @@ class PokemonBox {
   
   static async exportGoogleSpreadsheet() {
     if (config.pokemonBox.gs.url) {
-      this.promiseLocker.wait(async () => {
+      this.gsExportPromiseLocker.wait(async () => {
         const form = new FormData();
         form.append('json', JSON.stringify({
           sheet: config.pokemonBox.gs.sheet,

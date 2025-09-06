@@ -543,7 +543,10 @@ function showSelectDetail(pokemon, after, lv) {
           PTシミュは別ページに移りました
         </div>
         <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
-        <button @click="showGoogleSpreadsheetPopup" class="ml-auto">Googleスプレッドシート連携</button>
+        <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
+          Googleスプレッドシート連携
+          <template v-if="PokemonBox.gsExportPromiseLocker.executing">(エクスポート中...)</template>
+        </button>
         <button @click="showTsvPopup">TSVインポート/エクスポート</button>
       </div>
     </div>

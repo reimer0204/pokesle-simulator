@@ -46,6 +46,7 @@ let evaluateTablePokemonList = computed(() => {
 let columnList = computed(() => {
   return [
     { key: 'name', name: '名前', type: String },
+    { key: 'type', name: 'タイプ', type: String, convert: (x) => Pokemon.map[x.name].type },
     { key: 'specialty', name: 'とくい', type: String, convert: (x) => Pokemon.map[x.name].specialty },
     { key: 'skill', name: 'スキル', type: String, convert: (x) => Pokemon.map[x.name].skill.name },
     { key: 'foodList', name: '食材', type: null },

@@ -35,7 +35,7 @@ class PokemonSimulator {
   #fixedPotSize: number;
   cookingList: CookingType[];
   #defaultBestCooking: BestCookingType;
-  foodEnergyMap: {[key: string]: number};
+  foodEnergyMap: {[key: string]: { min: number, max: number }};
   defaultHelpRate: { day: number, night: number };
 
   #expectType;
@@ -53,6 +53,7 @@ class PokemonSimulator {
   #nightLength: number;
   #dayLength: number;
   #addHeal?: { effect: number; time: number; }[];
+  #foodCommonRate: number;
 
   constructor(config: any, mode: number) {
     if (!mode) throw 'モードが指定されていません'
@@ -89,10 +90,10 @@ class PokemonSimulator {
       this.cookingList = this.cookingList.filter(c => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0));
     }
 
-    let foodCommonRate = config.teamSimulation.day == null ? (0.2 / 7 + 1.1)
+    let foodCommonRate = (mode == PokemonSimulatorMode.SELECT || config.teamSimulation.day == null) ? ((2 * 0.1 + 0.9) * 6 + (3 * 0.3 + 0.7)) / 7
       : config.teamSimulation.day == 6 ? 1.3
       : 1.1;
-    if (config.teamSimulation.initialCookingChange) {
+    if (config.teamSimulation.initialCookingChange && mode != PokemonSimulatorMode.SELECT) {
       foodCommonRate = 0;
       let length = config.teamSimulation.day != null ? 3 : 21;
       let noSuccessRate = 1;
@@ -107,14 +108,15 @@ class PokemonSimulator {
     if (mode == PokemonSimulatorMode.ABOUT) {
       foodCommonRate *= config.simulation.cookingWeight
     }
+    this.#foodCommonRate = foodCommonRate;
 
     // 有効な料理に対しての食材のエナジー評価
     this.foodEnergyMap = {};
-    for(const food of Food.list) this.foodEnergyMap[food.name] = food.energy;
+    for(const food of Food.list) this.foodEnergyMap[food.name] = { min: food.energy * foodCommonRate, max: food.energy };
     for(const cooking of this.cookingList) {
       for(const cookingFood of cooking.foodList) {
-        this.foodEnergyMap[cookingFood.name] = Math.max(
-          this.foodEnergyMap[cookingFood.name],
+        this.foodEnergyMap[cookingFood.name].max = Math.max(
+          this.foodEnergyMap[cookingFood.name].max,
           Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus * foodCommonRate
         )
       }
@@ -231,14 +233,15 @@ class PokemonSimulator {
       lv,
       box.foodList,
       fixable && this.config.simulation.fixSkillSeed ? base.skill.effect.length : box.skillLv,
-      this.config.simulation.eventBonusType == 'all'
-        || this.config.simulation.eventBonusType == base.type
-        || this.config.simulation.eventBonusType == base.specialty
-        || (base.specialty == 'オール' && (
-          this.config.simulation.eventBonusType == 'きのみ'
-          || this.config.simulation.eventBonusType == '食材'
-          || this.config.simulation.eventBonusType == 'スキル'
-        )),
+      this.config.simulation.eventBonusType.types[base.type]
+        || this.config.simulation.eventBonusType.specialties[base.specialty]
+        || (
+          base.specialty == 'オール' && (
+            this.config.simulation.eventBonusType.specialties['きのみ']
+            || this.config.simulation.eventBonusType.specialties['食材']
+            || this.config.simulation.eventBonusType.specialties['スキル']
+          )
+        ),
       box.sleepTime,
       useCandy,
       useShard,
@@ -397,22 +400,18 @@ class PokemonSimulator {
         }
       }
 
+      const foodUseRate = this.mode == PokemonSimulatorMode.SELECT
+        ? this.config.selectEvaluate.specialty[base.specialty].foodEnergyRate / 100
+        : 1
+
       pokemon.foodList.push({
         name: food.name,
         num,
-        energy: this.foodEnergyMap[food.name] * num,
-      })  
+        energy: (this.foodEnergyMap[food.name].max * foodUseRate + this.foodEnergyMap[food.name].min * (1 - foodUseRate)),
+      })
     }
 
-    for(let { name, num } of pokemon.foodList) {
-      for(let foodProb of pokemon.foodProbList) {
-        if (foodProb.name == name) {
-          num -= foodProb.num;
-          foodProb.weight += 1 / pokemon.foodList.length;
-        }
-      }
-      pokemon.foodProbList.push({ name, num, weight: 1 / pokemon.foodList.length })
-    }
+    pokemon.foodProbList = this.calcFoodProbList(pokemon.foodList)
 
     // 発動するスキルの一覧(ゆびをふる用)
     if (pokemon.base.skill.name == 'ゆびをふる') {
@@ -467,7 +466,7 @@ class PokemonSimulator {
     pokemon.foodNum = pokemon.foodList.reduce((a, x) => a + x.num, 0) / pokemon.foodList.length;
 
     // 食材エナジー/手伝い
-    pokemon.foodEnergyPerHelp = pokemon.foodList.reduce((a, x) => a + x.energy, 0)
+    pokemon.foodEnergyPerHelp = pokemon.foodList.reduce((a, x) => a + x.energy * x.num, 0)
       / pokemon.foodList.length
       * this.#foodEnergyWeight;
 
@@ -731,7 +730,7 @@ class PokemonSimulator {
       pokemon.foodNumPerDay = pokemon.foodNum * foodGetChance;
       
       // 食材の個数
-      if (this.mode != PokemonSimulator.MODE_SELECT) {
+      if (this.mode != PokemonSimulator.MODE_SELECT || this.config.simulation.requireFoodNum) {
         for(let food of Food.list) {
           pokemon[food.name] = 0;
         }
@@ -750,9 +749,9 @@ class PokemonSimulator {
       // for(let food of Food.list) {
       //   pokemon[food.name] = 0;
       // }
-      for(const foodProb of pokemon.foodProbList) {
+      for(const foodProb of pokemon.foodProbList!) {
         const num = this.#probBorder.get(pokemon.foodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
-        pokemon.foodEnergyPerDay += num * this.foodEnergyMap[foodProb.name];
+        pokemon.foodEnergyPerDay += num * foodProb.energy;
         pokemon.foodNumPerDay += num;
         pokemon[foodProb.name] += num;
       }
@@ -911,7 +910,7 @@ class PokemonSimulator {
               // 概算モードなら食材数と概算エナジーを計算
               let num = effect.sub * pokemon.skillPerDay * weight;
               pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;                   // 1日あたりの食材数
-              energyPerSkill = this.foodEnergyMap[food.name] * effect.sub * this.#foodEnergyWeight; // 1回あたりのエナジー
+              energyPerSkill = this.foodEnergyMap[food.name].max * effect.sub * this.#foodEnergyWeight; // 1回あたりのエナジー
             }
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
@@ -946,7 +945,7 @@ class PokemonSimulator {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
                 foodEnergy +=
                   (
-                    this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
+                    this.foodEnergyMap[food.name].max * this.config.simulation.foodGetRate / 100
                     + food.energy * (100 - this.config.simulation.foodGetRate) / 100
                   )
               }
@@ -1045,7 +1044,7 @@ class PokemonSimulator {
               pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
               foodEnergy +=
                 (
-                  this.foodEnergyMap[food.name] * this.config.simulation.foodGetRate / 100
+                  this.foodEnergyMap[food.name].max * this.config.simulation.foodGetRate / 100
                   + food.energy * (100 - this.config.simulation.foodGetRate) / 100
                 )
             }
@@ -1183,14 +1182,14 @@ class PokemonSimulator {
   // AAAの情報を2個得る確率と追加で3個得る確率、更に追加で2個得る確率、といった形に変換する
   calcFoodProbList(foodList) {
     let foodProbList = [];
-    for(let { name, num } of foodList) {
+    for(let { name, num, energy } of foodList) {
       for(let foodProb of foodProbList) {
         if (foodProb.name == name) {
           num -= foodProb.num;
           foodProb.weight += 1 / foodList.length;
         }
       }
-      foodProbList.push({ name, num, weight: 1 / foodList.length })
+      foodProbList.push({ name, num, energy, weight: 1 / foodList.length })
     }
     return foodProbList;
   }

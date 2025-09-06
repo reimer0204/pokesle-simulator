@@ -23,6 +23,10 @@ class PromiseLocker {
       this.count--;
     }
   }
+
+  get executing() {
+    return this.count > 0
+  }
 }
 
 export {

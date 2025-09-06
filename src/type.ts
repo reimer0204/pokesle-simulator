@@ -1,3 +1,5 @@
+import type { Cooking } from "./data/food_and_cooking";
+
 type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー'
 
 interface CookingType {
@@ -35,6 +37,7 @@ interface FoodType {
   img: any;
   bestTypeRate?: { [key: string]: number };
   bestRate?: number;
+  bestCooking?: Cooking;
 }
 
 interface BerryType {
@@ -169,6 +172,7 @@ interface SimulatedPokemon extends FoodNames {
   foodProbList?: {
     name: string,
     num: number,
+    energy: number,
     weight: number,
   }[];
   skillLv: number;

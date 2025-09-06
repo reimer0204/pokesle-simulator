@@ -81,7 +81,16 @@ const defaultConfig = {
     foodGetRate: 30,
     campTicket: false,
     genkiFull: false,
-    eventBonusType: null,
+    eventBonusType: {
+      types: {
+        ...Berry.list.reduce((a, x) => (a[x.type] = false, a), {})
+      },
+      specialties: {
+        'きのみ': false,
+        '食材': false,
+        'スキル': false,
+      },
+    },
     eventBonusTypeFood: 1,
     eventBonusTypeSkillRate: 1.5,
     eventBonusTypeSkillLv: 3,

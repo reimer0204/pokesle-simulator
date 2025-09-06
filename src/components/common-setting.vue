@@ -21,6 +21,33 @@ function showResourceEditPopup() {
   Popup.show(ResourceEditPopup);
 }
 
+const eventBonusAllChecked = computed({
+  get() {
+    return !Object.values(config.simulation.eventBonusType.types).includes(false)
+      && !Object.values(config.simulation.eventBonusType.specialties).includes(false)
+  },
+  set(newValue) {
+    for(const key in config.simulation.eventBonusType.specialties) {
+      config.simulation.eventBonusType.specialties[key] = newValue;
+    }
+    for(const key in config.simulation.eventBonusType.types) {
+      config.simulation.eventBonusType.types[key] = newValue;
+    }
+  },
+})
+
+const exBerryError = computed(() => {
+  if (config.simulation.fieldExMainBerry == null) return false;
+
+  return !(
+    (
+      config.simulation.field == 'ワカクサ本島'
+      ? config.simulation.berryList
+      : Field.map[config.simulation.field]?.berryList
+    ) ?? []
+  ).includes(config.simulation.fieldExMainBerry)
+})
+
 </script>
 
 <template>
@@ -103,6 +130,7 @@ function showResourceEditPopup() {
                   <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}({{ berry.type }})</option>
                 </select>
               </div>
+              <DangerAlert v-if="exBerryError">好きなきのみに無いものが選ばれています</DangerAlert>
             </div>
           </td>
         </tr>
@@ -159,9 +187,24 @@ function showResourceEditPopup() {
       <div class="inline-flex-row-center" style="gap: 0.25em;">
         <span class="inline-flex-row-center">
           イベントボーナス：
-          <span v-if="!config.simulation.eventBonusType">なし</span>
-          <span v-else-if="config.simulation.eventBonusType == 'all'" class="caution">全員</span>
-          <span v-else class="caution">{{ config.simulation.eventBonusType }}</span>
+          <span v-if="
+            !Object.values(config.simulation.eventBonusType.types).includes(true)
+            && !Object.values(config.simulation.eventBonusType.specialties).includes(true)"
+          >なし</span>
+          <span v-else-if="
+              !Object.values(config.simulation.eventBonusType.types).includes(false)
+              || !Object.values(config.simulation.eventBonusType.specialties).includes(false)
+            "
+            class="caution"
+          >全員</span>
+          <span v-else class="caution">
+            {{
+              [
+                ...['きのみ', '食材', 'スキル'].filter(x => config.simulation.eventBonusType.specialties[x]),
+                ...Berry.typeList.filter(x => config.simulation.eventBonusType.types[x.type]).map(x => x.type),
+              ].join(',')
+            }}
+          </span>
         </span>
         <span v-if="config.simulation.eventBonusType" class="caution">
           <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
@@ -175,14 +218,21 @@ function showResourceEditPopup() {
       <tr>
         <th>適用タイプ</th>
         <td>
-          <select :value="config.simulation.eventBonusType" @input="config.simulation.eventBonusType = $event.target.value || null">
-            <option value="">-</option>
-            <option value="all">全員</option>
-            <option value="きのみ">とくい：きのみ</option>
-            <option value="食材">とくい：食材</option>
-            <option value="スキル">とくい：スキル</option>
-            <option v-for="berry in Berry.list" :value="berry.type">タイプ：{{ berry.type }}</option>
-          </select>
+          <div>
+            <InputCheckbox v-model="eventBonusAllChecked">全て選択</InputCheckbox>
+          </div>
+          <div class="display-grid gap-1em mt-1em" style="grid-template-columns: repeat(3, 150px);">
+            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['きのみ']">きのみとくい</InputCheckbox>
+            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['食材']">食材とくい</InputCheckbox>
+            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['スキル']">スキルとくい</InputCheckbox>
+            <InputCheckbox
+              v-for="berry in Berry.typeList"
+              v-model="config.simulation.eventBonusType.types[berry.type]"
+            >
+              <img class="w-20px" :src="berry.img" />
+              {{ berry.type }}({{ berry.name }})
+            </InputCheckbox>
+          </div>
         </td>
       </tr>
       <tr>

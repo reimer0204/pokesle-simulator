@@ -289,6 +289,7 @@ for(let cooking of Cooking.list) {
   for(let { name, num } of cooking.foodList) {
     if (Food.map[name].bestRate < cooking.rate) {
       Food.map[name].bestRate = cooking.rate;
+      Food.map[name].bestCooking = cooking;
     }
     if (Food.map[name].bestTypeRate[cooking.type] == null || Food.map[name].bestTypeRate[cooking.type] < cooking.rate) {
       Food.map[name].bestTypeRate[cooking.type] = cooking.rate;
