@@ -55,6 +55,8 @@ async function calc() {
         speed.value / 5,
       )
 
+      simulator.calcTeamHeal([pokemon])
+
       simulator.calcHelp(
         pokemon,
         0,

@@ -21,6 +21,7 @@ import { Food, Cooking } from '../../data/food_and_cooking';
       { key: 'maxEnergy_カレー', name: 'カレー\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_サラダ', name: 'サラダ\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_デザート', name: 'デザート\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+      { key: 'maxEnergy', name: '総合\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0, convert: (x) => Math.max(x.maxEnergy_カレー, x.maxEnergy_サラダ, x.maxEnergy_デザート) },
     ]">
       <template #foodList="{ data }">
         <div>

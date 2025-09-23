@@ -558,6 +558,12 @@ function changeColor() {
         <input v-else class="w-100" type="number" disabled placeholder="アメ数"/>
       </label>
       
+      <div>次のレベル<br>までのEXP</div>
+      <div></div>
+      <label>
+        <input class="w-100" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
+      </label>
+      
       <div>追加先No</div>
       <div></div>
       <label>

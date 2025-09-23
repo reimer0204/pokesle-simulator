@@ -23,7 +23,16 @@ async function calc() {
     [ '000', '001', '002', '010', '011', '012' ];
   let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
-  const simulator = new PokemonSimulator(config, PokemonSimulator.MODE_ABOUT)
+  const simulator = new PokemonSimulator({
+    ...config,
+    simulation: {
+      ...config.simulation,
+      expectType: {
+        food: 0,
+        skill: 0,
+      }
+    }
+  }, PokemonSimulator.MODE_ABOUT)
 
   let subSkillList = []
   if (subSkill.value == 1) subSkillList = ['食材確率アップS']
@@ -54,6 +63,8 @@ async function calc() {
         pokemon,
         speed.value / 5,
       )
+
+      simulator.calcTeamHeal([pokemon])
 
       simulator.calcHelp(
         pokemon,
