@@ -28,6 +28,19 @@ class Skill {
       genki: true,
     },
     {
+      name: 'きのみバースト',    
+      effect: [
+        { self: 11, other: 1 },
+        { self: 14, other: 2 },
+        { self: 21, other: 2 },
+        { self: 24, other: 3 },
+        { self: 27, other: 4 },
+        { self: 30, other: 5 },
+      ],
+      team: true,
+      energyOnly: true,
+    },
+    {
       name: 'ばけのかわ(きのみバースト)',    
       effect: [
         { self: 8,  other: 1 },
@@ -39,19 +52,6 @@ class Skill {
       ],
       team: true,
       success: 0.2,
-      energyOnly: true,
-    },
-    {
-      name: 'きのみバースト',    
-      effect: [
-        { self: 11, other: 1 },
-        { self: 14, other: 2 },
-        { self: 21, other: 2 },
-        { self: 24, other: 3 },
-        { self: 27, other: 4 },
-        { self: 30, other: 5 },
-      ],
-      team: true,
       energyOnly: true,
     },
     {

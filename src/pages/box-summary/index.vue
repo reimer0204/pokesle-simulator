@@ -100,7 +100,6 @@ async function loadFoodNumInfo() {
   }
 
   foodNumList.value = result;
-  console.log(result)
 }
 loadFoodNumInfo();
 

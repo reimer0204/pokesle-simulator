@@ -9,6 +9,11 @@ import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter';
 import Popup from '../models/popup/popup.ts';
 import ResourceEditPopup from './resource-edit-popup.vue';
+import Skill from '@/data/skill.ts';
+
+const props = defineProps({
+  fix: { type: Boolean, default: false },
+})
 
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);
@@ -206,7 +211,11 @@ const exBerryError = computed(() => {
             }}
           </span>
         </span>
-        <span v-if="config.simulation.eventBonusType" class="caution">
+        <span v-if="
+          Object.values(config.simulation.eventBonusType.types).includes(true)
+          || Object.values(config.simulation.eventBonusType.specialties).includes(true)
+        " class="caution">
+          <template v-if="config.simulation.eventBonusTypeBerry != 0"> きのみ+{{ config.simulation.eventBonusTypeBerry }}</template>
           <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
@@ -236,6 +245,10 @@ const exBerryError = computed(() => {
         </td>
       </tr>
       <tr>
+        <th>きのみ</th>
+        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBerry" > 個追加</td>
+      </tr>
+      <tr>
         <th>食材</th>
         <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood" > 個追加</td>
       </tr>
@@ -247,6 +260,42 @@ const exBerryError = computed(() => {
         <th>スキルレベル</th>
         <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv" > Lv追加</td>
       </tr>
+    </SettingTable>
+
+  </SettingButton>
+
+  <SettingButton title="スキル設定">
+    <template #label>
+      <div class="inline-flex-row-center" style="gap: 0.25em;">
+        <span class="inline-flex-row-center">
+          スキル設定
+          <template v-if="Skill.list.some(skill => config.simulation.skillRate[skill.name] != 1)">
+            ：
+          </template>
+          <div class="inline-flex-row-center gap-5px">
+            <template v-for="skill in Skill.list">
+              <span v-if="config.simulation.skillRate[skill.name] != 1" class="caution">
+                {{ skill.name }}({{ config.simulation.skillRate[skill.name] * 100 }}%)
+              </span>
+            </template>
+          </div>
+        </span>
+      </div>
+    </template>
+
+    <SettingTable style="width: calc(100vw - 100px);">
+      <SettingList grid>
+        <div v-for="skill in Skill.list">
+          <label>{{ skill.name }}</label>
+          <div>
+            <input
+              type="number" class="w-60px"
+              :value="config.simulation.skillRate[skill.name] * 100"
+              @input="$event => config.simulation.skillRate[skill.name] = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
+            > %
+          </div>
+        </div>
+      </SettingList>
     </SettingTable>
 
   </SettingButton>
@@ -272,8 +321,8 @@ const exBerryError = computed(() => {
 
   <SettingButton title="育成仮定" @close="emit('requireReload')">
     <template #label>
-      <div class="inline-flex-row-center">
-        育成仮定: {{ config.simulation.fix ? 'する' : 'しない' }}
+      <div class="inline-flex-row-center" :class="{ caution: props.fix }">
+        育成仮定: {{ config.simulation.fix || props.fix ? 'する' : 'しない' }}
         <template v-if="config.simulation.fix">(
           厳選{{ config.simulation.fixBorder }}%/{{ config.simulation.fixBorderSpecialty }}%以上
           <template v-if="config.simulation.fixResourceMode == 0">
@@ -294,14 +343,15 @@ const exBerryError = computed(() => {
       <tr>
         <th>育成仮定</th>
         <td>
-          <label><input type="checkbox" v-model="config.simulation.fix">する</label>
+          <label v-if="!props.fix"><input type="checkbox" v-model="config.simulation.fix">する</label>
+          <label v-else><input type="checkbox" checked disabled>する</label>
         </td>
       </tr>
       <tr>
         <th>仮定条件</th>
         <td>
-          <div               >エナジー厳選度 <input type="number" class="w-50px" v-model="config.simulation.fixBorder"          :disabled="!config.simulation.fix"> %以上のみ</div>
-          <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" v-model="config.simulation.fixBorderSpecialty" :disabled="!config.simulation.fix"> %以上のみ</div>
+          <div               >エナジー厳選度 <input type="number" class="w-50px" v-model="config.simulation.fixBorder"          :disabled="!config.simulation.fix && !props.fix"> %以上のみ</div>
+          <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" v-model="config.simulation.fixBorderSpecialty" :disabled="!config.simulation.fix && !props.fix"> %以上のみ</div>
           <small>厳選度が指定以上のポケモンのみ仮定します。<br>どちらかに合致した場合に対象となります。</small>
 
           <div>
@@ -469,15 +519,6 @@ const exBerryError = computed(() => {
           </div>
           <small>
             0の場合はナイトキャップピカチュウなし
-          </small>
-        </td>
-      </tr>
-      <tr>
-        <th>食材ゲット採用率</th>
-        <td>
-          <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
-          <small>
-            食材の何%を<br>料理に使えるか
           </small>
         </td>
       </tr>

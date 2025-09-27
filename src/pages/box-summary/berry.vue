@@ -104,8 +104,11 @@ let berryColumn = [
   <div class="page">
 
     <div class="flex-row-start-start flex-wrap gap-5px">
-      <CommonSetting />
+      <CommonSetting fix />
     </div>
+    <BaseAlert class="mt-10px">
+      このページでは育成仮定が強制的にONになります。
+    </BaseAlert>
 
     <div class="pokemon-list mt-10px">
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">

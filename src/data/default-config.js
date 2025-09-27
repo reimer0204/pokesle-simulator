@@ -91,9 +91,10 @@ const defaultConfig = {
         'スキル': false,
       },
     },
-    eventBonusTypeFood: 1,
-    eventBonusTypeSkillRate: 1.5,
-    eventBonusTypeSkillLv: 3,
+    eventBonusTypeBerry: 0,
+    eventBonusTypeFood: 0,
+    eventBonusTypeSkillRate: 1,
+    eventBonusTypeSkillLv: 0,
     potSize: Cooking.potMax,
     bagOverOperation: true,
     researchRankMax: true,
@@ -133,6 +134,10 @@ const defaultConfig = {
       // 'げんきオールS': 0,
       // '食材ゲットS': 0,
       // '料理パワーアップS': 0,
+    },
+
+    skillRate: {
+      ...Object.fromEntries(Skill.list.map(x => [x.name, 1])),
     },
   },
 

@@ -18,16 +18,6 @@ import PopupBase from './util/popup-base.vue';
       </div>
 
       <div>
-        <label>食材ゲット採用率</label>
-        <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.foodGetRate" step="1"> %</div>
-          <small>
-            食材の何%を<br>料理に使えるか
-          </small>
-        </div>
-      </div>
-
-      <div>
         <label>ゆめのかけら評価</label>
         <div>
           <div><input type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1"> %</div>

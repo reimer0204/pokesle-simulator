@@ -105,14 +105,17 @@ let skillColumn = [
   <div class="page">
 
     <div class="flex-row-start-start flex-wrap gap-5px">
-      <CommonSetting />
+      <CommonSetting fix />
     </div>
+    <BaseAlert class="mt-10px">
+      このページでは育成仮定が強制的にONになります。
+    </BaseAlert>
 
     <div class="pokemon-list mt-10px">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
         <div class="scroll-x">
-          <SortableTable :dataList="skillList" :columnList="skillColumn" class="mt-10px">
+          <SortableTable :dataList="skillList" :columnList="skillColumn">
             <template #pokemon="{ value }">
               <PokemonInfo :pokemon="value" />
             </template>

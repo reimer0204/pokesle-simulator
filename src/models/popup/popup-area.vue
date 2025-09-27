@@ -44,6 +44,7 @@ import Popup from './popup.ts'
       pointer-events: none;
 
       & > * {
+        max-width: calc(100% - 50px);
         pointer-events: auto;
       }
     }

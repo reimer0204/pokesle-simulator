@@ -442,6 +442,10 @@ class PokemonSimulator {
     // きのみの個数
     pokemon.berryNum = ((pokemon.base.specialty == 'きのみ' || pokemon.base.specialty == 'オール') ? 2 : 1)
       + (pokemon.subSkillNameList.includes('きのみの数S') ? 1 : 0)
+    
+    if (pokemon.eventBonus) {
+      pokemon.berryNum += this.config.simulation.eventBonusTypeBerry;
+    }
 
     // きのみエナジー/手伝い
     pokemon.berryEnergy = Math.max(
@@ -800,6 +804,10 @@ class PokemonSimulator {
       let foodGet;
       let cookingPowerUpEffect = 0;
 
+      if (this.mode != PokemonSimulator.MODE_SELECT) {
+        weight *= this.config.simulation.skillRate[skill.name]
+      }
+
       switch(skill.name) {
         case 'エナジーチャージS':
         case 'エナジーチャージS(ランダム)':
@@ -817,7 +825,7 @@ class PokemonSimulator {
           if (this.mode == PokemonSimulator.MODE_ABOUT) {
             energyPerSkill = pokemon.berryEnergy * effect.self
             // 他メンバーのエナジーはあとで計算
-            pokemon.burstBonus = effect.other;
+            pokemon.burstBonus = effect.other * weight;
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             energyPerSkill = 0
@@ -942,12 +950,8 @@ class PokemonSimulator {
               let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
               let foodEnergy = 0;
               for(let food of skill.foodList) {
-                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
-                foodEnergy +=
-                  (
-                    this.foodEnergyMap[food.name].max * this.config.simulation.foodGetRate / 100
-                    + food.energy * (100 - this.config.simulation.foodGetRate) / 100
-                  )
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+                foodEnergy += this.foodEnergyMap[food.name].max
               }
 
               energyPerSkill = foodEnergy / skill.foodList.length * num * this.#foodEnergyWeight;
@@ -957,7 +961,7 @@ class PokemonSimulator {
             if (!this.config.simulation.sundayPrepare) {
               let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
               for(let food of skill.foodList) {
-                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
               }
             }
           }
@@ -1041,22 +1045,18 @@ class PokemonSimulator {
             let num = foodGet / Food.list.length * pokemon.skillPerDay * weight;
             let foodEnergy = 0;
             for(let food of Food.list) {
-              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
-              foodEnergy +=
-                (
-                  this.foodEnergyMap[food.name].max * this.config.simulation.foodGetRate / 100
-                  + food.energy * (100 - this.config.simulation.foodGetRate) / 100
-                )
+              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+              foodEnergy += this.foodEnergyMap[food.name].max
             }
 
-            energyPerSkill = foodEnergy / Food.list.length * foodGet * this.#foodEnergyWeight;
+            energyPerSkill = foodEnergy / Food.list.length * foodGet * weight * this.#foodEnergyWeight;
           }
 
         } else if (this.mode == PokemonSimulator.MODE_TEAM) {
           if (!this.config.simulation.sundayPrepare) {
             let num = foodGet / Food.list.length * pokemon.skillPerDay * weight;
             for(let food of Food.list) {
-              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num * this.config.simulation.foodGetRate / 100;
+              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
             }
           }
         }

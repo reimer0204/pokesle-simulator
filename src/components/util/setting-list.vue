@@ -1,5 +1,11 @@
+<script setup lang="ts">
+const props = defineProps({
+  grid: { type: Boolean, default: false }
+})
+</script>
+
 <template>
-  <div class="setting-list">
+  <div class="setting-list" :class="{ grid: props.grid }">
     <slot></slot>
   </div>
 </template>
@@ -11,6 +17,11 @@
   flex-wrap: wrap;
   // grid-template-columns: max-content 1fr;
   gap: 5px 3px;
+
+  &.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 180px);
+  }
 
   :deep(small) {
     display: block;
