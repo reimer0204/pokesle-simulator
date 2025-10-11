@@ -74,6 +74,7 @@ const filteredPokemonList = computed(() => {
       if(x.box?.memo?.includes(keyword)) or = true;
       if(x.base.afterList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
+      if(x.box?.foodList.map(f1 => String.fromCharCode(x.base?.foodList.findIndex(f2 => f2?.name == f1) + 65))?.join('')?.includes(keyword)) or = true;
       if(x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.subSkillList?.map(x => SubSkill.map[x]?.short)?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.nature?.includes(keyword)) or = true;

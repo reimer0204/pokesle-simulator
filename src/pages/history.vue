@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2025/10/11</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>ネイティ、ネイティオの追加を忘れていたので対応</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2025/09/27</h3>
     <ul>
       <li>
