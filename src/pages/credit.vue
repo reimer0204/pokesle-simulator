@@ -14,7 +14,7 @@
         </ul>
       </li>
       <li>
-        RP Collection (<a href="https://docs.google.com/spreadsheets/d/1kBrPl0pdAO8gjOf_NrTgAPseFtqQA27fdfEbMBBeAhs" target="_blank">https://docs.google.com/spreadsheets/d/1kBrPl0pdAO8gjOf_NrTgAPseFtqQA27fdfEbMBBeAhs</a>)
+        RaenonXポケスリ攻略ツール (<a href="https://pks.raenonx.cc/ja/info/production" target="_blank">https://pks.raenonx.cc/ja/</a>)
         <ul>
           <li>各ポケモンの食材確率、スキル確率を参考にしています。</li>
         </ul>

@@ -24,7 +24,7 @@
 
     <h3>不具合見つけたんだけど</h3>
     <p>
-      <a href="https://x.com/harezora_lueur" target="_blank">@harezora_lueur</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。
+      <a href="https://x.com/hrzr_lueur_vrc" target="_blank">@hrzr_lueur_vrc</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。
     </p>
 
     <h2>仕様関連</h2>
@@ -89,7 +89,7 @@
 
     <h3>要望出したいんだけど</h3>
     <p>
-      <a href="https://x.com/harezora_lueur" target="_blank">@harezora_lueur</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。自分も欲しい機能なら作ります。
+      <a href="https://x.com/hrzr_lueur_vrc" target="_blank">@hrzr_lueur_vrc</a>とか<a href="https://github.com/reimer0204/pokesle-simulator" target="_blank">GitHub</a>とかに連絡ください。自分も欲しい機能なら作ります。
     </p>
 
   </div>

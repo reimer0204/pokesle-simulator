@@ -13,7 +13,7 @@ config.version.history = Version.HISTORY;
       もし応援していただける方がいらっしゃいましたら、作者の他の活動についてチャンネル登録やフォロー等いただけるとげんきが回復するのでよろしくお願いします🙇‍♂️<br>
       <div class="flex-row flex-wrap gap-1em mt-5px">
         <a href="https://www.youtube.com/@harezora_lueur" target="_blank">YouTube</a>
-        <a href="https://x.com/harezora_lueur"            target="_blank">X(メイン)</a>
+        <a href="https://x.com/hrzr_lueur_vrc"            target="_blank">X(メイン)</a>
         <a href="https://x.com/hiyashi_exit"              target="_blank">X(サブ1)</a>
         <a href="https://x.com/reimer0204"                target="_blank">X(サブ2)</a>
         <a href="https://misskey.io/@harezora_lueur"      target="_blank">misskey.io(避難用)</a>
@@ -22,6 +22,16 @@ config.version.history = Version.HISTORY;
     </div>
 
     <h2 class="mt-1em">更新履歴</h2>
+    
+    <h3>2025/10/21</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>Ver.3.0.0の変更を反映</li>
+        </ul>
+      </li>
+    </ul>
     
     <h3>2025/10/11</h3>
     <ul>

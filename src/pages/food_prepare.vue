@@ -26,7 +26,7 @@ const weights = reactive({'カレー': 100, 'サラダ': 100, 'デザート': 10
 const enableCookingTypes = computed(() => {
   return ['カレー', 'サラダ', 'デザート'].filter(x => weights[x]);
 })
-const bagSize = ref(700);
+const bagSize = ref(800);
 const top = ref(4);
 
 let evaluateTable = EvaluateTable.load(config);
