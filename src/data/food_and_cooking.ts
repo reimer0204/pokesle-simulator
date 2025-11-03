@@ -15,6 +15,7 @@ import slowpoketailImg from '../img/food/slowpoketail.png'
 import greengrasssoybeansImg from '../img/food/greengrasssoybeans.png'
 import greengrasscornImg from '../img/food/greengrasscorn.png'
 import coffeeImg from '../img/food/coffee.png'
+import pumpkinImg from '../img/food/pumpkin.png'
 import type { FoodName, CookingType, FoodType } from '../type'
 
 class Food {
@@ -36,6 +37,7 @@ class Food {
     { name: 'ワカクサ大豆',       energy: 100, img: greengrasssoybeansImg },
     { name: 'ワカクサコーン',     energy: 140, img: greengrasscornImg },
     { name: 'めざましコーヒー',   energy: 153, img: coffeeImg },
+    { name: 'ずっしりカボチャ',   energy: 250, img: pumpkinImg },
   ];
   static map = Food.list.reduce((a, x) => (a[x.name] = x, a), {} as { [key in FoodName]: FoodType });
   static maxEnergy: number;
@@ -67,6 +69,7 @@ class Cooking {
     {type: 'カレー', name: 'めざめるパワーシチュー', energy: 19061, foodList: [{name: 'ワカクサ大豆', num: 28},{name: 'あんみんトマト', num: 25},{name: 'あじわいキノコ', num: 23},{name: 'めざましコーヒー', num: 16},]},
     {type: 'カレー', name: 'ピヨピヨパンチ辛口カレー', energy: 5702, foodList: [{name: 'めざましコーヒー', num: 11},{name: 'げきからハーブ', num: 11},{name: 'あまいミツ', num: 11},]},
     {type: 'カレー', name: 'いあいぎりすき焼きカレー', energy: 20655, foodList: [{name: 'ふといながねぎ', num: 27},{name: 'マメミート', num: 26},{name: 'あまいミツ', num: 26},{name: 'とくせんエッグ', num: 22},]},
+    {type: 'カレー', name: 'なりきりバケッチャシチュー', energy: 15621, foodList: [{name: 'ずっしりカボチャ', num: 10},{name: 'マメミート', num: 16},{name: 'ほっこりポテト', num: 18},{name: 'あじわいキノコ', num: 25},]},
     {type: 'サラダ', name: 'ごちゃまぜサラダ', energy: 0, foodList: []},
     {type: 'サラダ', name: 'ヤドンテールのペッパーサラダ', energy: 8169, foodList: [{name: 'げきからハーブ', num: 10},{name: 'ピュアなオイル', num: 15},{name: 'おいしいシッポ', num: 10},]},
     {type: 'サラダ', name: 'キノコのほうしサラダ', energy: 5859, foodList: [{name: 'あじわいキノコ', num: 17},{name: 'ピュアなオイル', num: 8},{name: 'あんみんトマト', num: 8},]},
@@ -116,6 +119,7 @@ class Cooking {
     {type: 'デザート', name: 'はやおきコーヒーゼリー', energy: 6793, foodList: [{name: 'めざましコーヒー', num: 16},{name: 'モーモーミルク', num: 14},{name: 'あまいミツ', num: 12},]},
     {type: 'デザート', name: 'ドオーのエクレア', energy: 20885, foodList: [{name: 'リラックスカカオ', num: 30},{name: 'モーモーミルク', num: 26},{name: 'あまいミツ', num: 22},{name: 'めざましコーヒー', num: 24},]},
     {type: 'デザート', name: 'かたやぶりコーンティラミス', energy: 7125, foodList: [{name: 'モーモーミルク', num: 12},{name: 'ワカクサコーン', num: 14},{name: 'めざましコーヒー', num: 14},]},
+    {type: 'デザート', name: 'ドキドキこわいかおパンケーキ', energy: 24354, foodList: [{name: 'ずっしりカボチャ', num: 18},{name: 'とくせんエッグ', num: 24},{name: 'あまいミツ', num: 32},{name: 'あんみんトマト', num: 29},]},
   ].map(x => ({
     ...x,
   } as CookingType));
