@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2025/11/09</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>アンバー渓谷と新ポケモンを追加</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2025/11/03</h3>
     <ul>
       <li>

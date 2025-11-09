@@ -36,8 +36,8 @@ interface FoodType {
   energy: number;
   img: any;
   bestTypeRate?: { [key: string]: number };
-  bestRate?: number;
-  bestCooking?: Cooking;
+  bestRate: number;
+  bestCooking: Cooking;
 }
 
 interface BerryType {

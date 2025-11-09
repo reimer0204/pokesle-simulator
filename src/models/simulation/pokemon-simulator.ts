@@ -931,36 +931,39 @@ class PokemonSimulator {
 
           break;
 
+        case '食材セレクトS':
         case 'かいりきバサミ(食材セレクトS)':
         case 'きょううん(食材セレクトS)':
           if (skill.name == 'きょううん(食材セレクトS)') {
             pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
           }
 
+          const foodList = skill.foodList ?? pokemon.base.foodList.map(x => Food.map[x.name])
+
           if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = skill.foodList.reduce((a, food) =>
+            energyPerSkill = foodList.reduce((a, food) =>
               a + food.energy * (
                 (food.bestRate * Cooking.maxRecipeBonus - 1) * this.config.selectEvaluate.specialty[pokemon.base.specialty].foodGetRate / 100 + 1
               )
               , 0
-            ) / skill.foodList.length * effect.food;
+            ) / foodList.length * effect.food;
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
             if (this.#foodEnergyWeight > 0) {
-              let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
+              let num = effect.food / foodList.length * pokemon.skillPerDay * weight;
               let foodEnergy = 0;
-              for(let food of skill.foodList) {
+              for(let food of foodList) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
                 foodEnergy += this.foodEnergyMap[food.name].max
               }
 
-              energyPerSkill = foodEnergy / skill.foodList.length * num * this.#foodEnergyWeight;
+              energyPerSkill = foodEnergy / foodList.length * num * this.#foodEnergyWeight;
             }
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             if (!this.config.simulation.sundayPrepare) {
-              let num = effect.food / skill.foodList.length * pokemon.skillPerDay * weight;
-              for(let food of skill.foodList) {
+              let num = effect.food / foodList.length * pokemon.skillPerDay * weight;
+              for(let food of foodList) {
                 pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
               }
             }

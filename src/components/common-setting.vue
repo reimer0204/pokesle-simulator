@@ -95,7 +95,7 @@ const exBerryError = computed(() => {
               <option value="ウノハナ雪原">ウノハナ雪原</option>
               <option value="ラピスラズリ湖畔">ラピスラズリ湖畔</option>
               <option value="ゴールド旧発電所">ゴールド旧発電所</option>
-              <option value="？？？">？？？</option>
+              <option value="アンバー渓谷">アンバー渓谷</option>
             </select>
           </td>
         </tr>
