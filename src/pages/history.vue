@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2025/11/13</h3>
+    <ul>
+      <li>
+        不具合修正
+        <ul>
+          <li>厳選情報のリセットを忘れていたため対応</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2025/11/09</h3>
     <ul>
       <li>
