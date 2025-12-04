@@ -905,6 +905,10 @@ class PokemonSimulator {
           foodGet = effect;
           break;
 
+        case 'プレゼント(食材ゲットS)':
+          foodGet = effect;
+          break;
+
         case 'プラス(食材ゲットS)':
           foodGet = effect.main;
           const food = Food.map[pokemon.foodList[0].name];

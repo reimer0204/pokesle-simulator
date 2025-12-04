@@ -497,7 +497,7 @@ const specialtyEvaluateGraph = computed(() => {
                 {{ skill.effect[lv - 1] }}<br>
                 <template v-if="evaluateResult.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>
-              <template v-if="skill.name == '食材ゲットS'">
+              <template v-if="skill.name == '食材ゲットS' || skill.name == 'プレゼント(食材ゲットS)'">
                 (<br>
                 <template v-for="(food, i) in Food.list">
                   {{ i ? '+ ' : '' }}{{ food.energy }} × (({{ (food.bestRate * 100).toFixed(0) }}% × {{ Cooking.maxRecipeBonus * 100 }}% - 100%) × {{ config.selectEvaluate.specialty[evaluateResult.base.specialty].foodGetRate }}% + 100%) ※{{ food.name }}<br>
