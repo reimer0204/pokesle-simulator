@@ -155,7 +155,6 @@ function inferName(name) {
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60))
     .split('').map(x => '^$\\.*+?()[]{}|'.includes(x) ? `\\${x}` : x).join('.*')
   );
-  console.log(regexp)
 
   let matchPokemonList = pokemonNames.value.map(({ pokemon, normalizedName }) => {
     let result = regexp.exec(normalizedName)

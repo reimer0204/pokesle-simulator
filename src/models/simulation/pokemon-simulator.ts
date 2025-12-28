@@ -1028,6 +1028,7 @@ class PokemonSimulator {
 
         case 'げんきオールS':
         case 'げんきエールS':
+        case 'ほっぺすりすり(げんきエールS)':
         case 'げんきチャージS':
         case 'つきのひかり(げんきチャージS)':
           // 別の場所で計算

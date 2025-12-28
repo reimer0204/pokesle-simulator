@@ -80,6 +80,12 @@ class Skill {
       genki: true,
     },
     {
+      name: 'ほっぺすりすり(げんきエールS)',
+      effect: [9, 12, 16, 20, 27, 35].map(x => ({ other: x / 5 })),
+      team: true,
+      genki: true,
+    },
+    {
       name: 'げんきオールS',
       effect: [5.0, 7.0,	9.0,	11.4,	15.0, 18.1].map(x => ({ other: x })),
       team: true,

@@ -9,7 +9,6 @@ const disabledCookingNum = computed(() => {
 })
 
 const enableCookingList = computed(() => {
-  console.log('!')
   return Cooking.getEnableCookingList(config);
 })
 
