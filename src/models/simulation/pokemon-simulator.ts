@@ -635,7 +635,7 @@ class PokemonSimulator {
             if (subPokemon.base.skill.name == 'へんしん(スキルコピー)' || subPokemon.base.skill.name == 'ものまね(スキルコピー)') {
               list = [{ skill: Skill.map['エナジーチャージS'], weight: 1 }]
             } else {
-              list = pokemon.skillWeightList
+              list = subPokemon.skillWeightList
             }
             for(let { skill, weight } of list) {
               const skillWeight = pokemon.skillWeightList.find(x => x.skill == skill)
@@ -644,6 +644,21 @@ class PokemonSimulator {
               } else {
                 skillWeight.weight += weight / 4;
               }
+            }
+          }
+        }
+      }
+      
+      if (pokemon.base.skill.name == 'ほっぺすりすり(げんきエールS)') {
+        pokemon.skillWeightList = [{ skill: pokemon.base.skill, weight: 1 }]
+        for(let subPokemon of pokemonList) {
+          if (pokemon != subPokemon) {
+            for(let { skill, weight } of subPokemon.skillWeightList) {
+              pokemon.skillWeightList.push({
+                skill,
+                weight: weight * (1 - (1 - subPokemon.skillRate) ** pokemon.fixedSkillLv),
+                skillLv: subPokemon.fixedSkillLv
+              })
             }
           }
         }
@@ -796,8 +811,12 @@ class PokemonSimulator {
 
     let totalCookingPowerUpEffect = 0;
     
-    for(let { skill, weight } of pokemon.skillWeightList) {
-      const skillLv = (skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1;
+    for(let { skill, weight, skillLv } of pokemon.skillWeightList) {
+      if (skillLv == null) {
+        skillLv = (skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1;
+      } else {
+        skillLv--;
+      }
       const effect = skill.effect[skillLv];
       let energyPerSkill = 0;
 
@@ -1013,12 +1032,10 @@ class PokemonSimulator {
         case 'へんしん(スキルコピー)':
         case 'ものまね(スキルコピー)':
           if (this.mode == PokemonSimulator.MODE_SELECT) {
-            // 厳選時はエナジーチャージM相当で計算
-            energyPerSkill = Skill.map['エナジーチャージM'].effect[skillLv]
+            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            // 概算時はエナジーチャージM相当で計算
-            energyPerSkill = Skill.map['エナジーチャージM'].effect[skillLv]
+            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // スキルコピーがスキルコピーをコピーした場合はエナジーチャージS相当(公式)
@@ -1026,9 +1043,19 @@ class PokemonSimulator {
           }
           break;
 
+        case 'ほっぺすりすり(げんきエールS)':
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            // スキルコピーと同様の仕組みで計算
+          }
+
         case 'げんきオールS':
         case 'げんきエールS':
-        case 'ほっぺすりすり(げんきエールS)':
         case 'げんきチャージS':
         case 'つきのひかり(げんきチャージS)':
           // 別の場所で計算

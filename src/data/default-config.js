@@ -227,6 +227,14 @@ const defaultConfig = {
         },
       },
     },
+    skillEnergy: Object.fromEntries(
+      Skill.list.filter(x => x.evaluateEnergy != null).map(skill => {
+        return [
+          skill.name,
+          skill.evaluateEnergy.map(() => null)
+        ]
+      })
+    ),
     pokemonSleepTime: 500,
   },
 

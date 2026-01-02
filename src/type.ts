@@ -54,6 +54,7 @@ interface SkillType {
   metronome?: boolean;
   team?: boolean;
   success?: number;
+  evaluateEnergy?: number[];
   genki?: boolean;
   shard?: boolean;
   energyOnly?: boolean;
@@ -188,7 +189,7 @@ interface SimulatedPokemon extends FoodNames {
   subSkillNameList: string[];
   nextSubSkillList?: boolean[];
   nature: NatureType;
-  skillWeightList: { skill: SkillType, weight: number }[];
+  skillWeightList: { skill: SkillType, weight: number, skillLv?: number }[];
   selfHealList: { effect: number, time: number, night?: boolean }[],
   otherHealList: { effect: number, time: number, night?: boolean }[],
   

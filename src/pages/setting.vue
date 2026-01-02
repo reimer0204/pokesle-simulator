@@ -187,6 +187,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
             <th></th>
             <th v-for="specialty in specialtyList">{{ specialty }}</th>
             <th>下振れ考慮</th>
+            <th>エナジー換算</th>
             <th>備考</th>
           </tr>
         </thead>
@@ -196,6 +197,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
             <td v-for="specialty in specialtyList">
               <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].berryEnergyRate" step="1"> %</div>
             </td>
+            <td></td>
             <td></td>
             <td>
               <small>
@@ -215,6 +217,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
                 <InputRadio v-model="editConfig.selectEvaluate.expectType.food" :value="1">下振れ考慮</InputRadio>
               </div>
             </td>
+            <td></td>
             <td>
               <small>
               0%:基礎エナジー<br>
@@ -230,6 +233,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
             <td v-for="specialty in specialtyList">
               <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodGetRate" step="1"> %</div>
             </td>
+            <td></td>
             <td></td>
             <td class="w-200px">
               <small>
@@ -266,6 +270,39 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
                 <InputRadio :value="1" disabled>下振れ考慮</InputRadio>
                 <div>※将来機能</div>
               </div>
+            </td>
+            <td>
+              <template v-if="skill.evaluateEnergy != null">
+                <div class="flex-column">
+                  <div
+                    v-for="(energy, i) in skill.evaluateEnergy"
+                    class="flex-row-start-center"
+                  >
+                    <div>Lv{{ i + 1 }}：</div>
+                    <input
+                      type="number"
+                      class="text-align-right w-60px"
+                      :value="editConfig.selectEvaluate.skillEnergy[skill.name][i]"
+                      @input="editConfig.selectEvaluate.skillEnergy[skill.name][i] = Number($event.target.value) || null"
+                      :placeholder="energy"
+                    >
+                  </div>
+                </div>
+                <div v-if="
+                  skill.name == 'へんしん(スキルコピー)'
+                  || skill.name == 'ものまね(スキルコピー)'
+                  || skill.name == 'ほっぺすりすり(げんきエールS)'
+                ">
+                  <HelpButton title="デフォルト値の理由" markdown="
+                    スキルコピーやほっぺすりすりの対象はエナジーチャージM相当で評価しています。
+                    エナジーチャージMより強いスキルも一部ありますが、げんきオールや料理チャンスは積めば積むほど効果量が薄くなり、でんせつポケモンのスキルは1匹しか入れられないので、これらを基準にすると過剰に評価してしまいます。
+                    そのため、固定値で4匹固められる可能性のあるエナジーチャージMを基準にしています。
+
+                    ## ほっぺすりすりのデフォルト値
+                    エナジーチャージM持ちの中でもスキル確率の高いウソッキー(9%)に合わせ、補正が諸々かかった15%前提で計算しています。
+                  " />
+                </div>
+              </template>
             </td>
             <td>
               <small>
