@@ -5,7 +5,7 @@ import Exp from "../../data/exp";
 import Skill from "../../data/skill";
 import { Food, Cooking } from "../../data/food_and_cooking";
 import Nature from "../../data/nature";
-import Field from '../../data/field';
+import Field from '../../data/field.ts';
 import Berry from '../../data/berry';
 import SubSkill from '../../data/sub-skill';
 import ProbBorder from '../utils/prob-border';

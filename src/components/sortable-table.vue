@@ -269,7 +269,7 @@ function toggleHiddenColumn(key) {
               }"
               @click="emits('clickRow', data.$original)"
             >
-              <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key] }">
+              <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key], key: column.key }">
                 <template v-if="column.percent">
                   {{ data.$clone[column.key] != null ? `${(data.$clone[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
                 </template>

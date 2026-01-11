@@ -263,6 +263,20 @@ const defaultConfig = {
   sortableTable: {
     pokemonList2: { sort: [], hiddenColumn: [] },
   },
+
+  summary: {
+    field: {
+      shinkago: false,
+      ...Object.fromEntries(['きのみ', '食材', 'スキル'].map(key => [key, {
+        lv: 'max',
+        score: null,
+        specialty: null,
+        aaa: true, aab: true, aac: true,
+        aba: true, abb: true, abc: true,
+      }])),
+      pokemon: Object.fromEntries(Pokemon.list.map(x => [x.name, null])),
+    }
+  }
 }
 
 defaultConfig.simulation.cookingRecipeLv = Object.keys(Cooking.recipeLvs).length;

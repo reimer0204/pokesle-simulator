@@ -253,17 +253,20 @@ const pokemonColumn = computed(() => {
     </div>
 
     <div class="pokemon-list mt-10px">
-      <AsyncWatcherArea :asyncWatcher="asyncWatcher">
-        <div class="scroll-x">
-          <SortableTable :dataList="pokemonList" :columnList="pokemonColumn">
-            <template #pokemon="{ value }">
-              <PokemonInfo :pokemon="value" />
-            </template>
-            <template #foodList="{ data, value }">
-              <FoodList :pokemon="data" />
-            </template>
-          </SortableTable>
-        </div>
+      <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
+        <SortableTable
+          class="flex-110"
+          :dataList="pokemonList"
+          :columnList="pokemonColumn"
+          scroll
+        >
+          <template #pokemon="{ value }">
+            <PokemonInfo :pokemon="value" />
+          </template>
+          <template #foodList="{ data, value }">
+            <FoodList :pokemon="data" />
+          </template>
+        </SortableTable>
       </AsyncWatcherArea>
     </div>
 
@@ -280,6 +283,12 @@ const pokemonColumn = computed(() => {
 
   .scroll-x {
     overflow-x: scroll;
+  }
+
+  .pokemon-list {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
   }
 }
 

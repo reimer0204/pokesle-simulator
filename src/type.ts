@@ -115,6 +115,7 @@ interface PokemonType {
   candyName: string;
   requireSleep: { [key: string]: boolean };
   evolveCandyMap: { [key: string]: number };
+  fieldList: { name: string, type: string }[];
 
   evolve: {
     before?: string | null;

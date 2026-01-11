@@ -2,7 +2,7 @@ import PokemonSimulator from './pokemon-simulator'
 
 import { Food, Cooking } from '../../data/food_and_cooking'
 import Berry from '../../data/berry';
-import Field from '../../data/field';
+import Field from '../../data/field.ts';
 import Skill from '../../data/skill';
 import NightCapPikachu from '../../data/nightcap_pikachu';
 import type { SimulatedPokemon } from '@/type';

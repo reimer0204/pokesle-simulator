@@ -28,6 +28,7 @@ import BoxSummaryIndexPage from './pages/box-summary/index.vue'
 import BoxSummaryBerryPage from './pages/box-summary/berry.vue'
 import BoxSummaryFoodPage from './pages/box-summary/food.vue'
 import BoxSummarySkillPage from './pages/box-summary/skill.vue'
+import BoxSummaryFieldPage from './pages/box-summary/field.vue'
 import DataPage from './pages/data.vue'
 import DataFoodPage from './pages/data/food.vue'
 import DataCookingPage from './pages/data/cooking.vue'
@@ -53,6 +54,7 @@ const router = createRouter({
         { path: 'berry', component: BoxSummaryBerryPage },
         { path: 'food', component: BoxSummaryFoodPage },
         { path: 'skill', component: BoxSummarySkillPage },
+        { path: 'field', component: BoxSummaryFieldPage },
       ]
     },
     { path: '/data', component: DataPage,

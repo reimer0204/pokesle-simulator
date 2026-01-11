@@ -2,7 +2,7 @@
 import CookingSettingPopup from '../components/cooking-setting-popup.vue';
 import Berry from '../data/berry';
 import { Cooking } from '../data/food_and_cooking';
-import Field from '../data/field';
+import Field from '../data/field.ts';
 import NightCapPikachu from '../data/nightcap_pikachu';
 import config from '../models/config';
 import PokemonBox from '../models/pokemon-box/pokemon-box';

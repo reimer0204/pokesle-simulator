@@ -69,6 +69,7 @@ class PokemonBox {
         shiny: pokemon.shiny,
         memo: pokemon.memo,
         sleepTime: pokemon.sleepTime,
+        fix: pokemon.fix,
       };
     } else if (0 <= index && index < this._list.length) {
       this._list.splice(index, 1)

@@ -21,6 +21,7 @@ const foodList = computed(() => Food.list.map(food => {
   for(const cookingType of cookingTypeList) {
     const filteredCookingList = enableCookingList.value.filter(x => x.type == cookingType && x.foodList.some(x => x.name == food.name))
 
+    result[`require_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.foodList.find(f => f.name == food.name)?.num ?? 0), 0),
     result[`bestTypeRate_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.rate), 1)
     result[`maxAddEnergy_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.maxAddEnergy), 0)
     result[`maxEnergy_${cookingType}`] = food.energy * result[`bestTypeRate_${cookingType}`] * (result[`bestTypeRate_${cookingType}`] > 1 ? Cooking.maxRecipeBonus : 1)
@@ -67,15 +68,18 @@ const foodList = computed(() => Food.list.map(food => {
 
     <SortableTable class="mt-10px" :dataList="foodList" :columnList="[
       { key: 'name', name: '名前' },
-      { key: 'energy', name: '基礎エナジー', type: Number },
+      { key: 'energy', name: '基礎\nエナジー', type: Number },
+      { key: 'require_カレー', name: 'カレー\n必要最大数', type: Number },
       { key: 'bestTypeRate_カレー', name: 'カレー\n最大補正', percent: true, fixed: 0 },
-      { key: 'bestTypeRate_サラダ', name: 'サラダ\n最大補正', percent: true, fixed: 0 },
-      { key: 'bestTypeRate_デザート', name: 'デザート\n最大補正', percent: true, fixed: 0 },
       { key: 'maxAddEnergy_カレー', name: 'カレー\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxAddEnergy_サラダ', name: 'サラダ\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxAddEnergy_デザート', name: 'デザート\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_カレー', name: 'カレー\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+      { key: 'require_サラダ', name: 'サラダ\n必要最大数', type: Number },
+      { key: 'bestTypeRate_サラダ', name: 'サラダ\n最大補正', percent: true, fixed: 0 },
+      { key: 'maxAddEnergy_サラダ', name: 'サラダ\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_サラダ', name: 'サラダ\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+      { key: 'require_デザート', name: 'デザート\n必要最大数', type: Number },
+      { key: 'bestTypeRate_デザート', name: 'デザート\n最大補正', percent: true, fixed: 0 },
+      { key: 'maxAddEnergy_デザート', name: 'デザート\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_デザート', name: 'デザート\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy', name: '総合\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0, convert: (x) => Math.max(x.maxEnergy_カレー, x.maxEnergy_サラダ, x.maxEnergy_デザート) },
     ]">

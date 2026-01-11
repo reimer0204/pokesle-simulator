@@ -66,6 +66,7 @@ let pokemon = reactive({
   subSkillList: [null, null, null, null, null],
   nature: null,
   shiny: false,
+  fix: null,
 })
 const insertTo = ref(null)
 
@@ -573,6 +574,14 @@ function changeColor() {
       <label>
         <input class="w-100" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
       </label>
+      
+      <div>チームシミュ</div>
+      <div></div>
+      <select v-model="pokemon.fix">
+        <option :value="null">候補対象</option>
+        <option :value="1">固定</option>
+        <option :value="-1">除外</option>
+      </select>
       
       <div>追加先No</div>
       <div></div>
