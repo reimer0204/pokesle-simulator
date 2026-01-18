@@ -453,6 +453,34 @@ function changeColor() {
   pokemon.shiny = !pokemon.shiny;
 }
 
+function moveFocus(event) {
+
+  const inputElementList = [
+    nameInput.value,
+    lvInput.value,
+    // bagInput.value,
+    foodInput.value,
+    ...subSkillInputList.value,
+    natureInput.value,
+  ]
+  // console.log(inputElementList)
+  const index = inputElementList.indexOf(event.target)
+  if (event.key === 'Enter' || event.key === 'ArrowDown') {
+    if (index + 1 >= inputElementList.length) {
+      save(true);
+    } else {
+      inputElementList[index + 1].focus();
+    }
+    event.preventDefault();
+  }
+  if (event.key === 'ArrowUp') {
+    if (index - 1 >= 0) {
+      inputElementList[index - 1].focus();
+    }
+    event.preventDefault();
+  }
+}
+
 </script>
 
 <template>
@@ -472,7 +500,7 @@ function changeColor() {
 
       <div>名前</div>
       <input
-        type="text" ref="nameInput" v-model="assist.name" @keypress.enter="lvInput.focus()"
+        type="text" ref="nameInput" v-model="assist.name" @keydown="moveFocus"
         placeholder="ローマ字/ひらがな/カタカナ"
       />
       <select v-model="pokemon.name" class="w-200px">
@@ -480,12 +508,12 @@ function changeColor() {
       </select>
 
       <div>Lv</div>
-      <input type="number" ref="lvInput" v-model="pokemon.lv" @keypress.enter="foodInput.focus()"/>
+      <input type="number" ref="lvInput" v-model="pokemon.lv" @keydown="moveFocus" />
       <input type="number" v-model="pokemon.lv"/>
 
       <div>食材</div>
       <input
-        type="text" ref="foodInput" v-model="assist.foodABC" @keypress.enter="subSkillInputList[0].focus()"
+        type="text" ref="foodInput" v-model="assist.foodABC" @keydown="moveFocus"
         placeholder="AAB"
       />
       <div>
@@ -514,7 +542,7 @@ function changeColor() {
         <input
           type="text" ref="subSkillInputList" v-model="assist.subSkillList[i]"
           @input="convertSubSkill(i)"
-          @keypress.enter="i < 4 ? subSkillInputList[i + 1].focus() : natureInput.focus()"
+          @keydown="moveFocus"
           placeholder="ローマ字/ひらがな/カタカナ"
         />
 
@@ -529,7 +557,7 @@ function changeColor() {
 
       <div>せいかく</div>
       <input
-        type="text" ref="natureInput" v-model="assist.nature" @keypress.enter="save(true)"
+        type="text" ref="natureInput" v-model="assist.nature" @keydown="moveFocus"
           @input="convertNature"
         placeholder="ローマ字/ひらがな/カタカナ"
       />

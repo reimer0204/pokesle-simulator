@@ -1,78 +1,93 @@
 <script setup>
+import InputCheckbox from '@/components/form/input-checkbox.vue';
 import { Food, Cooking } from '../../data/food_and_cooking';
 import Nature from '../../data/nature';
 import Pokemon from '../../data/pokemon';
 import config from '../../models/config';
-import PokemonSimulator from '../../models/simulation/pokemon-simulator';
+import { AsyncWatcher } from '../../models/async-watcher.js';
+import PokemonListSimulator from '../../models/pokemon-box/pokemon-box-worker?worker';
+import MultiWorker from '../../models/multi-worker.js';
+import PokemonBox from '../../models/pokemon-box/pokemon-box.js';
+
 
 const lv = ref(60);
 const pokemonList = ref([])
-const nature = ref(null);
-const subSkill = ref(null);
-const speed = ref(0);
+const nature = ref('なまいき');
+const subSkill = ref(3);
+const speed = ref(35);
+const genkiFull = ref(false);
+const asyncWatcher = AsyncWatcher.init();
+
+let multiWorker = new MultiWorker(PokemonListSimulator)
+onBeforeUnmount(() => {
+  multiWorker.close();
+})
 
 async function calc() {
-  await PokemonSimulator.isReady
+  // multiWorker.reject();
 
-  let result = [];
-  let targetList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
+  asyncWatcher.run(async (progressCounter) => {
+    let targetList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
 
-  const foodCombinationList =
-    lv.value < 30 ? ['0'] :
-    lv.value < 60 ? [ '00', '01' ] :
-    [ '000', '001', '002', '010', '011', '012' ];
-  let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
+    const foodCombinationList =
+      lv.value < 30 ? ['0'] :
+      lv.value < 60 ? [ '00', '01' ] :
+      [ '000', '001', '002', '010', '011', '012' ];
+    let foodIndexListList = foodCombinationList.map(x => x.split('').map(Number))
 
-  const simulator = new PokemonSimulator(config, PokemonSimulator.MODE_ABOUT)
+    let subSkillList = []
+    if (subSkill.value == 1) subSkillList = ['スキル確率アップS']
+    if (subSkill.value == 2) subSkillList = ['スキル確率アップM']
+    if (subSkill.value == 3) subSkillList = ['スキル確率アップS', 'スキル確率アップM']
 
-  let subSkillList = []
-  if (subSkill.value == 1) subSkillList = ['スキル確率アップS']
-  if (subSkill.value == 2) subSkillList = ['スキル確率アップM']
-  if (subSkill.value == 3) subSkillList = ['スキル確率アップS', 'スキル確率アップM']
+    const boxPokemonList = [];
 
-  for(let base of targetList) {
+    for(let base of targetList) {
 
-    for(let foodIndexList of foodIndexListList) {
+      for(let foodIndexList of foodIndexListList) {
 
-      // 食材を設定しておく
-      let foodList = foodIndexList.map((f, i) => {
-        const food = Food.map[base.foodList[f]?.name];
-        if (food == null) return null;
-        return base.foodList[f].name
-      });
-      if (foodList.includes(null)) continue;
+        // 食材を設定しておく
+        let foodList = foodIndexList.map((f, i) => {
+          const food = Food.map[base.foodList[f]?.name];
+          if (food == null) return null;
+          return base.foodList[f].name
+        });
+        if (foodList.includes(null)) continue;
 
-      const pokemon = simulator.fromBox({
-        name: base.name,
-        lv: lv.value,
-        foodList: foodList,
-        subSkillList,
-        nature: nature.value,
-      });
-      
-      simulator.calcStatus(
-        pokemon,
-        speed.value / 5,
-      )
-
-      simulator.calcTeamHeal([pokemon])
-
-      simulator.calcHelp(
-        pokemon,
-        0,
-        0,
-      )
-
-      result.push(pokemon)
+        boxPokemonList.push({
+          name: base.name,
+          lv: lv.value,
+          foodList: foodList,
+          subSkillList,
+          nature: nature.value,
+        });
+      }
     }
-  }
 
-  pokemonList.value = result;
+    pokemonList.value = await PokemonBox.simulation(
+      boxPokemonList,
+      multiWorker, null, 
+      {
+        ...config,
+        simulation: {
+          ...config.simulation,
+          expectType: {
+            food: 0,
+            skill: 0,
+          },
+          helpBonus: (speed.value ?? 0) / 5,
+          genkiFull: genkiFull.value,
+        }
+      },
+      progressCounter
+    );
+  });
 }
 watch(lv, calc)
 watch(nature, calc)
 watch(subSkill, calc)
 watch(speed, calc)
+watch(genkiFull, calc)
 calc();
 
 const columnList = computed(() => {
@@ -131,16 +146,24 @@ const columnList = computed(() => {
           <input class="w-50px" type="number" v-model="speed" max="35" /> %
         </div>
       </div>
+
+      <div>
+        <label>げんき</label>
+        <div>
+          <InputCheckbox v-model="genkiFull">常時80%以上</InputCheckbox>
+        </div>
+      </div>
     </SettingList>
 
-    <div class="scroll mt-10px">
-      <!-- {{ pokemonList }} -->
-      <SortableTable class="pokemon-list" :dataList="pokemonList" :columnList="columnList" :fixColumn="1">
-        <template #foodList="{ data, value }">
-          <FoodList :pokemon="data" />
-        </template>
-      </SortableTable>
-    </div>
+    <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="mt-10px flex-110 minh-0 flex-column">
+      <div class="scroll flex-110">
+        <SortableTable class="pokemon-list" :dataList="pokemonList" :columnList="columnList" :fixColumn="1">
+          <template #foodList="{ data, value }">
+            <FoodList :pokemon="data" />
+          </template>
+        </SortableTable>
+      </div>
+    </AsyncWatcherArea>
   </div>
 </template>
 

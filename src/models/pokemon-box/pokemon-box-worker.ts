@@ -297,7 +297,7 @@ addEventListener('message', async (event) => {
     for(let pokemon of result) {
       simulator.calcStatus(
         pokemon,
-        pokemon.subSkillNameList?.includes('おてつだいボーナス') ? 1 : 0,
+        (pokemon.subSkillNameList?.includes('おてつだいボーナス') ? 1 : 0) + (config.simulation.helpBonus ?? 0),
         pokemon.subSkillNameList?.includes('げんき回復ボーナス') ? 1 : 0,
       )
 
@@ -324,22 +324,30 @@ addEventListener('message', async (event) => {
   if (type == 'assist') {
     let pokemonList: SimulatedPokemon[] = event.data.pokemonList;
     let basedPokemonList: SimulatedPokemon[] = event.data.basedPokemonList;
+    const fixPokemonList = basedPokemonList.filter(x => x.box?.fix == 1)
+    const kouhoPokemonList = basedPokemonList.filter(x => x.box?.fix == null)
 
     // ゆめボ/リサボ用
-    let energyTop5 = basedPokemonList.toSorted((a, b) => b.energyPerDay! - a.energyPerDay!).slice(0, 5);
+    let energyTop5 = kouhoPokemonList.toSorted((a, b) => b.energyPerDay! - a.energyPerDay!)
+      .slice(0, 5 - fixPokemonList.length).concat(fixPokemonList);
 
     // おてボ用に概算日給の高い上位5匹をリストアップしておく
-    let helpBonusTop5 = basedPokemonList.toSorted((a, b) => b.tmpScore! - a.tmpScore!).slice(0, 5);
+    let helpBonusTop5 = kouhoPokemonList.toSorted((a, b) => b.tmpScore! - a.tmpScore!)
+      .slice(0, 5 - fixPokemonList.length).concat(fixPokemonList);
 
     // きのみバースト用に1回の手伝いが多い上位5匹をリストアップしておく
-    let berryEnergyTop5 = basedPokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy).slice(0, 5)
+    let berryEnergyTop5 = kouhoPokemonList.toSorted((a, b) => b.berryEnergy - a.berryEnergy)
+      .slice(0, 5 - fixPokemonList.length).concat(fixPokemonList);
 
     // おてサポ用に1回の手伝いが多い上位6匹をリストアップしておく
-    let pickupEnergyPerHelpTop5 = basedPokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp).slice(0, 6)
+    let pickupEnergyPerHelpTop5 = kouhoPokemonList.toSorted((a, b) => b.pickupEnergyPerHelp - a.pickupEnergyPerHelp)
+      .slice(0, 6 - fixPokemonList.length).concat(fixPokemonList);
 
     // げんき回復スキルの効果を概算するため、げんき回復なしの強い上位6匹と、その6位より強い回復持ちをリストアップしておく
-    let healCheckTarget = basedPokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore! - a.tmpScore!).slice(0, 6)
-    healCheckTarget.push(...basedPokemonList.filter(x => x.healEffect != 0 && x.tmpScore! > (healCheckTarget.at(-1)?.tmpScore ?? 0)))
+    let healCheckTarget = kouhoPokemonList.filter(x => x.healEffect == 0).toSorted((a, b) => b.tmpScore! - a.tmpScore!).slice(0, 6 - fixPokemonList.length);
+    healCheckTarget.push(...kouhoPokemonList.filter(x => x.healEffect != 0 && x.tmpScore! > (healCheckTarget.at(-1)?.tmpScore ?? 0)));
+    healCheckTarget.push(...fixPokemonList);
+    healCheckTarget.sort((a, b) => b.tmpScore! - a.tmpScore!)
 
 
     // 他メンバーに影響を与える要素について計算

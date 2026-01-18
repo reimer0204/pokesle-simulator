@@ -100,7 +100,11 @@ const fieldList = computed(() => {
     }
 
     return false;
-  }) : []
+  }).map(pokemon => ({
+    ...pokemon,
+    minScore: Math.min(...pokemon.afterList.map(after => gensenMap[after]?.score ?? 0)),
+    minSpecialty: Math.min(...pokemon.afterList.map(after => gensenMap[after]?.specialty ?? 0)),
+  })) : []
 
   return [
     ...Field.list.map(x => x.name),
@@ -108,9 +112,9 @@ const fieldList = computed(() => {
   ].map(fieldName => {
     return {
       name: fieldName,
-      'うとうと': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'うとうと')).map(x => x.name),
-      'すやすや': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'すやすや')).map(x => x.name),
-      'ぐっすり': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'ぐっすり')).map(x => x.name),
+      'うとうと': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'うとうと')),
+      'すやすや': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'すやすや')),
+      'ぐっすり': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'ぐっすり')),
     }
   })
 })
@@ -206,8 +210,8 @@ const fixNum = computed(() => {
             <th>{{ field.name }}</th>
             <td v-for="type in ['うとうと', 'すやすや', 'ぐっすり']" style="vertical-align: top;">
               対象{{ field[type].length }}匹
-              <div v-for="name in field[type]" class="fs-10px">
-                {{ name }}
+              <div v-for="pokemon in field[type]" class="fs-10px text-align-right">
+                {{ pokemon.name }}({{ (pokemon.minScore * 100).toFixed(1) }}% / {{ (pokemon.minSpecialty * 100).toFixed(1) }}%)
               </div>
             </td>
             <td style="vertical-align: top;">
