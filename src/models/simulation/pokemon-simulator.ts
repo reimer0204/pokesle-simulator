@@ -1055,6 +1055,7 @@ class PokemonSimulator {
           }
 
         case 'げんきオールS':
+        case 'きのみジュース(げんきオールS)':
         case 'げんきエールS':
         case 'げんきチャージS':
         case 'つきのひかり(げんきチャージS)':

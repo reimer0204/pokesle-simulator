@@ -13,16 +13,31 @@ config.version.history = Version.HISTORY;
       もし応援していただける方がいらっしゃいましたら、作者の他の活動についてチャンネル登録やフォロー等いただけるとげんきが回復するのでよろしくお願いします🙇‍♂️<br>
       <div class="flex-row flex-wrap gap-1em mt-5px">
         <a href="https://www.youtube.com/@harezora_lueur" target="_blank">YouTube</a>
-        <a href="https://x.com/hrzr_lueur_vrc"            target="_blank">X(メイン)</a>
-        <a href="https://x.com/hiyashi_exit"              target="_blank">X(サブ1)</a>
-        <a href="https://x.com/reimer0204"                target="_blank">X(サブ2)</a>
-        <a href="https://misskey.io/@harezora_lueur"      target="_blank">misskey.io(避難用)</a>
-        
+        <a href="https://x.com/hrzr_lueur_vrc" target="_blank">X(メイン)</a>
+        <a href="https://x.com/hiyashi_exit" target="_blank">X(サブ1)</a>
+        <a href="https://x.com/reimer0204" target="_blank">X(サブ2)</a>
+        <a href="https://misskey.io/@harezora_lueur" target="_blank">misskey.io(避難用)</a>
+
       </div>
     </div>
 
     <h2 class="mt-1em">更新履歴</h2>
-    
+
+    <h3>2026/1/21</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>
+            ツボツボ追加
+            <ul>
+              <li>各種評価にきのみジュースの効果は含めていません</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
     <h3>2026/1/18</h3>
     <ul>
       <li>
@@ -33,7 +48,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2026/1/11</h3>
     <ul>
       <li>
@@ -43,7 +58,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2026/1/3</h3>
     <ul>
       <li>
@@ -53,7 +68,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2026/1/2</h3>
     <ul>
       <li>
@@ -64,7 +79,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/12/28</h3>
     <ul>
       <li>
@@ -79,7 +94,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/12/04</h3>
     <ul>
       <li>
@@ -94,7 +109,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/11/13</h3>
     <ul>
       <li>
@@ -104,7 +119,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/11/09</h3>
     <ul>
       <li>
@@ -114,7 +129,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/11/03</h3>
     <ul>
       <li>
@@ -125,7 +140,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/10/21</h3>
     <ul>
       <li>
@@ -135,7 +150,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/10/11</h3>
     <ul>
       <li>
@@ -145,7 +160,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/09/27</h3>
     <ul>
       <li>
@@ -160,7 +175,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/09/23</h3>
     <ul>
       <li>
@@ -181,7 +196,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/09/06</h3>
     <ul>
       <li>
@@ -199,7 +214,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/08/30</h3>
     <ul>
       <li>
@@ -215,7 +230,7 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/08/23</h3>
     <ul>
       <li>
@@ -235,26 +250,26 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
+
     <h3>2025/08/16</h3>
     <ul>
       <li>
         前回の修正で厳選情報生成のメモリ使用量が増大したため、速度の代わりにメモリ使用量を削減
       </li>
     </ul>
-    
+
     <h3>2025/08/16</h3>
     <ul>
       <li>げんきチャージのポケモンの厳選情報に誤差が出る問題を修正</li>
       <li>ヒーラー系のポケモンの厳選度0%付近の値がおかしくなる問題を修正</li>
     </ul>
-    
+
     <h3>2025/08/14</h3>
     <ul>
       <li>TSVインポート、スプレッドシートのインポート時にダークライが不完全なデータとして弾かれる問題を修正</li>
       <li>ポケモンの追加、編集時に追加先のNoを指定できるよう改善</li>
     </ul>
-    
+
     <h3>2025/08/12</h3>
     <ul>
       <li>新規登録時にメモが保存されない不具合を修正</li>
@@ -893,12 +908,14 @@ config.version.history = Version.HISTORY;
       margin-top: 1em;
     }
   }
+
   h3 {
     font-size: 18px;
     line-height: 1.4;
     margin: 0.5em 0 0.25em 0;
     border-bottom: 2px #CCC solid;
   }
+
   p {
     padding: 5px 0;
   }

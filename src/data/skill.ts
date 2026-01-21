@@ -104,6 +104,12 @@ class Skill {
       team: true,
       genki: true,
     },
+    {
+      name: 'きのみジュース(げんきオールS)',
+      effect: [5.0, 7.0,	9.0,	11.4,	15.0, 18.1].map(x => ({ other: x })),
+      team: true,
+      genki: true,
+    },
     { name: '食材ゲットS',                   effect: [  6.0,    8.0,	  11.0,	  14.0,	  17.0,   21.0,   24.0] },
     {
       name: 'プラス(食材ゲットS)',
