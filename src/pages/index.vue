@@ -72,6 +72,8 @@ const filteredPokemonList = computed(() => {
       let or = false;
       if(x.box?.name?.includes(keyword)) or = true;
       if(x.box?.memo?.includes(keyword)) or = true;
+      if(x.base.type?.includes(keyword)) or = true;
+      if(x.base.berry?.name.includes(keyword)) or = true;
       if(x.base.afterList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
       if(x.box?.foodList.map(f1 => String.fromCharCode(x.base?.foodList.findIndex(f2 => f2?.name == f1) + 65))?.join('')?.includes(keyword)) or = true;

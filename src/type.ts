@@ -38,6 +38,10 @@ interface FoodType {
   bestTypeRate?: { [key: string]: number };
   bestRate: number;
   bestCooking: Cooking;
+  maxEnergy_カレー: number;
+  maxEnergy_サラダ: number;
+  maxEnergy_デザート: number;
+  maxEnergy: number;
 }
 
 interface BerryType {
@@ -258,6 +262,7 @@ interface SimulatedPokemon extends FoodNames {
 
   tmpScore?: number;
   score: number;
+  foodCombination?: string;
 }
 
 interface SimulatedFood {

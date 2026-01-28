@@ -265,17 +265,36 @@ const defaultConfig = {
   },
 
   summary: {
-    field: {
-      shinkago: false,
-      ...Object.fromEntries(['きのみ', '食材', 'スキル'].map(key => [key, {
-        lv: 'max',
-        score: null,
-        specialty: null,
-        aaa: true, aab: true, aac: true,
-        aba: true, abb: true, abc: true,
-      }])),
-      pokemon: Object.fromEntries(Pokemon.list.map(x => [x.name, null])),
-    }
+    checklist: {
+      pokemonCondition: {
+        list: [
+          { type: 1, target: 'きのみ', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
+          { type: 1, target: '食材', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
+          { type: 1, target: 'スキル', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
+        ],
+        selectType: 0,
+        selectLv: 'max',
+        selectBorder: 90,
+        disablePokemonMap: Object.fromEntries(Pokemon.list.map(x => [x.name, false]))
+      },
+      food: {
+        enableMap: Object.fromEntries(Food.list.map(x => [x.name, true])),
+        borderType: 0,
+        borderLv: null,
+        borderValue: 70,
+        targetValue: 85,
+      },
+      skill: {
+        enableMap: Object.fromEntries(Skill.list.map(x => [x.name, true])),
+        borderLv: null,
+        borderValue: 75,
+        targetValue: 85,
+      },
+      field: {
+        shinkago: false,
+        bakecchaMatome: true,
+      }
+    },
   }
 }
 

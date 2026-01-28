@@ -222,7 +222,7 @@ watch(() => assist.name, inferName)
 
 // 厳選情報
 let selectResult = ref(null);
-let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort()];
+let selectLvList = ['max', ...Object.entries(config.selectEvaluate.levelList).flatMap(([lv, v]) => v ? [lv] : []).sort((a, b) => a - b)];
 
 async function calcSelectScore() {
   await boxLoading;

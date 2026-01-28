@@ -331,5 +331,8 @@ for(let type of ['カレー', 'サラダ', 'デザート']) {
     food[`maxEnergy_${type}`] = food.energy * food.bestTypeRate[type] * Cooking.maxRecipeBonus;
   }
 }
+for(let food of Food.list) {
+  food.maxEnergy = Math.max(food.maxEnergy_カレー, food.maxEnergy_サラダ, food.maxEnergy_デザート);
+}
 
 export { Cooking, Food };

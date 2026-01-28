@@ -2,11 +2,11 @@
   <div class="page">
 
     <div class="tab-list mb-10px">
-      <router-link to="/box-summary">ポケモン</router-link>
+      <router-link to="/box-summary">厳選チェックリスト</router-link>
+      <router-link to="/box-summary/pokemon">ポケモン</router-link>
       <router-link to="/box-summary/berry">きのみ</router-link>
       <router-link to="/box-summary/food">食材</router-link>
       <router-link to="/box-summary/skill">スキル</router-link>
-      <router-link to="/box-summary/field">フィールド別</router-link>
     </div>
 
     <router-view />

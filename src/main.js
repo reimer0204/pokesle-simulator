@@ -25,10 +25,10 @@ import SimulationPage from './pages/simulation.vue'
 import FoodPreparePage from './pages/food_prepare.vue'
 import BoxSummaryPage from './pages/box-summary.vue'
 import BoxSummaryIndexPage from './pages/box-summary/index.vue'
+import BoxSummaryPokemonPage from './pages/box-summary/pokemon.vue'
 import BoxSummaryBerryPage from './pages/box-summary/berry.vue'
 import BoxSummaryFoodPage from './pages/box-summary/food.vue'
 import BoxSummarySkillPage from './pages/box-summary/skill.vue'
-import BoxSummaryFieldPage from './pages/box-summary/field.vue'
 import DataPage from './pages/data.vue'
 import DataFoodPage from './pages/data/food.vue'
 import DataCookingPage from './pages/data/cooking.vue'
@@ -51,10 +51,10 @@ const router = createRouter({
     { path: '/box-summary', component: BoxSummaryPage,
       children: [
         { path: '', component: BoxSummaryIndexPage },
+        { path: 'pokemon', component: BoxSummaryPokemonPage },
         { path: 'berry', component: BoxSummaryBerryPage },
         { path: 'food', component: BoxSummaryFoodPage },
         { path: 'skill', component: BoxSummarySkillPage },
-        { path: 'field', component: BoxSummaryFieldPage },
       ]
     },
     { path: '/data', component: DataPage,

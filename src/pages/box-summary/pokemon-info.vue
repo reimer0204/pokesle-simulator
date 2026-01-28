@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import NatureInfo from '@/components/status/nature-info.vue';
 import { Food } from '@/data/food_and_cooking';
+import Nature from '@/data/nature';
 
 const props = defineProps({
-  pokemon: {}
+  pokemon: {},
+  nature: { type: Boolean, default: false },
 })
 
 </script>
@@ -27,6 +30,7 @@ const props = defineProps({
       </div>
     </div>
     <SubSkillLabelList class="sub-skill-list" :pokemon="props.pokemon" />
+    <NatureInfo v-if="props.nature && props.pokemon" :nature="props.pokemon.nature" />
   </div>
 </template>
 
