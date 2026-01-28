@@ -368,7 +368,6 @@ const checklist = computed(() => {
   }
 
   if (list.value == 1) {
-    console.log(foodCheckList.value)
     return foodCheckList.value;
   }
 
