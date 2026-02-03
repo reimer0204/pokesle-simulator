@@ -19,7 +19,6 @@ function exportList() {
 
     if(config.pokemonBox.tsv.name) arr[config.pokemonBox.tsv.name - 1] = pokemon.name;
     if(config.pokemonBox.tsv.lv) arr[config.pokemonBox.tsv.lv - 1] = pokemon.lv;
-    if(config.pokemonBox.tsv.bag) arr[config.pokemonBox.tsv.bag - 1] = pokemon.bag;
     if(config.pokemonBox.tsv.skillLv) arr[config.pokemonBox.tsv.skillLv - 1] = pokemon.skillLv;
     if(config.pokemonBox.tsv.foodABC) {
       arr[config.pokemonBox.tsv.foodABC - 1] = pokemon.foodList
@@ -63,7 +62,6 @@ function importList() {
     <SettingList class="mt-10px">
       <div><label>名前</label><input type="number" v-model="config.pokemonBox.tsv.name" placeholder="なし"></div>
       <div><label>Lv</label><input type="number" v-model="config.pokemonBox.tsv.lv" placeholder="なし"></div>
-      <div><label>所持数</label><input type="number" v-model="config.pokemonBox.tsv.bag" placeholder="なし"></div>
       <div><label>スキルLv</label><input type="number" v-model="config.pokemonBox.tsv.skillLv" placeholder="なし"></div>
       <div><label>食材ABC</label><input type="number" v-model="config.pokemonBox.tsv.foodABC" placeholder="なし"></div>
       <div><label>食材1</label><input type="number" v-model="config.pokemonBox.tsv.foodList[0]" placeholder="なし"></div>

@@ -78,7 +78,6 @@ interface SubSkillType {
 interface PokemonBoxType {
   name: string;
   lv: number;
-  bag?: number;
   skillLv?: number;
   foodList: [string, string, string];
   subSkillList: [string, string, string, string, string];

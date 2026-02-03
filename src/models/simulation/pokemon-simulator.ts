@@ -481,12 +481,10 @@ class PokemonSimulator {
 
 
     // 最大所持数計算
-    pokemon.bag = pokemon.box?.bag ?? (
-      pokemon.base.bag + (pokemon.base.evolveLv - 1) * 5
+    pokemon.bag = pokemon.base.bag
       + (pokemon.subSkillNameList.includes('最大所持数アップS') ? 6 : 0)
       + (pokemon.subSkillNameList.includes('最大所持数アップM') ? 12 : 0)
-      + (pokemon.subSkillNameList.includes('最大所持数アップL') ? 18 : 0)
-    );
+      + (pokemon.subSkillNameList.includes('最大所持数アップL') ? 18 : 0);
     if (pokemon.sleepTime >=  200) pokemon.bag += 1;
     if (pokemon.sleepTime >=  500) pokemon.bag += 2;
     if (pokemon.sleepTime >= 1000) pokemon.bag += 3;

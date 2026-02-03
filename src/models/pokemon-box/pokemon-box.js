@@ -50,7 +50,6 @@ class PokemonBox {
     if (Nature.map[pokemon.nature] == null) throw '知らないせいかく';
 
     pokemon = JSON.parse(JSON.stringify(pokemon));
-    pokemon.bag = Number(pokemon.bag) || null
     pokemon.skillLv = Number(pokemon.skillLv) || null
 
     let newIndex = index ?? this._list.length;
@@ -61,7 +60,6 @@ class PokemonBox {
       pokemon = {
         name: pokemon.name,
         lv: pokemon.lv,
-        bag: pokemon.bag,
         skillLv: pokemon.skillLv,
         foodList: pokemon.foodList,
         subSkillList: pokemon.subSkillList,
@@ -114,7 +112,6 @@ class PokemonBox {
       let boxPokemon = {
         name: cells[config.pokemonBox.tsv.name],
         lv: Number(cells[config.pokemonBox.tsv.lv]),
-        bag: Number(cells[config.pokemonBox.tsv.bag]) || null,
         skillLv: Number(cells[config.pokemonBox.tsv.skillLv]) || null,
         subSkillList: [
           cells[config.pokemonBox.tsv.subSkillList[0]],
@@ -174,7 +171,7 @@ class PokemonBox {
             ...this.list.map(pokemon => [
               pokemon.name,
               pokemon.lv,
-              pokemon.bag,
+              null, // 所持数を出力していたが削除したため欠番
               pokemon.skillLv,
               ...[...pokemon.foodList, '', '', ''].slice(0, 3),
               ...[...pokemon.subSkillList, '', '', '', '', ''].slice(0, 5),
@@ -211,7 +208,7 @@ class PokemonBox {
       let boxPokemon = {
         name: row[0],
         lv: Number(row[1]),
-        bag: Number(row[2]) || null,
+        // bag: Number(row[2]) || null, // 所持数を出力していたが削除したため欠番
         skillLv: Number(row[3]) || null,
         foodList:  [
           row[4],

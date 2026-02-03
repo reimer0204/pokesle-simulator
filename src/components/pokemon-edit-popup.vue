@@ -60,7 +60,6 @@ const natureInput = ref(null);
 let pokemon = reactive({
   name: null,
   lv: null,
-  bag: null,
   skillLv: null,
   foodList: [null, null, null],
   subSkillList: [null, null, null, null, null],
@@ -80,7 +79,6 @@ const kaihouPokemon = computed(() => {
 let assist = reactive({
   name: null,
   lv: null,
-  bag: null,
   skillLv: null,
   foodABC: null,
   subSkillList: [null, null, null, null, null],
@@ -97,7 +95,6 @@ if (props.index != null) {
 
   assist.name = pokemon.name;
   assist.lv = pokemon.lv;
-  assist.bag = pokemon.bag;
   assist.skillLv = pokemon.skillLv;
   assist.foodABC = pokemonFoodABC.value;
   assist.subSkillList = [...pokemon.subSkillList]
@@ -401,7 +398,6 @@ onMounted(() => {
 function reset() {
   pokemon.name = null;
   pokemon.lv = null;
-  pokemon.bag = null;
   pokemon.skillLv = null;
   pokemon.foodList = ['', '', ''];
   pokemon.subSkillList = [null, null, null, null, null];
@@ -411,7 +407,6 @@ function reset() {
 
   assist.name = '';
   assist.lv = null;
-  assist.bag = null;
   assist.skillLv = null;
   assist.foodABC = '';
   assist.subSkillList = ['', '', '', '', ''];
@@ -564,11 +559,6 @@ function moveFocus(event) {
       <select v-model="pokemon.nature">
         <option v-for="nature in Nature.list" :value="nature.name">{{ nature.name }}</option>
       </select>
-
-      <div>所持数</div>
-      <div></div>
-      <!-- <input type="number" ref="bagInput" v-model="pokemon.bag" @keypress.enter="skillLvInput.focus()"/> -->
-      <input type="number" v-model="pokemon.bag" :placeholder="basePokemon ? (basePokemon.bag + (basePokemon.evolveLv - 1) * 5) : '省略可'"/>
 
       <div>スキルLv</div>
       <div></div>

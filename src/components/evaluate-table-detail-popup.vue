@@ -327,7 +327,6 @@ const specialtyEvaluateGraph = computed(() => {
             <th>所持数</th>
             <td>
               {{ evaluateResult.base.bag }}<br>
-              <template v-if="evaluateResult.base.evolveLv > 1">+ 5 × {{ evaluateResult.base.evolveLv - 1 }} ※進化回数分<br></template>
               <template v-if="evaluateResult.subSkillNameList.includes('最大所持数アップS')">+ 6 ※最大所持数アップS<br></template>
               <template v-if="evaluateResult.subSkillNameList.includes('最大所持数アップM')">+ 12 ※最大所持数アップM<br></template>
               <template v-if="evaluateResult.subSkillNameList.includes('最大所持数アップL')">+ 18 ※最大所持数アップL<br></template>
