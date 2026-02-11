@@ -20,6 +20,8 @@ import Skill from '@/data/skill.ts';
 import SettingList from '@/components/util/setting-list.vue';
 import type { SimulatedPokemon } from '@/type.ts';
 import Field from '@/data/field.ts';
+import TablePopup from '@/components/table-popup.vue';
+import Popup from '@/models/popup/popup.ts';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 
@@ -152,6 +154,15 @@ const pokemonCheckList = computed(() => {
           target: [(item.energyBorder != null ? `総合${item.energyBorder}%以上` : null), (item.specialtyBorder != null ? `とくい${item.specialtyBorder}%以上` : null)].join('\n'),
           energyScore: hitPokemon?.evaluateResult[config.summary.checklist.pokemonCondition.selectLv][pokemon.name].energy.score,
           specialtyScore: hitPokemon?.evaluateResult[config.summary.checklist.pokemonCondition.selectLv][pokemon.name].specialty.score,
+          table: {
+            title: pokemon.name,
+            dataList: hitPokemonList,
+            columnList: [
+              { key: 'energyScore', name: '総合厳選度', percent: true, convert: x => x.pokemon.evaluateResult[config.summary.checklist.pokemonCondition.selectLv][pokemon.name].energy.score },
+              { key: 'specialtyScore', name: 'とくい厳選度', percent: true, convert: x => x.pokemon.evaluateResult[config.summary.checklist.pokemonCondition.selectLv][pokemon.name].specialty.score },
+              { key: 'pokemon', name: 'ポケモン' },
+            ],
+          },
         })
       }
     }
@@ -170,6 +181,7 @@ const pokemonCheckList = computed(() => {
       { key: 'energyScore', name: '総合厳選度', percent: true },
       { key: 'specialtyScore', name: 'とくい厳選度', percent: true },
       { key: 'pokemon', name: 'ポケモン' },
+      { key: 'table', name: 'ボックス' },
     ],
     targetPokemonList: result.filter(x => !x.checked).map(x => x.name),
   }
@@ -180,24 +192,28 @@ const foodCheckList = computed(() => {
 
   // 事前整理
   const foodScorePokemonMap: Record<string, any[]> = {};
+  const targetLvList = lvList.filter(x => x <= config.summary.checklist.food.borderLv);
   for(const simulatedPokemon of simulatedPokemonList.value) {
-    for(let [name, { food }] of Object.entries(simulatedPokemon.evaluateResult[config.summary.checklist.food.borderLv] ?? {})) {
-      if (Pokemon.map[name]) {
-        const foodNumMap = {};
-        let totalNum = 0;
-        simulatedPokemon.box?.foodList.forEach((name, index) => {
-          const num = simulatedPokemon.base.foodList.find(x => x.name == name)?.numList[index] ?? 0;
-          foodNumMap[name] = (foodNumMap[name] ?? 0) + num;
-          totalNum += num;
-        })
-
-        for(const key in foodNumMap) {
-          const score = foodNumMap[key] / totalNum * food.value;
-          if (foodScorePokemonMap[key] == null) foodScorePokemonMap[key] = [];
-          foodScorePokemonMap[key].push({
-            score,
-            pokemon: simulatedPokemon,
+    for(const lv of targetLvList) {
+      for(let [name, { food }] of Object.entries(simulatedPokemon.evaluateResult[lv] ?? {})) {
+        if (Pokemon.map[name]) {
+          const foodNumMap = {};
+          let totalNum = 0;
+          simulatedPokemon.box?.foodList.forEach((name, index) => {
+            const num = simulatedPokemon.base.foodList.find(x => x.name == name)?.numList[index] ?? 0;
+            foodNumMap[name] = (foodNumMap[name] ?? 0) + num;
+            totalNum += num;
           })
+
+          for(const key in foodNumMap) {
+            const score = foodNumMap[key] / totalNum * food.value;
+            if (foodScorePokemonMap[key] == null) foodScorePokemonMap[key] = [];
+            foodScorePokemonMap[key].push({
+              score,
+              lv,
+              pokemon: simulatedPokemon,
+            })
+          }
         }
       }
     }
@@ -253,11 +269,22 @@ const foodCheckList = computed(() => {
         maxNum: maxNum * 3,
         border,
         score: hitPokemon?.score,
+        lv: hitPokemon?.lv,
+        borderLv: config.summary.checklist.food.borderLv,
         checked,
         pokemon: hitPokemon?.pokemon,
         rate: hitPokemon?.score / bestFoodScore,
         note: targetPokemonList.map(x => `${x.pokemon.name}${x.foodCombination.split('').map(x => String.fromCharCode(Number(x) + 65)).join('')} (${x.score.toFixed(1)})`).join('\n'),
         targetPokemonList,
+        table: {
+          title: food.name,
+          dataList: foodScorePokemonMap[food.name],
+          columnList: [
+            { key: 'score', name: '個数', type: Number, fixed: 1 },
+            { key: 'lv', name: 'レベル', type: String },
+            { key: 'pokemon', name: 'ポケモン' },
+          ],
+        },
       })
     }
   }
@@ -271,9 +298,10 @@ const foodCheckList = computed(() => {
       { key: 'border', name: '基準値', type: Number, fixed: 1 },
       { key: 'note', name: '対象ポケモン＋理論値' },
       { key: 'checked', name: '厳選済', type: String, convert: x => x.checked ? '済' : '' },
-      { key: 'score', name: '最良個数', type: Number, fixed: 1 },
+      { key: 'score', name: '最良個数', type: Number, template: 'score', fixed: 1 },
       { key: 'rate', name: '最良個数/最大値', percent: true },
       { key: 'pokemon', name: '最良ポケモン' },
+      { key: 'table', name: 'ボックス' },
     ],
     targetPokemonList: result.filter(x => !x.checked).flatMap(x => x.targetPokemonList).map(x => x.pokemon.name),
   }
@@ -284,16 +312,20 @@ const skillCheckList = computed(() => {
 
   // 事前整理
   const skillScorePokemonMap: Record<string, any[]> = {};
+  const targetLvList = lvList.filter(x => x <= config.summary.checklist.skill.borderLv);
   for(const simulatedPokemon of simulatedPokemonList.value) {
-    for(let [name, { skill }] of Object.entries(simulatedPokemon.evaluateResult[config.summary.checklist.skill.borderLv] ?? {})) {
-      if (Pokemon.map[name]) {
-        const skillName = Pokemon.map[name].skill.name;
-        const score = skill.value;
-        if (skillScorePokemonMap[skillName] == null) skillScorePokemonMap[skillName] = [];
-        skillScorePokemonMap[skillName].push({
-          score,
-          pokemon: simulatedPokemon,
-        })
+    for(const lv of targetLvList) {
+      for(let [name, { skill }] of Object.entries(simulatedPokemon.evaluateResult[lv] ?? {})) {
+        if (Pokemon.map[name]) {
+          const skillName = Pokemon.map[name].skill.name;
+          const score = skill.value;
+          if (skillScorePokemonMap[skillName] == null) skillScorePokemonMap[skillName] = [];
+          skillScorePokemonMap[skillName].push({
+            score,
+            lv,
+            pokemon: simulatedPokemon,
+          })
+        }
       }
     }
   };
@@ -337,11 +369,22 @@ const skillCheckList = computed(() => {
         bestSkillScore,
         border,
         score: hitPokemon?.score,
+        lv: hitPokemon?.lv,
+        borderLv: config.summary.checklist.skill.borderLv,
         checked,
         pokemon: hitPokemon?.pokemon,
         rate: hitPokemon?.score / bestSkillScore,
         note: targetPokemonList.map(x => `${x.pokemon.name} (${x.score.toFixed(1)})`).join('\n'),
         targetPokemonList,
+        table: {
+          title: skill.name,
+          dataList: skillScorePokemonMap[skill.name],
+          columnList: [
+            { key: 'score', name: '回数', type: Number, fixed: 1 },
+            { key: 'lv', name: 'レベル', type: String },
+            { key: 'pokemon', name: 'ポケモン' },
+          ],
+        },
       })
     }
   }
@@ -357,6 +400,7 @@ const skillCheckList = computed(() => {
       { key: 'score', name: '最良回数', type: Number, fixed: 1 },
       { key: 'rate', name: '最良回数/最大値', percent: true },
       { key: 'pokemon', name: '最良ポケモン' },
+      { key: 'table', name: 'ボックス' },
     ],
     targetPokemonList: result.filter(x => !x.checked).flatMap(x => x.targetPokemonList).map(x => x.pokemon.name),
   }
@@ -438,6 +482,10 @@ const fieldList = computed(() => {
   }
 })
 
+function openBoxList(data: any) {
+  Popup.show(TablePopup, data.table);
+}
+
 </script>
 
 <template>
@@ -517,9 +565,17 @@ const fieldList = computed(() => {
                   <InputNumber class="w-50px" v-model="item.specialtyBorder" /> %以上
                 </td>
                 <td>
-                  <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.splice(index, 1)">
-                    <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
-                  </svg>
+                  <div class="flex-row-start-center gap-5px">
+                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index - 1)">
+                      <path d="M0,70 L50,20 L100,70z" fill="#888" />
+                    </svg>
+                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index + 1)">
+                      <path d="M0,30 L50,80 L100,30z" fill="#888" />
+                    </svg>
+                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.splice(index, 1)">
+                      <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
+                    </svg>
+                  </div>
                 </td>
               </tr>
 
@@ -693,6 +749,15 @@ const fieldList = computed(() => {
             </template>
             <template #skillBorder="{ data, value }">
               {{ data.bestSkillScore.toFixed(1) }} ✕ {{ config.summary.checklist.skill.borderValue }}% = {{ (data.bestSkillScore * (config.summary.checklist.skill.borderValue / 100)).toFixed(1) }}
+            </template>
+            <template #score="{ data, value }">
+              <div class="flex-column-center-end">
+                {{ data.score.toFixed(1) }}
+                <div v-if="data.lv != data.borderLv">({{ data.lv }}止め)</div>
+              </div>
+            </template>
+            <template #table="{ data, value }">
+              <div @click="openBoxList(data)" class="link">ボックス確認</div>
             </template>
           </SortableTable>
         </template>

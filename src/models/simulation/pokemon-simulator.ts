@@ -9,7 +9,7 @@ import Field from '../../data/field.ts';
 import Berry from '../../data/berry';
 import SubSkill from '../../data/sub-skill';
 import ProbBorder from '../utils/prob-border';
-import type { CookingType, NatureType, PokemonBoxType, PokemonType, SimulatedPokemon, SkillType, SubSkillType } from '../../type';
+import type { CookingType, FoodType, NatureType, PokemonBoxType, PokemonType, SimulatedPokemon, SkillType, SubSkillType } from '../../type';
 
 const GENKI_EFFECT = [0, 0.45, 0.52, 0.62, 0.71, 1.00];
 
@@ -629,18 +629,28 @@ class PokemonSimulator {
         pokemon.skillWeightList = [];
         for(let subPokemon of pokemonList) {
           if (pokemon != subPokemon) {
-            let list: { skill: SkillType, weight: number }[];
-            if (subPokemon.base.skill.name == 'へんしん(スキルコピー)' || subPokemon.base.skill.name == 'ものまね(スキルコピー)') {
-              list = [{ skill: Skill.map['エナジーチャージS'], weight: 1 }]
+            if (subPokemon.base.skill.name == '食材セレクトS') {
+              // 食材セレクトはコピー先の食材を設定しておく
+              pokemon.skillWeightList.push({
+                skill: subPokemon.base.skill,
+                weight: 1 / 4,
+                option: subPokemon.base.foodList.map(x => Food.map[x.name])
+              })
+              
             } else {
-              list = subPokemon.skillWeightList
-            }
-            for(let { skill, weight } of list) {
-              const skillWeight = pokemon.skillWeightList.find(x => x.skill == skill)
-              if (skillWeight === undefined) {
-                pokemon.skillWeightList.push({ skill, weight: weight / 4 })
+              let list: { skill: SkillType, weight: number }[];
+              if (subPokemon.base.skill.name == 'へんしん(スキルコピー)' || subPokemon.base.skill.name == 'ものまね(スキルコピー)') {
+                list = [{ skill: Skill.map['エナジーチャージS'], weight: 1 }]
               } else {
-                skillWeight.weight += weight / 4;
+                list = subPokemon.skillWeightList
+              }
+              for(let { skill, weight } of list) {
+                const skillWeight = pokemon.skillWeightList.find(x => x.skill == skill)
+                if (skillWeight === undefined) {
+                  pokemon.skillWeightList.push({ skill, weight: weight / 4 })
+                } else {
+                  skillWeight.weight += weight / 4;
+                }
               }
             }
           }
@@ -809,7 +819,7 @@ class PokemonSimulator {
 
     let totalCookingPowerUpEffect = 0;
     
-    for(let { skill, weight, skillLv } of pokemon.skillWeightList) {
+    for(let { skill, weight, skillLv, option } of pokemon.skillWeightList) {
       if (skillLv == null) {
         skillLv = (skill.effect.length >= pokemon.fixedSkillLv ? pokemon.fixedSkillLv : skill.effect.length) - 1;
       } else {
@@ -959,7 +969,7 @@ class PokemonSimulator {
             pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
           }
 
-          const foodList = skill.foodList ?? pokemon.base.foodList.map(x => Food.map[x.name])
+          const foodList: FoodType[] = option ?? skill.foodList ?? pokemon.base.foodList.map(x => Food.map[x.name])
 
           if (this.mode == PokemonSimulator.MODE_SELECT) {
             energyPerSkill = foodList.reduce((a, food) =>

@@ -1,6 +1,6 @@
 import type { Cooking } from "./data/food_and_cooking";
 
-type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー' | 'ずっしりカボチャ'
+type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー' | 'ずっしりカボチャ' | 'つやつやアボカド'
 
 interface CookingType {
   name: string;
@@ -79,7 +79,7 @@ interface PokemonBoxType {
   name: string;
   lv: number;
   skillLv?: number;
-  foodList: [string, string, string];
+  foodList: [FoodName, FoodName, FoodName];
   subSkillList: [string, string, string, string, string];
   nature: string,
   shiny?: boolean,
@@ -107,7 +107,7 @@ interface PokemonType {
   legend: boolean,
   kaihou: boolean,
   foodList: {
-    name: string;
+    name: FoodName;
     numList: (number | null)[];
   }[],
   foodRate: number;
@@ -193,7 +193,7 @@ interface SimulatedPokemon extends FoodNames {
   subSkillNameList: string[];
   nextSubSkillList?: boolean[];
   nature: NatureType;
-  skillWeightList: { skill: SkillType, weight: number, skillLv?: number }[];
+  skillWeightList: { skill: SkillType, weight: number, skillLv?: number, option?: any }[];
   selfHealList: { effect: number, time: number, night?: boolean }[],
   otherHealList: { effect: number, time: number, night?: boolean }[],
   

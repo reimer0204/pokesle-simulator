@@ -126,6 +126,7 @@ class Cooking {
     {type: 'デザート', name: 'かたやぶりコーンティラミス', energy: 7125, foodList: [{name: 'モーモーミルク', num: 12},{name: 'ワカクサコーン', num: 14},{name: 'めざましコーヒー', num: 14},]},
     {type: 'デザート', name: 'ドキドキこわいかおパンケーキ', energy: 24354, foodList: [{name: 'ずっしりカボチャ', num: 18},{name: 'とくせんエッグ', num: 24},{name: 'あまいミツ', num: 32},{name: 'あんみんトマト', num: 29},]},
     {type: 'デザート', name: 'グラスミキサースムージー', energy: 8165, foodList: [{name: 'つやつやアボカド', num: 18},{name: 'あんみんトマト', num: 16},{name: 'モーモーミルク', num: 14},]},
+    {type: 'デザート', name: 'みつあつめチョコワッフル', energy: 25484, foodList: [{name: 'あまいミツ', num: 38},{name: 'ワカクサコーン', num: 28},{name: 'ピュアなオイル', num: 28},{name: 'リラックスカカオ', num: 21},]},
   ].map(x => ({
     ...x,
   } as CookingType));
