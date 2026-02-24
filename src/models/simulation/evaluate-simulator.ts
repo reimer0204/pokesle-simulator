@@ -97,6 +97,7 @@ self.addEventListener('message', async (event: {
             scoreForHealerEvaluate, scoreForSupportEvaluate, 
             // timeCounter
           );
+          let [food1, food2, food3] = pokemon.foodNameList.map(x => eachResult[x] ?? 0);
 
           if (isNaN(eachResult.energyPerDay)) {
             console.log(eachResult);
@@ -111,6 +112,9 @@ self.addEventListener('message', async (event: {
               eachResult.berryNumPerDay,
               eachResult.foodNumPerDay,
               eachResult.skillPerDay,
+              food1,
+              food2,
+              food3,
               score / eachResult.averageHelpRate, // baseScore
               eachResult.pickupEnergyPerHelp, // pickupEnergyPerHelp
               weight.ids.map(id => SubSkill.idMap[id].name), // subSkillList
@@ -135,18 +139,21 @@ self.addEventListener('message', async (event: {
         berry: [],
         food: [],
         skill: [],
+        food1: [],
+        food2: [],
+        food3: [],
         baseScore: null,
         pickupEnergyPerHelp: null,
       };
-      for(const [index, key] of ['energy', 'berry', 'food', 'skill'].entries()) {
+      for(const [index, key] of ['energy', 'berry', 'food', 'skill', 'food1', 'food2', 'food3'].entries()) {
         scoreList.sort((a, b) => a[index] - b[index])
 
         let weightSum = 0;
         let nextIndex = 0;
         for(let i = 0; i < scoreList.length; i++) {
-          let [energy, berry, food, skill, baseScore, pickupEnergyPerHelp, subSkillList, nature, weight] = scoreList[i];
+          let [energy, berry, food, skill, food1, food2, food3, baseScore, pickupEnergyPerHelp, subSkillList, nature, weight] = scoreList[i];
 
-          let tmp = { energy, berry, food, skill }
+          let tmp = { energy, berry, food, skill, food1, food2, food3 }
           let nextWeightSum = weightSum + weight
           while (weightSum <= nextIndex && nextIndex < nextWeightSum && percentile[key].length <= 100) {
             if (index == 0 && percentile[key].length == config.selectEvaluate.supportBorder) {

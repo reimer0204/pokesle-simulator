@@ -206,7 +206,7 @@ const defaultConfig = {
         foodEnergyRate: 80,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
         foodGetRate: 30,        // 食材ゲットの評価レート
         skillLv: {
-          ...Object.fromEntries(Skill.list.map(x => [x.name, { type: 1, lv: 1 }])),
+          ...Object.fromEntries(Skill.list.map(x => [x.name, { type: x.name.includes('食材セレクト') ? 2 : 1, lv: 1 }])),
         },
       },
       'スキル': {

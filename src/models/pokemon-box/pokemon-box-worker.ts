@@ -139,6 +139,7 @@ addEventListener('message', async (event) => {
                     evaluateResult[lv][after][evaluateKey].pureMint = item
                   }
                 }
+                evaluateResult[lv][after].foodNumList = afterPokemon.foodList.map(f => simulatedPokemon[f.name]);
                 
                 if (evaluateType == null) {
                   if (afterPokemon.specialty == 'きのみ') evaluateResult[lv][after].specialty = evaluateResult[lv][after].berry;

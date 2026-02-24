@@ -79,6 +79,9 @@ export default class EvaluateTable {
               berry: record.berry,
               food: record.food,
               skill: record.skill,
+              food1: record.food1,
+              food2: record.food2,
+              food3: record.food3,
             }
           }
           resolve(result);
@@ -195,6 +198,9 @@ export default class EvaluateTable {
             berry: pokemonResult.berry.map(x => x.score),
             food: pokemonResult.food.map(x => x.score),
             skill: pokemonResult.skill.map(x => x.score),
+            food1: pokemonResult.food1.at(-1)?.score,
+            food2: pokemonResult.food2.at(-1)?.score,
+            food3: pokemonResult.food3.at(-1)?.score,
           })
         }
       }

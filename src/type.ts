@@ -100,7 +100,7 @@ interface PokemonType {
   type: string;
   evolveLv: number;
   remainEvolveLv: number;
-  foodNameList: string[];
+  foodNameList: FoodName[];
   bag: number;
   help: number;
   exp: number;
@@ -164,10 +164,11 @@ interface EvaluateResult {
       food: EvaluateResultInfo,
       skill: EvaluateResultInfo,
       specialty: EvaluateResultInfo,
+      foodNumList: number[],
     }
   }
 };
-type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty'
+type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty' | 'foodNumList'
 
 interface SimulatedPokemon extends FoodNames {
   box?: PokemonBoxType;

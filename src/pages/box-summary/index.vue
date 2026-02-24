@@ -18,7 +18,7 @@ import PokemonSimulator from '@/models/simulation/pokemon-simulator.ts';
 import DesignTable from '@/components/design-table.vue';
 import Skill from '@/data/skill.ts';
 import SettingList from '@/components/util/setting-list.vue';
-import type { SimulatedPokemon } from '@/type.ts';
+import type { FoodName, SimulatedPokemon } from '@/type.ts';
 import Field from '@/data/field.ts';
 import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';
@@ -195,25 +195,20 @@ const foodCheckList = computed(() => {
   const targetLvList = lvList.filter(x => x <= config.summary.checklist.food.borderLv);
   for(const simulatedPokemon of simulatedPokemonList.value) {
     for(const lv of targetLvList) {
-      for(let [name, { food }] of Object.entries(simulatedPokemon.evaluateResult[lv] ?? {})) {
+      for(let [name, { food, foodNumList }] of Object.entries(simulatedPokemon.evaluateResult[lv] ?? {})) {
         if (Pokemon.map[name]) {
-          const foodNumMap = {};
-          let totalNum = 0;
-          simulatedPokemon.box?.foodList.forEach((name, index) => {
-            const num = simulatedPokemon.base.foodList.find(x => x.name == name)?.numList[index] ?? 0;
-            foodNumMap[name] = (foodNumMap[name] ?? 0) + num;
-            totalNum += num;
-          })
-
-          for(const key in foodNumMap) {
-            const score = foodNumMap[key] / totalNum * food.value;
-            if (foodScorePokemonMap[key] == null) foodScorePokemonMap[key] = [];
-            foodScorePokemonMap[key].push({
+          Pokemon.map[name].foodList.forEach((food, index) => {
+            if (foodNumList[index] == null) return;
+            
+            const score = foodNumList[index];
+            if (score == null || score == 0) return;
+            if (foodScorePokemonMap[food.name] == null) foodScorePokemonMap[food.name] = [];
+            foodScorePokemonMap[food.name].push({
               score,
               lv,
               pokemon: simulatedPokemon,
             })
-          }
+          });
         }
       }
     }
@@ -222,25 +217,20 @@ const foodCheckList = computed(() => {
   const bestFoodScoreMap: Record<string, any[]> = {};
   for(let [name, lvMap] of Object.entries(promisedEvaluateTable.value)) {
     const pokemon = Pokemon.map[name];
-    for(let [foodCombination, { food }] of Object.entries(lvMap[config.summary.checklist.food.borderLv] ?? {})) {
+    if (pokemon == null) continue;
+    for(let [foodCombination, { food1, food2, food3 }] of Object.entries(lvMap[config.summary.checklist.food.borderLv] ?? {})) {
 
-      const foodNumMap = {};
-      let totalNum = 0;
-      foodCombination.split('').forEach((abc, index) => {
-        const food = pokemon.foodList[Number(abc)];
-        foodNumMap[food.name] = (foodNumMap[food.name] ?? 0) + food.numList[index];
-        totalNum += food.numList[index];
-      })
+      pokemon.foodList.forEach((food, index) => {
+        const score = index == 0 ? food1 : index == 1 ? food2 : food3;
 
-      for(const key in foodNumMap) {
-        const score = foodNumMap[key] / totalNum * food[100];
-        if (bestFoodScoreMap[key] == null) bestFoodScoreMap[key] = [];
-        bestFoodScoreMap[key].push({
+        if (score == null || score == 0) return;
+        if (bestFoodScoreMap[food.name] == null) bestFoodScoreMap[food.name] = [];
+        bestFoodScoreMap[food.name].push({
           score,
           pokemon: pokemon,
           foodCombination: foodCombination,
         })
-      }
+      })
     }
   }
   

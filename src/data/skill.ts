@@ -10,10 +10,10 @@ import { Food } from "./food_and_cooking";
  */
 class Skill {
   static list: SkillType[] = [
-    { name: 'エナジーチャージS' ,            effect: [400.0,  569.0,	 785.0,	1083.0,	1496.0,	2066.0,	3002.0], energyOnly: true },
-    { name: 'エナジーチャージS(ランダム)',   effect: [500.0,  711.5,	 981.5,	1354.0,	1870.0,	2582.5,	3752.5], energyOnly: true },
+    { name: 'エナジーチャージS' ,            effect: [400.0,  569.0,	 785.0,	1083.0,	1496.0,	2066.0,	3212.0], energyOnly: true },
+    { name: 'エナジーチャージS(ランダム)',   effect: [500.0,  711.5,	 981.5,	1354.0,	1870.0,	2582.5,	3915.0], energyOnly: true },
     { name: 'たくわえる(エナジーチャージS)', effect: [587, 834, 1151, 1590, 2194, 3031, 4404], metronome: false, energyOnly: true },
-    { name: 'エナジーチャージM',             effect: [800.0, 1251.0,	1726.0,	2383.0,	3290.0,	4546.0,	6409.0], energyOnly: true },
+    { name: 'エナジーチャージM',             effect: [800.0, 1251.0,	1726.0,	2383.0,	3290.0,	4546.0,	6858.0], energyOnly: true },
     {
       name: 'ナイトメア(エナジーチャージM)',
       effect: [
@@ -23,7 +23,7 @@ class Skill {
         { energy:  7149, other: -12 },
         { energy:  9870, other: -12 },
         { energy: 13638, other: -12 },
-        { energy: 17304, other: -12 },
+        { energy: 18515, other: -12 },
       ],
       metronome: false,
       genki: true,
@@ -124,6 +124,18 @@ class Skill {
       ],
     },
     { name: 'プレゼント(食材ゲットS)', effect: [4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 17.0] },
+    {
+      name: 'ビルドアップ(料理アシストS)',
+      effect: [
+        { main:  6, sub: 1 },
+        { main:  8, sub: 2 },
+        { main: 11, sub: 2 },
+        { main: 14, sub: 3 },
+        { main: 17, sub: 3 },
+        { main: 21, sub: 4 },
+        { main: 24, sub: 5 },
+      ],
+    },
     {
       name: '食材セレクトS',
       effect: [
