@@ -557,7 +557,7 @@ class PokemonSimulator {
     pokemon.ceilSkillRate =
       pokemon.skillRate > 0
       ? pokemon.skillRate / (1 - Math.pow(1 - pokemon.skillRate, pokemon.skillCeil))
-      : 1 / pokemon.skillCeil;
+      : 0;
 
     // 性格のげんき回復係数
     pokemon.natureGenkiMultiplier = (pokemon.nature?.good == 'げんき回復量' ? 1.2 : pokemon.nature?.weak == 'げんき回復量' ? 0.88 : 1)

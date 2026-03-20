@@ -26,7 +26,7 @@ const originalSkillLv = computed(() => {
     <span :class="{ auto: !inputedSkillLv, original: originalSkillLv != props.pokemon.skillLv }">
       {{ originalSkillLv }}
     </span>
-    <template v-if="originalSkillLv != props.pokemon.fixedSkillLv">
+    <template v-if="originalSkillLv < props.pokemon.fixedSkillLv">
       <small> →</small>
       {{ props.pokemon.fixedSkillLv }}
     </template>

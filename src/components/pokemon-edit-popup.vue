@@ -73,7 +73,7 @@ const basePokemon = computed(() => {
   return Pokemon.map[pokemon.name]
 })
 const kaihouPokemon = computed(() => {
-  return basePokemon.value?.name == 'ダークライ'
+  return basePokemon.value?.kaihou
 })
 
 let assist = reactive({

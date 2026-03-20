@@ -68,7 +68,6 @@ const simulatorLoaded = ref(false);
     ...config,
     simulation: {
       ...config.simulation,
-      requireFoodNum: true,
     }
   }, PokemonSimulator.MODE_SELECT)
   simulatorLoaded.value = true;
