@@ -7,6 +7,7 @@ import HelpRate from "../help-rate";
 import PokemonFilter from "../pokemon-filter";
 import PokemonSimulator from "../simulation/pokemon-simulator";
 import Nature from "../../data/nature";
+import { CheckList } from "../check-list";
 
 let simulator: PokemonSimulator;
 let evaluateSimulator: PokemonSimulator;
@@ -29,6 +30,8 @@ addEventListener('message', async (event) => {
   if (type == 'basic') {
     let pokemonList: PokemonBoxType[] = event.data.pokemonList; 
     let evaluateTable = event.data.evaluateTable;
+
+    const checkList = config.simulation.fix ? new CheckList(config, evaluateTable) : null;
 
     let result: SimulatedPokemon[] = [];
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
@@ -156,12 +159,21 @@ addEventListener('message', async (event) => {
                 if (evaluateResult[lv][after].specialty) {
                   evaluateSpecialtyMaxScore = Math.max(evaluateSpecialtyMaxScore, evaluateResult[lv][after].specialty.score)
                 }
+
+
               }
             }
 
             let thisFix = config.simulation.fix && fixablePokemonIndexSet!.has(box.index) && (
-              evaluateMaxScore >= config.simulation.fixBorder / 100
-              || evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100
+              (config.simulation.fixCheckList && checkList != null && checkList.isChecked(config, {
+                foodCombination: foodIndexList.map(x => String.fromCharCode(65 + x)).join(''),
+                evaluateResult: Object.fromEntries(
+                  Object.entries(evaluateResult!)
+                    .map(([lv, afterMap]) => [lv, { [after]: afterMap[after] }])
+                )
+              }))
+              || (config.simulation.fixBorder != null && evaluateMaxScore >= config.simulation.fixBorder / 100)
+              || (config.simulation.fixBorderSpecialty != null && evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100)
             );
             fix ||= thisFix
 

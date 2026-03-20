@@ -24,11 +24,16 @@ import IndexPage from './pages/index.vue'
 import SimulationPage from './pages/simulation.vue'
 import FoodPreparePage from './pages/food_prepare.vue'
 import BoxSummaryPage from './pages/box-summary.vue'
-import BoxSummaryIndexPage from './pages/box-summary/index.vue'
 import BoxSummaryPokemonPage from './pages/box-summary/pokemon.vue'
 import BoxSummaryBerryPage from './pages/box-summary/berry.vue'
 import BoxSummaryFoodPage from './pages/box-summary/food.vue'
 import BoxSummarySkillPage from './pages/box-summary/skill.vue'
+import CheckListPage from './pages/check-list.vue'
+import CheckListIndexPage from './pages/check-list/index.vue'
+import CheckListPokemonPage from './pages/check-list/pokemon.vue'
+import CheckListFoodPage from './pages/check-list/food.vue'
+import CheckListSkillPage from './pages/check-list/skill.vue'
+import CheckListFieldPage from './pages/check-list/field.vue'
 import DataPage from './pages/data.vue'
 import DataFoodPage from './pages/data/food.vue'
 import DataCookingPage from './pages/data/cooking.vue'
@@ -50,11 +55,19 @@ const router = createRouter({
     { path: '/food-prepare', component: FoodPreparePage },
     { path: '/box-summary', component: BoxSummaryPage,
       children: [
-        { path: '', component: BoxSummaryIndexPage },
         { path: 'pokemon', component: BoxSummaryPokemonPage },
         { path: 'berry', component: BoxSummaryBerryPage },
         { path: 'food', component: BoxSummaryFoodPage },
         { path: 'skill', component: BoxSummarySkillPage },
+      ]
+    },
+    { path: '/check-list', component: CheckListPage,
+      children: [
+        { path: '', component: CheckListIndexPage },
+        { path: 'pokemon', component: CheckListPokemonPage },
+        { path: 'food', component: CheckListFoodPage },
+        { path: 'skill', component: CheckListSkillPage },
+        { path: 'field', component: CheckListFieldPage },
       ]
     },
     { path: '/data', component: DataPage,

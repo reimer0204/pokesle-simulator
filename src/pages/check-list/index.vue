@@ -472,298 +472,223 @@ const fieldList = computed(() => {
   }
 })
 
-function openBoxList(data: any) {
-  Popup.show(TablePopup, data.table);
-}
-
 </script>
 
 <template>
   <div class="page">
-    
-    <div>
-      <SettingButton title="厳選チェックリスト設定">
-        <template #label>
-          厳選チェックリスト設定
-        </template>
+    <div class="flex-column-start-start gap-5px">
+      <div>
+        <DesignTable>
+          <tr>
+            <th :rowspan="config.summary.checklist.pokemonCondition.list.length + 3">ポケモン</th>
+            <th>対象</th>
+            <th>総合厳選度</th>
+            <th>とくい厳選度</th>
+            <th></th>
+          </tr>
 
-        <div class="flex-column-start-start gap-5px">
-          <div>
-            <DesignTable>
-              <tr>
-                <th :rowspan="config.summary.checklist.pokemonCondition.list.length + 3">ポケモン</th>
-                <th>対象</th>
-                <th>総合厳選度</th>
-                <th>とくい厳選度</th>
-                <th></th>
-              </tr>
-
-              <tr>
-                <td></td>
-                <td colspan="2">
-                  <div class="flex-column gap-5px">
-                    <div class="flex-row-start-center gap-5px">
-                      基準レベル：<select
-                        v-model="config.summary.checklist.pokemonCondition.selectLv"
-                      >
-                      <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
-                      <option value="max">全レベル内最大値</option>
-                      </select>
-                    </div>
-                    <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="0">パーセンタイル</InputRadio>
-                    <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="1">指定パーセンタイルに対する比率</InputRadio>
-                    <div v-if="config.summary.checklist.pokemonCondition.selectType == 1">
-                      厳選度 <InputNumber class="w-50px" v-model="config.summary.checklist.pokemonCondition.selectBorder" /> %に対して
-                    </div>
-                  </div>
-                </td>
-                <td></td>
-              </tr>
-              
-              <tr v-for="(item, index) in config.summary.checklist.pokemonCondition.list">
-                <td>
-                  <div class="flex-row-start-center gap-5px">
-                    <select
-                      :value="`${item.type}${item.target ? `_${item.target}` : ''}`"
-                      @input="($event) => {
-                        const [type, target] = $event.target.value.split('_')
-                        item.type = Number(type);
-                        item.target = target ?? null;
-                      }"
-                    >
-                      <option value="0">全ポケモン</option>
-                      <option value="1_きのみ">きのみとくい</option>
-                      <option value="1_食材">食材とくい</option>
-                      <option value="1_スキル">スキルとくい</option>
-                      <option
-                        v-for="pokemon in saishuuShinkaPokemonList"
-                        :value="`2_${pokemon.name}`"
-                      >
-                        {{ pokemon.name }}
-                      </option>
-                    </select>
-                    
-                    <template v-for="combine of ['aaa', 'aab', 'aac', 'aba', 'abb', 'abc']">
-                      <InputCheckbox v-model="item[combine]">{{ combine.toUpperCase() }}</InputCheckbox>
-                    </template>
-                  </div>
-                </td>
-                <td>
-                  <InputNumber class="w-50px" v-model="item.energyBorder" /> %以上
-                </td>
-                <td>
-                  <InputNumber class="w-50px" v-model="item.specialtyBorder" /> %以上
-                </td>
-                <td>
-                  <div class="flex-row-start-center gap-5px">
-                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index - 1)">
-                      <path d="M0,70 L50,20 L100,70z" fill="#888" />
-                    </svg>
-                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index + 1)">
-                      <path d="M0,30 L50,80 L100,30z" fill="#888" />
-                    </svg>
-                    <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.splice(index, 1)">
-                      <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
-                    </svg>
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <td colspan="2">
-                  <div class="flex-row-start-center gap-10px">
-                    <button @click="config.summary.checklist.pokemonCondition.list.push({
-                      type: 0,
-                      target: null,
-                      aaa: true,
-                      aab: true,
-                      aac: true,
-                      aba: true,
-                      abb: true,
-                      abc: true,
-                      energyBorder: null,
-                      specialtyBorder: null,
-                    })">追加</button>
-
-                    <SettingButton title="非表示ポケモン設定">
-                      <template #label>
-                        <div class="flex-row-start-center">
-                          非表示ポケモン設定
-                          <template v-if="saishuuShinkaPokemonList.length - filteredSaishuuShinkaPokemonList.length">
-                            ：<span class="caution">{{ saishuuShinkaPokemonList.length - filteredSaishuuShinkaPokemonList.length }}匹</span>
-                          </template>
-                        </div>
-                      </template>
-
-                      <div>
-                        <SortableTable
-                          class="w-300px h-600px"
-                          :dataList="saishuuShinkaPokemonList"
-                          :columnList="[
-                            { key: 'name', name: 'ポケモン' },
-                            { key: 'checked', name: '非表示', convert: (x) => !config.summary.checklist.pokemonCondition.disablePokemonMap[x.name] },
-                          ]"
-                          scroll
-                        >
-                          <template #checked="{ data, value }">
-                            <InputCheckbox v-model="config.summary.checklist.pokemonCondition.disablePokemonMap[data.name]">非表示</InputCheckbox>
-                          </template>
-                        </SortableTable>
-                      </div>
-                    </SettingButton>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <th rowspan="2">食材</th>
-                <th>対象</th>
-                <th colspan="3">条件</th>
-              </tr>
-              <tr>
-                <td>
-                  <div class="gap-5px" style="display: grid; grid-template-columns: repeat(4, 130px);">
-                    <InputCheckbox
-                      v-for="food in Food.list"
-                      v-model="config.summary.checklist.food.enableMap[food.name]"
-                    >
-                      {{ food.name }}
-                    </InputCheckbox>
-                  </div>
-                </td>
-                <td colspan="3">
-                  <div class="flex-column gap-5px">
-                    <InputRadio v-model="config.summary.checklist.food.borderType" :value="0">理論値に対しての割合</InputRadio>
-                    <InputRadio v-model="config.summary.checklist.food.borderType" :value="1">必要最大数に対しての割合</InputRadio>
-
-                    <div class="flex-row-start-center gap-5px">
-                      <select
-                        v-if="config.summary.checklist.food.borderType == 0"
-                        v-model="config.summary.checklist.food.borderLv"
-                      >
-                        <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
-                      </select>
-
-                      <InputNumber class="w-50px" v-model="config.summary.checklist.food.borderValue" /> %以上
-                    </div>
-
-                    <div class="flex-row-start-center gap-5px">
-                      <span>厳選対象ポケモン</span>
-                      <InputNumber class="w-50px" v-model="config.summary.checklist.food.targetValue" /> %以上
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <th rowspan="2">スキル</th>
-                <th>対象</th>
-                <th colspan="3">条件</th>
-              </tr>
-              <tr>
-                <td>
-                  <div class="gap-5px" style="display: grid; grid-template-columns: repeat(2, 265px);">
-                    <InputCheckbox
-                      v-for="skill in Skill.list"
-                      v-model="config.summary.checklist.skill.enableMap[skill.name]"
-                    >
-                      {{ skill.name }}
-                    </InputCheckbox>
-                  </div>
-                </td>
-                <td colspan="3">
-                  <div class="flex-column gap-5px">
-                    <div class="flex-row-start-center gap-5px">
-                      <select
-                        v-model="config.summary.checklist.skill.borderLv"
-                      >
-                        <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
-                      </select>
-
-                      <InputNumber class="w-50px" v-model="config.summary.checklist.skill.borderValue" /> %以上
-                    </div>
-
-                    <div class="flex-row-start-center gap-5px">
-                      <span>厳選対象ポケモン</span>
-                      <InputNumber class="w-50px" v-model="config.summary.checklist.skill.targetValue" /> %以上
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <th rowspan="2">フィールド別</th>
-                <td colspan="4">
-                  <div class="flex-column gap-5px">
-                    <InputCheckbox v-model="config.summary.checklist.field.shinkago">進化後を表示</InputCheckbox>
-                    <InputCheckbox v-model="config.summary.checklist.field.bakecchaMatome">バケッチャをまとめて表示</InputCheckbox>
-                  </div>
-                </td>
-              </tr>
-            </DesignTable>
-          </div>
-        </div>
-      </SettingButton>
-    </div>
-    
-    <div class="tab-list mt-10px">
-      <div @click="list = 0" :class="{ active: list == 0 }" class="cursor-pointer">ポケモン</div>
-      <div @click="list = 1" :class="{ active: list == 1 }" class="cursor-pointer">食材</div>
-      <div @click="list = 2" :class="{ active: list == 2 }" class="cursor-pointer">スキル</div>
-      <div @click="list = 3" :class="{ active: list == 3 }" class="cursor-pointer">フィールド別</div>
-    </div>
-
-    <!-- チェックリスト表示 -->
-    
-    <div class="pokemon-list mt-10px">
-      <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
-        <template v-if="list < 3">
-          <SortableTable
-            :key="list"
-            class="flex-110"
-            :dataList="checklist.dataList"
-            :columnList="checklist.columnList"
-            scroll
-          >
-            <template #pokemon="{ value }">
-              <PokemonInfo :pokemon="value" nature />
-            </template>
-            <template #foodList="{ data, value }">
-              <FoodList :pokemon="data" />
-            </template>
-            <template #food="{ data, value }">
-              <img :src="data.food.img" class="w-20px h-20px" />{{ data.food.name }}
-            </template>
-            <template #berry="{ data, value }">
-              <img :src="data.base.berry.img" class="w-20px h-20px" />{{ data.base.berry.name }}
-            </template>
-            <template #border="{ data, value }">
-              {{ data.bestFoodScore.toFixed(1) }} ✕ {{ config.summary.checklist.food.borderValue }}% = {{ (data.bestFoodScore * (config.summary.checklist.food.borderValue / 100)).toFixed(1) }}
-            </template>
-            <template #skillBorder="{ data, value }">
-              {{ data.bestSkillScore.toFixed(1) }} ✕ {{ config.summary.checklist.skill.borderValue }}% = {{ (data.bestSkillScore * (config.summary.checklist.skill.borderValue / 100)).toFixed(1) }}
-            </template>
-            <template #score="{ data, value }">
-              <div class="flex-column-center-end">
-                {{ data.score.toFixed(1) }}
-                <div v-if="data.lv != data.borderLv">({{ data.lv }}止め)</div>
+          <tr>
+            <td></td>
+            <td colspan="2">
+              <div class="flex-column gap-5px">
+                <div class="flex-row-start-center gap-5px">
+                  基準レベル：<select
+                    v-model="config.summary.checklist.pokemonCondition.selectLv"
+                  >
+                  <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
+                  <option value="max">全レベル内最大値</option>
+                  </select>
+                </div>
+                <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="0">パーセンタイル</InputRadio>
+                <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="1">指定パーセンタイルに対する比率</InputRadio>
+                <div v-if="config.summary.checklist.pokemonCondition.selectType == 1">
+                  厳選度 <InputNumber class="w-50px" v-model="config.summary.checklist.pokemonCondition.selectBorder" /> %に対して
+                </div>
               </div>
-            </template>
-            <template #table="{ data, value }">
-              <div @click="openBoxList(data)" class="link">ボックス確認</div>
-            </template>
-          </SortableTable>
-        </template>
-        <template v-if="list == 3">
-          <SortableTable
-            :key="list"
-            class="flex-110"
-            :dataList="fieldList.dataList"
-            :columnList="fieldList.columnList"
-            scroll
-          >
-          </SortableTable>
-        </template>
-      </AsyncWatcherArea>
-    </div>
+            </td>
+            <td></td>
+          </tr>
+          
+          <tr v-for="(item, index) in config.summary.checklist.pokemonCondition.list">
+            <td>
+              <div class="flex-row-start-center gap-5px">
+                <select
+                  :value="`${item.type}${item.target ? `_${item.target}` : ''}`"
+                  @input="($event) => {
+                    const [type, target] = $event.target.value.split('_')
+                    item.type = Number(type);
+                    item.target = target ?? null;
+                  }"
+                >
+                  <option value="0">全ポケモン</option>
+                  <option value="1_きのみ">きのみとくい</option>
+                  <option value="1_食材">食材とくい</option>
+                  <option value="1_スキル">スキルとくい</option>
+                  <option
+                    v-for="pokemon in saishuuShinkaPokemonList"
+                    :value="`2_${pokemon.name}`"
+                  >
+                    {{ pokemon.name }}
+                  </option>
+                </select>
+                
+                <template v-for="combine of ['aaa', 'aab', 'aac', 'aba', 'abb', 'abc']">
+                  <InputCheckbox v-model="item[combine]">{{ combine.toUpperCase() }}</InputCheckbox>
+                </template>
+              </div>
+            </td>
+            <td>
+              <InputNumber class="w-50px" v-model="item.energyBorder" /> %以上
+            </td>
+            <td>
+              <InputNumber class="w-50px" v-model="item.specialtyBorder" /> %以上
+            </td>
+            <td>
+              <div class="flex-row-start-center gap-5px">
+                <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index - 1)">
+                  <path d="M0,70 L50,20 L100,70z" fill="#888" />
+                </svg>
+                <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.swap(index, index + 1)">
+                  <path d="M0,30 L50,80 L100,30z" fill="#888" />
+                </svg>
+                <svg viewBox="0 0 100 100" width="14" @click="config.summary.checklist.pokemonCondition.list.splice(index, 1)">
+                  <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
+                </svg>
+              </div>
+            </td>
+          </tr>
 
+          <tr>
+            <td colspan="2">
+              <div class="flex-row-start-center gap-10px">
+                <button @click="config.summary.checklist.pokemonCondition.list.push({
+                  type: 0,
+                  target: null,
+                  aaa: true,
+                  aab: true,
+                  aac: true,
+                  aba: true,
+                  abb: true,
+                  abc: true,
+                  energyBorder: null,
+                  specialtyBorder: null,
+                })">追加</button>
+
+                <SettingButton title="非表示ポケモン設定">
+                  <template #label>
+                    <div class="flex-row-start-center">
+                      非表示ポケモン設定
+                      <template v-if="saishuuShinkaPokemonList.length - filteredSaishuuShinkaPokemonList.length">
+                        ：<span class="caution">{{ saishuuShinkaPokemonList.length - filteredSaishuuShinkaPokemonList.length }}匹</span>
+                      </template>
+                    </div>
+                  </template>
+
+                  <div>
+                    <SortableTable
+                      class="w-300px h-600px"
+                      :dataList="saishuuShinkaPokemonList"
+                      :columnList="[
+                        { key: 'name', name: 'ポケモン' },
+                        { key: 'checked', name: '非表示', convert: (x) => !config.summary.checklist.pokemonCondition.disablePokemonMap[x.name] },
+                      ]"
+                      scroll
+                    >
+                      <template #checked="{ data, value }">
+                        <InputCheckbox v-model="config.summary.checklist.pokemonCondition.disablePokemonMap[data.name]">非表示</InputCheckbox>
+                      </template>
+                    </SortableTable>
+                  </div>
+                </SettingButton>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th rowspan="2">食材</th>
+            <th>対象</th>
+            <th colspan="3">条件</th>
+          </tr>
+          <tr>
+            <td>
+              <div class="gap-5px" style="display: grid; grid-template-columns: repeat(4, 130px);">
+                <InputCheckbox
+                  v-for="food in Food.list"
+                  v-model="config.summary.checklist.food.enableMap[food.name]"
+                >
+                  {{ food.name }}
+                </InputCheckbox>
+              </div>
+            </td>
+            <td colspan="3">
+              <div class="flex-column gap-5px">
+                <InputRadio v-model="config.summary.checklist.food.borderType" :value="0">理論値に対しての割合</InputRadio>
+                <InputRadio v-model="config.summary.checklist.food.borderType" :value="1">必要最大数に対しての割合</InputRadio>
+
+                <div class="flex-row-start-center gap-5px">
+                  <select
+                    v-if="config.summary.checklist.food.borderType == 0"
+                    v-model="config.summary.checklist.food.borderLv"
+                  >
+                    <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
+                  </select>
+
+                  <InputNumber class="w-50px" v-model="config.summary.checklist.food.borderValue" /> %以上
+                </div>
+
+                <div class="flex-row-start-center gap-5px">
+                  <span>厳選対象ポケモン</span>
+                  <InputNumber class="w-50px" v-model="config.summary.checklist.food.targetValue" /> %以上
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th rowspan="2">スキル</th>
+            <th>対象</th>
+            <th colspan="3">条件</th>
+          </tr>
+          <tr>
+            <td>
+              <div class="gap-5px" style="display: grid; grid-template-columns: repeat(2, 265px);">
+                <InputCheckbox
+                  v-for="skill in Skill.list"
+                  v-model="config.summary.checklist.skill.enableMap[skill.name]"
+                >
+                  {{ skill.name }}
+                </InputCheckbox>
+              </div>
+            </td>
+            <td colspan="3">
+              <div class="flex-column gap-5px">
+                <div class="flex-row-start-center gap-5px">
+                  <select
+                    v-model="config.summary.checklist.skill.borderLv"
+                  >
+                    <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
+                  </select>
+
+                  <InputNumber class="w-50px" v-model="config.summary.checklist.skill.borderValue" /> %以上
+                </div>
+
+                <div class="flex-row-start-center gap-5px">
+                  <span>厳選対象ポケモン</span>
+                  <InputNumber class="w-50px" v-model="config.summary.checklist.skill.targetValue" /> %以上
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th rowspan="2">フィールド別</th>
+            <td colspan="4">
+              <div class="flex-column gap-5px">
+                <InputCheckbox v-model="config.summary.checklist.field.shinkago">進化後を表示</InputCheckbox>
+                <InputCheckbox v-model="config.summary.checklist.field.bakecchaMatome">バケッチャをまとめて表示</InputCheckbox>
+              </div>
+            </td>
+          </tr>
+        </DesignTable>
+      </div>
+    </div>
   </div>
 </template>
 

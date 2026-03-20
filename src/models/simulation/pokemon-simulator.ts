@@ -496,8 +496,11 @@ class PokemonSimulator {
     if (pokemon.sleepTime >=  500) pokemon.bag += 2;
     if (pokemon.sleepTime >= 1000) pokemon.bag += 3;
     if (pokemon.sleepTime >= 2000) pokemon.bag += 2;
+    if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
+      pokemon.bag += this.config.simulation.eventBonusTypeBag;
+    }
     if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket) {
-      pokemon.bag *= 1.2;
+      pokemon.bag = Math.floor(pokemon.bag * 1.2);
     }
 
     // いつ育到達は所持数がいっぱい＋4回(キュー消化分)以降

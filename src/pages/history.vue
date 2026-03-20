@@ -28,6 +28,17 @@ config.version.history = Version.HISTORY;
       <li>
         機能改善
         <ul>
+          <li>イベントボーナスの設定に所持数を追加</li>
+          <li>育成仮定の条件に厳選チェックリストに該当するかどうかを追加</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <h3>2026/3/20</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
           <li>ミュウを追加
             <ul>
               <li>食材確率、スキル確率は不確定情報とのことですが、<router-link to="/credit">参考資料</router-link>に記載の仮の値をそのまま採用して実装しています</li>

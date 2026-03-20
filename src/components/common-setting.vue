@@ -53,6 +53,22 @@ const exBerryError = computed(() => {
   ).includes(config.simulation.fieldExMainBerry)
 })
 
+function reset() {
+  config.simulation.eventBonusType.specialties = {
+    'きのみ': false,
+    '食材': false,
+    'スキル': false,
+  };
+  for(const key in config.simulation.eventBonusType.types) {
+    config.simulation.eventBonusType.types[key] = false;
+  }
+  config.simulation.eventBonusTypeBerry = 0;
+  config.simulation.eventBonusTypeFood = 0;
+  config.simulation.eventBonusTypeSkillRate = 1;
+  config.simulation.eventBonusTypeSkillLv = 0;
+  config.simulation.eventBonusTypeBag = 0;
+}
+
 </script>
 
 <template>
@@ -260,6 +276,15 @@ const exBerryError = computed(() => {
         <th>スキルレベル</th>
         <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv" > Lv追加</td>
       </tr>
+      <tr>
+        <th>所持数</th>
+        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag" > 個追加</td>
+      </tr>
+      <tr>
+        <td>
+          <button @click="reset">リセット</button>
+        </td>
+      </tr>
     </SettingTable>
 
   </SettingButton>
@@ -324,7 +349,12 @@ const exBerryError = computed(() => {
       <div class="inline-flex-row-center" :class="{ caution: props.fix }">
         育成仮定: {{ config.simulation.fix || props.fix ? 'する' : 'しない' }}
         <template v-if="config.simulation.fix">(
-          厳選{{ config.simulation.fixBorder }}%/{{ config.simulation.fixBorderSpecialty }}%以上
+          <template v-if="config.simulation.fixCheckList">
+            チェックリスト該当
+          </template>
+          <template v-if="config.simulation.fixBorder != null || config.simulation.fixBorderSpecialty != null">
+            厳選{{ config.simulation.fixBorder ?? '-' }}%/{{ config.simulation.fixBorderSpecialty ?? '-' }}%以上
+          </template>
           <template v-if="config.simulation.fixResourceMode == 0">
             {{ config.simulation.fixLv }}Lv
             <template v-if="config.simulation.fixEvolve"> 進化 </template>
@@ -350,11 +380,11 @@ const exBerryError = computed(() => {
       <tr>
         <th>仮定条件</th>
         <td>
-          <div               >エナジー厳選度 <input type="number" class="w-50px" v-model="config.simulation.fixBorder"          :disabled="!config.simulation.fix && !props.fix"> %以上のみ</div>
-          <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" v-model="config.simulation.fixBorderSpecialty" :disabled="!config.simulation.fix && !props.fix"> %以上のみ</div>
-          <small>厳選度が指定以上のポケモンのみ仮定します。<br>どちらかに合致した場合に対象となります。</small>
+          <div               ><label><input type="checkbox" v-model="config.simulation.fixCheckList" :disabled="!config.simulation.fix && !props.fix">厳選チェックリストに該当</label></div>
+          <div class="mt-3px">エナジー厳選度 <input type="number" class="w-50px" :value="config.simulation.fixBorder"          @input="config.simulation.fixBorder          = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
+          <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" :value="config.simulation.fixBorderSpecialty" @input="config.simulation.fixBorderSpecialty = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
 
-          <div>
+          <div class="mt-3px">
             <SettingButton title="除外フィルタ">
               <template #label>
                 <div class="inline-flex-row-center">
