@@ -140,8 +140,8 @@ document.addEventListener("visibilitychange", () => {
         flex-direction: column;
         
         & > h2 {
-          font-size: 100%;
-          padding: 5px 5px 0;
+          font-size: 85%;
+          padding: 5px 5px 3px;
           flex: 0 0 auto;
           font-weight: normal;
           color: #888;
