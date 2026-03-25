@@ -10,6 +10,7 @@ import PokemonFilter from '../models/pokemon-filter';
 import Popup from '../models/popup/popup.ts';
 import ResourceEditPopup from './resource-edit-popup.vue';
 import Skill from '@/data/skill.ts';
+import InputRadio from './form/input-radio.vue';
 
 const props = defineProps({
   fix: { type: Boolean, default: false },
@@ -308,20 +309,76 @@ function reset() {
       </div>
     </template>
 
-    <SettingTable style="width: calc(100vw - 100px);">
-      <SettingList grid>
-        <div v-for="skill in Skill.list">
-          <label>{{ skill.name }}</label>
-          <div>
-            <input
-              type="number" class="w-60px"
-              :value="config.simulation.skillRate[skill.name] * 100"
-              @input="$event => config.simulation.skillRate[skill.name] = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
-            > %
-          </div>
+    <div style="width: calc(100vw - 100px); max-width: 1000px;">
+      <ToggleArea open>
+        <template #headerText>個別スキル設定</template>
+
+        <SettingTable class="w-100">
+          <SettingList grid>
+            <div v-for="skill in Skill.list">
+              <label>{{ skill.name }}</label>
+              <div>
+                <input
+                  type="number" class="w-60px"
+                  :value="config.simulation.skillRate[skill.name] * 100"
+                  @input="$event => config.simulation.skillRate[skill.name] = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
+                > %
+              </div>
+            </div>
+          </SettingList>
+        </SettingTable>
+      </ToggleArea>
+      
+      <ToggleArea open class="mt-10px">
+        <template #headerText>共通設定</template>
+
+        <div>
+          <SettingTable class="w-100">
+            <SettingList>
+              <div>
+                <label>
+                  食材ゲット・食材アシスト評価方法
+                  <HelpButton title="食材ゲット評価方法" markdown="
+                    # 食材のまま評価
+                    単純に獲得する食材量の期待値で計算します。
+                    実際は期待値通りになることは稀であり、この設定でシミュレーションして出てきた料理は作れないことが多いので注意です。
+
+                    # 今日のエナジーとして評価
+                    食材を最も良い料理に活用した場合のエナジー期待値で計算します。
+
+                    # 翌日のエナジーとして評価
+                    食材を最も良い料理に活用した場合のエナジー期待値で計算しますが、明日のエナジーとして計算します。
+                    今日の睡眠にはエナジーが乗らず、明日以降の睡眠に乗るエナジーとして計算するので、1日分減らした評価で計算します。
+                    月曜の場合：6/7倍
+                    火曜の場合：5/6倍
+                    水曜の場合：4/5倍
+                    木曜の場合：3/4倍
+                    金曜の場合：2/3倍
+                    土曜の場合：1/2倍
+                    日曜の場合：**7倍** (日曜の稼ぎは日曜の睡眠の1日分にしか乗りませんが、月曜に食材を回すことで7日分のエナジーになるため)
+                  " />
+                </label>
+                <div>
+                  <div><InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="1">食材のまま評価</InputRadio></div>
+                  <div><InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="2">今日のエナジーとして評価</InputRadio></div>
+                  <div><InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="3">翌日のエナジーとして評価</InputRadio></div>
+                </div>
+              </div>
+              <div>
+                <label>食材ゲット評価率</label>
+                <div>
+                  <input
+                    type="number" class="w-60px"
+                    :value="config.teamSimulation.foodGetEvaluateRate * 100"
+                    @input="$event => config.teamSimulation.foodGetEvaluateRate = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
+                  > %
+                </div>
+              </div>
+            </SettingList>
+          </SettingTable>
         </div>
-      </SettingList>
-    </SettingTable>
+      </ToggleArea>
+    </div>
 
   </SettingButton>
 

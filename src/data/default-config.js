@@ -150,6 +150,8 @@ const defaultConfig = {
     resultNum: 10,
     cookingNum: 3,
     nightCapPikachu: 0,
+    foodGetEvaluateType: 3,
+    foodGetEvaluateRate: 0.5,
 
     require: {
       dayHelpRate: 0,

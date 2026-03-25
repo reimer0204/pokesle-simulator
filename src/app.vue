@@ -68,7 +68,7 @@ document.addEventListener("visibilitychange", () => {
           <div>
             <router-link to="/setting">基準生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
             <router-link to="/check-list" :class="{ disabled: requireRefresh.setting }">チェック<br>リスト</router-link>
-            <router-link to="/evaluate-table">基準確認</router-link>
+            <router-link to="/evaluate-table" :class="{ disabled: requireRefresh.setting }">基準確認</router-link>
           </div>
         </div>
         <div>

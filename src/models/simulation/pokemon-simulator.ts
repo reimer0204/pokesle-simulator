@@ -1079,6 +1079,8 @@ class PokemonSimulator {
       
       // 食材ゲットの処理
       if (foodGet && foodGetList != null) {
+        let type = foodGetList.length == Food.list.length ? this.config.teamSimulation.foodGetEvaluateType : 1;
+
         if (this.mode == PokemonSimulator.MODE_SELECT) {
           let num = foodGet / foodGetList.length * pokemon.skillPerDay * weight;
 
@@ -1095,21 +1097,45 @@ class PokemonSimulator {
 
         } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
           if (this.#foodEnergyWeight > 0) {
-            let num = foodGet / foodGetList.length * pokemon.skillPerDay * weight;
+            // 1食材あたりの個数
+            let oneFoodNumPerSkill = foodGet / foodGetList.length * this.config.teamSimulation.foodGetEvaluateRate;
+            let num = pokemon.skillPerDay * oneFoodNumPerSkill * weight;
             let foodEnergy = 0;
             for(let food of foodGetList) {
-              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+              if (type == 1) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+              }
               foodEnergy += this.foodEnergyMap[food.name].max
             }
+            let energy = foodEnergy * this.#foodEnergyWeight * oneFoodNumPerSkill;
+            if (type == 3 && this.config.teamSimulation.day != null) {
+              energy *= (7 - (this.config.teamSimulation.day + 1) % 7) / (7 - this.config.teamSimulation.day)
+            }
 
-            energyPerSkill += foodEnergy / foodGetList.length * foodGet * this.#foodEnergyWeight;
+            energyPerSkill += energy;
           }
 
         } else if (this.mode == PokemonSimulator.MODE_TEAM) {
           if (!this.config.simulation.sundayPrepare) {
-            let num = foodGet / foodGetList.length * pokemon.skillPerDay * weight;
-            for(let food of foodGetList) {
-              pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+            // 1食材あたりの個数
+            let oneFoodNumPerSkill = foodGet / foodGetList.length * this.config.teamSimulation.foodGetEvaluateRate;
+            if (type == 1) {
+              let num = pokemon.skillPerDay * oneFoodNumPerSkill * weight;
+              for(let food of foodGetList) {
+                pokemon[food.name] = Number(pokemon[food.name] ?? 0) + num;
+              }
+              
+            } else {
+              let energy = 0;
+              for(let food of foodGetList) {
+                energy += this.foodEnergyMap[food.name].max
+              }
+
+              energy *= this.#foodEnergyWeight * oneFoodNumPerSkill;
+              if (type == 3 && this.config.teamSimulation.day != null) {
+                energy *= (7 - (this.config.teamSimulation.day + 1) % 7) / (7 - this.config.teamSimulation.day)
+              }
+              energyPerSkill += energy;
             }
           }
         }
