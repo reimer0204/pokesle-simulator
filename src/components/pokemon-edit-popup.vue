@@ -404,6 +404,7 @@ function reset() {
   pokemon.nature = null;
   pokemon.shiny = false;
   pokemon.memo = null;
+  pokemon.favorite = null;
 
   assist.name = '';
   assist.lv = null;
@@ -579,6 +580,10 @@ function moveFocus(event) {
       <div>メモ</div>
       <div></div>
       <label><input class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
+      
+      <div>お気に入り</div>
+      <div></div>
+      <label><InputCheckbox v-model="pokemon.favorite">お気に入り</InputCheckbox></label>
       
       <div>所持アメ</div>
       <div></div>

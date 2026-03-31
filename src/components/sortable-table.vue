@@ -7,6 +7,8 @@ const props = defineProps({
   pager: { type: Number, default: null },
   scroll: { type: Boolean, default: false },
   disabledColumn: { type: Function, default: null },
+  grid: { type: Number, default: null },
+  selectedField: { type: String, default: null },
 })
 const emits = defineEmits(['clickRow', 'update:setting'])
 
@@ -265,7 +267,9 @@ function toggleHiddenColumn(key) {
               :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
               :style="{
                 left: columnLeftList[i],
-                backgroundColor: sortColors[j]?.[column.key],
+                backgroundColor: sortColors[j]?.[column.key] ?? (props.selectedField && data.$original[props.selectedField] ? '#F003' : null),
+                borderBottomWidth: j > 0 && props.grid && ((j + (props.pager != null ? page * props.pager : 0)) % props.grid) == (props.grid - 1)
+                  ? '2px' : null,
               }"
               @click="emits('clickRow', data.$original)"
             >

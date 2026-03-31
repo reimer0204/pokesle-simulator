@@ -20,6 +20,8 @@ import EvaluateResult from '@/components/page-assist/index/evaluate-result.vue';
 import SettingList from '@/components/util/setting-list.vue';
 import type { SimulatedPokemon } from '@/type.ts';
 import SubSkill from '@/data/sub-skill.ts';
+import InputCheckbox from '@/components/form/input-checkbox.vue';
+import StarIcon from '@/components/icon/star-icon.vue';
 
 let evaluateTable = EvaluateTable.load(config);
 
@@ -51,6 +53,7 @@ async function createPokemonList(setConfig = false) {
         await evaluateTable, 
         {
           ...config,
+          cleaning: mode.value == 'cleaning',
           pureMint: mode.value == 'pureMint',
         },
         progressCounter, setConfig
@@ -114,9 +117,20 @@ watch(config.candy, processSimulatedPokemonList)
 const columnList = computed(() => {
   let result = [
     { key: 'edit', name: '', type: Number, convert: item => item.box?.fix == -1 ? 2 : item.box?.fix },
+  ]
+
+  if (mode.value == 'cleaning') {
+    result.push({ key: 'pokemonNo', name: '図鑑\nNo', type: Number, convert: x => x.base.order })
+  }
+
+  result.push(
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
     { key: 'name', name: '名前', type: String, convert: x => x.box.name },
-  ]
+  );
+
+  if (mode.value == 'cleaning') {
+    result.push({ key: 'hitCheckList', name: '整理備考', type: Number, convert: x => x.hitCheckList?.length ?? 0 })
+  }
 
   if (config.pokemonList.memo) {
     result.push({ key: 'memo', name: 'メモ', type: String, convert: x => x.box.memo ?? '' })
@@ -268,6 +282,7 @@ async function showGoogleSpreadsheetPopup() {
 }
 
 function deletePokemon(index) {
+  if (PokemonBox.list[index]?.favorite) return;
   if (confirm(`${PokemonBox.list[index].name}(Lv${PokemonBox.list[index].lv})を削除します。よろしいですか？`)) {
     PokemonBox.delete(index);
     createPokemonList()
@@ -301,6 +316,22 @@ function showSelectDetail(pokemon, after, lv) {
     subSkillList: pokemon.box.subSkillList,
     nature: pokemon.nature,
   })
+}
+
+const selectedPokemonList = computed(() => simulatedPokemonList.value.filter(x => x.selected && !x.box?.favorite))
+function deleteSelectedPokemon() {
+  if (selectedPokemonList.value.length) {
+    if (confirm(`選択したポケモンを削除します。よろしいですか？`)) {
+      PokemonBox.delete(...selectedPokemonList.value.map(pokemon => pokemon.box.index));
+      createPokemonList()
+    }
+  }
+}
+
+function toggleFavorite(data: SimulatedPokemon) {
+  let pokemon = PokemonBox.list[data.box!.index]
+  pokemon.favorite = data.box!.favorite = !data.box!.favorite
+  PokemonBox.post(pokemon, data.box!.index);
 }
 
 </script>
@@ -380,7 +411,7 @@ function showSelectDetail(pokemon, after, lv) {
         <div>
           <select v-model.number="mode">
             <option value="normal">通常</option>
-            <option value="cleaning" disabled>ボックス整理(そのうち)</option>
+            <option value="cleaning">ボックス整理</option>
             <option value="pureMint">まっしろミント</option>
           </select>
         </div>
@@ -392,39 +423,68 @@ function showSelectDetail(pokemon, after, lv) {
           <input type="text" class="w-200px" v-model="keyword" placeholder="名前、食材名、スキル名など" />
         </div>
       </div>
+
+      <div>
+        <label>ボックス整理</label>
+        <div class="flex-row-start-center gap-10px">
+          <button class="important" @click="deleteSelectedPokemon" :disabled="selectedPokemonList.length == 0">選択したポケモン({{ selectedPokemonList.length }}匹)を削除</button>
+          <InputCheckbox v-if="mode == 'cleaning'" v-model="config.pokemonList.cleaning.shinyLock">色違いも整理備考に表示する</InputCheckbox>
+        </div>
+      </div>
     </SettingList>
 
     <div class="pokemon-list mt-5px">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
-        <SortableTable :dataList="filteredPokemonList" :columnList="columnList" v-model:setting="config.sortableTable.pokemonList2"
+        <SortableTable
+          :dataList="filteredPokemonList"
+          :columnList="columnList"
+          v-model:setting="config.sortableTable.pokemonList2"
           :fixColumn="config.pokemonList.fixScore ? 10 : 4"
           :pager="config.pokemonList.pageUnit"
           scroll
+          :grid="4"
+          @clickRow="data => {
+            data.selected = !data.box?.favorite && !data.selected
+          }"
+          selectedField="selected"
         >
 
           <template #edit="{ data }">
             <div class="flex-row-start-center gap-3px">
-              <svg viewBox="0 0 100 100" width="16" @click="showEditPopup(data)">
+              <InputCheckbox
+                v-model="data.selected" class="mr-5px" readonly
+                :disabled="data.box?.favorite"
+              ></InputCheckbox>
+              <svg viewBox="0 0 100 100" width="16" @click.stop="showEditPopup(data)">
                 <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
               </svg>
               <template v-if="(config.sortableTable.pokemonList2.sort.length == 1 && config.sortableTable.pokemonList2.sort[0].key == 'index') || config.sortableTable.pokemonList2.sort.length == 0">
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.box.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
+                <svg viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
                   <path d="M0,70 L50,20 L100,70z" fill="#888" />
                 </svg>
-                <svg viewBox="0 0 100 100" width="14" @click="PokemonBox.move(data.box.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
+                <svg viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
                   <path d="M0,30 L50,80 L100,30z" fill="#888" />
                 </svg>
               </template>
-              <svg viewBox="0 0 100 100" width="14" @click="deletePokemon(data.box.index)">
-                <path d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100" fill="#888" />
+              <svg viewBox="0 0 100 100" width="14" @click.stop="deletePokemon(data.box.index)">
+                <path
+                  d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100"
+                  :fill="data.box.favorite ? '#CCC' : '#888'"
+                />
               </svg>
               <div title="チームのシミュレーションで固定・除外する設定">
                 <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
-                <svg v-if="data.box?.fix == null" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
-                <svg v-if="data.box?.fix ==    1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
-                <svg v-if="data.box?.fix ==   -1" viewBox="0 -110 640 640" width="16" @click="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
+                <svg v-if="data.box?.fix == null" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
+                <svg v-if="data.box?.fix ==    1" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
+                <svg v-if="data.box?.fix ==   -1" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
               </div>
+              <StarIcon
+                v-if="mode == 'cleaning'"
+                @click.stop="toggleFavorite(data)"
+                class="fs-14px"
+                :style="{ color: data.box?.favorite ? '#FFD700' : '#888' }"
+              />
             </div>
           </template>
 
@@ -534,6 +594,22 @@ function showSelectDetail(pokemon, after, lv) {
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%;">
               {{ data.base.afterList.length > 1 ? data.base.afterList[0] + '等' : data.base.afterList[0] }}
+            </div>
+          </template>
+
+          <template #pokemonNo="{ data, column }">
+            {{ data.base.no }}
+          </template>
+
+          <template #hitCheckList="{ data, column }">
+            <div class="w-100 flex-column-center-start">
+              <template v-if="data.box.favorite">お気に入り</template>
+              <template v-if="data.box.shiny && config.pokemonList.cleaning.shinyLock">色違い</template>
+              <div v-for="{ type, food, skill } in data.hitCheckList">
+                <template v-if="type == 'pokemon'">厳選度</template>
+                <template v-if="type == 'food'"><img :src="food.img" class="w-20px" /></template>
+                <template v-if="type == 'skill'">{{ skill.name }}</template>
+              </div>
             </div>
           </template>
 

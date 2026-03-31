@@ -63,6 +63,7 @@ interface SkillType {
   shard?: boolean;
   energyOnly?: boolean;
   foodList?: FoodType[];
+  skillSpecialtyOnly: boolean;
 }
 
 interface SubSkillType {
@@ -88,6 +89,7 @@ interface PokemonBoxType {
   training?: number,
   nextExp?: number,
   memo?: string,
+  favorite?: boolean,
   index: number,
 }
 
@@ -263,6 +265,8 @@ interface SimulatedPokemon extends FoodNames {
   tmpScore?: number;
   score: number;
   foodCombination?: string;
+
+  hitCheckList?: any[];
 }
 
 interface SimulatedFood {

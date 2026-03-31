@@ -649,13 +649,23 @@ const fieldList = computed(() => {
           </tr>
           <tr>
             <td>
+              <div>
+                <InputCheckbox v-model="config.summary.checklist.skill.skillSpecialtyOnly">スキルとくいが持っていないスキルをまとめて除外</InputCheckbox>
+              </div>
+
+              <hr />
+
               <div class="gap-5px" style="display: grid; grid-template-columns: repeat(2, 265px);">
-                <InputCheckbox
-                  v-for="skill in Skill.list"
-                  v-model="config.summary.checklist.skill.enableMap[skill.name]"
-                >
-                  {{ skill.name }}
-                </InputCheckbox>
+                <template v-for="skill in Skill.list">
+                  <template v-if="config.summary.checklist.skill.skillSpecialtyOnly && !skill.skillSpecialtyOnly">
+                    <InputCheckbox disabled>{{ skill.name }}</InputCheckbox>
+                  </template>
+                  <template v-else>
+                    <InputCheckbox v-model="config.summary.checklist.skill.enableMap[skill.name]">
+                      {{ skill.name }}
+                    </InputCheckbox>
+                  </template>
+                </template>
               </div>
             </td>
             <td colspan="3">

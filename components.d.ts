@@ -41,6 +41,7 @@ declare module 'vue' {
     SimulationSelectType: typeof import('./src/components/simulation-select-type.vue')['default']
     SkillLvLabel: typeof import('./src/components/status/skill-lv-label.vue')['default']
     SortableTable: typeof import('./src/components/sortable-table.vue')['default']
+    StarIcon: typeof import('./src/components/icon/star-icon.vue')['default']
     SubSkillLabel: typeof import('./src/components/status/sub-skill-label.vue')['default']
     SubSkillLabelList: typeof import('./src/components/status/sub-skill-label-list.vue')['default']
     TablePopup: typeof import('./src/components/table-popup.vue')['default']

@@ -38,6 +38,9 @@ const defaultConfig = {
     fixScore: false,
     candy: false,
     pageUnit: 50,
+    cleaning: {
+      shinyLock: true,
+    },
   },
 
   pokemonBox: {
@@ -55,6 +58,7 @@ const defaultConfig = {
       training: 16,
       nextExp: 17,
       memo: 18,
+      favorite: 19,
     },
     gs: {
       url: null,
@@ -151,7 +155,7 @@ const defaultConfig = {
     cookingNum: 3,
     nightCapPikachu: 0,
     foodGetEvaluateType: 3,
-    foodGetEvaluateRate: 0.5,
+    foodGetEvaluateRate: 0.3,
 
     require: {
       dayHelpRate: 0,
@@ -292,6 +296,7 @@ const defaultConfig = {
         borderLv: null,
         borderValue: 75,
         targetValue: 85,
+        skillSpecialtyOnly: true,
       },
       field: {
         shinkago: false,

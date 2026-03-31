@@ -12,7 +12,7 @@ export class CheckList {
     this.evaluateTable = evaluateTable;
   }
   
-  pokemonCheckList(config: any, simulatedPokemonList: SimulatedPokemon[]) {
+  pokemonCheckList(config: any, simulatedPokemonList: SimulatedPokemon[], hitList: any[] | null = null) {
     if (this.evaluateTable == null) {
       return {
         dataList: [],
@@ -62,6 +62,9 @@ export class CheckList {
             if (item.specialtyBorder != null) {
               score = Math.max(score, simulatedPokemon.evaluateResult[config.summary.checklist.pokemonCondition.selectLv][pokemon.name].specialty.score - item.specialtyBorder / 100);
             }
+            if (hitList != null && score >= 0) {
+              hitList.push({ type: 'pokemon', condition: item })
+            }
             return [{ pokemon: simulatedPokemon, score }];
           }).sort((a, b) => b.score - a.score);
 
@@ -110,7 +113,7 @@ export class CheckList {
     }
   }
 
-  foodCheckList(config: any, simulatedPokemonList: SimulatedPokemon[]) {
+  foodCheckList(config: any, simulatedPokemonList: SimulatedPokemon[], hitList: any[] | null = null) {
     if (this.evaluateTable == null) {
       return {
         dataList: [],
@@ -184,6 +187,9 @@ export class CheckList {
         let hitPokemon = foodScorePokemonMap[food.name][0];
         let checked = hitPokemon?.score >= border;
         let targetPokemonList = bestFoodScoreMap[food.name].filter(x => x.score >= targetBorder);
+        if (hitList != null && checked) {
+          hitList!.push({ type: 'food', food })
+        }
         result.push({
           food,
           bestFoodScore,
@@ -228,7 +234,7 @@ export class CheckList {
     }
   }
 
-  skillCheckList(config: any, simulatedPokemonList: SimulatedPokemon[]) {
+  skillCheckList(config: any, simulatedPokemonList: SimulatedPokemon[], hitList: any[] | null = null) {
     if (this.evaluateTable == null) {
       return {
         dataList: [],
@@ -277,6 +283,9 @@ export class CheckList {
     }
     
     for(const skill of Skill.list) {
+      if (config.summary.checklist.skill.skillSpecialtyOnly && !skill.skillSpecialtyOnly) {
+        continue;
+      }
       if (
         bestSkillScoreMap[skill.name] != null
         && config.summary.checklist.skill.enableMap[skill.name]
@@ -292,9 +301,12 @@ export class CheckList {
         let hitPokemon = skillScorePokemonMap[skill.name][0];
         let checked = hitPokemon?.score >= border
         let targetPokemonList = bestSkillScoreMap[skill.name].filter(x => x.score >= targetBorder);
+        if (hitList != null && checked) {
+          hitList!.push({ type: 'skill', skill })
+        }
 
         result.push({
-          skill: skill,
+          skill,
           bestSkillScore,
           border,
           score: hitPokemon?.score,
@@ -335,9 +347,13 @@ export class CheckList {
     }
   }
 
-  isChecked(config: any, simulatedPokemon: SimulatedPokemon) {
-    return this.pokemonCheckList(config, [simulatedPokemon]).dataList.some(x => x.checked)
-      || this.foodCheckList(config, [simulatedPokemon]).dataList.some(x => x.checked)
-      || this.skillCheckList(config, [simulatedPokemon]).dataList.some(x => x.checked);
+  getChecked(config: any, simulatedPokemon: SimulatedPokemon) {
+    const result: any[] = [];
+    
+    this.pokemonCheckList(config, [simulatedPokemon], result);
+    this.foodCheckList(config, [simulatedPokemon], result);
+    this.skillCheckList(config, [simulatedPokemon], result);
+
+    return result;
   }
 }

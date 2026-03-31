@@ -31,7 +31,7 @@ addEventListener('message', async (event) => {
     let pokemonList: PokemonBoxType[] = event.data.pokemonList; 
     let evaluateTable = event.data.evaluateTable;
 
-    const checkList = config.simulation.fix ? new CheckList(config, evaluateTable) : null;
+    const checkList = config.simulation.fix || config.cleaning ? new CheckList(config, evaluateTable) : null;
 
     let result: SimulatedPokemon[] = [];
     let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
@@ -58,6 +58,7 @@ addEventListener('message', async (event) => {
 
       let evaluateResult: EvaluateResult | null = null;
       let fix = false;
+      let checkListHit: any[] = [];
 
       // 厳選
       if (evaluateTable) {
@@ -159,28 +160,34 @@ addEventListener('message', async (event) => {
                 if (evaluateResult[lv][after].specialty) {
                   evaluateSpecialtyMaxScore = Math.max(evaluateSpecialtyMaxScore, evaluateResult[lv][after].specialty.score)
                 }
-
-
               }
             }
 
+            let thisCheckListHit = checkList != null ? checkList.getChecked(config, {
+              foodCombination: foodIndexList.map(x => String.fromCharCode(65 + x)).join(''),
+              evaluateResult: Object.fromEntries(
+                Object.entries(evaluateResult!)
+                  .map(([lv, afterMap]) => [lv, { [after]: afterMap[after] }])
+              )
+            } as SimulatedPokemon) : null;
+            if (thisCheckListHit != null) {
+              checkListHit.push(...thisCheckListHit!)
+            }
+
             let thisFix = config.simulation.fix && fixablePokemonIndexSet!.has(box.index) && (
-              (config.simulation.fixCheckList && checkList != null && checkList.isChecked(config, {
-                foodCombination: foodIndexList.map(x => String.fromCharCode(65 + x)).join(''),
-                evaluateResult: Object.fromEntries(
-                  Object.entries(evaluateResult!)
-                    .map(([lv, afterMap]) => [lv, { [after]: afterMap[after] }])
-                )
-              }))
+              (config.simulation.fixCheckList && thisCheckListHit?.length)
               || (config.simulation.fixBorder != null && evaluateMaxScore >= config.simulation.fixBorder / 100)
               || (config.simulation.fixBorderSpecialty != null && evaluateSpecialtyMaxScore >= config.simulation.fixBorderSpecialty / 100)
             );
             fix ||= thisFix
 
             // 最終進化想定シミュをする場合、別個体に切り出し
-            if (thisFix && (config.simulation.fixEvolve || config.simulation.fixResourceMode == 1)) {
-              if (!config.simulation.fixEvolveExcludeSleep || !Pokemon.map[after].requireSleep[pokemonList[i].name]) {
-                addPokemonList.push(after)
+            // ボックス整理時は最終進化想定しない
+            if (!config.cleaning) {
+              if (thisFix && (config.simulation.fixEvolve || config.simulation.fixResourceMode == 1)) {
+                if (!config.simulation.fixEvolveExcludeSleep || !Pokemon.map[after].requireSleep[pokemonList[i].name]) {
+                  addPokemonList.push(after)
+                }
               }
             }
           }
@@ -233,6 +240,7 @@ addEventListener('message', async (event) => {
           }
         }
         simulatedPokemon.beforeName = pokemonList[i].name;
+        simulatedPokemon.hitCheckList = checkListHit;
         thisResult.push(simulatedPokemon)
 
         if (evaluateResult) {

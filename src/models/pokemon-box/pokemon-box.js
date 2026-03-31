@@ -66,6 +66,7 @@ class PokemonBox {
         nature: pokemon.nature,
         shiny: pokemon.shiny,
         memo: pokemon.memo,
+        favorite: pokemon.favorite,
         sleepTime: pokemon.sleepTime,
         fix: pokemon.fix,
       };
@@ -84,9 +85,13 @@ class PokemonBox {
     }
   }
 
-  static delete(index) {
-    if (index != null) {
-      this._list.splice(index, 1);
+  static delete(...index) {
+  // 後ろのインデックスのものから削除する(前から削除するとずれるため)
+    const sortedIndexes = index.filter(i => i != null).sort((a, b) => b - a);
+    if (sortedIndexes.length) {
+      for (const i of sortedIndexes) {
+        this._list.splice(i, 1);
+      }
       this.save();
     }
   }
@@ -127,6 +132,7 @@ class PokemonBox {
         training: Number(cells[config.pokemonBox.tsv.training]) || null,
         nextExp: Number(cells[config.pokemonBox.tsv.nextExp]) || null,
         memo: cells[config.pokemonBox.tsv.memo] || null,
+        favorite: !!cells[config.pokemonBox.tsv.favorite],
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];
@@ -167,7 +173,7 @@ class PokemonBox {
           sheet: config.pokemonBox.gs.sheet,
           pokemonList: [
             // 連携カラムが増えた場合はこのnew Arrayの件数も増やす
-            [this._time.toISOString(), ...new Array(18).fill('')],
+            [this._time.toISOString(), ...new Array(19).fill('')],
             ...this.list.map(pokemon => [
               pokemon.name,
               pokemon.lv,
@@ -182,6 +188,7 @@ class PokemonBox {
               pokemon.training ?? null,
               pokemon.nextExp ?? null,
               pokemon.memo ?? null,
+              pokemon.favorite ?? null,
             ])
           ],
         }))
@@ -229,6 +236,7 @@ class PokemonBox {
         training: Number(row[16]) || null,
         nextExp: Number(row[17]) || null,
         memo: row[18] || null,
+        favorite: !!row[19],
       }
 
       let pokemon = Pokemon.map[boxPokemon.name];

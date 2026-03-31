@@ -37,6 +37,7 @@ function exportList() {
     if(config.pokemonBox.tsv.training) arr[config.pokemonBox.tsv.training - 1] = pokemon.training;
     if(config.pokemonBox.tsv.nextExp) arr[config.pokemonBox.tsv.nextExp - 1] = pokemon.nextExp;
     if(config.pokemonBox.tsv.memo) arr[config.pokemonBox.tsv.memo - 1] = pokemon.memo;
+    if(config.pokemonBox.tsv.favorite) arr[config.pokemonBox.tsv.favorite - 1] = pokemon.favorite ? 1 : '';
 
     return arr.join('\t');
   }).join('\n')
@@ -79,6 +80,7 @@ function importList() {
       <div><label>目標Lv</label><input type="number" v-model="config.pokemonBox.tsv.training" placeholder="なし"></div>
       <div><label>次Lv迄のExp</label><input type="number" v-model="config.pokemonBox.tsv.nextExp" placeholder="なし"></div>
       <div><label>メモ</label><input type="number" v-model="config.pokemonBox.tsv.memo" placeholder="なし"></div>
+      <div><label>お気に入り</label><input type="number" v-model="config.pokemonBox.tsv.favorite" placeholder="なし"></div>
     </SettingList>
 
     <div class="flex-row gap-10px mt-10px">
