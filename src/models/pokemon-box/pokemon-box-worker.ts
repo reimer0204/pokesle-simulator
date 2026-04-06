@@ -444,10 +444,15 @@ addEventListener('message', async (event) => {
               break;
             }
             
+            case 'いやしのはどう(げんきエールS)':
             case 'おてつだいサポートS':
             case 'おてつだいブースト': {
               let pickupEnergySum = [...pickupEnergyPerHelpTop5.filter(x => x.box!.index != pokemon.box!.index).slice(0, 4), pokemon].reduce((a, x) => a + x.pickupEnergyPerHelp, 0)
-              supportSkillEnergy += pickupEnergySum * (skill.name == 'おてつだいブースト' ? effect.max : effect / 5);
+              let helpNum = 0;
+              if (skill.name == 'おてつだいブースト') helpNum = effect.max;
+              if (skill.name == 'おてつだいサポートS') helpNum = effect / 5;
+              if (skill.name == 'いやしのはどう(げんきエールS)') helpNum = effect.help2 * 2 / 5;
+              supportSkillEnergy += pickupEnergySum * helpNum;
               break;
             }
           }

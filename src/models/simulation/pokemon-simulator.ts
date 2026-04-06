@@ -907,6 +907,35 @@ class PokemonSimulator {
 
           break;
         }
+        
+        case 'いやしのはどう(げんきエールS)': {
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            energyPerSkill = scoreForSupportEvaluate! * effect.help2 * 2;
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            // チームが分かっている時はここで獲得エナジーと食材の期待値計算
+            let helpCount = effect.help1;
+            for(let subPokemon of pokemonList!) {
+              if (subPokemon.base.name == 'ラティオス') {
+                helpCount = effect.help2;
+                break;
+              }
+            }
+            helpCount = helpCount * 2 / 5;
+
+            energyPerSkill = 0;
+            for(let subPokemon of pokemonList!) {
+              energyPerSkill += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.foodRate);
+              for(let food of subPokemon.foodList) {
+                pokemon[food.name] = (pokemon[food.name] ?? 0) + food.num / subPokemon.foodList.length * helpCount * subPokemon.foodRate * pokemon.skillPerDay * weight;
+              }
+            }
+          }
+
+          break;
+        }
 
         case 'おてつだいサポートS':
         case 'おてつだいブースト':

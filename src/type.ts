@@ -63,7 +63,7 @@ interface SkillType {
   shard?: boolean;
   energyOnly?: boolean;
   foodList?: FoodType[];
-  skillSpecialtyOnly: boolean;
+  skillSpecialtyOnly?: boolean;
 }
 
 interface SubSkillType {

@@ -510,9 +510,10 @@ const specialtyEvaluateGraph = computed(() => {
                 げんき回復量で計算済み
               </template>
               
-              <template v-if="skill.name == 'おてつだいサポートS' || skill.name == 'おてつだいブースト'">
+              <template v-if="skill.name == 'おてつだいサポートS' || skill.name == 'いやしのはどう(げんきエールS)' || skill.name == 'おてつだいブースト'">
                 {{ evaluateResult.scoreForSupportEvaluate.toFixed(1) }} ※厳選度{{ config.selectEvaluate.supportBorder }}%の上位{{ config.selectEvaluate.supportRankNum }}%のおてつだいあたりのエナジーの平均値<br>
                 <template v-if="skill.name == 'おてつだいブースト'">× {{ skill.effect[lv - 1].max }} × 5</template>
+                <template v-else-if="skill.name == 'いやしのはどう(げんきエールS)'">× {{ skill.effect[lv - 1].help2 }} × 5</template>
                 <template v-else>× {{ skill.effect[lv - 1] }}</template><br>
                 <template v-if="evaluateResult.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
               </template>

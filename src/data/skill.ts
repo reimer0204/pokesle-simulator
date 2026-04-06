@@ -86,6 +86,19 @@ class Skill {
       genki: true,
     },
     {
+      name: 'いやしのはどう(げんきエールS)',
+      effect: [
+        { other: 6,  help1: 1, help2: 2 },
+        { other: 8,  help1: 2, help2: 3 },
+        { other: 10, help1: 2, help2: 4 },
+        { other: 13, help1: 3, help2: 5 },
+        { other: 17, help1: 4, help2: 6 },
+        { other: 22, help1: 4, help2: 7 },
+      ].map(x => ({ ...x, other: x.other * 2 / 5 })),
+      team: true,
+      genki: true,
+    },
+    {
       name: 'げんきオールS',
       effect: [5.0, 7.0,	9.0,	11.4,	15.0, 18.1].map(x => ({ other: x })),
       team: true,
