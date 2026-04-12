@@ -272,6 +272,7 @@ interface SimulatedPokemon extends FoodNames {
 interface SimulatedFood {
   name: FoodName;
   num: number;
+  baseNum: number,
   energy: number;
 }
 

@@ -391,6 +391,7 @@ class PokemonSimulator {
       const food = Food.map[name];
       if (food == null) throw `${pokemon.base.name}:不正な食べ物(${name})`
       let num = Math.round(firstFoodEnergy * [1, 2.25, 3.6][index] / food.energy);
+      let baseNum = num;
       if (eventBonus) {
         num += this.config.simulation.eventBonusTypeFood;
       }
@@ -414,6 +415,7 @@ class PokemonSimulator {
       pokemon.foodList.push({
         name: food.name,
         num,
+        baseNum,
         energy: (this.foodEnergyMap[food.name].max * foodUseRate + this.foodEnergyMap[food.name].min * (1 - foodUseRate)),
       })
     }
@@ -446,14 +448,6 @@ class PokemonSimulator {
     pokemon.subSkillNameList = subSkillList.map(x => x?.name);
     pokemon.nature = nature;
 
-    // きのみの個数
-    pokemon.berryNum = ((pokemon.base.specialty == 'きのみ' || pokemon.base.specialty == 'オール') ? 2 : 1)
-      + (pokemon.subSkillNameList.includes('きのみの数S') ? 1 : 0)
-    
-    if (pokemon.eventBonus) {
-      pokemon.berryNum += this.config.simulation.eventBonusTypeBerry;
-    }
-
     // きのみエナジー/手伝い
     pokemon.berryEnergy = Math.max(
       pokemon.base.berry.energy + pokemon.lv - 1,
@@ -461,6 +455,17 @@ class PokemonSimulator {
     )
     * berryRate / 100
     * this.#berryEnergyWeight
+
+    // きのみの個数
+    pokemon.berryNum = ((pokemon.base.specialty == 'きのみ' || pokemon.base.specialty == 'オール') ? 2 : 1)
+      + (pokemon.subSkillNameList.includes('きのみの数S') ? 1 : 0)
+    
+    // おてつだいサポート用のきのみエナジー/手伝い(イベントボーナス加算前に計算)
+    let berryEnergyPerHelpForSupport = pokemon.berryEnergy * pokemon.berryNum
+    
+    if (pokemon.eventBonus) {
+      pokemon.berryNum += this.config.simulation.eventBonusTypeBerry;
+    }
 
     pokemon.berryEnergyPerHelp = pokemon.berryEnergy * pokemon.berryNum
 
@@ -481,10 +486,15 @@ class PokemonSimulator {
       / pokemon.foodList.length
       * this.#foodEnergyWeight;
 
+    // おてつだいサポート用の食材エナジー/手伝い(イベントボーナス抜きで計算)
+    let foodEnergyPerHelpForSupport = pokemon.foodList.reduce((a, x) => a + x.energy * x.baseNum, 0)
+      / pokemon.foodList.length
+      * this.#foodEnergyWeight;
+
     // きのみor食材エナジー/手伝い
     pokemon.pickupEnergyPerHelp =
-      pokemon.berryEnergyPerHelp * (1 - pokemon.foodRate)
-      + pokemon.foodEnergyPerHelp * pokemon.foodRate;
+      berryEnergyPerHelpForSupport * (1 - pokemon.foodRate)
+      + foodEnergyPerHelpForSupport * pokemon.foodRate;
 
 
     // 最大所持数計算

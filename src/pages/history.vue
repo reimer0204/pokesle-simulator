@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2026/4/12</h3>
+    <ul>
+      <li>
+        不具合修正
+        <ul>
+          <li>イベントボーナスのきのみ、食材の追加がおてつだいサポート等のスキルに乗っている問題を修正</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2026/4/6</h3>
     <ul>
       <li>
@@ -32,7 +42,6 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-
     
     <h3>2026/3/31</h3>
     <ul>
