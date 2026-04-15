@@ -67,8 +67,8 @@ async function createPokemonList(setConfig = false) {
       const result = { name: berry.name, type: berry.type, }
       for(let i = 0; i < simulatedPokemonList.length; i++) {
         const pokemonList = simulatedPokemonList[i].filter(x => x.base.berry.name == berry.name)
-         .sort((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
-        result[`score${i}`] = pokemonList[0]?.berryEnergyPerDay
+         .sort((a, b) => b.bEpD - a.bEpD)
+        result[`score${i}`] = pokemonList[0]?.bEpD
         result[`pokemon${i}`] = pokemonList[0]
       }
       return result;

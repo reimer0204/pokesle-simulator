@@ -175,10 +175,10 @@ class PokemonSimulator {
       shard: 0,
       berryNum: 0,
       berryEnergy: 0,
-      berryEnergyPerHelp: 0,
+      bEpH: 0,
       foodRate: 0,
       foodNum: 0,
-      foodEnergyPerHelp: 0,
+      fEpH: 0,
       pickupEnergyPerHelp: 0,
       bag: 0,
       bagFullHelpNum: 0,
@@ -205,9 +205,9 @@ class PokemonSimulator {
       normalNightHelpNum: 0,
       normalHelpNum: 0,
       berryHelpNum: 0,
-      berryEnergyPerDay: 0,
+      bEpD: 0,
       berryNumPerDay: 0,
-      foodEnergyPerDay: 0,
+      fEpD: 0,
       foodNumPerDay: 0,
       pickupEnergyPerDay: 0,
       skillPerDay: 0,
@@ -467,7 +467,8 @@ class PokemonSimulator {
       pokemon.berryNum += this.config.simulation.eventBonusTypeBerry;
     }
 
-    pokemon.berryEnergyPerHelp = pokemon.berryEnergy * pokemon.berryNum
+    pokemon.bEpH4Spt = berryEnergyPerHelpForSupport
+    pokemon.bEpH = pokemon.berryEnergy * pokemon.berryNum
 
     // 食材確率
     pokemon.foodRate = pokemon.base.foodRate
@@ -482,7 +483,7 @@ class PokemonSimulator {
     pokemon.foodNum = pokemon.foodList.reduce((a, x) => a + x.num, 0) / pokemon.foodList.length;
 
     // 食材エナジー/手伝い
-    pokemon.foodEnergyPerHelp = pokemon.foodList.reduce((a, x) => a + x.energy * x.num, 0)
+    pokemon.fEpH = pokemon.foodList.reduce((a, x) => a + x.energy * x.num, 0)
       / pokemon.foodList.length
       * this.#foodEnergyWeight;
 
@@ -766,14 +767,14 @@ class PokemonSimulator {
 
     // きのみエナジー/日
     let berryHelpNum = pokemon.normalHelpNum * (1 - pokemon.foodRate) + pokemon.berryHelpNum
-    pokemon.berryEnergyPerDay = pokemon.berryEnergyPerHelp * berryHelpNum
+    pokemon.bEpD = pokemon.bEpH * berryHelpNum
     pokemon.berryNumPerDay = pokemon.berryNum * berryHelpNum;
     
     if (this.#expectType.food == 0) {
 
       // 食材エナジー/日
       let foodGetChance = pokemon.normalHelpNum * pokemon.foodRate;
-      pokemon.foodEnergyPerDay = pokemon.foodEnergyPerHelp * foodGetChance;
+      pokemon.fEpD = pokemon.fEpH * foodGetChance;
       pokemon.foodNumPerDay = pokemon.foodNum * foodGetChance;
       
       // 食材の個数
@@ -786,7 +787,7 @@ class PokemonSimulator {
 
     } else {
       // 食材エナジー/日
-      pokemon.foodEnergyPerDay = 0;
+      pokemon.fEpD = 0;
       pokemon.foodNumPerDay = 0;
       
       // 食材の個数
@@ -796,14 +797,14 @@ class PokemonSimulator {
       // }
       for(const foodProb of pokemon.foodProbList!) {
         const num = this.#probBorder.get(pokemon.foodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
-        pokemon.foodEnergyPerDay += num * foodProb.energy;
+        pokemon.fEpD += num * foodProb.energy;
         pokemon.foodNumPerDay += num;
         pokemon[foodProb.name] += num;
       }
     }
     
     // きのみor食材エナジー/日
-    pokemon.pickupEnergyPerDay = pokemon.berryEnergyPerDay + pokemon.foodEnergyPerDay;
+    pokemon.pickupEnergyPerDay = pokemon.bEpD + pokemon.fEpD;
 
     // スキル発動回数の期待値を計算(チェックごとの確率の総和)
     if (pokemon.bag > 0) {
@@ -937,7 +938,7 @@ class PokemonSimulator {
 
             energyPerSkill = 0;
             for(let subPokemon of pokemonList!) {
-              energyPerSkill += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.foodRate);
+              energyPerSkill += subPokemon.bEpH * helpCount * (1 - subPokemon.foodRate);
               for(let food of subPokemon.foodList) {
                 pokemon[food.name] = (pokemon[food.name] ?? 0) + food.num / subPokemon.foodList.length * helpCount * subPokemon.foodRate * pokemon.skillPerDay * weight;
               }
@@ -968,9 +969,9 @@ class PokemonSimulator {
 
             energyPerSkill = 0;
             for(let subPokemon of pokemonList!) {
-              energyPerSkill += subPokemon.berryEnergyPerHelp * helpCount * (1 - subPokemon.foodRate);
+              energyPerSkill += subPokemon.bEpH4Spt * helpCount * (1 - subPokemon.foodRate);
               for(let food of subPokemon.foodList) {
-                pokemon[food.name] = (pokemon[food.name] ?? 0) + food.num / subPokemon.foodList.length * helpCount * subPokemon.foodRate * pokemon.skillPerDay * weight;
+                pokemon[food.name] = (pokemon[food.name] ?? 0) + food.baseNum / subPokemon.foodList.length * helpCount * subPokemon.foodRate * pokemon.skillPerDay * weight;
               }
             }
             

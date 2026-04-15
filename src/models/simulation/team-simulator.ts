@@ -83,7 +83,7 @@ self.addEventListener('message', async (event) => {
         if((
           config.simulation.field == 'ワカクサ本島' ? config.simulation.berryList : Field.map[config.simulation.field].berryList
         )?.includes('ウブ')) {
-          nightCapPikachu.berryEnergyPerDay *= 2;
+          nightCapPikachu.bEpD *= 2;
         }
       }
 
@@ -101,6 +101,31 @@ self.addEventListener('message', async (event) => {
         ? cookingListMap[config.simulation.cookingType]
         : cookingList.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy);
 
+      let foodCommonRate = (config.teamSimulation.day == null) ? ((2 * 0.1 + 0.9) * 6 + (3 * 0.3 + 0.7)) / 7
+        : config.teamSimulation.day == 6 ? 1.3
+        : 1.1;
+      if (config.teamSimulation.initialCookingChange) {
+        foodCommonRate = 0;
+        let length = config.teamSimulation.day != null ? 3 : 21;
+        let noSuccessRate = 1;
+        for(let i = 0; i < length; i++) {
+          let success = ((i >= 18 || config.teamSimulation.day == 6) ? 0.3 : 0.1) + config.teamSimulation.initialCookingChange * noSuccessRate;
+          noSuccessRate *= 1 - success;
+          foodCommonRate += success
+        }
+        foodCommonRate /= length;
+      }
+      foodCommonRate *= config.simulation.cookingWeight
+      let foodEnergyMap = {};
+      for(const cooking of cookingList) {
+        for(const cookingFood of cooking.foodList) {
+          foodEnergyMap[cookingFood.name] = Math.max(
+            foodEnergyMap[cookingFood.name] || 0,
+            Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus * foodCommonRate
+          )
+        }
+      }
+      
       // シミュレーター用意
       let simulator = new PokemonSimulator(config, PokemonSimulator.MODE_TEAM);
 
@@ -150,6 +175,9 @@ self.addEventListener('message', async (event) => {
         let todayResearchExp = 0;
         let useTotalShard = 0;
         let useCandies: { [key: string]: number } = {};
+        let specialtyBerry = 0;
+        let specialtyFood = 0;
+        let specialtySkill = 0;
 
         for(let pokemon of pokemonList) {
           helpBonusCount += pokemon.subSkillNameList.includes('おてつだいボーナス') ? 1 : 0;
@@ -162,6 +190,10 @@ self.addEventListener('message', async (event) => {
           if (useCandies[pokemon.base.candyName] > (config.candy.bag[pokemon.base.candyName] ?? 0) + freeCandy * 5) {
             continue combinationLoop;
           }
+
+          if (pokemon.base.specialty == 'きのみ') specialtyBerry++;
+          if (pokemon.base.specialty == '食材') specialtyFood++;
+          if (pokemon.base.specialty == 'スキル') specialtySkill++;
 
           researchExpBonusCount += config.simulation.researchRankMax && pokemon.subSkillNameList.includes('リサーチEXPボーナス') ? 1 : 0;
 
@@ -178,6 +210,17 @@ self.addEventListener('message', async (event) => {
 
         // 睡眠EXPボーナスが指定値に満たない場合は不採用
         if (suiminExpBonusCount < config.teamSimulation.require.suiminExp) {
+          continue;
+        }
+        
+        // 各とくいの匹数が指定値に満たない場合は不採用
+        if (specialtyBerry < config.teamSimulation.require.specialtyNum['きのみ']) {
+          continue;
+        }
+        if (specialtyFood < config.teamSimulation.require.specialtyNum['食材']) {
+          continue;
+        }
+        if (specialtySkill < config.teamSimulation.require.specialtyNum['スキル']) {
           continue;
         }
 
@@ -212,11 +255,6 @@ self.addEventListener('message', async (event) => {
 
         helpRate.calcTeamHeal(pokemonList)
 
-        // 睡眠EXPボーナスが指定値に満たない場合は不採用
-        if (suiminExpBonusCount < config.teamSimulation.require.suiminExp) {
-          continue;
-        }
-
         for(let pokemon of pokemonList) {
           simulator.calcHelp(
             pokemon,
@@ -235,7 +273,7 @@ self.addEventListener('message', async (event) => {
             continue combinationLoop;
           }
 
-          energy += pokemon.berryEnergyPerDay;
+          energy += pokemon.bEpD;
           energy += pokemon.skillEnergyPerDay;
           skillShard += pokemon.shard;
 
@@ -297,8 +335,8 @@ self.addEventListener('message', async (event) => {
         const selectedCookingList = [];
         let cookingCount = 0;
         let cookingList = [];
+        let remainFoodEnergy = 0;
         if (config.simulation.cookingWeight > 0) {
-
           let cookingTimingList = [];
           if (config.teamSimulation.day != null) {
             for(let i = 0; i < config.teamSimulation.cookingNum ?? 3; i++) {
@@ -353,12 +391,14 @@ self.addEventListener('message', async (event) => {
             if (config.teamSimulation.day == null) {
               // 余った食材を詰める
               let addFoodPower = 0;
-              while(potRemain > 0 && remainFoodList.length) {
-                const num = Math.min(potRemain, remainFoodList[0].num);
-                potRemain -= num;
-                remainFoodList[0].num -= num;
-                addFoodPower += remainFoodList[0].energy * num;
-                if (remainFoodList[0].num <= 0) remainFoodList.shift();
+              if (config.simulation.remainFoodMode == 0) {
+                while(potRemain > 0 && remainFoodList.length) {
+                  const num = Math.min(potRemain, remainFoodList[0].num);
+                  potRemain -= num;
+                  remainFoodList[0].num -= num;
+                  addFoodPower += remainFoodList[0].energy * num;
+                  if (remainFoodList[0].num <= 0) remainFoodList.shift();
+                }
               }
 
               const successPower = (chanceWeekEffect.successProbabilityList[index] * (sunday ? 2 : 1) + 1);
@@ -396,6 +436,10 @@ self.addEventListener('message', async (event) => {
               energy += cookingEnergy;
 
             }
+          }
+          if (config.simulation.remainFoodMode == 1) {
+            remainFoodEnergy = remainFoodList.reduce((sum, { name, num }) => sum + (foodEnergyMap[name] ?? 0) * (addFoodNum[name] ?? 0) * config.simulation.remainFoodRate, 0);
+            energy += remainFoodEnergy;
           }
         }
         // remainFoodNum = Object.fromEntries(remainFoodList.map(({ name, num }) => [name, num]));
@@ -466,6 +510,7 @@ self.addEventListener('message', async (event) => {
             defaultFoodNum,
             foodNum,
             cookingPowerUpEffectList,
+            remainFoodEnergy,
             ...resultOption,
           }))
 

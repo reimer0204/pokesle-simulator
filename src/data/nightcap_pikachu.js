@@ -42,7 +42,7 @@ class NightCapPikachu {
     nightCapPikachu.shard = 0;
     
     nightCapPikachu.helpNum = 86400 / nightCapPikachu.time;
-    nightCapPikachu.berryEnergyPerDay = nightCapPikachu.helpNum * Math.max(
+    nightCapPikachu.bEpD = nightCapPikachu.helpNum * Math.max(
       Berry.map['ウブ'].energy + lv - 1,
       Berry.map['ウブ'].energy * (1.025 ** (lv - 1))
     ) * (1 - 0.16 * nightCapPikachu.foodNumList.length)

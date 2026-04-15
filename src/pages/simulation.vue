@@ -47,6 +47,9 @@ const requireText = computed(() => {
   if (config.teamSimulation.require.dayHelpRate > 0) result.push(`日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`)
   if (config.teamSimulation.require.nightHelpRate > 0) result.push(`夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`)
   if (config.teamSimulation.require.suiminExp > 0) result.push(`睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`)
+  if (config.teamSimulation.require.specialtyNum['きのみ'] > 0) result.push(`きのみとくい${config.teamSimulation.require.specialtyNum['きのみ']}匹以上`)
+  if (config.teamSimulation.require.specialtyNum['食材'] > 0) result.push(`食材とくい${config.teamSimulation.require.specialtyNum['食材']}匹以上`)
+  if (config.teamSimulation.require.specialtyNum['スキル'] > 0) result.push(`スキルとくい${config.teamSimulation.require.specialtyNum['スキル']}匹以上`)
   for(const berry of Berry.typeList) {
     if (config.teamSimulation.require.typeNum[berry.type] > 0) result.push(`${berry.type}1匹以上`)
   }
@@ -116,16 +119,16 @@ async function simulation() {
     let targetPokemonList = [];
     
     if (config.simulation.mode != 2) {
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.bEpD - a.bEpD)
       targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
       filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
 
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
       targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
       filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
 
     } else {
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
       targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
       filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
     }
@@ -339,6 +342,9 @@ async function showEditPopup(pokemon) {
           <tr><th>日中手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222"> %以上(最大222%)</div></td></tr>
           <tr><th>夜間手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222"> %以上(最大222%)</div></td></tr>
           <tr><th>睡眠EXPボーナス</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp"> 匹以上</div></td></tr>
+          <tr><th>きのみとくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['きのみ']"> 匹以上</div></td></tr>
+          <tr><th>食材とくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['食材']"> 匹以上</div></td></tr>
+          <tr><th>スキルとくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['スキル']"> 匹以上</div></td></tr>
           <tr v-for="berry in Berry.typeList">
             <th :style="{ color: berry.typeColor }">{{ berry.type }}</th>
             <td>
@@ -430,6 +436,29 @@ async function showEditPopup(pokemon) {
           <div>
             <div>
               <input type="number" v-model="initialCookingPowerUp" class="w-50px">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label>余った食材の評価</label>
+          <div>
+            <div>
+              <div class="flex-row-start-start gap-10px">
+                <InputRadio v-model="config.simulation.remainFoodMode" :value="0">隙間に詰める</InputRadio>
+                <div class="flex-column-start-start gap-5px">
+                  <InputRadio v-model="config.simulation.remainFoodMode" :value="1">以下割合で換算</InputRadio>
+                  <div class="ml-16px">
+                    <input
+                      type="number"
+                      :value="config.simulation.remainFoodRate * 100"
+                      @input="config.simulation.remainFoodRate = Number($event.target.value) / 100"
+                      class="w-50px"
+                    >
+                    %
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -584,10 +613,10 @@ async function showEditPopup(pokemon) {
                   <tr>
                     <th>きのみ</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                      {{ Math.round(pokemon.bEpD).toLocaleString() }}
                     </td>
                     <td class="text-align-right">
-                      {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.berryEnergyPerDay, 0)).toLocaleString() }}
+                      {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.bEpD, 0)).toLocaleString() }}
                     </td>
                   </tr>
                   <tr>
@@ -654,6 +683,12 @@ async function showEditPopup(pokemon) {
                     </td>
                     <td class="text-align-right">
                       {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th colspan="2">残り食材</th>
+                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                      {{ result.remainFoodEnergy?.toFixed(1) }}
                     </td>
                   </tr>
                   <tr>

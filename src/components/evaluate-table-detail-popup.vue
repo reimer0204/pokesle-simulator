@@ -410,7 +410,7 @@ const specialtyEvaluateGraph = computed(() => {
               <template v-if="config.selectEvaluate.specialty[evaluateResult.base.specialty].berryEnergyRate != 100">× {{ config.selectEvaluate.specialty[evaluateResult.base.specialty].berryEnergyRate }}% ※好物補正<br></template>
               × ({{ (evaluateResult.normalHelpNum).toFixed(2) }} × (100% - {{ (evaluateResult.foodRate * 100).toFixed(1) }}%) + {{ (evaluateResult.berryHelpNum).toFixed(2) }}) ※通常手伝い×きのみ率＋いつ育<br>
             </td>
-            <td>{{ evaluateResult.berryEnergyPerDay.toFixed(1) }}</td>
+            <td>{{ evaluateResult.bEpD.toFixed(1) }}</td>
           </tr>
 
           <tr>
@@ -434,7 +434,7 @@ const specialtyEvaluateGraph = computed(() => {
                 </template>
               </div>
             </td>
-            <td>{{ evaluateResult.foodEnergyPerDay.toFixed(1) }}</td>
+            <td>{{ evaluateResult.fEpD.toFixed(1) }}</td>
           </tr>
 
           <tr>
@@ -615,16 +615,16 @@ const specialtyEvaluateGraph = computed(() => {
           <tr>
             <th colspan="2">小計</th>
             <td>
-              {{ evaluateResult.berryEnergyPerDay.toFixed(1) }}
-              + {{ evaluateResult.foodEnergyPerDay.toFixed(1) }}
+              {{ evaluateResult.bEpD.toFixed(1) }}
+              + {{ evaluateResult.fEpD.toFixed(1) }}
               + {{ evaluateResult.skillEnergyPerDay.toFixed(1) }}<br>
             </td>
-            <td>{{ (evaluateResult.berryEnergyPerDay + evaluateResult.foodEnergyPerDay + evaluateResult.skillEnergyPerDay).toFixed(0) }}</td>
+            <td>{{ (evaluateResult.bEpD + evaluateResult.fEpD + evaluateResult.skillEnergyPerDay).toFixed(0) }}</td>
           </tr>
           <tr>
             <th colspan="2">総計</th>
             <td>
-              {{ (evaluateResult.berryEnergyPerDay + evaluateResult.foodEnergyPerDay + evaluateResult.skillEnergyPerDay).toFixed(0) }}<br>
+              {{ (evaluateResult.bEpD + evaluateResult.fEpD + evaluateResult.skillEnergyPerDay).toFixed(0) }}<br>
               <!-- <template v-if="result.subSkillNameList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template> -->
               <template v-if="evaluateResult.subSkillNameList.includes('おてつだいボーナス')">× {{
                 (((1 - evaluateResult.speedBonus) * (

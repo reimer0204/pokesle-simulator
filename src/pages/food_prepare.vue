@@ -135,16 +135,16 @@ async function simulation() {
         let targetPokemonList = [];
         
         if (config.simulation.mode != 2) {
-          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.berryEnergyPerDay - a.berryEnergyPerDay)
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.bEpD - a.bEpD)
           targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
           filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
 
-          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
           targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
           filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
 
         } else {
-          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.foodEnergyPerDay - a.foodEnergyPerDay)
+          sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
           targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
           filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
         }
@@ -686,10 +686,10 @@ async function showEditPopup(pokemon) {
                     <tr>
                       <th>きのみ</th>
                       <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                        {{ Math.round(pokemon.berryEnergyPerDay).toLocaleString() }}
+                        {{ Math.round(pokemon.bEpD).toLocaleString() }}
                       </td>
                       <td class="text-align-right">
-                        {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.berryEnergyPerDay, 0)).toLocaleString() }}
+                        {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.bEpD, 0)).toLocaleString() }}
                       </td>
                     </tr>
                     <tr>

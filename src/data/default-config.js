@@ -125,6 +125,8 @@ const defaultConfig = {
     cookingRecipeLvType3: true,
     cookingRecipeFixLv: Cooking.maxRecipeLv,
     cookingRecipeRepeatLv: 100,
+    remainFoodMode: 0,
+    remainFoodRate: 0,
     mode: 0,
 
     filter: {
@@ -161,6 +163,11 @@ const defaultConfig = {
       dayHelpRate: 0,
       nightHelpRate: 0,
       suiminExp: 0,
+      specialtyNum: {
+        'きのみ': 0,
+        '食材': 0,
+        'スキル': 0,
+      },
       typeNum: Berry.list.reduce((a, x) => (a[x.type] = 0, a), {})
     },
 

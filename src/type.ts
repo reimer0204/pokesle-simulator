@@ -172,6 +172,10 @@ interface EvaluateResult {
 };
 type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty' | 'foodNumList'
 
+/**
+ * ポケモンのシミュレーション結果
+ * @property bEpH4Spt - きのみエナジー/手伝い(サポート計算用)
+ */
 interface SimulatedPokemon extends FoodNames {
   box?: PokemonBoxType;
   base: PokemonType;
@@ -209,10 +213,13 @@ interface SimulatedPokemon extends FoodNames {
   // 個体から算出できる結果
   berryNum: number;
   berryEnergy: number;
-  berryEnergyPerHelp: number;
+
+  /** きのみエナジー/手伝い(サポート計算用) */
+  bEpH4Spt: number;
+  bEpH: number;
   foodRate: number;
   foodNum: number;
-  foodEnergyPerHelp: number;
+  fEpH: number;
   pickupEnergyPerHelp: number;
   bag: number;
   bagFullHelpNum: number;
@@ -247,9 +254,9 @@ interface SimulatedPokemon extends FoodNames {
   normalNightHelpNum: number;
   normalHelpNum: number;
   berryHelpNum: number;
-  berryEnergyPerDay: number;
+  bEpD: number;
   berryNumPerDay: number;
-  foodEnergyPerDay: number;
+  fEpD: number;
   foodNumPerDay: number;
   pickupEnergyPerDay: number;
   skillPerDay: number;
