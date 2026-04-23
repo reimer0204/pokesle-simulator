@@ -1,7 +1,7 @@
 import HelpRate from '../help-rate';
 
 import Pokemon from "../../data/pokemon";
-import Exp from "../../data/exp";
+import Exp from "../../data/exp.ts";
 import Skill from "../../data/skill";
 import { Food, Cooking } from "../../data/food_and_cooking";
 import Nature from "../../data/nature";
@@ -986,6 +986,10 @@ class PokemonSimulator {
         case 'プレゼント(食材ゲットS)':
           foodGet = effect;
           foodGetList = Food.list;
+          
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            energyPerSkill += this.config.selectEvaluate.energyPerCandy * 4;
+          }
           break;
 
         case 'ビルドアップ(料理アシストS)':

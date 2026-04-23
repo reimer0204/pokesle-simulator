@@ -64,6 +64,7 @@ interface SkillType {
   energyOnly?: boolean;
   foodList?: FoodType[];
   skillSpecialtyOnly?: boolean;
+  selfHeal?: boolean;
 }
 
 interface SubSkillType {

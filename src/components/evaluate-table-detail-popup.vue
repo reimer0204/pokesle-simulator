@@ -363,12 +363,24 @@ const specialtyEvaluateGraph = computed(() => {
           <tr>
             <th>げんき回復量</th>
             <td>
-              {{ evaluateResult.allHealList.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
-              <template v-if="evaluateResult.nature?.good == 'げんき回復量'">× 120% ※せいかく<br></template>
-              <template v-else-if="evaluateResult.nature?.weak == 'げんき回復量'">× 88% ※せいかく<br></template>
-              <template v-else>× 100% ※せいかく<br></template>
+              <template v-if="evaluateResult.allHealList">
+                {{ evaluateResult.allHealList?.reduce((a, x) => a + x.effect, 0).toFixed(1) }}<br>
+                <template v-if="evaluateResult.nature?.good == 'げんき回復量'">× 120% ※せいかく<br></template>
+                <template v-else-if="evaluateResult.nature?.weak == 'げんき回復量'">× 88% ※せいかく<br></template>
+                <template v-else>× 100% ※せいかく<br></template>
+              </template>
+              <template v-else>
+                常時100%
+              </template>
             </td>
-            <td>{{ (evaluateResult.allHealList.reduce((a, x) => a + x.effect, 0) * evaluateResult.natureGenkiMultiplier).toFixed(1) }}</td>
+            <td>
+              <template v-if="evaluateResult.allHealList">
+                {{ (evaluateResult.allHealList?.reduce((a, x) => a + x.effect, 0) * evaluateResult.natureGenkiMultiplier).toFixed(1) }}
+              </template>
+              <template v-else>
+                100%
+              </template>
+            </td>
           </tr>
           <tr>
             <th>日中手伝い回数</th>

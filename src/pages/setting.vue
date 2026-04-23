@@ -1,8 +1,10 @@
 <script setup>
+import Pokemon from '@/data/pokemon.ts';
 import SettingList from '../components/util/setting-list.vue';
 import Skill from '../data/skill';
 import config from '../models/config';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
+import Exp from '@/data/exp.ts';
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
@@ -26,13 +28,38 @@ async function save() {
 
 }
 
+const maxEnergyPerExp = computed(() => {
+  return Pokemon.list.filter(x => x.isLast).map(pokemon => {
+    let beforeEnergy = 0;
+    let maxEnergyPerExp = { score: 0, lv: 0 };
+    for(let lv = 1; lv <= Exp.list.length; lv++) {
+      let energy = Math.max(pokemon.berry.energy + lv - 1, pokemon.berry.energy * Math.pow(1.025, lv - 1))
+        * (pokemon.specialty == 'きのみ' || pokemon.specialty == 'オール' ? 3 : 2)
+        * 86400 / pokemon.help  // 1日のお手伝い回数
+        / 0.45  // げんき補正
+        / 0.65  // おてつだいスピード最大短縮
+        / 0.9   // せいかく
+        / (1 - (lv - 1) * 0.002)  // Lvによるおてつだいスピードの短縮
+      
+      if (lv >= 30) {
+        const requireExp = (Exp.list[lv - 1].total - Exp.list[lv - 2].total) * pokemon.exp;
+        const energyPerExp = (energy - beforeEnergy) / requireExp;
+        if (maxEnergyPerExp.score < energyPerExp) {
+          maxEnergyPerExp = { score: energyPerExp, lv, requireExp, energy, beforeEnergy };
+        }
+      }
+      beforeEnergy = energy;
+    }
+    return { ...maxEnergyPerExp, name: pokemon.name };
+  }).sort((a, b) => b.score - a.score)[0];
+})
+
 const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
 
 </script>
 
 <template>
   <div class="page">
-
     <DangerAlert v-if="config.version.evaluateTable == null">
       この設定を反映すると、あなたの設定に応じた厳選情報を計算します。<br>
       設定や端末のスペックによりますが、3～10分ほどかかるのでお待ちください。
@@ -142,10 +169,18 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           </small>
         </div>
         <div>
+          <label>げんき計算</label>
+          <div>
+            <InputCheckbox v-model="editConfig.selectEvaluate.genkiFullIfSelfHeal">
+              げんきチャージ持ちは<br>常時げんき100%とする
+            </InputCheckbox>
+          </div>
+        </div>
+        <div>
           <label>銀種前提厳選</label>
           <div>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.silverSeedUse">銀種前提</label>
-            <small>チェックを外す方が重いです。</small>
+            <InputCheckbox v-model="editConfig.selectEvaluate.silverSeedUse">銀種前提</InputCheckbox>
+            <small class="mt-5px">チェックを外すと重いです</small>
           </div>
         </div>
         <div>
@@ -159,14 +194,18 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         <div>
           <label>厳選レベル</label>
           <div>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[10]">10</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[25]">25</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[30]">30</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[50]">50</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[60]">60</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[75]">75</label>
-            <label><input type="checkbox" v-model="editConfig.selectEvaluate.levelList[100]">100</label>
-            <small>どのLv時点の評価で厳選するか設定します。<br>100Lvは組合せが多く計算が重いのと、100Lvに強い<br>サブスキルがあっても育成が大変なため省略推奨です。</small>
+            <div class="flex-row-start-center gap-5px">
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[10]">10</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[25]">25</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[30]">30</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[50]">50</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[60]">60</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[75]">75</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[100]">100</InputCheckbox>
+            </div>
+            <small class="mt-5px">
+              どのLv時点の評価で厳選するか設定します。<br>100Lvは組合せが多く計算が重いのと、100Lvに強い<br>サブスキルがあっても育成が大変なため省略推奨です。
+            </small>
           </div>
         </div>
         <div>
@@ -176,6 +215,136 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           </div>
         </div>
       </SettingList>
+    </ToggleArea>
+
+    <ToggleArea open>
+      <template #headerText>経験値関連補正</template>
+
+      <div>
+        経験値に関するサブスキル・せいかく・スキルはエナジーには直接影響を与えないため、<br>
+        あなたのプレイスタイルに応じて下記サブスキル・せいかくについての補正値を設定することができます。
+      </div>
+
+      <div class="flex-row-start-start mt-10px gap-10px">
+        <DesignTable>
+          <thead>
+            <tr>
+              <th></th>
+              <th>加算</th>
+              <th>倍率</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>睡眠EXPボーナス</th>
+              <td>
+                <div>
+                  ＋
+                  <input
+                    type="number"
+                    class="w-50px"
+                    v-model="editConfig.selectEvaluate.subSkill.suiminExpBonus.add"
+                    step="1">
+                </div>
+              </td>
+              <td>
+                <div>
+                  <input
+                    type="number"
+                    class="w-50px"
+                    :value="editConfig.selectEvaluate.subSkill.suiminExpBonus.rate * 100"
+                    @input="editConfig.selectEvaluate.subSkill.suiminExpBonus.rate = Number($event.target.value) / 100"
+                    step="1"
+                  >
+                  %
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>EXP獲得量▲▲</th>
+              <td>
+                <div>
+                  ＋
+                  <input
+                    type="number"
+                    class="w-50px"
+                    v-model="editConfig.selectEvaluate.nature.expUp.add"
+                    step="1">
+                </div>
+              </td>
+              <td>
+                <div>
+                  <input
+                    type="number"
+                    class="w-50px"
+                    :value="editConfig.selectEvaluate.nature.expUp.rate * 100"
+                    @input="editConfig.selectEvaluate.nature.expUp.rate = Number($event.target.value) / 100"
+                    step="1"
+                  >
+                  %
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>EXP獲得量▼▼</th>
+              <td>
+                <div>
+                  ＋
+                  <input
+                    type="number"
+                    class="w-50px"
+                    v-model="editConfig.selectEvaluate.nature.expDown.add"
+                    step="1">
+                </div>
+              </td>
+              <td>
+                <div>
+                  <input
+                    type="number"
+                    class="w-50px"
+                    :value="editConfig.selectEvaluate.nature.expDown.rate * 100"
+                    @input="editConfig.selectEvaluate.nature.expDown.rate = Number($event.target.value) / 100"
+                    step="1"
+                  >
+                  %
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </DesignTable>
+
+        <SettingList>
+          <div>
+            <label>経験値のエナジー換算</label>
+            <div class="flex-column gap-5px">
+              <div><input type="number" class="w-40px" v-model="editConfig.selectEvaluate.energyPerCandy" step="1" min="0" max="100" >&nbsp;エナジー / 25経験値</div>
+            </div>
+            <small class="mt-5px w-150px">
+              アメを獲得するスキルのエナジー計算に利用されます。
+              
+              <HelpButton title="経験値のエナジー換算" :markdown="`
+                # 参考情報
+                Lv30以降で1レベル上がることで増加する1日のきのみエナジーの理論値/経験値の最大値は ${(maxEnergyPerExp.score).toFixed(2)} です。
+                ※Lvが低いうちはきのみエナジーの計算式が異なるので30以降で計算
+
+                上記値になるケース
+                ${maxEnergyPerExp.name}
+                Lv${maxEnergyPerExp.lv - 1}: ${Math.round(maxEnergyPerExp.beforeEnergy)}エナジー
+                Lv${maxEnergyPerExp.lv}: ${Math.round(maxEnergyPerExp.energy)}エナジー
+                 (必要経験値: ${maxEnergyPerExp.requireExp})
+
+                よって、アメ1個あたりの数値に直すと ${(maxEnergyPerExp.score * 25).toFixed(0)}
+                その育てたポケモンを1週間運用する場合は ${(maxEnergyPerExp.score * 25 * 7).toFixed(0)}
+                その育てたポケモンを30日運用する場合は ${(maxEnergyPerExp.score * 25 * 30).toFixed(0)}
+
+                理論値で計算しているのでその点については高めに出ている一方、サブスキルの解放は考慮していない値のため、概ねこの値を設定しておけばそれっぽい数値になるかと思います。
+                育てたポケモンを平均何日運用するかで調整してください。
+              `" />
+            </small>
+          </div>
+        </SettingList>
+
+      </div>
     </ToggleArea>
 
     <ToggleArea open>

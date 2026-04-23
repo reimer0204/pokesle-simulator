@@ -105,7 +105,21 @@ self.addEventListener('message', async (event: {
           }
 
           for(let weight of weightList) {
-            let score = simulator.selectEvaluateToScore(eachResult, weight.yumebo, weight.risabo)
+            let score = simulator.selectEvaluateToScore(eachResult, weight.yumebo, weight.risabo);
+            let rawScore = score;
+
+            if (subSkillList.includes('睡眠EXPボーナス')) {
+              score += config.selectEvaluate.subSkill.suiminExpBonus.add;
+              score += rawScore * (config.selectEvaluate.subSkill.suiminExpBonus.rate - 1);
+            }
+            if (nature?.good === 'EXP獲得量') {
+              score += config.selectEvaluate.nature.expUp.add;
+              score += rawScore * (config.selectEvaluate.nature.expUp.rate - 1);
+            }
+            if (nature?.weak === 'EXP獲得量') {
+              score += config.selectEvaluate.nature.expDown.add;
+              score += rawScore * (config.selectEvaluate.nature.expDown.rate - 1);
+            }
 
             const obj = [
               score,
@@ -115,7 +129,7 @@ self.addEventListener('message', async (event: {
               food1,
               food2,
               food3,
-              score / eachResult.averageHelpRate, // baseScore
+              rawScore / eachResult.averageHelpRate, // baseScore
               eachResult.pickupEnergyPerHelp, // pickupEnergyPerHelp
               weight.ids.map(id => SubSkill.idMap[id].name), // subSkillList
               eachResult.nature?.name,              // nature

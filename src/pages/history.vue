@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2026/4/22</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>厳選設定に経験値関連の設定を追加</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2026/4/16</h3>
     <ul>
       <li>

@@ -59,6 +59,7 @@ class Skill {
       name: 'げんきチャージS',
       effect: [12.0, 16.2, 21.2, 26.6, 33.6, 43.4].map(x => ({ self: x })),
       genki: true,
+      selfHeal: true,
     },
     {
       name: 'つきのひかり(げんきチャージS)',
@@ -72,6 +73,7 @@ class Skill {
       ].map(x => ({ self: x.self, other: x.other * 0.5 / 5 })), // 大成功は50%、1匹だけなので/5
       genki: true,
       team: true,
+      selfHeal: true,
     },
     {
       name: 'げんきエールS',

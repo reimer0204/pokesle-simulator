@@ -55,6 +55,19 @@ class HelpRate {
       return;
     }
 
+    // 厳選シミュレーションでかつ自分で回復できる場合はスキップ
+    if (
+      this.#mode == PokemonSimulator.MODE_SELECT
+      && pokemonList[0].base.skill.selfHeal
+      && this.#config.selectEvaluate.genkiFullIfSelfHeal
+    ) {
+      for(let pokemon of pokemonList) {
+        pokemon.dayHelpRate = 2.22;
+        pokemon.nightHelpRate = 2.22;
+      }
+      return;
+    }
+
     let infoList = []
 
     let healerKey = '';

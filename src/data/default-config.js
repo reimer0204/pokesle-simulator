@@ -198,6 +198,7 @@ const defaultConfig = {
       // '食材ゲットS': 1,
       // '料理パワーアップS': 1,
     },
+    genkiFullIfSelfHeal: false,
     levelList: {
       10: false,
       25: false,
@@ -241,6 +242,13 @@ const defaultConfig = {
         },
       },
     },
+    subSkill: {
+      suiminExpBonus: { add: 0, rate: 1 },
+    },
+    nature: {
+      expUp: { add: 0, rate: 1 },
+      expDown: { add: 0, rate: 1 },
+    },
     skillEnergy: Object.fromEntries(
       Skill.list.filter(x => x.evaluateEnergy != null).map(skill => {
         return [
@@ -250,6 +258,7 @@ const defaultConfig = {
       })
     ),
     pokemonSleepTime: 500,
+    energyPerCandy: 200,
   },
 
   candy: {

@@ -6,7 +6,7 @@ import SelectTableDetailPopup from '../components/evaluate-table-detail-popup.vu
 import SortableTable from '../components/sortable-table.vue';
 import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
-import Exp from '../data/exp.js';
+import Exp from '../data/exp.ts';
 import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
 import { AsyncWatcher } from '../models/async-watcher.js';
@@ -560,19 +560,19 @@ function toggleFavorite(data: SimulatedPokemon) {
           </template>
 
           <template #evaluate="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" :type="column.templateType" :field="column.templateField" />
+            <EvaluateResult @click.stop :pokemon="data" :lv="column.lv" :type="column.templateType" :field="column.templateField" />
           </template>
 
           <template #evaluate_energy="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" field="value" />
+            <EvaluateResult @click.stop :pokemon="data" :lv="column.lv" field="value" />
           </template>
 
           <template #specialty="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" type="specialty" />
+            <EvaluateResult @click.stop :pokemon="data" :lv="column.lv" type="specialty" />
           </template>
 
           <template #specialty_num="{ data, column }">
-            <EvaluateResult :pokemon="data" :lv="column.lv" type="specialty" field="value" />
+            <EvaluateResult @click.stop :pokemon="data" :lv="column.lv" type="specialty" field="value" />
           </template>
 
           <template #candy="{ data, column }">
