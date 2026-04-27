@@ -99,6 +99,7 @@ class Cooking {
     {type: 'サラダ', name: 'りんごさんヨーグルトサラダ', energy: 19293, foodList: [{name: 'とくせんエッグ', num: 35},{name: 'とくせんリンゴ', num: 28},{name: 'あんみんトマト', num: 23},{name: 'モーモーミルク', num: 18},]},
     {type: 'サラダ', name: 'くだけるアボカドサラダ', energy: 7125, foodList: [{name: 'つやつやアボカド', num: 14},{name: 'ワカクサ大豆', num: 18},{name: 'ピュアなオイル', num: 10},]},
     {type: 'サラダ', name: 'じならしワカモレチップス', energy: 25162, foodList: [{name: 'つやつやアボカド', num: 28},{name: 'ワカクサコーン', num: 25},{name: 'げきからハーブ', num: 30},{name: 'ワカクサ大豆', num: 22},]},
+    {type: 'サラダ', name: 'ごろごろねっとうサラダ', energy: 25356, foodList: [{name: 'ずっしりカボチャ', num: 20},{name: 'ほっこりポテト', num: 30},{name: 'ワカクサコーン', num: 18},{name: 'あじわいキノコ', num: 27},]},
     {type: 'デザート', name: 'ごちゃまぜジュース', energy: 0, foodList: []},
     {type: 'デザート', name: 'じゅくせいスイートポテト', energy: 1907, foodList: [{name: 'ほっこりポテト', num: 9},{name: 'モーモーミルク', num: 5},]},
     {type: 'デザート', name: 'ふくつのジンジャークッキー', energy: 4921, foodList: [{name: 'あまいミツ', num: 14},{name: 'あったかジンジャー', num: 12},{name: 'リラックスカカオ', num: 5},{name: 'とくせんエッグ', num: 4},]},
