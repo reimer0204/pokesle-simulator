@@ -155,9 +155,10 @@ export class CheckList {
       for(let [foodCombination, { food1, food2, food3 }] of Object.entries(lvMap[config.summary.checklist.food.borderLv] ?? {})) {
 
         pokemon.foodList.forEach((food, index) => {
-          const score = index == 0 ? food1 : index == 1 ? food2 : food3;
+          const scoreList = index == 0 ? food1 : index == 1 ? food2 : food3;
+          const score = scoreList?.at(-1);
 
-          if (score == null || score == 0) return;
+          if (score == null || score === 0) return;
           if (bestFoodScoreMap[food.name] == null) bestFoodScoreMap[food.name] = [];
           bestFoodScoreMap[food.name].push({
             score,

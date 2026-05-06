@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import SortableTable from '../../components/sortable-table.vue';
-import AsyncWatcherArea from '../../components/util/async-watcher-area.vue';
-import config from '../../models/config.js';
-import PokemonInfo from './pokemon-info.vue';
+import SortableTable from '@/components/sortable-table.vue';
+import AsyncWatcherArea from '@/components/util/async-watcher-area.vue';
+import config from '@/models/config.js';
+import PokemonInfo from '../pokemon-info.vue';
 import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';
 
 const props = defineProps({
-  skillCheckList: {
+  foodCheckList: {
     type: Object as () => Record<string, any>,
     required: true,
   },
 })
+
+let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+
+if (config.summary.checklist.food.borderLv == null || !lvList.includes(config.summary.checklist.food.borderLv)) {
+  config.summary.checklist.food.borderLv = lvList.filter(x => x >= 60)[0] ?? lvList.at(-1);
+}
 
 function openBoxList(data: any) {
   Popup.show(TablePopup, data.table);
@@ -25,8 +31,8 @@ function openBoxList(data: any) {
       <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
         <SortableTable
           class="flex-110"
-          :dataList="skillCheckList.dataList"
-          :columnList="skillCheckList.columnList"
+          :dataList="foodCheckList.dataList"
+          :columnList="foodCheckList.columnList"
           scroll
         >
           <template #pokemon="{ value }">

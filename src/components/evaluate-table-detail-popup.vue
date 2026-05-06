@@ -209,7 +209,7 @@ const evaluateGraph = computed(() => {
     }
   }
 
-   return thisResult;
+  return thisResult;
 })
 
 const specialtyEvaluateGraph = computed(() => {

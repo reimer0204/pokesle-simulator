@@ -120,9 +120,9 @@ const skillCheckList = computed(() => {
       <router-link to="/check-list/field">フィールド別</router-link>
     </div>
 
-    <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
+    <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column mt-10px">
       <router-view
-        class="mt-10px flex-110"
+        class="flex-110"
         :simulatedPokemonList="simulatedPokemonList"
         :promisedEvaluateTable="promisedEvaluateTable"
         :pokemonCheckList="pokemonCheckList"
@@ -140,7 +140,6 @@ const skillCheckList = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding-bottom: 10px;
   height: 100%;
 
   .scroll-x {

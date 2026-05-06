@@ -223,6 +223,14 @@ function toggleHiddenColumn(key) {
   })
 }
 
+function onClickRow(event, data) {
+  // クリックされたのがinputやbuttonなどの操作可能な要素であれば、行のクリックイベントを発火させない
+  if (event.target.closest('input, button, select, textarea, a')) {
+    return;
+  }
+  emits('clickRow', data.$original)
+}
+
 </script>
 
 <template>
@@ -267,11 +275,11 @@ function toggleHiddenColumn(key) {
               :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
               :style="{
                 left: columnLeftList[i],
-                backgroundColor: sortColors[j]?.[column.key] ?? (props.selectedField && data.$original[props.selectedField] ? '#F003' : null),
+                backgroundColor: sortColors[j]?.[column.key] ?? (props.selectedField && data.$original[props.selectedField] ? '#FDD' : null),
                 borderBottomWidth: j > 0 && props.grid && ((j + (props.pager != null ? page * props.pager : 0)) % props.grid) == (props.grid - 1)
                   ? '2px' : null,
               }"
-              @click="emits('clickRow', data.$original)"
+              @click="onClickRow($event, data)"
             >
               <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key], key: column.key }">
                 <template v-if="column.percent">

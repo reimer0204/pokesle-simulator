@@ -32,6 +32,8 @@ import CheckListPage from './pages/check-list.vue'
 import CheckListIndexPage from './pages/check-list/index.vue'
 import CheckListPokemonPage from './pages/check-list/pokemon.vue'
 import CheckListFoodPage from './pages/check-list/food.vue'
+import CheckListFoodIndexPage from './pages/check-list/food/index.vue'
+import CheckListFoodNamePage from './pages/check-list/food/_name.vue'
 import CheckListSkillPage from './pages/check-list/skill.vue'
 import CheckListFieldPage from './pages/check-list/field.vue'
 import DataPage from './pages/data.vue'
@@ -65,7 +67,14 @@ const router = createRouter({
       children: [
         { path: '', component: CheckListIndexPage },
         { path: 'pokemon', component: CheckListPokemonPage },
-        { path: 'food', component: CheckListFoodPage },
+        {
+          path: 'food', component: CheckListFoodPage,
+          children: [
+            { path: '', component: CheckListFoodIndexPage },
+            { path: 'index', component: CheckListFoodIndexPage },
+            { path: ':name', component: CheckListFoodNamePage },
+          ]
+        },
         { path: 'skill', component: CheckListSkillPage },
         { path: 'field', component: CheckListFieldPage },
       ]

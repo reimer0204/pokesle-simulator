@@ -68,7 +68,6 @@ function openBoxList(data: any) {
 .page {
   display: flex;
   flex-direction: column;
-  padding-bottom: 10px;
 
   .scroll-x {
     overflow-x: scroll;
