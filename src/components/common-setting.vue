@@ -11,6 +11,7 @@ import Popup from '../models/popup/popup.ts';
 import ResourceEditPopup from './resource-edit-popup.vue';
 import Skill from '@/data/skill.ts';
 import InputRadio from './form/input-radio.vue';
+import InputNumber from './form/input-number.vue';
 
 const props = defineProps({
   fix: { type: Boolean, default: false },
@@ -68,6 +69,9 @@ function reset() {
   config.simulation.eventBonusTypeSkillRate = 1;
   config.simulation.eventBonusTypeSkillLv = 0;
   config.simulation.eventBonusTypeBag = 0;
+  config.simulation.eventBonusTypeBagRate = 0;
+  config.simulation.eventBonus.skill.berryBurst = 1;
+  config.simulation.eventBonus.skill.foodGet = 1;
 }
 
 </script>
@@ -236,6 +240,9 @@ function reset() {
           <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
+          <template v-if="config.simulation.eventBonusTypeBag != 0"> 所持数+{{ config.simulation.eventBonusTypeBag }}</template>
+          <template v-if="config.simulation.eventBonusTypeBagRate != 0"> 所持数x{{ config.simulation.eventBonusTypeBagRate }}</template>
+          <template v-if="config.simulation.eventBonus.skill.berryBurst != 0"> きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}</template>
         </span>
       </div>
     </template>
@@ -279,7 +286,28 @@ function reset() {
       </tr>
       <tr>
         <th>所持数</th>
-        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag" > 個追加</td>
+        <td>
+          <div class="flex-row-start-center gap-1em">
+            <div><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag" > 個追加</div>
+            <div><InputNumber class="w-60px" v-model="config.simulation.eventBonusTypeBagRate" :step="0.1" /> 倍</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>スキル</th>
+        <td>
+          <BaseAlert>スキルの設定は適用タイプによらず適用されます</BaseAlert>
+          <SettingTable class="w-100 mt-5px">
+            <SettingList>
+              <div>
+                <label>きのみバースト</label>
+                <div class="flex-row-start-center gap-4px">
+                  <InputNumber class="w-60px" v-model="config.simulation.eventBonus.skill.berryBurst" :step="0.1" /> 倍
+                </div>
+              </div>
+            </SettingList>
+          </SettingTable>
+        </td>
       </tr>
       <tr>
         <td>
@@ -318,11 +346,11 @@ function reset() {
             <div v-for="skill in Skill.list">
               <label>{{ skill.name }}</label>
               <div>
-                <input
-                  type="number" class="w-60px"
-                  :value="config.simulation.skillRate[skill.name] * 100"
-                  @input="$event => config.simulation.skillRate[skill.name] = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
-                > %
+                <InputNumber
+                  class="w-60px"
+                  v-model="config.simulation.skillRate[skill.name]"
+                  percent
+                /> %
               </div>
             </div>
           </SettingList>
@@ -367,11 +395,11 @@ function reset() {
               <div>
                 <label>食材ゲット評価率</label>
                 <div>
-                  <input
-                    type="number" class="w-60px"
-                    :value="config.teamSimulation.foodGetEvaluateRate * 100"
-                    @input="$event => config.teamSimulation.foodGetEvaluateRate = isNaN($event.target.value) ? 1 : Number($event.target.value) / 100"
-                  > %
+                  <InputNumber
+                    class="w-60px"
+                    v-model="config.teamSimulation.foodGetEvaluateRate"
+                    percent
+                  /> %
                 </div>
               </div>
             </SettingList>

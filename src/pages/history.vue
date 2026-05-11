@@ -23,6 +23,17 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2026/5/11</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>イベントボーナス設定に所持数倍率を追加</li>
+          <li>イベントボーナス設定にきのみバーストの倍率を追加</li>
+        </ul>
+      </li>
+    </ul>
+
     <h3>2026/5/6</h3>
     <ul>
       <li>
@@ -32,7 +43,6 @@ config.version.history = Version.HISTORY;
         </ul>
       </li>
     </ul>
-    
     
     <h3>2026/4/27</h3>
     <ul>

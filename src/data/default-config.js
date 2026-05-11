@@ -94,11 +94,18 @@ const defaultConfig = {
         'スキル': false,
       },
     },
+    eventBonus: {
+      skill: {
+        berryBurst: 1,
+        foodGet: 1,
+      },
+    },
     eventBonusTypeBerry: 0,
     eventBonusTypeFood: 0,
     eventBonusTypeSkillRate: 1,
     eventBonusTypeSkillLv: 0,
     eventBonusTypeBag: 0,
+    eventBonusTypeBagRate: 1,
     potSize: Cooking.potMax,
     bagOverOperation: true,
     researchRankMax: true,

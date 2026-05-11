@@ -509,10 +509,12 @@ class PokemonSimulator {
     if (pokemon.sleepTime >= 2000) pokemon.bag += 2;
     if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
       pokemon.bag += this.config.simulation.eventBonusTypeBag;
+      pokemon.bag *= this.config.simulation.eventBonusTypeBagRate;
     }
     if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket) {
       pokemon.bag = Math.floor(pokemon.bag * 1.2);
     }
+    pokemon.bag = Math.ceil(pokemon.bag);
 
     // いつ育到達は所持数がいっぱい＋4回(キュー消化分)以降
     pokemon.bagFullHelpNum = Math.max(pokemon.bag / (
@@ -871,14 +873,21 @@ class PokemonSimulator {
         case 'ばけのかわ(きのみバースト)':
         case 'きのみバースト': {
           if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            energyPerSkill = pokemon.berryEnergy * effect.self
+            energyPerSkill = pokemon.berryEnergy
+              * effect.self
+              * this.config.simulation.eventBonus.skill.berryBurst
+
             // 他メンバーのエナジーはあとで計算
-            pokemon.burstBonus = effect.other * weight;
+            pokemon.burstBonus = effect.other
+              * weight
+              * this.config.simulation.eventBonus.skill.berryBurst;
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             energyPerSkill = 0
             for(let subPokemon of pokemonList!) {
-              energyPerSkill += pokemon.berryEnergy * (pokemon == subPokemon ? effect.self : effect.other);
+              energyPerSkill += pokemon.berryEnergy
+                * (pokemon == subPokemon ? effect.self : effect.other)
+                * this.config.simulation.eventBonus.skill.berryBurst;
             }
 
           } else if (this.mode == PokemonSimulator.MODE_SELECT) {
@@ -904,9 +913,13 @@ class PokemonSimulator {
 
           } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
             const { self, other } = effect.team.at(-1)
-            energyPerSkill = pokemon.berryEnergy * self
+            energyPerSkill = pokemon.berryEnergy
+              * self
+              * this.config.simulation.eventBonus.skill.berryBurst;
+
             // 他メンバーのエナジーはあとで計算
-            pokemon.burstBonus = other;
+            pokemon.burstBonus = other
+              * this.config.simulation.eventBonus.skill.berryBurst;
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             const { self, other } = effect.team[helpBoostCount! - 1]
@@ -914,6 +927,7 @@ class PokemonSimulator {
             for(let subPokemon of pokemonList!) {
               energyPerSkill += pokemon.berryEnergy * (pokemon == subPokemon ? self : other);
             }
+            energyPerSkill *= this.config.simulation.eventBonus.skill.berryBurst;
           }
 
           break;
