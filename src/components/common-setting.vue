@@ -300,7 +300,7 @@ function reset() {
           <SettingTable class="w-100 mt-5px">
             <SettingList>
               <div>
-                <label>きのみバースト</label>
+                <label>きのみバースト(みかづきのいのり含む)</label>
                 <div class="flex-row-start-center gap-4px">
                   <InputNumber class="w-60px" v-model="config.simulation.eventBonus.skill.berryBurst" :step="0.1" /> 倍
                 </div>
