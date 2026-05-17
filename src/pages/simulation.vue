@@ -179,6 +179,7 @@ async function simulation() {
 
     targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
 
+    // 組み合わせをワーカースレッドごとに分割
     let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
       sum: 0,
       topList: [],
@@ -199,6 +200,7 @@ async function simulation() {
       min.sum += combinationSize;
       min.topList.push(i);
     }
+    targetPokemonList.sort((a, b) => b.score - a.score);
 
     let bestResult = [];
     let workerResultList = new Array(customConfig.workerNum).fill(0).map(() => []);

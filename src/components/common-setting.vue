@@ -74,6 +74,12 @@ function reset() {
   config.simulation.eventBonus.skill.foodGet = 1;
 }
 
+const workerNum = ref(config.workerNum);
+function saveWorkerNum() {
+  config.workerNum = workerNum.value;
+  location.reload();
+}
+
 </script>
 
 <template>
@@ -667,6 +673,16 @@ function reset() {
         <td>
           <input class="w-50px" type="number" step="1" v-model="config.checkFreq"> 回
           <DangerAlert class="mt-5px">チェック頻度を変更すると厳選情報の再計算が必要です</DangerAlert>
+        </td>
+      </tr>
+      <tr>
+        <th>スレッド数</th>
+        <td>
+          <div class="flex-row-start-center gap-5px">
+            <input class="w-50px" type="number" step="1" v-model="workerNum">
+            <button @click="saveWorkerNum">保存して再読み込み</button>
+          </div>
+          <DangerAlert class="mt-5px">スレッド数を増やすと処理が速くなりますが、メモリやCPUの負荷が増加します</DangerAlert>
         </td>
       </tr>
     </SettingTable>
