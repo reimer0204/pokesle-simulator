@@ -33,7 +33,8 @@ self.addEventListener('message', async (event) => {
       const helpRate = new HelpRate(config);
       
       const freeCandy = config.candy.bag.s * 3 + config.candy.bag.m * 20 + config.candy.bag.l * 100
-      
+      const fixedAboutScore = fixedPokemonList.reduce((a, x) => a + x.score, 0);
+
       // 組み合わせを列挙
       let combinationList = [];
       if (pickup > 0) {
@@ -41,7 +42,7 @@ self.addEventListener('message', async (event) => {
           let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
           let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? targetNum - pickup + i : top);
           combinationLoop: while(true) {
-            let aboutScore = 0;
+            let aboutScore = fixedAboutScore;
             if (targetPokemonList) {
               for(let index of combination) {
                 aboutScore += targetPokemonList[index].score
@@ -141,6 +142,7 @@ self.addEventListener('message', async (event) => {
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
 
         // 概算値の時点でボーダーを超えていなければこの組み合わせは計算するまでもないのでスキップ
+        console.log(borderScore, aboutScore, combination);
         if (aboutScore * dayLength < borderScore) {
           continue;
         }

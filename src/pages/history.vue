@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
     
+    <h3>2026/5/18</h3>
+    <ul>
+      <li>
+        不具合修正
+        <ul>
+          <li>シミュレーション時に固定のメンバーがいると最適解が出る前に探索が打ち切られる不具合を修正</li>
+        </ul>
+      </li>
+    </ul>
+    
     <h3>2026/5/17</h3>
     <ul>
       <li>
