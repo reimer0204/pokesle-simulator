@@ -142,7 +142,6 @@ self.addEventListener('message', async (event) => {
       combinationLoop: for(let { aboutScore, combination } of combinationList) {
 
         // 概算値の時点でボーダーを超えていなければこの組み合わせは計算するまでもないのでスキップ
-        console.log(borderScore, aboutScore, combination);
         if (aboutScore * dayLength < borderScore) {
           continue;
         }
