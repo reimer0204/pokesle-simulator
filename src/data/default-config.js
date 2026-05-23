@@ -185,6 +185,7 @@ const defaultConfig = {
   },
 
   foodDefaultNum: {},
+  foodUnlimited: false,
 
   // 厳選関連
   selectEvaluate: {

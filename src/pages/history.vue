@@ -23,6 +23,21 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <h3>2026/5/23</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>
+            シミュレーションの食材数設定欄に「食材無制限」オプションを追加
+            <ul>
+              <li>食材が潤沢にある場合のシミュレーションが出来ます</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
     <h3>2026/5/21</h3>
     <ul>
       <li>

@@ -16,6 +16,7 @@ import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worke
 import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';
 import Berry from '@/data/berry.ts';
+import InputCheckbox from '@/components/form/input-checkbox.vue';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
@@ -90,7 +91,11 @@ async function simulation() {
         ...config.teamSimulation,
         beforeEnergy: beforeEnergy.value,
       },
-    }))
+    }));
+
+    if (config.foodUnlimited) {
+      customConfig.foodDefaultNum = Object.fromEntries(Food.list.map(food => [food.name, 9999]));
+    }
 
     if (config.simulation.mode == 2) {
       customConfig.simulation.berryEnergyWeight = 0;
@@ -488,10 +493,25 @@ async function showEditPopup(pokemon) {
                 <label>{{ food.name }}</label>
                 <label>：</label>
                 <div>
-                  <input type="number" class="w-50px" :value="config.foodDefaultNum[food.name]"
-                    @input="config.foodDefaultNum[food.name] = $event.target.value ? Number($event.target.value) : 0">
+                  <input
+                    v-if="!config.foodUnlimited"
+                    type="number"
+                    class="w-50px"
+                    :value="config.foodDefaultNum[food.name]"
+                    @input="config.foodDefaultNum[food.name] = $event.target.value ? Number($event.target.value) : 0"
+                  >
+                  <input
+                    v-else 
+                    type="number"
+                    class="w-50px"
+                    value="9999"
+                    disabled
+                  >
                 </div>
               </template>
+              <div class="flex-row-end-center" style="grid-column: span 3;">
+                <InputCheckbox v-model="config.foodUnlimited">食材無制限</InputCheckbox>
+              </div>
             </div>
           </div>
         </div>
