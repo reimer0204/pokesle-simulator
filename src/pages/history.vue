@@ -23,6 +23,16 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <h3>2026/5/25</h3>
+    <ul>
+      <li>
+        機能改善
+        <ul>
+          <li>ジジーロン追加</li>
+        </ul>
+      </li>
+    </ul>
+
     <h3>2026/5/23</h3>
     <ul>
       <li>
