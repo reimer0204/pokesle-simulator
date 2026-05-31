@@ -50,7 +50,7 @@ addEventListener('message', async (event) => {
 
     for(let i = 0; i < pokemonList.length; i++) {
       const box: PokemonBoxType = pokemonList[i];
-      const base: PokemonType = Pokemon.map[pokemonList[i].name];
+      const originalBase: PokemonType = Pokemon.map[pokemonList[i].name];
 
       // 仮定計算の結果、リストに追加することになったポケモンの一覧
       // 例) イーブイの場合はイーブイの代わりにブイズが複数匹入ったりする
@@ -63,9 +63,9 @@ addEventListener('message', async (event) => {
       // 厳選
       if (evaluateTable) {
         evaluateResult = null;
-        let foodIndexList = pokemonList[i].foodList.map(foodName => base.foodNameList.findIndex(baseFood => baseFood == foodName))
+        let foodIndexList = pokemonList[i].foodList.map(foodName => originalBase.foodNameList.findIndex(baseFood => baseFood == foodName))
         if (!foodIndexList.includes(-1)) {
-          for(let after of base.afterList) {
+          for(let after of originalBase.afterList) {
             if (!evaluateTable[after]) {
               continue;
             }
@@ -197,26 +197,21 @@ addEventListener('message', async (event) => {
       if (addPokemonList.length == 0) {
         addPokemonList.push(box.name);
       }
-      
-      // スキルレベル未指定の場合のスキルレベルを計算
-      let original = simulator.fromBox({ ...pokemonList[i], skillLv: undefined });
 
       let thisResult: SimulatedPokemon[] = [];
       for(let j = 0; j < addPokemonList.length; j++) {
         let pokemonName = addPokemonList[j]
         const base = Pokemon.map[pokemonName];
         let skillLv = box.skillLv
+        
         if (skillLv != null) {
           // 進化後でスキルレベルが未指定の場合のスキルレベルを計算
-          let simulatedPokemon = simulator.fromBox(
-            { ...pokemonList[i], name: pokemonName, skillLv: undefined }, 
-            fix, 
-            config.simulation.fixResourceMode == 0 ? 0 : base.evolveCandyMap[pokemonList[i].name],
-            pokemonList[i].name != pokemonName ? (base.evolve.lv || undefined) : 0,
-          );
-
-          skillLv += simulatedPokemon.fixedSkillLv - original.fixedSkillLv
+          skillLv += base.evolveLv - originalBase.evolveLv
+          if (base.skill.effect.length < skillLv) {
+            skillLv = base.skill.effect.length;
+          }
         }
+    
 
         let simulatedPokemon = simulator.fromBox(
           { ...pokemonList[i], name: pokemonName, skillLv }, 

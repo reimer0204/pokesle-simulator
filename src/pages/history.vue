@@ -23,15 +23,27 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
-    <h3>2026/5/25</h3>
-    <ul>
-      <li>
-        機能改善
-        <ul>
-          <li>ジジーロン追加</li>
-        </ul>
-      </li>
-    </ul>
+    <HistoryItem date="2026/5/31">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>仮定設定で金種を与える場合に上限を超えたレベルが表示されることがある不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
+    <HistoryItem date="2026/5/25">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ジジーロン追加</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
 
     <h3>2026/5/23</h3>
     <ul>

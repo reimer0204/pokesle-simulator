@@ -247,8 +247,8 @@ function saveWorkerNum() {
           <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
           <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
           <template v-if="config.simulation.eventBonusTypeBag != 0"> 所持数+{{ config.simulation.eventBonusTypeBag }}</template>
-          <template v-if="config.simulation.eventBonusTypeBagRate != 0"> 所持数x{{ config.simulation.eventBonusTypeBagRate }}</template>
-          <template v-if="config.simulation.eventBonus.skill.berryBurst != 0"> きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}</template>
+          <template v-if="config.simulation.eventBonusTypeBagRate != 1"> 所持数x{{ config.simulation.eventBonusTypeBagRate }}</template>
+          <template v-if="config.simulation.eventBonus.skill.berryBurst != 1"> きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}</template>
         </span>
       </div>
     </template>
