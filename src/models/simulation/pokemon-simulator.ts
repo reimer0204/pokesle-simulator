@@ -904,6 +904,36 @@ class PokemonSimulator {
           break;
         }
         
+        case 'りゅうせいぐん(きのみバースト)': {
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            const { self, other } = effect.team[helpBoostCount! - 1]
+            energyPerSkill = 
+              pokemon.berryEnergy * (self + effect.bonus)
+              + Math.max(Berry.map['ヤチェ'].energy + pokemon.lv - 1, Berry.map['ヤチェ'].energy * (1.025 ** (pokemon.lv - 1))) * other * 4;
+
+          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
+            const { self, other } = effect.team.at(-1)
+            energyPerSkill = pokemon.berryEnergy
+              * (self + effect.bonus)
+              * this.config.simulation.eventBonus.skill.berryBurst;
+
+            // 他メンバーのエナジーはあとで計算
+            pokemon.burstBonus = other
+              * this.config.simulation.eventBonus.skill.berryBurst;
+
+          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
+            const { self, other } = effect.team[helpBoostCount! - 1]
+            energyPerSkill = 0
+            const withLatias = pokemonList!.some(x => x.base.name == 'ラティアス');
+            for(let subPokemon of pokemonList!) {
+              energyPerSkill += pokemon.berryEnergy * (pokemon == subPokemon ? (withLatias ? self : self + effect.bonus) : other);
+            }
+            energyPerSkill *= this.config.simulation.eventBonus.skill.berryBurst;
+          }
+
+          break;
+        }
+        
         case 'みかづきのいのり(げんきオールS)': {
           if (this.mode == PokemonSimulator.MODE_SELECT) {
             const { self, other } = effect.team[helpBoostCount! - 1]

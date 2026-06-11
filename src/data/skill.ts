@@ -56,6 +56,18 @@ class Skill {
       energyOnly: true,
     },
     {
+      name: 'りゅうせいぐん(きのみバースト)',
+      effect: [
+        { team: [{ self: 12, other: 1 }, { self: 14, other: 1 }, { self: 18, other: 1 }, { self: 18, other: 2 }, { self: 20, other: 2 }], bonus: 2 },
+        { team: [{ self: 21, other: 1 }, { self: 24, other: 1 }, { self: 29, other: 1 }, { self: 30, other: 2 }, { self: 33, other: 2 }], bonus: 4 },
+        { team: [{ self: 29, other: 1 }, { self: 29, other: 2 }, { self: 35, other: 2 }, { self: 37, other: 3 }, { self: 41, other: 3 }], bonus: 6 },
+        { team: [{ self: 38, other: 1 }, { self: 39, other: 2 }, { self: 42, other: 3 }, { self: 45, other: 4 }, { self: 49, other: 4 }], bonus: 8 },
+        { team: [{ self: 43, other: 2 }, { self: 44, other: 3 }, { self: 48, other: 4 }, { self: 49, other: 5 }, { self: 53, other: 5 }], bonus: 9 },
+        { team: [{ self: 48, other: 3 }, { self: 50, other: 4 }, { self: 55, other: 4 }, { self: 55, other: 5 }, { self: 58, other: 5 }], bonus: 10 },
+      ],
+      team: true,
+    },
+    {
       name: 'げんきチャージS',
       effect: [12.0, 16.2, 21.2, 26.6, 33.6, 43.4].map(x => ({ self: x })),
       genki: true,
