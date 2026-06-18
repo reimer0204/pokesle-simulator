@@ -236,7 +236,10 @@ self.addEventListener('message', async (event) => {
         }
 
         // 伝説は2匹以上入れられない
-        if (legendNum >= 2) {
+        // ただし2匹でもラティアスとラティオスの組み合わせはOK
+        if (legendNum >= 2
+          && !(legendNum === 2 && pokemonList.some(pokemon => pokemon.base.name == 'ラティアス') && pokemonList.some(pokemon => pokemon.base.name == 'ラティオス'))
+        ) {
           continue;
         }
 

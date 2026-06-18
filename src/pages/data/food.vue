@@ -27,6 +27,9 @@ const foodList = computed(() => Food.list.map(food => {
     result[`maxEnergy_${cookingType}`] = food.energy * result[`bestTypeRate_${cookingType}`] * (result[`bestTypeRate_${cookingType}`] > 1 ? Cooking.maxRecipeBonus : 1)
   }
 
+  result[`maxAddEnergyAverage`] = (result[`maxAddEnergy_カレー`] + result[`maxAddEnergy_サラダ`] + result[`maxAddEnergy_デザート`]) / 3;
+  result[`maxAddEnergyGeometricMean`] = Math.cbrt(result[`maxAddEnergy_カレー`] * result[`maxAddEnergy_サラダ`] * result[`maxAddEnergy_デザート`]);
+
   return result;
 }))
 
@@ -81,6 +84,8 @@ const foodList = computed(() => Food.list.map(food => {
       { key: 'bestTypeRate_デザート', name: 'デザート\n最大補正', percent: true, fixed: 0 },
       { key: 'maxAddEnergy_デザート', name: 'デザート\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy_デザート', name: 'デザート\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+      { key: 'maxAddEnergyAverage', name: '平均\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
+      { key: 'maxAddEnergyGeometricMean', name: '相乗平均\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
       { key: 'maxEnergy', name: '総合\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0, convert: (x) => Math.max(x.maxEnergy_カレー, x.maxEnergy_サラダ, x.maxEnergy_デザート) },
     ]">
       <template #foodList="{ data }">

@@ -23,6 +23,17 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/6/18">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ラティアスとラティオスの同時編成対応が漏れていたため修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/6/11">
       <ul>
         <li>
