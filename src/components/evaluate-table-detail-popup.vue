@@ -83,7 +83,7 @@ const evaluateResult = computed(() => {
   const lv = props.lv;
 
   // サブスキルの組み合わせを列挙
-  const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
+  const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
   let subSkillList: string[] = props.subSkillList;
   subSkillList = (config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(subSkillList) : subSkillList).slice(0, subSkillNum);
 
@@ -557,20 +557,24 @@ const specialtyEvaluateGraph = computed(() => {
               </template>
 
               <div v-if="skill.name == '料理パワーアップS' || skill.name == 'マイナス(料理パワーアップS)'" class="skill-description">
-                <template v-for="{ effect, num } in [
+                <template v-for="{ effect, num, perEnergy } in [
                   (() => {
                     let effect = (skill.name == '料理パワーアップS' ? skill.effect[lv - 1] : skill.effect[lv - 1].main)
                     let num = evaluateResult.skillPerDay / (evaluateResult.base.skill.name == 'ゆびをふる' ? Skill.metronomeTarget.length : 1)
                     return {
                       effect,
                       num,
+                      perEnergy: (
+                        config.selectEvaluate.cookingPowerUpType == 0 ? Cooking.cookingPowerUpEnergy
+                        : Cooking.cookingPowerUpEnergyAverage
+                      ) * config.selectEvaluate.cookingPowerUpRate / 100
                     }
                   })()
                 ]">
                   <template v-for="{ i, name, eachNum, limit, mainEffect, remainEffect } in [0, 1, 2].map(i => {
                     let eachNum = Math.floor(num / 3) + Math.min(Math.max(0, num - Math.floor(num / 3) * 3 - i), 1);
                     let limit = Cooking.maxFoodNum - Cooking.potMax;
-                    let mainEffect = Cooking.cookingPowerUpEnergy * Math.min(limit, effect * eachNum)
+                    let mainEffect = perEnergy * Math.min(limit, effect * eachNum)
                     let remainEffect = Food.averageEnergy * Math.max(effect * eachNum - limit, 0)
                     return {
                       i,
@@ -583,7 +587,7 @@ const specialtyEvaluateGraph = computed(() => {
                   })">
                     <br v-if="i">
                     <div>{{ name }}：{{ effect }} × {{ eachNum.toFixed(2) }}回＝{{ (effect * eachNum).toFixed(1) }}</div>
-                    <div>有効範囲エナジー：{{ Cooking.cookingPowerUpEnergy.toFixed(1) }} × min({{ limit }}, {{ (effect * eachNum).toFixed(1) }})＝{{ mainEffect.toFixed(1) }}</div>
+                    <div>有効範囲エナジー：{{ perEnergy.toFixed(1) }} × min({{ limit }}, {{ (effect * eachNum).toFixed(1) }})＝{{ mainEffect.toFixed(1) }}</div>
                     <div>&emsp;余剰分エナジー：{{ Food.averageEnergy.toFixed(1) }} × max({{ (effect * eachNum).toFixed(1) }} - {{ limit }}, 0)＝{{ remainEffect.toFixed(1) }}</div>
                   </template>
 
@@ -593,7 +597,7 @@ const specialtyEvaluateGraph = computed(() => {
 
                   <br>
                   <div>
-                    ※{{ Cooking.cookingPowerUpEnergy.toFixed(1) }}は全料理中の最大エナジーと食材数{{ Cooking.potMax }}以下の最大エナジーの差を食材数の差で割った値
+                    ※{{ perEnergy.toFixed(1) }}は料理3種ごとの最大エナジーと食材数{{ Cooking.potMax }}以下の最大エナジーの差を食材数の差で割った値{{ config.selectEvaluate.cookingPowerUpType == 0 ? 'の最大' : 'の平均値' }}に、{{ config.selectEvaluate.cookingPowerUpRate }}%をかけたもの<br>
                   </div>
                 </template>
               </div>

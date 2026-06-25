@@ -43,7 +43,7 @@ async function createPokemonList(setConfig = false) {
       { fix: true, fixLv: 30 },
       { fix: true, fixLv: 50 },
       { fix: true, fixLv: 60 },
-      { fix: true, fixLv: 75 },
+      { fix: true, fixLv: 70 },
     ].entries()) {
       simulatedPokemonList.push(await PokemonBox.simulation(
         PokemonBox.list,

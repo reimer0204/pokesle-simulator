@@ -197,6 +197,8 @@ const defaultConfig = {
     teamHelpBonus: 3,       // チームに自分以外のおてボ持ちが何匹いるか
     supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     supportRankNum: 20,     // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
+    cookingPowerUpType: 1,  // 料理パワーアップの評価方法(0:理論値, 1:平均)  
+    cookingPowerUpRate: 60,    
     healer: 80,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
     expectType: {
       border: 70,
@@ -213,8 +215,8 @@ const defaultConfig = {
       30: true,
       50: true,
       60: true,
-      75: true,
-      100: false,
+      70: true,
+      80: false,
     },
     specialty: {
       'きのみ': {

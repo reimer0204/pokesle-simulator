@@ -27,7 +27,7 @@ self.addEventListener('message', async (event: {
 
 
   // サブスキルの組み合わせを列挙
-  const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
+  const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
   let subSkillCombinationList = SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[1]]
   if (subSkillCombinationList == null) {
     throw 'サブスキルの組み合わせの取得に失敗しました。'

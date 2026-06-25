@@ -533,7 +533,7 @@ function moveFocus(event) {
         </div>
       </div>
 
-      <template v-for="(lv, i) in [10, 25, 50, 75, 100]">
+      <template v-for="(lv, i) in [10, 25, 50, 70, 80]">
         <div>サブスキル({{ lv }})</div>
         <input
           type="text" ref="subSkillInputList" v-model="assist.subSkillList[i]"

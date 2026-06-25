@@ -17,7 +17,7 @@ import greengrasscornImg from '../img/food/greengrasscorn.png'
 import coffeeImg from '../img/food/coffee.png'
 import pumpkinImg from '../img/food/pumpkin.png'
 import avocadoImg from '../img/food/avocado.png'
-import type { FoodName, CookingType, FoodType } from '../type'
+import type { FoodName, CookingTypeName, CookingType, FoodType } from '../type'
 
 class Food {
   static list: FoodType[] = [
@@ -135,6 +135,8 @@ class Cooking {
 	static maxFoodNum: number;
 	static maxEnergy: number;
 	static cookingPowerUpEnergy: number;
+	static cookingPowerUpEnergyAverage: number;
+	static cookingPowerUpEnergyMap: { [key in CookingTypeName]: number };
 	static recipeLvs = {1: { bonus: 1, totalExp: 0 }, 2: { bonus: 1.02, totalExp: 1080 }, 3: { bonus: 1.04, totalExp: 2324 }, 4: { bonus: 1.06, totalExp: 3936 }, 5: { bonus: 1.08, totalExp: 5545 }, 6: { bonus: 1.09, totalExp: 7341 }, 7: { bonus: 1.11, totalExp: 9712 }, 8: { bonus: 1.13, totalExp: 12760 }, 9: { bonus: 1.16, totalExp: 16426 }, 10: { bonus: 1.18, totalExp: 20791 }, 11: { bonus: 1.19, totalExp: 25639 }, 12: { bonus: 1.21, totalExp: 30911 }, 13: { bonus: 1.23, totalExp: 36621 }, 14: { bonus: 1.24, totalExp: 42922 }, 15: { bonus: 1.26, totalExp: 49882 }, 16: { bonus: 1.28, totalExp: 57551 }, 17: { bonus: 1.3, totalExp: 66001 }, 18: { bonus: 1.31, totalExp: 75131 }, 19: { bonus: 1.33, totalExp: 84981 }, 20: { bonus: 1.35, totalExp: 95642 }, 21: { bonus: 1.37, totalExp: 107159 }, 22: { bonus: 1.4, totalExp: 119576 }, 23: { bonus: 1.42, totalExp: 132938 }, 24: { bonus: 1.45, totalExp: 147309 }, 25: { bonus: 1.47, totalExp: 162621 }, 26: { bonus: 1.5, totalExp: 178929 }, 27: { bonus: 1.52, totalExp: 196563 }, 28: { bonus: 1.55, totalExp: 215605 }, 29: { bonus: 1.58, totalExp: 236149 }, 30: { bonus: 1.61, totalExp: 258299 }, 31: { bonus: 1.64, totalExp: 281955 }, 32: { bonus: 1.67, totalExp: 306759 }, 33: { bonus: 1.7, totalExp: 332769 }, 34: { bonus: 1.74, totalExp: 360469 }, 35: { bonus: 1.77, totalExp: 389943 }, 36: { bonus: 1.81, totalExp: 421521 }, 37: { bonus: 1.84, totalExp: 455380 }, 38: { bonus: 1.88, totalExp: 491055 }, 39: { bonus: 1.92, totalExp: 528663 }, 40: { bonus: 1.96, totalExp: 568918 }, 41: { bonus: 2, totalExp: 611541 }, 42: { bonus: 2.04, totalExp: 656646 }, 43: { bonus: 2.08, totalExp: 704344 }, 44: { bonus: 2.13, totalExp: 754748 }, 45: { bonus: 2.17, totalExp: 807184 }, 46: { bonus: 2.22, totalExp: 862205 }, 47: { bonus: 2.27, totalExp: 920936 }, 48: { bonus: 2.32, totalExp: 983590 }, 49: { bonus: 2.37, totalExp: 1050391 }, 50: { bonus: 2.42, totalExp: 1121582 }, 51: { bonus: 2.48, totalExp: 1196687 }, 52: { bonus: 2.53, totalExp: 1319485 }, 53: { bonus: 2.59, totalExp: 1471363 }, 54: { bonus: 2.65, totalExp: 1672589 }, 55: { bonus: 2.71, totalExp: 1930878 }, 56: { bonus: 2.77, totalExp: 2231322 }, 57: { bonus: 2.83, totalExp: 2579312 }, 58: { bonus: 2.9, totalExp: 2977994 }, 59: { bonus: 2.97, totalExp: 3413120 }, 60: { bonus: 3.03, totalExp: 3891145 }, 61: { bonus: 3.09, totalExp: 4433557 }, 62: { bonus: 3.15, totalExp: 5054788 }, 63: { bonus: 3.21, totalExp: 5773019 }, 64: { bonus: 3.27, totalExp: 6606405 }, 65: { bonus: 3.34, totalExp: 7599103 },};
   static maxRecipeLv: number;
   static potMax = 81;
@@ -316,7 +318,9 @@ Food.averageMaxCookedEnergy = Food.list.reduce((a, f) => a + f.energy * f.bestRa
 
 
 Cooking.cookingPowerUpEnergy = 0;
-for(let type of ['カレー', 'サラダ', 'デザート']) {
+Cooking.cookingPowerUpEnergyAverage = 0;
+Cooking.cookingPowerUpEnergyMap = {};
+for(let type of ['カレー', 'サラダ', 'デザート'] as CookingTypeName[]) {
 	let typeCookingList = Cooking.list.filter(c => c.type == type);
   let normalPotCookableList = typeCookingList.filter(x => x.foodNum <= Cooking.potMax)
 
@@ -326,6 +330,8 @@ for(let type of ['カレー', 'サラダ', 'デザート']) {
   if (allPotMaxCooking.name != normalPotMaxCooking.name) {
     let addVolume = (allPotMaxCooking.maxEnergy - normalPotMaxCooking.maxEnergy) / (allPotMaxCooking.foodNum - normalPotMaxCooking.foodNum);
     Cooking.cookingPowerUpEnergy = Math.max(Cooking.cookingPowerUpEnergy, addVolume)
+    Cooking.cookingPowerUpEnergyAverage += addVolume;
+    Cooking.cookingPowerUpEnergyMap[type] = addVolume;
   }
   
   for(let food of Food.list) {
@@ -336,5 +342,6 @@ for(let type of ['カレー', 'サラダ', 'デザート']) {
 for(let food of Food.list) {
   food.maxEnergy = Math.max(food.maxEnergy_カレー, food.maxEnergy_サラダ, food.maxEnergy_デザート);
 }
+Cooking.cookingPowerUpEnergyAverage /= 3;
 
 export { Cooking, Food };

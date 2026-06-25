@@ -45,6 +45,7 @@ class PokemonSimulator {
   #skillEnergyIgnore = 0;
   #helpRate: HelpRate;
   #freeCandy = 0;
+  #cookingPowerUpEnergy = 0;
 
   static MODE_ABOUT = 1;
   static MODE_TEAM = 2;
@@ -163,6 +164,12 @@ class PokemonSimulator {
       this.#addHeal = undefined;
     }
 
+    // 料理パワーアップのエナジー評価
+    this.#cookingPowerUpEnergy = (
+      config.selectEvaluate.cookingPowerUpType == 0 ? Cooking.cookingPowerUpEnergy
+      : Cooking.cookingPowerUpEnergyAverage
+    ) * config.selectEvaluate.cookingPowerUpRate / 100;
+
     this.#simulatedDefaultPokemon = {
       foodList: [],
       foodProbList: [],
@@ -264,11 +271,11 @@ class PokemonSimulator {
     // 銀種
     // 有効なサブスキル計算
     let enableSubSkillLength = 0;
-    if (lv >=  10) enableSubSkillLength++;
-    if (lv >=  25) enableSubSkillLength++;
-    if (lv >=  50) enableSubSkillLength++;
-    if (lv >=  75) enableSubSkillLength++;
-    if (lv >= 100) enableSubSkillLength++;
+    if (lv >= 10) enableSubSkillLength++;
+    if (lv >= 25) enableSubSkillLength++;
+    if (lv >= 50) enableSubSkillLength++;
+    if (lv >= 70) enableSubSkillLength++;
+    if (lv >= 80) enableSubSkillLength++;
     let subSkillNameList = [...box.subSkillList];
     if (fixable && this.config.simulation.fixSubSkillSeed) {
       let hit;
@@ -1254,7 +1261,7 @@ class PokemonSimulator {
             }
 
             // 拡張して意味がある範囲の増分エナジーを計算
-            thisEnergyPerSkill += Cooking.cookingPowerUpEnergy * Math.min(addPotSize, limit)
+            thisEnergyPerSkill += this.#cookingPowerUpEnergy * Math.min(addPotSize, limit)
             
             // 余剰は食材の平均エナジーで計算
             if (addPotSize > limit) {

@@ -67,7 +67,12 @@ class Exp {
 		{total: 57280, shard: 750},
 		{total: 60257, shard: 804},
 		{total: 63286, shard: 866},
-		{total: 66363, shard: null},
+		{total: 66363, shard: 932},
+		{total: 69458, shard: 1004},
+		{total: 72574, shard: 1084},
+		{total: 75718, shard: 1173},
+		{total: 78907, shard: 1272},
+		{total: 82162, shard: null},
 	];
 
 	static calcRequireInfo(pokemon, nature, config) {
@@ -99,8 +104,8 @@ class Exp {
 			let minBoostTotal = normalTotal;
 			
 			// アメ1個あたりの経験値
-			let candyExp25 = nature.good == 'EXP獲得量' ? 41 : nature.weak == 'EXP獲得量' ? 29 : 35;
-			let candyExp30 = nature.good == 'EXP獲得量' ? 35 : nature.weak == 'EXP獲得量' ? 25 : 30;
+			let candyExp25 = nature.good == 'EXP獲得量' ? 47 : nature.weak == 'EXP獲得量' ? 33 : 40;
+			let candyExp30 = nature.good == 'EXP獲得量' ? 41 : nature.weak == 'EXP獲得量' ? 29 : 35;
 			let candyExp99 = nature.good == 'EXP獲得量' ? 30 : nature.weak == 'EXP獲得量' ? 21 : 25;
 
 			// 必要な経験値

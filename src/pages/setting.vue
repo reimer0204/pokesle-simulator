@@ -5,6 +5,8 @@ import Skill from '../data/skill';
 import config from '../models/config';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import Exp from '@/data/exp.ts';
+import InputRadio from '@/components/form/input-radio.vue';
+import { Cooking } from '@/data/food_and_cooking.ts';
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
@@ -162,6 +164,32 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           </small>
         </div>
         <div>
+          <label>料理パワーアップ評価方法</label>
+          <div>
+            <InputRadio v-model="editConfig.selectEvaluate.cookingPowerUpType" :value="0">3種のうち最大</InputRadio>
+            <InputRadio v-model="editConfig.selectEvaluate.cookingPowerUpType" :value="1">3種の平均</InputRadio>
+          </div>
+          <div>上記の <input type="number" class="w-40px" v-model="editConfig.selectEvaluate.cookingPowerUpRate" step="1"> %</div>
+          <small class="w-120px">
+            なべ拡張の1個分を何エナジーとして評価するか            
+            <HelpButton title="料理パワーアップの評価方法" :markdown="`
+              # 考え方
+              いいキャンプチケットを使用しない場合は、料理パワーアップを発動することでより良い料理が作れるようになります。
+              10個分拡大して10000エナジー高い料理が作れる場合、1個分の拡大あたり1000エナジーの価値があると考えられます。
+              その考えに基づき、現在のなべの最大値で作れる料理と最も良い料理のエナジー差と、食材数の差から価値を計算しています。
+
+              この時、料理3種それぞれで差が異なるので、そのどれを使用するかを設定できます。
+              現環境では以下の通りです。
+              カレー：${Cooking.cookingPowerUpEnergyMap['カレー'].toFixed(1)}エナジー
+              サラダ：${Cooking.cookingPowerUpEnergyMap['サラダ'].toFixed(1)}エナジー
+              デザート：${Cooking.cookingPowerUpEnergyMap['デザート'].toFixed(1)}エナジー
+              平均：${Cooking.cookingPowerUpEnergyAverage.toFixed(1)}エナジー
+              
+              また、食材が十分用意された状態では料理パワーアップの価値は上記の通り計算できますが、これから食材も集める場合は料理パワーアップだけでは意味がないので、食材担当と併用する運用が基本の場合は100%ではなく50%などの値にする必要があります。
+            `" />
+          </small>
+        </div>
+        <div>
           <label>仮定ヒーラー</label>
           <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.healer" step="1"></div>
           <small>
@@ -200,11 +228,11 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               <InputCheckbox v-model="editConfig.selectEvaluate.levelList[30]">30</InputCheckbox>
               <InputCheckbox v-model="editConfig.selectEvaluate.levelList[50]">50</InputCheckbox>
               <InputCheckbox v-model="editConfig.selectEvaluate.levelList[60]">60</InputCheckbox>
-              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[75]">75</InputCheckbox>
-              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[100]">100</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[70]">70</InputCheckbox>
+              <InputCheckbox v-model="editConfig.selectEvaluate.levelList[80]">80</InputCheckbox>
             </div>
             <small class="mt-5px">
-              どのLv時点の評価で厳選するか設定します。<br>100Lvは組合せが多く計算が重いのと、100Lvに強い<br>サブスキルがあっても育成が大変なため省略推奨です。
+              どのLv時点の評価で厳選するか設定します。
             </small>
           </div>
         </div>

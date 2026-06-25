@@ -1,10 +1,11 @@
 import type { Cooking } from "./data/food_and_cooking";
 
 type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー' | 'ずっしりカボチャ' | 'つやつやアボカド'
+export type CookingTypeName = 'カレー' | 'サラダ' | 'デザート';
 
 interface CookingType {
   name: string;
-  type: string;
+  type: CookingTypeName;
   energy: number;
 	foodList: { name: FoodName, num: number }[];
   rawEnergy?: number;

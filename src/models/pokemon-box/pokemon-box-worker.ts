@@ -77,7 +77,11 @@ addEventListener('message', async (event) => {
             let evaluateSpecialtyMaxScore = 0;
             
             for(let lv of lvList) {
+              if (evaluateTable.scoreForHealerEvaluate[lv]?.[''].energy == null || evaluateTable.scoreForSupportEvaluate[lv]?.[''].energy == null) {
+                continue;
+              }
               if (evaluateResult[lv] == null) evaluateResult[lv] = {};
+
               
               let foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 3;
 
@@ -85,7 +89,7 @@ addEventListener('message', async (event) => {
                 afterPokemon, lv, pokemonList[i].foodList,
               )
 
-              let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 75 ? 3 : lv < 100 ? 4 : 5;
+              let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
 
               let subSkillList: string[] = (
                 config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(box.subSkillList) : box.subSkillList
@@ -247,6 +251,7 @@ addEventListener('message', async (event) => {
             // 仮定計算で進化の計算がされた場合は、進化先1つだけの結果を詰める
             simulatedPokemon.evaluateResult = {}
             for(let lv of lvList) {
+              if (evaluateResult[lv]?.[pokemonName] == null) continue;
               simulatedPokemon.evaluateResult[lv] = {
                 [pokemonName]: evaluateResult[lv][pokemonName],
               }
@@ -259,12 +264,14 @@ addEventListener('message', async (event) => {
               simulatedPokemon.evaluateResult.max[after] = {} as any;
               for(let key of evaluateResultKeyList) {
                 simulatedPokemon.evaluateResult.max[after][key] = lvList
-                  .map(lv => simulatedPokemon.evaluateResult[lv][after][key])
+                  .map(lv => simulatedPokemon.evaluateResult[lv]?.[after][key])
+                  .filter(x => x != null)
                   .sort((a, b) => b.score - a.score)[0];
               }
             }
             // 各レベルごとに最適な進化先のスコアを算出
             for(let lv of [...lvList, 'max']) {
+              if (simulatedPokemon.evaluateResult[lv] == null) continue;
               const best = {} as any
               for(let key of evaluateResultKeyList) {
                 
