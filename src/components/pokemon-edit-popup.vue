@@ -27,6 +27,7 @@ import {
   Legend,
   // plugins
 } from 'chart.js'
+import Exp from '@/data/exp.ts';
 
 ChartJS.register(
   RadialLinearScale,
@@ -274,7 +275,10 @@ async function calcSelectScore() {
   }
 }
 calcSelectScore();
-watch(pokemon, calcSelectScore)
+watch(() => pokemon.name, calcSelectScore)
+watch(() => pokemon.foodList, calcSelectScore, { deep: true })
+watch(() => pokemon.subSkillList, calcSelectScore, { deep: true })
+watch(() => pokemon.nature, calcSelectScore)
 
 const selectResultColumns = computed(() => {
   const result = [
@@ -445,8 +449,12 @@ function shareX() {
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`)
 }
 
-function changeColor() {
+function toggleColor() {
   pokemon.shiny = !pokemon.shiny;
+}
+
+function toggleFavorite() {
+  pokemon.favorite = !pokemon.favorite;
 }
 
 function moveFocus(event) {
@@ -477,10 +485,32 @@ function moveFocus(event) {
   }
 }
 
+const candyInfo = computed(() => {
+  const result = Exp.calcRequireInfo(pokemon, pokemon.nature, config);
+  return {
+    data: [
+      { name: '通常時', num: result.normalCandyNum, exp: result.normalCandyShard },
+      { name: `アメブ(EXPx${config.candy.boostMultiply}/ゆめかけx${config.candy.boostShard})`, num: result.boostCandyNum, exp: result.boostCandyShard },
+      { name: 'バランス(通常分)', num: result.bestNormalCandyNum, exp: result.bestNormalCandyShard },
+      { name: 'バランス(アメブ分)', num: result.bestBoostCandyNum, exp: result.bestBoostCandyShard },
+      {
+        name: 'バランス(合計)',
+        num: result.bestNormalCandyNum != null ? result.bestNormalCandyNum + result.bestBoostCandyNum : null,
+        exp: result.bestNormalCandyShard != null ? result.bestNormalCandyShard + result.bestBoostCandyShard : null
+      }
+    ],
+    columnList: [
+      { key: 'name', name: '種類' },
+      { key: 'num', name: '必要アメ数', type: Number },
+      { key: 'exp', name: '必要ゆめのかけら', type: Number },
+    ],
+  }
+})
+
 </script>
 
 <template>
-  <PopupBase class="edit-pokemon-popup" @close="$emit('close')" @keydown.esc.stop="onEsc" @keydown.c.alt="changeColor">
+  <PopupBase class="edit-pokemon-popup" @close="$emit('close')" @keydown.esc.stop="onEsc" @keydown.c.alt="toggleColor" @keydown.f.alt="toggleFavorite">
     <template #headerText>ポケモン編集</template>
 
     <BaseAlert>
@@ -571,32 +601,18 @@ function moveFocus(event) {
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <input type="number" v-model="pokemon.sleepTime" placeholder="省略可"/>
 
-
       <div>色違い</div>
       <div>Alt+Cで切り替え</div>
       <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
-      <label><input type="checkbox" v-model="pokemon.shiny" />色違い</label>
+      <label><InputCheckbox v-model="pokemon.shiny">色違い</InputCheckbox></label>
       
+      <div>お気に入り</div>
+      <div>Alt+Fで切り替え</div>
+      <label><InputCheckbox v-model="pokemon.favorite">お気に入り</InputCheckbox></label>
+
       <div>メモ</div>
       <div></div>
       <label><input class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
-      
-      <div>お気に入り</div>
-      <div></div>
-      <label><InputCheckbox v-model="pokemon.favorite">お気に入り</InputCheckbox></label>
-      
-      <div>所持アメ</div>
-      <div></div>
-      <label>
-        <input v-if="basePokemon" class="w-100" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
-        <input v-else class="w-100" type="number" disabled placeholder="アメ数"/>
-      </label>
-      
-      <div>次のレベル<br>までのEXP</div>
-      <div></div>
-      <label>
-        <input class="w-100" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
-      </label>
       
       <div>チームシミュ</div>
       <div></div>
@@ -606,10 +622,10 @@ function moveFocus(event) {
         <option :value="-1">除外</option>
       </select>
       
-      <div>追加先No</div>
+      <div>ボックス内No</div>
       <div></div>
       <label>
-        <input class="w-100" type="number" v-model.number="insertTo" placeholder="追加先No"/>
+        <input class="w-100" type="number" v-model.number="insertTo" placeholder="ボックス内No"/>
       </label>
     </div>
 
@@ -630,7 +646,7 @@ function moveFocus(event) {
     </ToggleArea>
     -->
 
-    <ToggleArea class="mt-20px" open v-if="simulatedPokemonList && !kaihouPokemon">
+    <ToggleArea class="mt-10px" open v-if="simulatedPokemonList && !kaihouPokemon">
       <template #headerText>厳選情報</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
@@ -696,6 +712,44 @@ function moveFocus(event) {
         </div>
         <div v-else>せいかくまで入力すると表示されます</div>
       </AsyncWatcherArea>
+    </ToggleArea>
+    
+    <ToggleArea class="mt-10px">
+      <template #headerText>アメ＆EXP情報</template>
+     
+      <div>
+        <SettingList>
+          <div>
+            <label>次のレベルまでのEXP</label>
+            <div>
+              <input class="w-80px" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
+            </div>
+          </div>
+
+          <div>
+            <label>目標レベル</label>
+            <div>
+              <input class="w-80px" type="number" v-model.number="pokemon.training" placeholder="目標レベル"/> Lv
+            </div>
+          </div>
+
+          <div>
+            <label>所持アメ</label>
+            <div>
+              <input v-if="basePokemon" class="w-80px" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
+              <input v-else class="w-80px" type="number" disabled placeholder="アメ数"/>
+              個
+            </div>
+          </div>
+        </SettingList>
+
+        <SortableTable
+          class="mt-5px"
+          :dataList="candyInfo.data"
+          :columnList="candyInfo.columnList"
+        ></SortableTable>
+
+      </div>
     </ToggleArea>
 
     <div class="flex-row-start-center gap-10px mt-10px">

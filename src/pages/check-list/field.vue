@@ -55,23 +55,30 @@ const fieldList = computed(() => {
       ...Field.list.map(x => x.name),
       ...Field.list.filter(x => x.ex).map(x => `${x.name}EX`),
     ].map(fieldName => {
-      return {
+      const result = {
         name: fieldName,
         'うとうと': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'うとうと')),
         'すやすや': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'すやすや')),
         'ぐっすり': pokemonList.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'ぐっすり')),
+        'うとうと全員': Pokemon.list.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'うとうと')),
+        'すやすや全員': Pokemon.list.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'すやすや')),
+        'ぐっすり全員': Pokemon.list.filter(x => x.fieldList.some(x => x.name == fieldName && x.type == 'ぐっすり')),
       }
+      result['うとうと対象率'] = result['うとうと'].length / Math.max(1, result['うとうと全員'].length);
+      result['すやすや対象率'] = result['すやすや'].length / Math.max(1, result['すやすや全員'].length);
+      result['ぐっすり対象率'] = result['ぐっすり'].length / Math.max(1, result['ぐっすり全員'].length);
+      return result;
     }),
     columnList: [
       { key: 'name', name: 'フィールド' },
       { key: 'type1', name: 'うとうと', type: String, convert: x => x['うとうと'].map(p => p.name).join('\n') },
       { key: 'type2', name: 'すやすや', type: String, convert: x => x['すやすや'].map(p => p.name).join('\n') },
       { key: 'type3', name: 'ぐっすり', type: String, convert: x => x['ぐっすり'].map(p => p.name).join('\n') },
-      { key: 'type1_num', name: 'うとうと(匹)', type: Number, convert: x => x['うとうと'].length },
-      { key: 'type2_num', name: 'すやすや(匹)', type: Number, convert: x => x['すやすや'].length },
-      { key: 'type3_num', name: 'ぐっすり(匹)', type: Number, convert: x => x['ぐっすり'].length },
-      { key: 'num', name: '合計(匹)', type: Number, convert: x => x['うとうと'].length + x['すやすや'].length + x['ぐっすり'].length },
-      { key: 'ave', name: '相乗平均(匹)', type: Number, fixed: 1, convert: x => (x['うとうと'].length * x['すやすや'].length * x['ぐっすり'].length) ** (1/3) },
+      { key: 'type1_num', name: 'うとうと\n対象率', type: Number, percent: true, convert: x => x['うとうと対象率'] },
+      { key: 'type2_num', name: 'すやすや\n対象率', type: Number, percent: true, convert: x => x['すやすや対象率'] },
+      { key: 'type3_num', name: 'ぐっすり\n対象率', type: Number, percent: true, convert: x => x['ぐっすり対象率'] },
+      { key: 'ave', name: '平均対象率', type: Number, percent: true, convert: x => (x['うとうと対象率'] + x['すやすや対象率'] + x['ぐっすり対象率']) / 3 },
+      { key: 'mean', name: '相乗平均対象率', type: Number, percent: true, convert: x => (x['うとうと対象率'] * x['すやすや対象率'] * x['ぐっすり対象率']) ** (1/3) },
     ],
   }
 })

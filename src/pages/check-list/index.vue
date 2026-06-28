@@ -22,6 +22,7 @@ import type { FoodName, SimulatedPokemon } from '@/type.ts';
 import Field from '@/data/field.ts';
 import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';
+import HelpButton from '@/components/help/help-button.vue';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 
@@ -33,7 +34,10 @@ if (config.summary.checklist.skill.borderLv == null || !lvList.includes(config.s
 }
 
 const saishuuShinkaPokemonList = computed(() => {
-  return Pokemon.list.filter(x => x.isLast).sort((a, b) => a.name < b.name ? -1 : 1)
+  return Pokemon.list
+    .filter(x => x.isLast)
+    .filter(x => x.fieldList.length)
+    .sort((a, b) => a.name < b.name ? -1 : 1)
 })
 
 const filteredSaishuuShinkaPokemonList = computed(() => {
@@ -103,10 +107,11 @@ watch(() => [
       <div>
         <DesignTable>
           <tr>
-            <th :rowspan="config.summary.checklist.pokemonCondition.list.length + 3">ポケモン</th>
+            <th :rowspan="config.summary.checklist.pokemonCondition.list.length + 3">各ポケモン<br>厳選基準</th>
             <th>対象</th>
             <th>総合厳選度</th>
             <th>とくい厳選度</th>
+            <th class="w-120px"></th>
             <th></th>
           </tr>
 
@@ -129,6 +134,9 @@ watch(() => [
                 </div>
               </div>
             </td>
+            <td>
+              食材かスキルの基準を満たしたポケモンを厳選済みとするか
+            </td>
             <td></td>
           </tr>
           
@@ -147,6 +155,7 @@ watch(() => [
                   <option value="1_きのみ">きのみとくい</option>
                   <option value="1_食材">食材とくい</option>
                   <option value="1_スキル">スキルとくい</option>
+                  <option value="3">伝説ポケモン</option>
                   <option
                     v-for="pokemon in saishuuShinkaPokemonList"
                     :value="`2_${pokemon.name}`"
@@ -165,6 +174,9 @@ watch(() => [
             </td>
             <td>
               <InputNumber class="w-50px" v-model="item.specialtyBorder" /> %以上
+            </td>
+            <td>
+              <InputCheckbox v-model="item.alsoFoodAndSkill">厳選済とする</InputCheckbox>
             </td>
             <td>
               <div class="flex-row-start-center gap-5px">
@@ -227,9 +239,9 @@ watch(() => [
             </td>
           </tr>
           <tr>
-            <th rowspan="2">食材</th>
+            <th rowspan="2">食材<br>厳選基準</th>
             <th>対象</th>
-            <th colspan="3">条件</th>
+            <th colspan="4">条件</th>
           </tr>
           <tr>
             <td>
@@ -242,33 +254,60 @@ watch(() => [
                 </InputCheckbox>
               </div>
             </td>
-            <td colspan="3">
+            <td colspan="4">
               <div class="flex-column gap-5px">
-                <InputRadio v-model="config.summary.checklist.food.borderType" :value="0">理論値に対しての割合</InputRadio>
+                <h3>厳選基準</h3>
+                <InputRadio v-model="config.summary.checklist.food.borderType" :value="0">ポケモンの能力に対しての割合</InputRadio>
                 <InputRadio v-model="config.summary.checklist.food.borderType" :value="1">必要最大数に対しての割合</InputRadio>
 
-                <div class="flex-row-start-center gap-5px">
-                  <select
+                <div class="gap-5px">
+                  <template
                     v-if="config.summary.checklist.food.borderType == 0"
-                    v-model="config.summary.checklist.food.borderLv"
                   >
-                    <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
-                  </select>
+
+                    <div class="flex-row-start-center gap-5px">
+                      <select
+                        v-model="config.summary.checklist.food.borderLv"
+                      >
+                        <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
+                      </select>
+                      における<br>
+                    </div>
+                    <div>
+                      各ポケモンの厳選度 <InputNumber class="w-60px" v-model="config.summary.checklist.food.borderRate" placeholder="理論値" /> %の<br>
+                    </div>
+                  </template>
 
                   <InputNumber class="w-50px" v-model="config.summary.checklist.food.borderValue" /> %以上
                 </div>
 
+                <hr class="w-100">
+
+                <h3>
+                  捕獲対象
+                  <HelpButton title="設定について" markdown="
+                    ## 捕獲対象の設定
+                    食材やスキルの厳選は複数のポケモンを対象にすることが多いかと思います（ヒーラーならサーナイト、パーモット等）。
+                    この時、2番手3番手のポケモンは捕まえても基準を満たしにくいため、捕まえるかどうか悩むラインになります。
+                    この「捕獲対象」の設定値は、その何番手まで捕まえるかの設定になります。
+
+                    例えばあるスキルの厳選基準を10回/日としたとします。
+                    仮にあるポケモンの理論値が10回の場合は、理論値を引かなければならず、このポケモンで厳選基準を満たすのは現実的ではありません。
+                    この時、例えば捕獲対象を80%にしておくと、理論値の8割を参照して8回になるので、このポケモンは捕獲候補から外れます。
+                  "></HelpButton>
+                </h3>
                 <div class="flex-row-start-center gap-5px">
-                  <span>厳選対象ポケモン</span>
-                  <InputNumber class="w-50px" v-model="config.summary.checklist.food.targetValue" /> %以上
+                  <span>そのポケモンの理論値の</span>
+                  <InputNumber class="w-50px" v-model="config.summary.checklist.food.targetValue" /> %以上が
                 </div>
+                上記基準を超えるポケモン
               </div>
             </td>
           </tr>
           <tr>
-            <th rowspan="2">スキル</th>
+            <th rowspan="2">スキル<br>厳選基準</th>
             <th>対象</th>
-            <th colspan="3">条件</th>
+            <th colspan="4">条件</th>
           </tr>
           <tr>
             <td>
@@ -291,31 +330,53 @@ watch(() => [
                 </template>
               </div>
             </td>
-            <td colspan="3">
-              <div class="flex-column gap-5px">
+            <td colspan="4">
+              <div class="flex-column-start-stretch gap-5px">
+                <h3>厳選基準</h3>
                 <div class="flex-row-start-center gap-5px">
                   <select
                     v-model="config.summary.checklist.skill.borderLv"
                   >
-                    <option v-for="lv in lvList" :value="lv">Lv. {{ lv }} の理論値</option>
+                    <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
                   </select>
-
+                  における<br>
+                </div>
+                <div>
+                  各ポケモンの厳選度 <InputNumber class="w-60px" v-model="config.summary.checklist.skill.borderRate" placeholder="理論値" /> %の<br>
                   <InputNumber class="w-50px" v-model="config.summary.checklist.skill.borderValue" /> %以上
                 </div>
 
-                <div class="flex-row-start-center gap-5px">
-                  <span>厳選対象ポケモン</span>
-                  <InputNumber class="w-50px" v-model="config.summary.checklist.skill.targetValue" /> %以上
+                <hr class="w-100">
+
+                <div class="gap-5px">
+                  <h3>
+                    捕獲対象
+                    <HelpButton title="設定について" markdown="
+                      ## 捕獲対象の設定
+                      食材やスキルの厳選は複数のポケモンを対象にすることが多いかと思います（ヒーラーならサーナイト、パーモット等）。
+                      この時、2番手3番手のポケモンは捕まえても基準を満たしにくいため、捕まえるかどうか悩むラインになります。
+                      この「捕獲対象」の設定値は、その何番手まで捕まえるかの設定になります。
+
+                      例えばあるスキルの厳選基準を10回/日としたとします。
+                      仮にあるポケモンの理論値が10回の場合は、理論値を引かなければならず、このポケモンで厳選基準を満たすのは現実的ではありません。
+                      この時、例えば捕獲対象を80%にしておくと、理論値の8割を参照して8回になるので、このポケモンは捕獲候補から外れます。
+                    "></HelpButton>
+                  </h3>
+                  <div>
+                    そのポケモンの理論値の
+                    <InputNumber class="w-50px" v-model="config.summary.checklist.skill.targetValue" /> %以上が<br>
+                    上記基準を超えるポケモン
+                  </div>
                 </div>
               </div>
             </td>
           </tr>
           <tr>
-            <th rowspan="2">フィールド別</th>
+            <th rowspan="2">その他</th>
             <td colspan="4">
               <div class="flex-column gap-5px">
-                <InputCheckbox v-model="config.summary.checklist.field.shinkago">進化後を表示</InputCheckbox>
-                <InputCheckbox v-model="config.summary.checklist.field.bakecchaMatome">バケッチャをまとめて表示</InputCheckbox>
+                <InputCheckbox v-model="config.summary.checklist.field.bakecchaMatome">バケッチャ・パンプジンをまとめて表示</InputCheckbox>
+                <InputCheckbox v-model="config.summary.checklist.field.shinkago">フィールド別画面に進化後を表示</InputCheckbox>
               </div>
             </td>
           </tr>

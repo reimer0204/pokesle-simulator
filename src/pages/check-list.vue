@@ -97,7 +97,7 @@ watch(() => [
 })
 
 const pokemonCheckList = computed(() => {
-  return checkList.value?.pokemonCheckList(config, simulatedPokemonList.value);
+  return checkList.value?.pokemonCheckList(config, simulatedPokemonList.value, null, foodCheckList.value, skillCheckList.value);
 })
 
 const foodCheckList = computed(() => {
@@ -113,7 +113,7 @@ const skillCheckList = computed(() => {
 <template>
   <div class="page">
     <div class="tab-list">
-      <router-link to="/check-list/">チェックリスト設定</router-link>
+      <router-link to="/check-list/">厳選基準設定</router-link>
       <router-link to="/check-list/pokemon">ポケモン</router-link>
       <router-link to="/check-list/food">食材</router-link>
       <router-link to="/check-list/skill">スキル</router-link>

@@ -168,6 +168,7 @@ addEventListener('message', async (event) => {
             }
 
             let thisCheckListHit = checkList != null ? checkList.getChecked(config, {
+              base: { name: after },
               foodCombination: foodIndexList.map(x => String.fromCharCode(65 + x)).join(''),
               evaluateResult: Object.fromEntries(
                 Object.entries(evaluateResult!)
