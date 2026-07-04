@@ -355,7 +355,7 @@ Pokemon.nameSortList = [...Pokemon.list].sort((a, b) => a.name < b.name ? -1 : 1
 
 // スキルとくいが持っているスキルか設定
 for(let skill of Skill.list) {
-  skill.skillSpecialtyOnly = Pokemon.list.some(x => x.skill.name == skill.name && (x.specialty == 'スキル' || x.specialty == 'オール'));
+  skill.skillSpecialtyOnly = Pokemon.list.some(x => x.skill.name == skill.name && (x.specialty == 'スキル'));
 }
 
 export default Pokemon;

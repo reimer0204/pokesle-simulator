@@ -454,8 +454,9 @@ function saveWorkerNum() {
           <template v-else>
             リソース使用({{ config.simulation.fixLv }}Lv<template v-if="config.simulation.fixEvolve"> 進化</template>)
           </template>
-          <template v-if="config.simulation.fixSubSkillSeed"> 銀種 </template>
-          <template v-if="config.simulation.fixSkillSeed"> 金種 </template>
+          <template v-if="config.simulation.fixSubSkillSeed"> 銀種</template>
+          <template v-if="config.simulation.fixSkillSeed === 1"> 金種</template>
+          <template v-if="config.simulation.fixSkillSeed === 2"> 金種最大</template>
         )</template>
       </div>
     </template>
@@ -528,7 +529,11 @@ function saveWorkerNum() {
       <tr>
         <th>メインスキルの種</th>
         <td>
-          <div><label><input type="checkbox"            v-model="config.simulation.fixSkillSeed" :disabled="!config.simulation.fix">最大まで与えたものとして仮定</label></div>
+          <div>
+            <InputRadio v-model="config.simulation.fixSkillSeed" :value="0" :disabled="!config.simulation.fix">なし</InputRadio>
+            <InputRadio v-model="config.simulation.fixSkillSeed" :value="1" :disabled="!config.simulation.fix">厳選設定のスキルレベルまで</InputRadio>
+            <InputRadio v-model="config.simulation.fixSkillSeed" :value="2" :disabled="!config.simulation.fix">最大</InputRadio>
+          </div>
           <small>メインスキルの種を与えたと仮定</small>
         </td>
       </tr>
@@ -539,34 +544,40 @@ function saveWorkerNum() {
     <template #label>
       <div class="inline-flex-row-center">
         厳選設定:
-        <template v-if="config.simulation.selectType == 0">パーセンタイル</template>
-        <template v-if="config.simulation.selectType == 1">目標スコア比</template>
+        <template v-if="config.simulation.selectType == 0">厳選度</template>
+        <template v-if="config.simulation.selectType == 1">2段階評価</template>
       </div>
     </template>
 
-    <SettingTable>
-      <tr>
-        <th>厳選設定</th>
-        <td>
-          <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
-            <option value="0">パーセンタイル</option>
-            <option value="1">目標スコア比</option>
-          </select>
-        </td>
-      </tr>
-      <tr v-if="config.simulation.selectType == 1">
-        <th>目標スコア</th>
-        <td>
-          <div><input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %</div>
-          <div class="w-300px">
-            <small>
-              例えば90%にすると、厳選度90%の個体に対しこの個体が稼ぐエナジーが何%あるか計算します。<br>
-              パーセンタイルの場合上位80%の時点で理論値と大差なかったり逆にものすごく差がある可能性がありますが、目標スコア比で見るとこの問題が回避できます。
-            </small>
-          </div>
-        </td>
-      </tr>
-    </SettingTable>
+    <div>
+      <BaseAlert>
+        この設定はチェックリストでの基準と共有しているため、変更した場合はチェックリストの基準値も合わせて見直ししてください。
+      </BaseAlert>
+
+      <SettingTable>
+        <tr>
+          <th>厳選設定</th>
+          <td>
+            <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
+              <option value="0">厳選度</option>
+              <option value="1">2段階評価</option>
+            </select>
+          </td>
+        </tr>
+        <tr v-if="config.simulation.selectType == 1">
+          <th>目標スコア</th>
+          <td>
+            <div><input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %</div>
+            <div class="w-300px">
+              <small>
+                例えば90%にすると、厳選度90%の個体に対しこの個体が稼ぐエナジーが何%あるか計算します。<br>
+                パーセンタイルの場合上位80%の時点で理論値と大差なかったり逆にものすごく差がある可能性がありますが、目標スコア比で見るとこの問題が回避できます。
+              </small>
+            </div>
+          </td>
+        </tr>
+      </SettingTable>
+    </div>
   </SettingButton>
 
   <SettingButton @click="Popup.show(CookingSettingPopup)" :important="disabledCookingNum > 0">
@@ -589,8 +600,7 @@ function saveWorkerNum() {
       <BaseAlert class="mt-5px w-600px">
         1%で当たるものを100回試行した時の期待値は1%×100で1回ですが、1回以上当たる確率は63.4%程度しかありません。<br>
         つまり、下振れして1回も当たらない確率が36.6%あるということです。<br>
-        試行回数がもっと多ければ期待値に収束していきますが、ポケスリでは基本的に試行回数が少ないため下振れすることも多いです。<br>
-        そのために、「XX%の確率で少なくとも1日n回は当たる」という方法で計算できるようにしたのが下振れ補正です。
+        期待値での計算でシミュレーションすると下振れした際に困るものも多いので、食材の獲得、料理パワーアップなどの料理に関する項目、げんきオールなどのヒーラー系の項目について下振れ補正をONにすると安定感のあるシミュレーションが出来ます（ただし当該ポケモンたちの想定エナジーが低く見積もられる点はご注意ください）。
       </BaseAlert>
 
     </div>
@@ -607,6 +617,15 @@ function saveWorkerNum() {
           <div class="flex-row gap-10px">
             <InputRadio v-model="config.simulation.expectType.food" :value="0">通常期待値</InputRadio>
             <InputRadio v-model="config.simulation.expectType.food" :value="1">下振れ補正</InputRadio>
+          </div>
+        </td>
+      </tr>
+      <tr v-for="skill in Skill.list" :key="skill.name">
+        <th>{{ skill.name }}</th>
+        <td>
+          <div class="flex-row gap-10px">
+            <InputRadio v-model="config.simulation.expectType[skill.name]" :value="0">通常期待値</InputRadio>
+            <InputRadio v-model="config.simulation.expectType[skill.name]" :value="1">下振れ補正</InputRadio>
           </div>
         </td>
       </tr>

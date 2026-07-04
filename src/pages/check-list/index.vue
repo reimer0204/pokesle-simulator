@@ -78,8 +78,6 @@ async function createPokemonList(setConfig = false) {
             ...config.simulation,
             bagOverOperation: false,
             fix: false,
-            selectType: config.summary.checklist.pokemonCondition.selectType,
-            selectBorder: config.summary.checklist.pokemonCondition.selectBorder,
           },
         },
         progressCounter, true
@@ -94,8 +92,8 @@ async function createPokemonList(setConfig = false) {
 }
 createPokemonList();
 watch(() => [
-  config.summary.checklist.pokemonCondition.selectType,
-  config.summary.checklist.pokemonCondition.selectBorder,
+  config.simulation.selectType,
+  config.simulation.selectBorder,
 ], () => {
   createPokemonList(true);
 })
@@ -127,10 +125,10 @@ watch(() => [
                   <option value="max">全レベル内最大値</option>
                   </select>
                 </div>
-                <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="0">パーセンタイル</InputRadio>
-                <InputRadio v-model="config.summary.checklist.pokemonCondition.selectType" :value="1">指定パーセンタイルに対する比率</InputRadio>
-                <div v-if="config.summary.checklist.pokemonCondition.selectType == 1">
-                  厳選度 <InputNumber class="w-50px" v-model="config.summary.checklist.pokemonCondition.selectBorder" /> %に対して
+                <InputRadio v-model="config.simulation.selectType" :value="0">厳選度</InputRadio>
+                <InputRadio v-model="config.simulation.selectType" :value="1">2段階評価</InputRadio>
+                <div v-if="config.simulation.selectType == 1">
+                  厳選度 <InputNumber class="w-50px" v-model="config.simulation.selectBorder" /> %の出力に対して
                 </div>
               </div>
             </td>

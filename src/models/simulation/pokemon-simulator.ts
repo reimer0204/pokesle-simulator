@@ -299,12 +299,33 @@ class PokemonSimulator {
     let berryRate = berryMatch
       ? (this.config.simulation.fieldEx == 1 ? 240 : 200)
       : 100;
+    
+    let skillLv = box.skillLv;
+    if (fixable) {
+      // 厳選設定のスキルレベルまで
+      if (this.config.simulation.fixSkillSeed === 1) {
+        let skillLvSetting = this.config.selectEvaluate.specialty[base.specialty].skillLv[base.skill.name];
+        if (skillLvSetting.type == 1) {
+          skillLv = base.evolveLv;
+        }
+        if (skillLvSetting.type == 2) {
+          skillLv = base.skill.effect.length;
+        }
+        if (skillLvSetting.type == 3) {
+          skillLv = skillLvSetting.lv;
+        }
+      }
+      // 最大まで
+      if (this.config.simulation.fixSkillSeed === 2) {
+        skillLv = base.skill.effect.length;
+      }
+    }
 
     const pokemon = this.initSimulatedPokemon(
       base,
       lv,
       box.foodList,
-      fixable && this.config.simulation.fixSkillSeed ? base.skill.effect.length : box.skillLv,
+      skillLv,
       this.config.simulation.eventBonusType.types[base.type]
         || this.config.simulation.eventBonusType.specialties[base.specialty]
         || (
@@ -346,7 +367,7 @@ class PokemonSimulator {
   ) {
     // スキルレベル計算
     let skillLvSetting = this.config.selectEvaluate.specialty[basePokemon.specialty].skillLv[basePokemon.skill.name];
-    let skillLv: number = null;
+    let skillLv: number = 1;
     if (skillLvSetting.type == 1) {
       skillLv = basePokemon.evolveLv;
     }
@@ -821,20 +842,37 @@ class PokemonSimulator {
       let nightSkillableNum = Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum);
 
       if (pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール') {
-        let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
-        let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
-        let dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0
         let nightNoHit = (1 - pokemon.ceilSkillRate) ** nightSkillableNum;
         let nightOneHit = nightSkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (nightSkillableNum - 1) * pokemon.ceilSkillRate * nightSkillableNum : 0;
-        let nightTwoHit = nightSkillableNum >= 2 ? 1 - nightNoHit - nightOneHit : 0
+        let nightTwoHit = nightSkillableNum >= 2 ? 1 - nightNoHit - nightOneHit : 0;
 
-        pokemon.skillPerDay =
-          (dayOneHit + dayTwoHit * 2) * (this.config.checkFreq - 1)
-          + nightOneHit + nightTwoHit * 2
+        if (this.#expectType[pokemon.base.skill.name] == 0) {
+          // 通常期待値
+          let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
+          let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
+          let dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0
+
+          pokemon.skillPerDay =
+            (dayOneHit + dayTwoHit * 2) * (this.config.checkFreq - 1)
+            + nightOneHit + nightTwoHit * 2
+        } else {
+          // 下振れ
+          pokemon.skillPerDay = 
+            this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 2)
+            + nightOneHit + nightTwoHit * 2
+        }
       } else {
-        pokemon.skillPerDay =
-          (1 - (1 - pokemon.ceilSkillRate) ** daySkillableNum) * (this.config.checkFreq - 1)
-          + (1 - (1 - pokemon.ceilSkillRate) ** Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum))
+        if (this.#expectType[pokemon.base.skill.name] == 0) {
+          // 通常期待値
+          pokemon.skillPerDay =
+            (1 - (1 - pokemon.ceilSkillRate) ** daySkillableNum) * (this.config.checkFreq - 1)
+            + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum)
+        } else {
+          // 下振れ
+          pokemon.skillPerDay = 
+            this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 1)
+            + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum)
+        }
       }
     } else {
       pokemon.skillPerDay = 0;

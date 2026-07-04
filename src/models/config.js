@@ -25,6 +25,10 @@ let config = reactive({
 try {
   const cookieConfig = JSON.parse(localStorage.getItem('config'));
   mergeObject(config, cookieConfig);
+
+  if (config.simulation.fixSkillSeed === true) {
+    config.simulation.fixSkillSeed = 1;
+  }
 } catch(e) {
   // NOP
 }

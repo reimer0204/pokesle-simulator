@@ -474,7 +474,7 @@ const specialtyEvaluateGraph = computed(() => {
               </template>
             </td>
             <td>
-              {{ evaluateResult.skillCeil }}
+              {{ evaluateResult.skillCeil.toFixed(2) }}
             </td>
           </tr>
           <tr>
@@ -487,7 +487,12 @@ const specialtyEvaluateGraph = computed(() => {
           <tr>
             <th>スキル回数</th>
             <td>
-              {{ (evaluateResult.ceilSkillRate * 100).toFixed(2) }}% × {{ (evaluateResult.normalHelpNum).toFixed(2) }}<br>
+              <template v-if="config.selectEvaluate.expectType[evaluateResult.base.skill.name] == 0">
+                {{ (evaluateResult.ceilSkillRate * 100).toFixed(2) }}% × {{ (evaluateResult.normalHelpNum).toFixed(2) }}<br>
+              </template>
+              <template v-else>
+                {{ (evaluateResult.ceilSkillRate * 100).toFixed(2) }}% を {{ (evaluateResult.normalHelpNum).toFixed(2) }} 回試行した時、{{ config.selectEvaluate.expectType.border }}%の確率で最低発生する回数<br>
+              </template>
             </td>
             <td>{{ (evaluateResult.skillPerDay).toFixed(2) }}</td>
           </tr>

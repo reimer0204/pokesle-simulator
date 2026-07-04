@@ -166,9 +166,23 @@ addEventListener('message', async (event) => {
                 }
               }
             }
+            
+            if (evaluateResult[lvList[0]]) {
+              evaluateResult.max = {};
+              for(let after of Object.keys(evaluateResult[lvList[0]])) {
+                evaluateResult.max[after] = {} as any;
+                for(let key of evaluateResultKeyList) {
+                  evaluateResult.max[after][key] = lvList
+                    .map(lv => evaluateResult[lv]?.[after][key])
+                    .filter(x => x != null)
+                    .sort((a, b) => b.score - a.score)[0];
+                }
+              }
+            }
 
             let thisCheckListHit = checkList != null ? checkList.getChecked(config, {
-              base: { name: after },
+              no: box.index,
+              base: Pokemon.map[after],
               foodCombination: foodIndexList.map(x => String.fromCharCode(65 + x)).join(''),
               evaluateResult: Object.fromEntries(
                 Object.entries(evaluateResult!)
@@ -251,7 +265,7 @@ addEventListener('message', async (event) => {
           } else {
             // 仮定計算で進化の計算がされた場合は、進化先1つだけの結果を詰める
             simulatedPokemon.evaluateResult = {}
-            for(let lv of lvList) {
+            for(let lv of [...lvList, 'max']) {
               if (evaluateResult[lv]?.[pokemonName] == null) continue;
               simulatedPokemon.evaluateResult[lv] = {
                 [pokemonName]: evaluateResult[lv][pokemonName],
@@ -260,16 +274,6 @@ addEventListener('message', async (event) => {
           }
           
           if (simulatedPokemon.evaluateResult?.[lvList[0]]) {
-            simulatedPokemon.evaluateResult.max = {};
-            for(let after of Object.keys(simulatedPokemon.evaluateResult[lvList[0]])) {
-              simulatedPokemon.evaluateResult.max[after] = {} as any;
-              for(let key of evaluateResultKeyList) {
-                simulatedPokemon.evaluateResult.max[after][key] = lvList
-                  .map(lv => simulatedPokemon.evaluateResult[lv]?.[after][key])
-                  .filter(x => x != null)
-                  .sort((a, b) => b.score - a.score)[0];
-              }
-            }
             // 各レベルごとに最適な進化先のスコアを算出
             for(let lv of [...lvList, 'max']) {
               if (simulatedPokemon.evaluateResult[lv] == null) continue;

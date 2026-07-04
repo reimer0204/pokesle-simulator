@@ -461,11 +461,8 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
             </td>
             <td>
               <div class="flex-column-start-start gap-5px">
-                <!-- <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="0">通常期待値(確率×回数)</InputRadio>
-                <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="1">下振れ考慮</InputRadio> -->
-                <InputRadio :value="0" disabled>通常期待値(確率×回数)</InputRadio>
-                <InputRadio :value="1" disabled>下振れ考慮</InputRadio>
-                <div>※将来機能</div>
+                <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="0">通常期待値(確率×回数)</InputRadio>
+                <InputRadio v-model="editConfig.selectEvaluate.expectType[skill.name]" :value="1">下振れ考慮</InputRadio>
               </div>
             </td>
             <td>

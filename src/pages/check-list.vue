@@ -74,8 +74,6 @@ async function createPokemonList(setConfig = false) {
             ...config.simulation,
             bagOverOperation: false,
             fix: false,
-            selectType: config.summary.checklist.pokemonCondition.selectType,
-            selectBorder: config.summary.checklist.pokemonCondition.selectBorder,
           },
         },
         progressCounter, true
@@ -90,8 +88,8 @@ async function createPokemonList(setConfig = false) {
 }
 createPokemonList();
 watch(() => [
-  config.summary.checklist.pokemonCondition.selectType,
-  config.summary.checklist.pokemonCondition.selectBorder,
+  config.simulation.selectType,
+  config.simulation.selectBorder,
 ], () => {
   createPokemonList(true);
 })
