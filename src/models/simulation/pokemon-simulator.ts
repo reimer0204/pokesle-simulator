@@ -32,6 +32,7 @@ class PokemonSimulator {
   helpEffectCache = new Map<string, [number, number]>();
   helpRateCache = new Map<string, any>();
   // calcStatusCache = new Map<string, any>();
+  #bestCookingCache = new Map<number, BestCookingType>();
   #fixedPotSize: number;
   cookingList: CookingType[];
   #defaultBestCooking: BestCookingType;
@@ -125,13 +126,7 @@ class PokemonSimulator {
     }
 
     // 現状の鍋のサイズでできる一番いい料理
-    this.#defaultBestCooking = this.cookingList
-      .filter(cooking => cooking.foodNum <= this.#fixedPotSize)
-      .map(cooking => ({
-        ...cooking,
-        lastEnergy: cooking.fixEnergy + (this.#fixedPotSize - cooking.foodNum) * Food.averageEnergy,
-      }))
-      .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+    this.#defaultBestCooking = this.#getBestCooking(this.#fixedPotSize);
 
     // this.calcStatusCache = new Map();
 
@@ -233,6 +228,23 @@ class PokemonSimulator {
     for(let food of Food.list) {
       this.#simulatedDefaultPokemon[food.name] = 0;
     }
+  }
+
+  #getBestCooking(potSize: number): BestCookingType {
+    const cacheKey = Math.round(potSize);
+    const cached = this.#bestCookingCache.get(cacheKey);
+    if (cached) return cached;
+
+    const bestCooking = this.cookingList
+      .filter(cooking => cooking.foodNum <= potSize)
+      .map(cooking => ({
+        ...cooking,
+        lastEnergy: cooking.fixEnergy + (potSize - cooking.foodNum) * Food.averageEnergy,
+      }))
+      .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+
+    this.#bestCookingCache.set(cacheKey, bestCooking);
+    return bestCooking;
   }
 
   fromBox(box: PokemonBoxType, fixable: boolean = false, useCandy: number = 0, requireLv: number = 0) {
@@ -402,7 +414,15 @@ class PokemonSimulator {
     const firstFoodEnergy = Food.map[foodNameList[0]].energy * ((base.specialty == '食材' || base.specialty == 'オール') ? 2 : 1)
 
     const pokemon: SimulatedPokemon = {
-      ...structuredClone(this.#simulatedDefaultPokemon),
+      ...this.#simulatedDefaultPokemon,
+      foodList: [],
+      foodProbList: [],
+      subSkillNameList: [],
+      skillWeightList: [],
+      selfHealList: [],
+      otherHealList: [],
+      skillEnergyMap: {},
+      evaluateResult: {},
       base,
       skillLv: skillLv,
       lv: lv,
@@ -414,7 +434,8 @@ class PokemonSimulator {
 
     let foodUnlock = lv >= 60 ? 3 : lv >= 30 ? 2 : 1;
 
-    for(let [index, name] of foodNameList.slice(0, foodUnlock).entries()) {
+    for(let index = 0; index < Math.min(foodNameList.length, foodUnlock); index++) {
+      const name = foodNameList[index];
       if (!name) continue;
       const food = Food.map[name];
       if (food == null) throw `${pokemon.base.name}:不正な食べ物(${name})`
@@ -808,9 +829,7 @@ class PokemonSimulator {
       pokemon.foodNumPerDay = pokemon.foodNum * foodGetChance;
       
       // 食材の個数
-      for(let food of Food.list) {
-        pokemon[food.name] = 0;
-      }
+      Object.assign(pokemon, PokemonSimulator.FOOD_NUM_RESET);
       for(let food of pokemon.foodList) {
         pokemon[food.name] += Number(food.num) / pokemon.foodList.length * foodGetChance;
       }
@@ -822,9 +841,6 @@ class PokemonSimulator {
       
       // 食材の個数
       Object.assign(pokemon, PokemonSimulator.FOOD_NUM_RESET);
-      // for(let food of Food.list) {
-      //   pokemon[food.name] = 0;
-      // }
       for(const foodProb of pokemon.foodProbList!) {
         const num = this.#probBorder.get(pokemon.foodRate * foodProb.weight, pokemon.normalHelpNum) * foodProb.num
         pokemon.fEpD += num * foodProb.energy;
@@ -1328,12 +1344,7 @@ class PokemonSimulator {
               * (this.config.simulation.campTicket ? 1.5 : 1)
             );
 
-            let afterBestCooking = this.cookingList.filter(cooking => cooking.foodNum <= afterPotSize)
-              .map(cooking => ({
-                ...cooking,
-                lastEnergy: cooking.fixEnergy + (afterPotSize - cooking.foodNum) * Food.averageEnergy,
-              }))
-              .sort((a, b) => b.lastEnergy - a.lastEnergy)[0];
+            const afterBestCooking = this.#getBestCooking(afterPotSize);
 
             if (afterBestCooking) {
               thisEnergyPerSkill += (afterBestCooking.lastEnergy - this.#defaultBestCooking.lastEnergy) * this.config.simulation.cookingWeight;
@@ -1456,7 +1467,17 @@ class PokemonSimulator {
     )
     // timeCounter?.stop('calcStatus')
 
-    this.calcTeamHeal([pokemon])
+    const shouldCalcTeamHeal =
+      this.mode == PokemonSimulator.MODE_SELECT
+        ? (pokemon.selfHeal > 0 || pokemon.otherHeal > 0 || this.config.selectEvaluate.healer > 0)
+        : (pokemon.selfHeal > 0 || pokemon.otherHeal > 0);
+
+    if (shouldCalcTeamHeal) {
+      this.calcTeamHeal([pokemon])
+    } else {
+      pokemon.dayHelpRate = this.defaultHelpRate.day;
+      pokemon.nightHelpRate = this.defaultHelpRate.night;
+    }
 
     // timeCounter?.start('calcHelp')
     this.calcHelp(

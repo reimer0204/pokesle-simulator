@@ -205,7 +205,7 @@ const defaultConfig = {
     supportRankNum: 20,     // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     cookingPowerUpType: 1,  // 料理パワーアップの評価方法(0:理論値, 1:平均)  
     cookingPowerUpRate: 60,    
-    healer: 80,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
+    healer: 90,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
     expectType: {
       border: 70,
       food: 1,

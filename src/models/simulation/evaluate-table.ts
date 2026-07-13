@@ -153,7 +153,10 @@ export default class EvaluateTable {
         }
       )
       
-      let normalPokemonEvaluateTable = normalPokemonResult.reduce((a, x) => ({ ...a, ...x.result}), {});
+      const normalPokemonEvaluateTable = {};
+      for(const chunk of normalPokemonResult) {
+        Object.assign(normalPokemonEvaluateTable, chunk.result);
+      }
 
       let scoreForHealerEvaluateList = normalPokemonResult.flatMap(x => x.scoreForHealerEvaluateList);
       let scoreForSupportEvaluateList = normalPokemonResult.flatMap(x => x.scoreForSupportEvaluateList);
@@ -182,9 +185,12 @@ export default class EvaluateTable {
           }
         }
       )
-      let supportPokemonEvaluateTable = supportPokemonResult.reduce((a, x) => ({ ...a, ...x.result}), {});
+      const supportPokemonEvaluateTable = {};
+      for(const chunk of supportPokemonResult) {
+        Object.assign(supportPokemonEvaluateTable, chunk.result);
+      }
 
-      let pokemonEvaluateTable = { ...normalPokemonEvaluateTable, ...supportPokemonEvaluateTable };
+      const pokemonEvaluateTable = { ...normalPokemonEvaluateTable, ...supportPokemonEvaluateTable };
 
       for(let pokemonName in pokemonEvaluateTable) {
 

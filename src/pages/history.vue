@@ -23,6 +23,18 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/7/13">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>シンオウ御三家追加</li>
+            <li>シミュレーション処理の最適化</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/7/4">
       <ul>
         <li>

@@ -10,8 +10,9 @@ class HelpRate {
   #dayLength: number;
   #nightLength: number;
   #teamHealCache: any;
-  #helpRateCache: { [key: string]: { day: number, night: number } };
+  #helpRateCache: Map<string, { day: number, night: number, healList?: { effect: number, time: number, night?: boolean }[] }>;
   #helpRateCacheCount = 0;
+  #helpRateCacheLimit = 4096;
 
   static GENKI_LIST = [
     { border: 80, effect: 0.45 },
@@ -29,7 +30,7 @@ class HelpRate {
     this.#dayLength = 86400 - this.#nightLength;
 
     this.#teamHealCache = {}
-    this.#helpRateCache = {}
+    this.#helpRateCache = new Map()
   }
 
   dump() {
@@ -141,7 +142,7 @@ class HelpRate {
       const cacheValue = caches[key];
       
       if (cacheValue === undefined) {
-        let allHealList;
+        let allHealList: { effect: number, time: number, night?: boolean }[];
         
         // 3回くらいループさせるとほぼ収束する
         for(let i = 0; i < 2; i++) {
@@ -149,12 +150,15 @@ class HelpRate {
             pokemon.selfHealList = []
             pokemon.otherHealList = []
 
-            allHealList = infoList.flatMap((x, k) => {
-              if (pokemonList[k].base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
-                return []
+            allHealList = [];
+            for(let k = 0; k < infoList.length; k++) {
+              const subPokemon = pokemonList[k];
+              if (subPokemon.base.skill.name == 'ナイトメア(エナジーチャージM)' && pokemon.base.type == 'あく') {
+                continue;
               }
-              return pokemonList[k].otherHealList
-            }).sort((a, b) => a.time - b.time)
+              allHealList.push(...subPokemon.otherHealList);
+            }
+            allHealList.sort((a, b) => a.time - b.time)
             
             let unPickHelpNum = info.beforeNightHelp;  // 昨日の夜の手伝い回数で初期化
             let beforeHelp = 0; // 前回のおてつだい時刻
@@ -320,11 +324,11 @@ class HelpRate {
     for(let { effect, time } of healList) {
       cacheKey += `${effect},${time},`
     }
-    let cache = this.#helpRateCache[cacheKey]
+    let cache = this.#helpRateCache.get(cacheKey)
     this.#helpRateCacheCount++;
 
     if (cache === undefined) {
-      let newHealList = [...healList]
+      let newHealList = healList.length ? healList.slice() : [];
       let genki = morningGenki
       let dayHelpRate = 0;
       let nightHelpRate = 0;
@@ -397,7 +401,10 @@ class HelpRate {
       if (this.#mode == PokemonSimulator.MODE_SELECT) {
         result.healList = healList;
       }
-      this.#helpRateCache[cacheKey] = result;
+      this.#helpRateCache.set(cacheKey, result);
+      if (this.#helpRateCache.size > this.#helpRateCacheLimit) {
+        this.#helpRateCache.delete(this.#helpRateCache.keys().next().value!);
+      }
       return result;
 
     } else {

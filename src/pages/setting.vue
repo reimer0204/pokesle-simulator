@@ -18,8 +18,8 @@ async function save() {
     await EvaluateTable.simulation(editConfig, progressCounter);
     editConfig.initSetting = true;
     editConfig.version.evaluateTable = EvaluateTable.VERSION;
-    editConfig.version.evaluateTableSleepTime = config.sleepTime
-    editConfig.version.evaluateTableCheckFreq = config.checkFreq
+    editConfig.version.evaluateTableSleepTime = editConfig.sleepTime
+    editConfig.version.evaluateTableCheckFreq = editConfig.checkFreq
 
     config.save(editConfig);
 
