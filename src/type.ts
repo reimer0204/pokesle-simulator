@@ -98,6 +98,7 @@ interface PokemonBoxType {
 interface PokemonType {
   name: string;
   no: number;
+  order: number;
   berry: BerryType;
   specialty: 'きのみ' | '食材' | 'スキル' | 'オール';
   skill: SkillType;

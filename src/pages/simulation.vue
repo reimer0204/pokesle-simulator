@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import CommonSetting from '../components/common-setting.vue';
 import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
@@ -117,7 +117,7 @@ async function simulation() {
     const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
     let filteredTargetPokemonList = pokemonList.filter(x => x.box?.fix == null);
 
-    const pickup = 5 - fixedPokemonList.length;
+    const pickup = 5 - new Set(fixedPokemonList.map(x => x.box!.index)).size;
 
     // スコアの高い上位のみをピックアップ
     let sortedPokemonList;

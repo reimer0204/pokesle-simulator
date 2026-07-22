@@ -190,7 +190,11 @@ addEventListener('message', async (event) => {
               )
             } as SimulatedPokemon) : null;
             if (thisCheckListHit != null) {
-              checkListHit.push(...thisCheckListHit!)
+              for(let item of thisCheckListHit) {
+                if (!checkListHit.includes(item)) {
+                  checkListHit.push(item)
+                }
+              }
             }
 
             let thisFix = config.simulation.fix && fixablePokemonIndexSet!.has(box.index) && (

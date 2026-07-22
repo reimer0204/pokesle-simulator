@@ -23,6 +23,30 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/7/22">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>
+              ボックスの表示モードにボックス整理(詳細)を追加
+              <ul>
+                <li>
+                  特に数が多くて整理できていないポケモンに絞って確認することが出来ます
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          不具合修正
+          <ul>
+            <li>いつ育運用が有効になっている状態で対象ポケモンを固定にしてチーム編成をシミュレーションすると結果が表示されない不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/7/13">
       <ul>
         <li>

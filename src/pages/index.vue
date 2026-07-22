@@ -28,7 +28,8 @@ let evaluateTable = EvaluateTable.load(config);
 const simulatedPokemonList = ref<SimulatedPokemon[]>([])
 const keyword = ref('')
 const asyncWatcher = AsyncWatcher.init();
-const mode = ref('normal')
+const mode = ref('normal');
+const cleaningDetailTab = ref(0);
 
 let multiWorker = new MultiWorker(PokemonListSimulator)
 onBeforeUnmount(() => {
@@ -53,7 +54,7 @@ async function createPokemonList(setConfig = false) {
         await evaluateTable, 
         {
           ...config,
-          cleaning: mode.value == 'cleaning',
+          cleaning: mode.value == 'cleaning' || mode.value == 'cleaning_detail',
           pureMint: mode.value == 'pureMint',
         },
         progressCounter, setConfig
@@ -65,9 +66,34 @@ async function createPokemonList(setConfig = false) {
   }
 }
 
-const filteredPokemonList = computed(() => {
-  if (!keyword?.value.length) return simulatedPokemonList.value;
+const isShowPokemonList = computed(() => {
+  return mode.value != 'cleaning_detail' || cleaningDetailTab.value == 1
+});
 
+const cleaningDetailPokemon: Ref<string | null> = ref(null);
+const cleaningDetailSummaryList = computed(() => {
+  return Pokemon.list.filter(x => x.isLast).map(pokemon => {
+    const targetList = simulatedPokemonList.value.filter(x => x.base.afterList.includes(pokemon.name));
+    return {
+      ...pokemon,
+      checklistChecked: targetList.some(x => x.hitCheckList?.length),
+      num: targetList.length,
+    }
+  })
+})
+
+const filteredPokemonList = computed(() => {
+  if (mode.value === 'cleaning_detail') {
+    if (cleaningDetailPokemon.value != null) {
+      return simulatedPokemonList.value.filter(x => {
+        return x.base.afterList.includes(cleaningDetailPokemon.value!)
+      })
+    } else {
+      return simulatedPokemonList.value;
+    }
+  }
+
+  if (!keyword?.value.length) return simulatedPokemonList.value;
   return simulatedPokemonList.value.filter(x => {
     let result = true;
     let keywords = keyword.value.split(/'[\s　]'/g);
@@ -119,7 +145,8 @@ const columnList = computed(() => {
     { key: 'edit', name: '', type: Number, convert: item => item.box?.fix == -1 ? 2 : item.box?.fix },
   ]
 
-  if (mode.value == 'cleaning') {
+  if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
+    // result.push({ key: 'pokemonSeedNo', name: '種ポケ\n図鑑No', type: Number, convert: x => Pokemon.map[x.base.seed].order })
     result.push({ key: 'pokemonNo', name: '図鑑\nNo', type: Number, convert: x => x.base.order })
   }
 
@@ -128,7 +155,7 @@ const columnList = computed(() => {
     { key: 'name', name: '名前', type: String, convert: x => x.box.name },
   );
 
-  if (mode.value == 'cleaning') {
+  if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
     result.push({ key: 'hitCheckList', name: '整理備考', type: Number, convert: x => x.hitCheckList?.length ?? 0 })
   }
 
@@ -411,7 +438,8 @@ function toggleFavorite(data: SimulatedPokemon) {
         <div>
           <select v-model.number="mode">
             <option value="normal">通常</option>
-            <option value="cleaning">ボックス整理</option>
+            <option value="cleaning">ボックス整理(簡易)</option>
+            <option value="cleaning_detail">ボックス整理(詳細)</option>
             <option value="pureMint">まっしろミント</option>
           </select>
         </div>
@@ -428,12 +456,19 @@ function toggleFavorite(data: SimulatedPokemon) {
         <label>ボックス整理</label>
         <div class="flex-row-start-center gap-10px">
           <button class="important" @click="deleteSelectedPokemon" :disabled="selectedPokemonList.length == 0">選択したポケモン({{ selectedPokemonList.length }}匹)を削除</button>
-          <InputCheckbox v-if="mode == 'cleaning'" v-model="config.pokemonList.cleaning.shinyLock">色違いも整理備考に表示する</InputCheckbox>
+          <InputCheckbox v-if="mode == 'cleaning' || mode == 'cleaning_detail'" v-model="config.pokemonList.cleaning.shinyLock">色違いも整理備考に表示する</InputCheckbox>
         </div>
       </div>
     </SettingList>
 
-    <div class="pokemon-list mt-5px">
+    <div v-if="mode == 'cleaning_detail'">
+      <TabList>
+        <div :class="{ active: cleaningDetailTab == 0 }" @click="cleaningDetailTab = 0">サマリー情報</div>
+        <div :class="{ active: cleaningDetailTab == 1 }" @click="cleaningDetailTab = 1">詳細{{ cleaningDetailPokemon ? `(${cleaningDetailPokemon})` : null }}</div>
+      </TabList>
+    </div>
+
+    <div class="pokemon-list mt-5px" v-if="isShowPokemonList">
 
       <AsyncWatcherArea :asyncWatcher="asyncWatcher">
         <SortableTable
@@ -480,7 +515,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                 <svg v-if="data.box?.fix ==   -1" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L353.3 251.6C407.9 237 448 187.2 448 128C448 57.3 390.7 0 320 0C250.2 0 193.5 55.8 192 125.2L38.8 5.1zM264.3 304.3C170.5 309.4 96 387.2 96 482.3c0 16.4 13.3 29.7 29.7 29.7H514.3c3.9 0 7.6-.7 11-2.1l-261-205.6z" fill="#E40"/></svg>
               </div>
               <StarIcon
-                v-if="mode == 'cleaning'"
+                v-if="mode == 'cleaning' || mode == 'cleaning_detail'"
                 @click.stop="toggleFavorite(data)"
                 class="fs-14px"
                 :style="{ color: data.box?.favorite ? '#FFD700' : '#888' }"
@@ -597,6 +632,10 @@ function toggleFavorite(data: SimulatedPokemon) {
             </div>
           </template>
 
+          <template #pokemonSeedNo="{ data, column }">
+            {{ Pokemon.map[data.base.seed].no }}
+          </template>
+
           <template #pokemonNo="{ data, column }">
             {{ data.base.no }}
           </template>
@@ -630,6 +669,45 @@ function toggleFavorite(data: SimulatedPokemon) {
       </div>
     </div>
 
+    <template v-if="mode == 'cleaning_detail'">
+      <div class="pokemon-list mt-5px" v-show="cleaningDetailTab == 0">
+        <AsyncWatcherArea :asyncWatcher="asyncWatcher">
+          <SortableTable
+            :dataList="cleaningDetailSummaryList"
+            :columnList="[
+              { key: 'seedNo', name: '種ポケ\n図鑑No', type: Number, convert: x => Pokemon.map[x.seed].no },
+              { key: 'seed', name: '種ポケ' },
+              { key: 'no', name: '図鑑No', type: Number },
+              { key: 'name', name: '名前' },
+              { key: 'berryName', name: 'きのみ', convert: x => x.berry.name },
+              { key: 'typeName', name: 'タイプ', convert: x => x.berry.type },
+              { key: 'specialty', name: 'とくい' },
+              { key: 'num', name: 'ボックス内\n候補数', type: Number },
+              { key: 'checklistChecked', name: 'チェックリスト\n該当', type: Boolean },
+              { key: 'dummy', name: '', convert: () => 0 },
+            ]"
+            :grid="4"
+          >
+            <template #dummy="{ data }">
+              <button @click="cleaningDetailPokemon = data.name; cleaningDetailTab = 1;">確認</button>
+            </template>
+          </SortableTable>
+        </AsyncWatcherArea>
+
+        <div class="flex-row-start-center gap-5px">
+          <button @click="addPokemon">ポケモン新規追加</button>
+          <div>
+            PTシミュは別ページに移りました
+          </div>
+          <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
+          <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
+            Googleスプレッドシート連携
+            <template v-if="PokemonBox.gsExportPromiseLocker.executing">(エクスポート中...)</template>
+          </button>
+          <button @click="showTsvPopup">TSVインポート/エクスポート</button>
+        </div>
+      </div>
+    </template>
 
   </div>
 </template>

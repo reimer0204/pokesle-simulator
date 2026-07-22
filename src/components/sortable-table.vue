@@ -293,6 +293,9 @@ function onClickRow(event, data) {
                     }) }}
                   </template>
                 </template>
+                <template v-else-if="column.type == Boolean">
+                  <template v-if="data.$clone[column.key]">◯</template>
+                </template>
                 <template v-else>
                   {{ data.$clone[column.key] }}
                 </template>

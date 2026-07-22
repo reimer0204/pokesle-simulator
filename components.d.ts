@@ -50,6 +50,7 @@ declare module 'vue' {
     SubSkillLabel: typeof import('./src/components/status/sub-skill-label.vue')['default']
     SubSkillLabelList: typeof import('./src/components/status/sub-skill-label-list.vue')['default']
     TablePopup: typeof import('./src/components/table-popup.vue')['default']
+    TabList: typeof import('./src/components/tab-list.vue')['default']
     ToggleArea: typeof import('./src/components/design/toggle-area.vue')['default']
   }
 }
