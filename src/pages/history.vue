@@ -23,6 +23,18 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/7/27">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ボックスの表示モードでボックス整理を選択した際、たねポケモンの図鑑Noを表示しソートできるよう改善</li>
+            <li>仮定計算時、エレズンのせいかくに応じて進化先がどちらか一方しか出ないよう改善</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/7/22">
       <ul>
         <li>

@@ -60,12 +60,22 @@ addEventListener('message', async (event) => {
       let fix = false;
       let checkListHit: any[] = [];
 
+      let afterList = [...originalBase.afterList];
+      if (box.name === 'エレズン') {
+        const high = [
+          'いじっぱり', 'やんちゃ', 'ゆうかん', 'わんぱく', 'のうてんき',
+          'うっかりや', 'なまいき', 'せっかち', 'ようき', 'むじゃき',
+          'がんばりや', 'すなお', 'きまぐれ',
+        ].includes(box.nature)
+        afterList = high ? ['ストリンダー(ハイなすがた)'] : ['ストリンダー(ローなすがた)'];
+      }
+      
       // 厳選
       if (evaluateTable) {
         evaluateResult = null;
         let foodIndexList = pokemonList[i].foodList.map(foodName => originalBase.foodNameList.findIndex(baseFood => baseFood == foodName))
         if (!foodIndexList.includes(-1)) {
-          for(let after of originalBase.afterList) {
+          for(let after of afterList) {
             if (!evaluateTable[after]) {
               continue;
             }
@@ -259,6 +269,7 @@ addEventListener('message', async (event) => {
         }
         simulatedPokemon.beforeName = pokemonList[i].name;
         simulatedPokemon.hitCheckList = checkListHit;
+        simulatedPokemon.afterList = afterList;
         thisResult.push(simulatedPokemon)
 
         if (evaluateResult) {

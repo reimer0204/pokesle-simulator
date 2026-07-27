@@ -73,7 +73,7 @@ const isShowPokemonList = computed(() => {
 const cleaningDetailPokemon: Ref<string | null> = ref(null);
 const cleaningDetailSummaryList = computed(() => {
   return Pokemon.list.filter(x => x.isLast).map(pokemon => {
-    const targetList = simulatedPokemonList.value.filter(x => x.base.afterList.includes(pokemon.name));
+    const targetList = simulatedPokemonList.value.filter(x => x.afterList.includes(pokemon.name));
     return {
       ...pokemon,
       checklistChecked: targetList.some(x => x.hitCheckList?.length),
@@ -86,7 +86,7 @@ const filteredPokemonList = computed(() => {
   if (mode.value === 'cleaning_detail') {
     if (cleaningDetailPokemon.value != null) {
       return simulatedPokemonList.value.filter(x => {
-        return x.base.afterList.includes(cleaningDetailPokemon.value!)
+        return x.afterList.includes(cleaningDetailPokemon.value!)
       })
     } else {
       return simulatedPokemonList.value;
@@ -146,7 +146,7 @@ const columnList = computed(() => {
   ]
 
   if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
-    // result.push({ key: 'pokemonSeedNo', name: '種ポケ\n図鑑No', type: Number, convert: x => Pokemon.map[x.base.seed].order })
+    result.push({ key: 'pokemonSeedNo', name: '種ポケ\n図鑑No', type: Number, convert: x => Pokemon.map[x.base.seed].order })
     result.push({ key: 'pokemonNo', name: '図鑑\nNo', type: Number, convert: x => x.base.order })
   }
 
@@ -235,7 +235,7 @@ const columnList = computed(() => {
   if (config.pokemonList.baseInfo) {
     result.push(
       { key: 'no', name: '図鑑\nNo', convert: x => x.base.no },
-      { key: 'afterList', name: '最終進化', convert: x => x.base.afterList },
+      { key: 'afterList', name: '最終進化' },
       { key: 'berryName', name: 'きのみ', convert: x => x.base.berry.name },
       { key: 'skillName', name: 'スキル', convert: x => x.base.skill.name },
     )
@@ -332,17 +332,6 @@ function updateGrowthInfo(data) {
   PokemonBox.post(pokemon, data.box.index)
 
   processSimulatedPokemonList();
-}
-
-// 厳選詳細ポップアップを表示
-function showSelectDetail(pokemon, after, lv) {
-  Popup.show(SelectTableDetailPopup, {
-    name: after,
-    lv,
-    foodIndexList: pokemon.box.foodList.map(f => Math.max(pokemon.base.foodList.findIndex(f2 => f2.name == f)), 0),
-    subSkillList: pokemon.box.subSkillList,
-    nature: pokemon.nature,
-  })
 }
 
 const selectedPokemonList = computed(() => simulatedPokemonList.value.filter(x => x.selected && !x.box?.favorite))
@@ -628,7 +617,7 @@ function toggleFavorite(data: SimulatedPokemon) {
 
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%;">
-              {{ data.base.afterList.length > 1 ? data.base.afterList[0] + '等' : data.base.afterList[0] }}
+              {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
             </div>
           </template>
 

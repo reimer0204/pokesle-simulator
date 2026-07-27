@@ -195,6 +195,7 @@ interface SimulatedPokemon extends FoodNames {
   sleepTime: number,
   fixable?: boolean,
   beforeName?: string;
+  afterList: string[];
 
   useShard: number;
   useCandy: number;
