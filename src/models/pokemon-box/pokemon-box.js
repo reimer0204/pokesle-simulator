@@ -3,7 +3,7 @@ import { Food, Cooking } from '../../data/food_and_cooking';
 import Nature from '../../data/nature';
 import Pokemon from '../../data/pokemon';
 import SubSkill from '../../data/sub-skill';
-import config from '../config';
+import config from '../config.ts';
 import { PromiseLocker } from '../promise-locker'
 
 class PokemonBox {

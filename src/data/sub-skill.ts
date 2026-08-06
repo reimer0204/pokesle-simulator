@@ -1,6 +1,7 @@
 import type { SubSkillType } from "../type";
 
-const list = [
+// 銀種計算に関わるので、上位が上の方に来る順番で定義しておくこと
+const list: SubSkillType[] = [
   { id:  1, name: 'きのみの数S',          rarity: 3, short: 'きのみS',  katakana: 'キノミノカズS',             inputSort: 0, next: null},
   { id:  2, name: 'げんき回復ボーナス',   rarity: 3, short: 'げんボ',   katakana: 'ゲンキカイフクボーナス',    inputSort: 0, next: null},
   { id:  3, name: 'ゆめのかけらボーナス', rarity: 3, short: 'ゆめボ',   katakana: 'ユメノカケラボーナス',      inputSort: 0, next: null},
@@ -22,20 +23,21 @@ const list = [
 
 class SubSkill {
   static list: SubSkillType[] = list;
+  static hasNextList: SubSkillType[] = list.filter(x => x.next != null);
   static map: { [key: string]: SubSkillType } = list.reduce((a, x) => (a[x.name] = x, a), {});
   static idMap: { [key: number]: SubSkillType } = list.reduce((a, x) => (a[x.id] = x, a), {});
   static listForInput = SubSkill.list.toSorted((a, b) => a.inputSort - b.inputSort);
 
-  static useSilverSeed(subSkillList: string[]): string[] {
+  static useSilverSeed(subSkillList: string[], setting?: { [key: string]: boolean }): string[] {
     let tmp = subSkillList.join('/')
   
-    if (tmp.includes('最大所持数アップM'  ) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップM'  , '最大所持数アップL'  ) };
-    if (tmp.includes('最大所持数アップS'  ) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップS'  , '最大所持数アップL'  ) };
-    if (tmp.includes('最大所持数アップS'  ) && !tmp.includes('最大所持数アップM'  )) { tmp = tmp.replace('最大所持数アップS'  , '最大所持数アップM'  ) };
-    if (tmp.includes('スキルレベルアップS') && !tmp.includes('スキルレベルアップM')) { tmp = tmp.replace('スキルレベルアップS', 'スキルレベルアップM') };
-    if (tmp.includes('スキル確率アップS'  ) && !tmp.includes('スキル確率アップM'  )) { tmp = tmp.replace('スキル確率アップS'  , 'スキル確率アップM'  ) };
-    if (tmp.includes('食材確率アップS'    ) && !tmp.includes('食材確率アップM'    )) { tmp = tmp.replace('食材確率アップS'    , '食材確率アップM'    ) };
-    if (tmp.includes('おてつだいスピードS') && !tmp.includes('おてつだいスピードM')) { tmp = tmp.replace('おてつだいスピードS', 'おてつだいスピードM') };
+    if (tmp.includes('最大所持数アップM'  ) && (setting == null || setting['最大所持数アップM'  ]) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップM'  , '最大所持数アップL'  ) };
+    if (tmp.includes('最大所持数アップS'  ) && (setting == null || setting['最大所持数アップS'  ]) && !tmp.includes('最大所持数アップM'  )) { tmp = tmp.replace('最大所持数アップS'  , '最大所持数アップM'  ) };
+    if (tmp.includes('最大所持数アップM'  ) && (setting == null || setting['最大所持数アップM'  ]) && !tmp.includes('最大所持数アップL'  )) { tmp = tmp.replace('最大所持数アップM'  , '最大所持数アップL'  ) };
+    if (tmp.includes('スキルレベルアップS') && (setting == null || setting['スキルレベルアップS']) && !tmp.includes('スキルレベルアップM')) { tmp = tmp.replace('スキルレベルアップS', 'スキルレベルアップM') };
+    if (tmp.includes('スキル確率アップS'  ) && (setting == null || setting['スキル確率アップS'  ]) && !tmp.includes('スキル確率アップM'  )) { tmp = tmp.replace('スキル確率アップS'  , 'スキル確率アップM'  ) };
+    if (tmp.includes('食材確率アップS'    ) && (setting == null || setting['食材確率アップS'    ]) && !tmp.includes('食材確率アップM'    )) { tmp = tmp.replace('食材確率アップS'    , '食材確率アップM'    ) };
+    if (tmp.includes('おてつだいスピードS') && (setting == null || setting['おてつだいスピードS']) && !tmp.includes('おてつだいスピードM')) { tmp = tmp.replace('おてつだいスピードS', 'おてつだいスピードM') };
   
     return tmp.split('/')
   }

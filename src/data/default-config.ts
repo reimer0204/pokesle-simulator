@@ -3,6 +3,7 @@ import Berry from "./berry.ts";
 import { Food, Cooking } from './food_and_cooking.ts'
 import Pokemon from "./pokemon.ts";
 import Skill from "./skill.ts";
+import SubSkill from "./sub-skill.ts";
 
 const defaultConfig = {
 
@@ -198,7 +199,11 @@ const defaultConfig = {
     shardEnergyRate: 120,   // エナジー/ゆめのかけら
     shardEnergy: 20,        // ゆめのかけらをエナジーに換算する
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
-    silverSeedUse: true,    // 銀種前提で厳選するか
+    silverSeed: Object.fromEntries(
+      SubSkill.list
+      .filter(x => x.next != null)
+      .map(x => [x.name, true])
+    ),
     helpBonus: 20,          // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
     teamHelpBonus: 3,       // チームに自分以外のおてボ持ちが何匹いるか
     supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか

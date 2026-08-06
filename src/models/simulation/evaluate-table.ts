@@ -4,9 +4,10 @@ import Skill from "../../data/skill";
 import SubSkill from "../../data/sub-skill";
 import SubSkillCombination from "../../data/sub-skill-combination";
 import EvaluateTableWorker from "./evaluate-simulator?worker";
-import config from "../config";
+import config from "../config.ts";
 import MultiWorker from "../multi-worker";
 import Version from "../version";
+import SubSkillCombinationWorker from "../sub-skill-combination-worker.ts?worker";
 
 const DB_NAME = 'evaluateTable';
 const DB_VERSION = 1;
@@ -93,19 +94,6 @@ export default class EvaluateTable {
     }
   }
 
-  static getAllPatternNum(newConfig) {
-    let lvList = Object.entries(newConfig.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-    return lvList.reduce((a, x) => a + this.getPatternNum(x), 0)
-  }
-
-  static getPatternNum(lv) {
-    const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
-    const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
-    const subSkillCombinationNum = (SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[]]).length;
-
-    return foodNum * subSkillCombinationNum * Nature.list.length;
-  }
-
   static async simulation(newConfig = null, progressCounter) {
     const fixedConfig = JSON.parse(JSON.stringify(newConfig ?? config));
 
@@ -114,10 +102,26 @@ export default class EvaluateTable {
     let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).flatMap(([lv, enable]) => enable ? [Number(lv)] : [])
 
     // Lvごとに画面表示用の進捗カウンターを用意しておく
-    let subProgressCounterList = progressCounter.split(...lvList.flatMap(lv => {
-      let patternNum = this.getPatternNum(lv);
+    let [subSkillCombinationProgress, ...subProgressCounterList] = progressCounter.split(10, ...lvList.flatMap(lv => {
+      const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
+      const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
+
+      // 目安なのでサブスキルの数の組み合わせで計算
+      let c = 1;
+      for(let i = SubSkill.list.length - subSkillNum + 1; i <= SubSkill.list.length; i++) c *= i;
+      for(let i = 2; i <= subSkillNum; i++) c /= i;
+
+      let patternNum = foodNum * c * Nature.list.length;
       return [patternNum, patternNum]
     }));
+
+    // サブスキルの組合せを計算する
+    const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1)
+    const [subSkillCombinationList] = await subSkillCombinationWorker.call(
+      subSkillCombinationProgress,
+      () => ({ config: fixedConfig }),
+    )
+    subSkillCombinationWorker.close();
 
     // 最終進化のポケモンだけチェック
     let pokemonList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
@@ -133,7 +137,7 @@ export default class EvaluateTable {
     let progressCounterIndex = 0;
     for(let lv of lvList) {
       const foodCombinationList = lv < 30 ? ['0'] : lv < 60 ? [ '00', '01' ] : [ '000', '001', '002', '010', '011', '012' ];
-
+      const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
       // 
       subProgressCounterList[progressCounterIndex].setName(`Lv${lv}の通常ポケモンの厳選情報を作成しています…`)
       let normalPokemonResult = await multiWorker.call(
@@ -146,6 +150,7 @@ export default class EvaluateTable {
             config: fixedConfig,
             pokemonList: normalPokemonList.slice(i1, i2),
             foodCombinationList,
+            subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
             // subSkillCombinationList,
             // scoreForHealerEvaluate,
             // scoreForSupportEvaluate,
@@ -180,6 +185,7 @@ export default class EvaluateTable {
             config: fixedConfig,
             pokemonList: supportPokemonList.slice(i1, i2),
             foodCombinationList,
+            subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
             scoreForHealerEvaluate,
             scoreForSupportEvaluate,
           }

@@ -4,13 +4,14 @@ import SortableTable from '../components/sortable-table.vue';
 import SettingList from '../components/util/setting-list.vue';
 import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
-import config from '../models/config.js';
+import config from '../models/config.ts';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import MultiWorker from '../models/multi-worker.js';
 import Popup from '../models/popup/popup.ts';
 import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker';
 import SubSkill from '../data/sub-skill';
 import Nature from '@/data/nature';
+import SubSkillCombinationWorker from '@/models/sub-skill-combination-worker?worker';
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 let lv = ref(lvList.at(-1))
@@ -57,10 +58,31 @@ let columnList = computed(() => {
   ]
 })
 
+// サブスキルの組合せを計算する
+const subSkillCombinationListPromise = (async () => {
+  const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1)
+  const [subSkillCombinationList] = await subSkillCombinationWorker.call(
+    null,
+    () => ({ config: JSON.parse(JSON.stringify(config)) }),
+  )
+  subSkillCombinationWorker.close();
+
+  return subSkillCombinationList;
+})()
+
 async function showDetail(pokemon, p) {
   
   asyncWatcher.run(async (progressCounter) => {
     await evaluateTablePromise
+    const subSkillCombinationList = await subSkillCombinationListPromise;
+
+    const subSkillNum = 
+      lv.value < 10 ? 0 : 
+      lv.value < 25 ? 1 : 
+      lv.value < 50 ? 2 : 
+      lv.value < 70 ? 3 : 
+      lv.value < 80 ? 4 : 5;
+
 
     const multiWorker = new MultiWorker(EvaluateTableWorker, 1)
 
@@ -72,6 +94,7 @@ async function showDetail(pokemon, p) {
           config: JSON.parse(JSON.stringify(config)),
           pokemonList: [Pokemon.map[pokemon.name]],
           foodCombinationList: [pokemon.foodIndexList],
+          subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
           scoreForHealerEvaluate: evaluateTable.value.scoreForHealerEvaluate[lv.value][''].energy,
           scoreForSupportEvaluate: evaluateTable.value.scoreForSupportEvaluate[lv.value][''].energy,
         }

@@ -1,6 +1,6 @@
 <script setup>
 import { Cooking } from '../data/food_and_cooking';
-import config from '../models/config';
+import config from '../models/config.ts';
 import PopupBase from './util/popup-base.vue';
 
 const checkAll = computed({

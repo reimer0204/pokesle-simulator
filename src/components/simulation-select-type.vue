@@ -1,5 +1,5 @@
 <script setup>
-import config from '../models/config';
+import config from '../models/config.ts';
 </script>
 
 <template>

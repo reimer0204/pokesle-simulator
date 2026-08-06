@@ -2,7 +2,7 @@
 import { Food, Cooking } from '../../data/food_and_cooking';
 import Popup from '../../models/popup/popup.ts';
 import CookingSettingPopup from '../../components/cooking-setting-popup.vue';
-import config from '../../models/config';
+import config from '../../models/config.ts';
 
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);

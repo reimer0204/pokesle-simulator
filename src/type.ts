@@ -74,7 +74,7 @@ interface SubSkillType {
   rarity: number;
   short: string;
   katakana: string;
-  next?: string;
+  next: string | null;
   inputSort: number;
 }
 

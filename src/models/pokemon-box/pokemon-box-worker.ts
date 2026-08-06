@@ -102,7 +102,7 @@ addEventListener('message', async (event) => {
               let subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
 
               let subSkillList: string[] = (
-                config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(box.subSkillList) : box.subSkillList
+                SubSkill.useSilverSeed(box.subSkillList, config.selectEvaluate.silverSeed)
               ).slice(0, subSkillNum);
 
               for(const evaluateType of evaluateTypeList) {

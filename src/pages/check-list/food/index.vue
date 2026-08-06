@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SortableTable from '@/components/sortable-table.vue';
 import AsyncWatcherArea from '@/components/util/async-watcher-area.vue';
-import config from '@/models/config.js';
+import config from '@/models/config.ts';
 import PokemonInfo from '../pokemon-info.vue';
 import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';

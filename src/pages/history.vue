@@ -1,6 +1,6 @@
 <script setup>
 import Version from '../models/version';
-import config from '../models/config';
+import config from '../models/config.ts';
 
 config.version.history = Version.HISTORY;
 </script>
@@ -22,6 +22,18 @@ config.version.history = Version.HISTORY;
     </div>
 
     <h2 class="mt-1em">更新履歴</h2>
+
+    <HistoryItem date="2026/8/6">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ルカリオ、ピクシーのアップデート反映</li>
+            <li>基準生成時に銀種を使用するスキルを指定できるよう改善</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
 
     <HistoryItem date="2026/7/27">
       <ul>

@@ -3,7 +3,7 @@ import InputCheckbox from '@/components/form/input-checkbox.vue';
 import { Food, Cooking } from '../../data/food_and_cooking';
 import Nature from '../../data/nature';
 import Pokemon from '../../data/pokemon';
-import config from '../../models/config';
+import config from '../../models/config.ts';
 import { AsyncWatcher } from '../../models/async-watcher.js';
 import PokemonListSimulator from '../../models/pokemon-box/pokemon-box-worker?worker';
 import MultiWorker from '../../models/multi-worker.js';

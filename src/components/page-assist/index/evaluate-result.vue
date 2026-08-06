@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { SimulatedPokemon } from '../../../type.ts';
-import config from '@/models/config.js';
+import config from '@/models/config.ts';
 import Popup from '@/models/popup/popup.ts';
 import EvaluateTableDetailPopup from '@/components/evaluate-table-detail-popup.vue';
 import { computed } from 'vue';

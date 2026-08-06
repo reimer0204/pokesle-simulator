@@ -4,7 +4,7 @@ import Nature from '../data/nature';
 import Pokemon from '../data/pokemon';
 import SubSkill from '../data/sub-skill';
 import { AsyncWatcher } from '../models/async-watcher';
-import config from '../models/config';
+import config from '../models/config.ts';
 import EvaluateTable from '../models/simulation/evaluate-table';
 import MultiWorker from '../models/multi-worker';
 import PokemonBox from '../models/pokemon-box/pokemon-box';

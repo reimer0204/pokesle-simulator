@@ -16,7 +16,7 @@ import { Food, Cooking } from '../data/food_and_cooking';
 import Pokemon from '../data/pokemon';
 import Skill from '../data/skill';
 import SubSkill from '../data/sub-skill';
-import config from '../models/config';
+import config from '../models/config.ts';
 import EvaluateTable from '../models/simulation/evaluate-table';
 import HelpRate from '../models/help-rate';
 import PokemonSimulator from '../models/simulation/pokemon-simulator';
@@ -85,7 +85,7 @@ const evaluateResult = computed(() => {
   // サブスキルの組み合わせを列挙
   const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
   let subSkillList: string[] = props.subSkillList;
-  subSkillList = (config.selectEvaluate.silverSeedUse ? SubSkill.useSilverSeed(subSkillList) : subSkillList).slice(0, subSkillNum);
+  subSkillList = SubSkill.useSilverSeed(subSkillList, config.selectEvaluate.silverSeed).slice(0, subSkillNum);
 
   const simulatedPokemon = simulator.fromEvaluate(
     basePokemon.value,
@@ -558,7 +558,17 @@ const specialtyEvaluateGraph = computed(() => {
               <template v-if="skill.name == 'ゆめのかけらゲットS' || skill.name == 'ゆめのかけらゲットS(ランダム)'">
                 {{ skill.effect[lv - 1] }}
                 <template v-if="evaluateResult.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
-                ＝ {{ (skill.effect[lv - 1] * weight).toFixed(1) }}
+                ＝ {{ (skill.effect[lv - 1] * weight).toFixed(1) }} (ゆめのかけら、総計内で計算)
+              </template>
+
+              <template v-if="skill.name == 'はどうだん(ゆめのかけらゲットS)'">
+                {{ skill.effect[lv - 1].shard }}
+                <template v-if="evaluateResult.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
+                ＝ {{ (skill.effect[lv - 1].shard * weight).toFixed(1) }} (ゆめのかけら、総計内で計算)
+                <br>
+                {{ skill.effect[lv - 1].energy }}
+                <template v-if="evaluateResult.base.skill.name == 'ゆびをふる'">÷ {{ Skill.metronomeTarget.length }}<br></template>
+                ＝ {{ (skill.effect[lv - 1].energy * weight).toFixed(1) }}
               </template>
 
               <div v-if="skill.name == '料理パワーアップS' || skill.name == 'マイナス(料理パワーアップS)'" class="skill-description">

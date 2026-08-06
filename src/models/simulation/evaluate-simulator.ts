@@ -14,6 +14,13 @@ self.addEventListener('message', async (event: {
     foodCombinationList: string[],
     scoreForHealerEvaluate: number,
     scoreForSupportEvaluate: number,
+    subSkillCombinationList: {
+      s: number[],
+      0?: number[],
+      1?: number[],
+      2?: number[],
+      3?: number[],
+    }[],
   }
 }) => {
   const {
@@ -27,13 +34,7 @@ self.addEventListener('message', async (event: {
 
 
   // サブスキルの組み合わせを列挙
-  const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
-  let subSkillCombinationList = SubSkillCombination[(config.selectEvaluate.silverSeedUse ? 's' : 'n') + subSkillNum] ?? [[1]]
-  if (subSkillCombinationList == null) {
-    throw 'サブスキルの組み合わせの取得に失敗しました。'
-  }
-
-  subSkillCombinationList = subSkillCombinationList.map(subSkillCombination => {
+  const subSkillCombinationList = event.data.subSkillCombinationList.map(subSkillCombination => {
     const weightList = [];
     if (subSkillCombination[0]) weightList.push({ yumebo: false, risabo: false, weight: subSkillCombination[0][0], ids: subSkillCombination[0].slice(1) })
     if (subSkillCombination[1]) weightList.push({ yumebo:  true, risabo: false, weight: subSkillCombination[1][0], ids: subSkillCombination[1].slice(1) })

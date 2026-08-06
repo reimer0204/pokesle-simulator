@@ -6,7 +6,7 @@ import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import SettingList from '../components/util/setting-list.vue';
 import { Food, Cooking } from '../data/food_and_cooking';
 import { AsyncWatcher } from '../models/async-watcher.js';
-import config from '../models/config.js';
+import config from '../models/config.ts';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box/pokemon-box';

@@ -1177,6 +1177,11 @@ class PokemonSimulator {
           pokemon.shard += effect * pokemon.skillPerDay * weight;
           break;
 
+        case 'はどうだん(ゆめのかけらゲットS)':
+          pokemon.shard += effect.shard * pokemon.skillPerDay * weight;
+          energyPerSkill = effect.energy;
+          break;
+
         case '料理パワーアップS':
           cookingPowerUpEffect = effect;
           break;

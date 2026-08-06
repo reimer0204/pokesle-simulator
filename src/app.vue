@@ -1,6 +1,6 @@
 <script setup>
 import AsyncWatcherArea from './components/util/async-watcher-area.vue';
-import config from './models/config';
+import config from './models/config.ts';
 import EvaluateTable from './models/simulation/evaluate-table';
 import Version from './models/version';
 import Ajax from './models/utils/ajax';

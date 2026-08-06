@@ -245,6 +245,20 @@ class Skill {
     { name: '料理チャンスS',                 effect: [  4.0,    5.0,    6.0,	   7.0,	   8.0,	  10.0] },
     { name: 'ゆめのかけらゲットS',           effect: [240.0,  340.0,	 480.0,	 670.0,	 920.0,	1260.0,	1800.0, 2500.0], shard: true },
     { name: 'ゆめのかけらゲットS(ランダム)', effect: [300.0,  425.0,	 600.0,	 837.5,	1150.0,	1575.0,	2250.0, 2875.0], shard: true },
+    {
+      name: 'はどうだん(ゆめのかけらゲットS)',
+      effect: [
+        { shard:  240.0, energy: 200 },
+        { shard:  340.0, energy: 285 },
+        { shard:  480.0, energy: 393 },
+        { shard:  670.0, energy: 542 },
+        { shard:  920.0, energy: 748 },
+        { shard: 1260.0, energy: 1033 },
+        { shard: 1800.0, energy: 1501 },
+        { shard: 2500.0, energy: 2042 },
+      ],
+      shard: true
+    },
     { name: 'へんしん(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
     { name: 'ものまね(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
     { name: 'ゆびをふる',                    effect: [ null,   null,    null,   null,   null,   null, null], team: true, },

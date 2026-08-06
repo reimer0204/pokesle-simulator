@@ -1,7 +1,7 @@
 <script setup>
 import { Food, Cooking } from '../../data/food_and_cooking';
 import Pokemon from '../../data/pokemon';
-import config from '../../models/config';
+import config from '../../models/config.ts';
 
 const props = defineProps({
   pokemon: { required: true },

@@ -1,5 +1,5 @@
-<script setup>
-import config from '../../models/config.js';
+<script setup lang="ts">
+import config from '../../models/config.ts';
 import PokemonBox from '../../models/pokemon-box/pokemon-box.js';
 
 const props = defineProps({

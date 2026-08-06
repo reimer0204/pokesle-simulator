@@ -1,5 +1,5 @@
 <script setup>
-import config from '../models/config';
+import config from '../models/config.ts';
 import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PopupBase from './util/popup-base.vue';
 

@@ -2,11 +2,12 @@
 import Pokemon from '@/data/pokemon.ts';
 import SettingList from '../components/util/setting-list.vue';
 import Skill from '../data/skill';
-import config from '../models/config';
+import config from '../models/config.ts';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import Exp from '@/data/exp.ts';
 import InputRadio from '@/components/form/input-radio.vue';
 import { Cooking } from '@/data/food_and_cooking.ts';
+import SubSkill from '@/data/sub-skill.ts';
 
 let editConfig = reactive(config.clone());
 let result = ref(null)
@@ -205,13 +206,6 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           </div>
         </div>
         <div>
-          <label>銀種前提厳選</label>
-          <div>
-            <InputCheckbox v-model="editConfig.selectEvaluate.silverSeedUse">銀種前提</InputCheckbox>
-            <small class="mt-5px">チェックを外すと重いです</small>
-          </div>
-        </div>
-        <div>
           <label>おてつだいボーナス評価</label>
           <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.teamHelpBonus" step="1" min="0" max="4"> 匹</div>
           <small>
@@ -240,6 +234,18 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           <label>おやすみリボン</label>
           <div>
             <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.pokemonSleepTime"> 時間</div>
+          </div>
+        </div>
+        <div>
+          <label>銀種前提厳選</label>
+          <div class="flex-row flex-wrap gap-5px">
+            <template v-for="subSkill in SubSkill.list.filter(x => x.next != null).sort((a, b) => a.name.localeCompare(b.name))">
+              <div class="flex-row-start-center gap-5px">
+                <InputCheckbox v-model="editConfig.selectEvaluate.silverSeed[subSkill.name]">
+                  {{ subSkill.name }}
+                </InputCheckbox>
+              </div>
+            </template>
           </div>
         </div>
       </SettingList>

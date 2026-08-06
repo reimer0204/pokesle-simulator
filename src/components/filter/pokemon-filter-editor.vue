@@ -2,7 +2,7 @@
 
 import Pokemon from '../../data/pokemon';
 import Skill from '../../data/skill';
-import config from '../../models/config';
+import config from '../../models/config.ts';
 import PokemonBox from '../../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../../models/pokemon-filter';
 

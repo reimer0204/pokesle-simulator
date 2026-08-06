@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SubSkill from '../../data/sub-skill';
-import config from '../../models/config';
+import config from '../../models/config.ts';
 import type { SimulatedPokemon } from '../../type'
 
 const props = defineProps<{

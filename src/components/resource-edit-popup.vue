@@ -1,6 +1,6 @@
 <script setup>
 import Pokemon from '../data/pokemon';
-import config from '../models/config';
+import config from '../models/config.ts';
 import InputNumber from './form/input-number.vue';
 import PopupBase from './util/popup-base.vue';
 

@@ -2,7 +2,7 @@
 import Field from '@/data/field.js';
 import SortableTable from '../../components/sortable-table.vue';
 import AsyncWatcherArea from '../../components/util/async-watcher-area.vue';
-import config from '../../models/config.js';
+import config from '../../models/config.ts';
 import Pokemon from '@/data/pokemon.ts';
 import EvaluateTable from '@/models/simulation/evaluate-table.ts';
 import { AsyncWatcher } from '@/models/async-watcher.js';
