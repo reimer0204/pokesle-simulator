@@ -25,6 +25,7 @@ const columnList = computed(() => {
     // { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
     config.simulation.cookingRecipeLvType1 ? { key: 'lv1', name: '実際のLv' } : null,
     config.simulation.cookingRecipeLvType3 ? { key: 'lv3', name: `${config.simulation.cookingRecipeRepeatLv}回\n料理時Lv` } : null,
+    config.simulation.cookingRecipeLvType4 ? { key: 'lv4', name: `基礎エナジー\n✕${config.simulation.cookingRecipeRepeatLv2}%回\n料理時Lv` } : null,
     { key: 'lv', name: '計算Lv' },
     { key: 'fixEnergy', name: '最終エナジー', type: Number, fixed: 0 },
   ].filter(x => x)
@@ -49,13 +50,21 @@ const columnList = computed(() => {
             <label>シミュレーション設定</label>
             <div>
               <div class="flex-row-start-center gap-20px">
-                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType1" :value="1">実際のLv</InputCheckbox>
-                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType2" :value="2">
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType1">
+                  実際のLv
+                </InputCheckbox>
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType2">
                   全て<input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" @click.stop />Lv
                 </InputCheckbox>
-                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType3" :value="3">
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType3">
                   <input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" @click.stop />
-                回料理した際のLv</InputCheckbox>
+                  回料理した際のLv
+                </InputCheckbox>
+                <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType4">
+                  基礎エナジーの
+                  <input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv2" @click.stop />
+                  %回料理した際のLv
+                </InputCheckbox>
               </div>
               <small class="mt-5px">
                 <b>上記で選択したもののうち、最もレベルの高いものが各種シミュレーションに採用されます。</b><br>

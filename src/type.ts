@@ -13,6 +13,7 @@ interface CookingType {
   lv1?: number;
   lv2?: number;
   lv3?: number;
+  lv4?: number;
   rate: number;
   recipeLvBonus: number;
   fixEnergy: number;

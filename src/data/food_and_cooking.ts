@@ -323,6 +323,20 @@ class Cooking {
           cooking.lv3 = lv;
           cooking.lv = Math.max(cooking.lv, cooking.lv3);
         }
+        if (config.simulation.cookingRecipeLvType4) {
+          let exp = 0;
+          let lv = 1;
+          const num = Math.round(cooking.energy * config.simulation.cookingRecipeRepeatLv2 / 100)
+
+          for(let i = 0; i < num; i++) {
+            exp += Cooking.recipeLvs[lv].bonus * cooking.energy;
+            while(Cooking.recipeLvs[lv].totalExp <= exp && lv < Cooking.maxRecipeLv) {
+              lv++;
+            }
+          }
+          cooking.lv4 = lv;
+          cooking.lv = Math.max(cooking.lv, cooking.lv4);
+        }
       }
   
       cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv]?.bonus ?? 0;
