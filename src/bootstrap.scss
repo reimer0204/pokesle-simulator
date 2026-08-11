@@ -8,7 +8,7 @@
     flex-direction: $direction;
   }
 
-  @each $justifyContent in start, center, end {
+  @each $justifyContent in start, center, end, space-between, space-around, space-evenly {
     .flex-#{$direction}-#{$justifyContent} {
       display: flex;
       flex-direction: $direction;

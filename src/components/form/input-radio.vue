@@ -3,15 +3,19 @@ const props = defineProps({
   modelValue: { default: false },
   value: { required: true },
   disabled: { type: Boolean, default: false },
+  override: { type: Boolean, default: null },
 })
 const emits = defineEmits(['update:modelValue'])
 
 const isChecked = computed(() => {
+  if (props.override != null) {
+    return props.override;
+  }
   return props.modelValue == props.value;
 })
 
 function onClick() {
-  if (props.disabled) return;
+  if (props.disabled || props.override != null) return;
 
   emits('update:modelValue', props.value)
 }
@@ -42,7 +46,7 @@ function onClick() {
   }
 
   &.disabled {
-    opacity: 0.5;
+    opacity: 0.3;
   }
 }
 </style>

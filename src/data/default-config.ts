@@ -76,7 +76,7 @@ const defaultConfig = {
     selectType: 0,
     selectBorder: 90,
     field: 'ワカクサ本島',
-    fieldEx: null,
+    fieldEx: 1,
     fieldExMainBerry: '',
     fieldBonus: 75,
     berryList: ['', '', ''],
@@ -198,8 +198,8 @@ const defaultConfig = {
 
   // 厳選関連
   selectEvaluate: {
-    shardEnergyRate: 120,   // エナジー/ゆめのかけら
-    shardEnergy: 20,        // ゆめのかけらをエナジーに換算する
+    shardEnergyRate: 60,   // エナジー/ゆめのかけら
+    shardEnergy: 10,        // ゆめのかけらをエナジーに換算する
     shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
     silverSeed: Object.fromEntries(
       SubSkill.list

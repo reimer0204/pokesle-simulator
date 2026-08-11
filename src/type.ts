@@ -52,12 +52,14 @@ interface BerryType {
   type: string,
   typeColor: string,
   img: any;
+  colorOrder: number;
 }
 
 interface SkillType {
   name: string;
   effect: any[];
   metronome?: boolean;
+  copyable?: boolean;
   team?: boolean;
   success?: number;
   evaluateEnergy?: number[];
@@ -205,7 +207,13 @@ interface SimulatedPokemon extends FoodNames {
   subSkillNameList: string[];
   nextSubSkillList?: boolean[];
   nature: NatureType;
-  skillWeightList: { skill: SkillType, weight: number, skillLv?: number, option?: any }[];
+  skillWeightList: {
+    skill: SkillType,
+    weight: number,
+    skillLv?: number,
+    copy?: SimulatedPokemon,
+    pokemon?: SimulatedPokemon,
+  }[];
   selfHealList: { effect: number, time: number, night?: boolean }[],
   otherHealList: { effect: number, time: number, night?: boolean }[],
   

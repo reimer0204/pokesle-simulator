@@ -73,6 +73,8 @@ class Cooking {
     {type: 'カレー', name: 'いあいぎりすき焼きカレー', energy: 20655, foodList: [{name: 'ふといながねぎ', num: 27},{name: 'マメミート', num: 26},{name: 'あまいミツ', num: 26},{name: 'とくせんエッグ', num: 22},]},
     {type: 'カレー', name: 'なりきりバケッチャシチュー', energy: 15621, foodList: [{name: 'ずっしりカボチャ', num: 10},{name: 'マメミート', num: 16},{name: 'ほっこりポテト', num: 18},{name: 'あじわいキノコ', num: 25},]},
     {type: 'カレー', name: 'しんりょくアボカドグラタン', energy: 24802, foodList: [{name: 'つやつやアボカド', num: 22},{name: 'ほっこりポテト', num: 20},{name: 'モーモーミルク', num: 41},{name: 'ピュアなオイル', num: 32},]},
+    {type: 'カレー', name: 'ワカクサカレーパン', energy: 10945, foodList: [{name: 'あったかジンジャー', num: 20},{name: 'げきからハーブ', num: 20},{name: 'ワカクサ大豆', num: 8},{name: 'ピュアなオイル', num: 15},]},
+    {type: 'カレー', name: 'とびはねるカレーうどん', energy: 25539, foodList: [{name: 'あったかジンジャー', num: 39},{name: 'あじわいキノコ', num: 31},{name: 'げきからハーブ', num: 22},{name: 'マメミート', num: 20},]},
     {type: 'サラダ', name: 'ごちゃまぜサラダ', energy: 0, foodList: []},
     {type: 'サラダ', name: 'ヤドンテールのペッパーサラダ', energy: 8169, foodList: [{name: 'げきからハーブ', num: 10},{name: 'ピュアなオイル', num: 15},{name: 'おいしいシッポ', num: 10},]},
     {type: 'サラダ', name: 'キノコのほうしサラダ', energy: 5859, foodList: [{name: 'あじわいキノコ', num: 17},{name: 'ピュアなオイル', num: 8},{name: 'あんみんトマト', num: 8},]},

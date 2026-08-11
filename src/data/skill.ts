@@ -12,7 +12,20 @@ class Skill {
   static list: SkillType[] = [
     { name: 'エナジーチャージS' ,            effect: [400.0,  569.0,	 785.0,	1083.0,	1496.0,	2066.0,	3212.0], energyOnly: true },
     { name: 'エナジーチャージS(ランダム)',   effect: [500.0,  711.5,	 981.5,	1354.0,	1870.0,	2582.5,	3915.0], energyOnly: true },
-    { name: 'たくわえる(エナジーチャージS)', effect: [587, 834, 1151, 1590, 2194, 3031, 4404], metronome: false, energyOnly: true },
+    {
+      name: 'たくわえる(エナジーチャージS)',
+      effect: [
+        { base: 600,  expect: 587 },
+        { base: 853,  expect: 834 },
+        { base: 1177, expect: 1151 },
+        { base: 1625, expect: 1590 },
+        { base: 2243, expect: 2194 },
+        { base: 3099, expect: 3031 },
+        { base: 4502, expect: 4404 },
+      ],
+      metronome: false,
+      energyOnly: true,
+    },
     { name: 'エナジーチャージM',             effect: [800.0, 1251.0,	1726.0,	2383.0,	3290.0,	4546.0,	6858.0], energyOnly: true },
     {
       name: 'ナイトメア(エナジーチャージM)',
@@ -26,6 +39,7 @@ class Skill {
         { energy: 18515, other: -12 },
       ],
       metronome: false,
+      copyable: false,
       genki: true,
     },
     {
@@ -141,13 +155,13 @@ class Skill {
     {
       name: 'プラス(食材ゲットS)',
       effect: [
-        { main:  5, sub:  6 },
-        { main:  7, sub:  7 },
-        { main:  9, sub:  8 },
-        { main: 11, sub:  9 },
-        { main: 13, sub: 10 },
-        { main: 16, sub: 11 },
-        { main: 18, sub: 12 },
+        { main:  5, sub:   0 },
+        { main:  7, sub: 125 },
+        { main:  9, sub: 300 },
+        { main: 11, sub: 425 },
+        { main: 13, sub: 600 },
+        { main: 16, sub: 725 },
+        { main: 18, sub: 850 },
       ],
     },
     { name: 'プレゼント(食材ゲットS)', effect: [4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 17.0] },
@@ -259,9 +273,9 @@ class Skill {
       ],
       shard: true
     },
-    { name: 'へんしん(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
-    { name: 'ものまね(スキルコピー)',        effect: [ null,   null,    null,   null,   null,   null, null], metronome: false },
-    { name: 'ゆびをふる',                    effect: [ null,   null,    null,   null,   null,   null, null], team: true, },
+    { name: 'へんしん(スキルコピー)', effect: [ null,   null,    null,   null,   null,   null, null], metronome: false, copyable: false },
+    { name: 'ものまね(スキルコピー)', effect: [ null,   null,    null,   null,   null,   null, null], metronome: false, copyable: false },
+    { name: 'ゆびをふる',             effect: [ null,   null,    null,   null,   null,   null, null], team: true, },
   ];
   static map: { [key: string]: SkillType } = Skill.list.reduce((a: { [key: string]: SkillType }, x) => (a[x.name] = x, a), {});;
   static metronomeTarget = Skill.list.filter(x => x.name != 'ゆびをふる' && x.metronome !== false);

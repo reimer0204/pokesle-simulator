@@ -43,18 +43,6 @@ const eventBonusAllChecked = computed({
   },
 })
 
-const exBerryError = computed(() => {
-  if (config.simulation.fieldExMainBerry == null) return false;
-
-  return !(
-    (
-      config.simulation.field == 'ワカクサ本島'
-      ? config.simulation.berryList
-      : Field.map[config.simulation.field]?.berryList
-    ) ?? []
-  ).includes(config.simulation.fieldExMainBerry)
-})
-
 function reset() {
   config.simulation.eventBonusType.specialties = {
     'きのみ': false,
@@ -79,6 +67,22 @@ function saveWorkerNum() {
   config.workerNum = workerNum.value;
   location.reload();
 }
+
+const selectedField = computed(() => Field.map[config.simulation.field]);
+
+watch(() => config.simulation.field, () => {
+  if (selectedField.value?.berryOptionList) {
+    for(let i = 0; i < 3; i++) {
+      if (!selectedField.value.berryOptionList[i].includes(config.simulation.berryList[i])) {
+        config.simulation.berryList[i] = selectedField.value.berryOptionList[i][0];
+      }
+    }
+  }
+})
+
+const berryList = computed(() => {
+  return Berry.list.sort((a, b) => a.colorOrder - b.colorOrder);
+});
 
 </script>
 
@@ -115,54 +119,71 @@ function saveWorkerNum() {
         <tr>
           <th>フィールド</th>
           <td>
-            <select v-model="config.simulation.field">
-              <option value="ワカクサ本島">ワカクサ本島</option>
-              <option value="シアンの砂浜">シアンの砂浜</option>
-              <option value="トープ洞窟">トープ洞窟</option>
-              <option value="ウノハナ雪原">ウノハナ雪原</option>
-              <option value="ラピスラズリ湖畔">ラピスラズリ湖畔</option>
-              <option value="ゴールド旧発電所">ゴールド旧発電所</option>
-              <option value="アンバー渓谷">アンバー渓谷</option>
-            </select>
+            <div
+              style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px 0px;"
+            >
+              <InputRadio
+                v-for="field in Field.list.filter(x => !x.ex)"
+                v-model="config.simulation.field"
+                :value="field.name"
+              >
+                {{ field.name }}
+              </InputRadio>
+            </div>
+            <div
+              class="mt-5px"
+              style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px 0px;"
+            >
+              <InputRadio
+                v-for="field in Field.list.filter(x => x.ex)"
+                v-model="config.simulation.field"
+                :value="field.name"
+              >
+                {{ field.name }}
+              </InputRadio>
+            </div>
           </td>
         </tr>
         <tr>
           <th>きのみ</th>
           <td>
-            <div v-if="config.simulation.field == 'ワカクサ本島'" class="flex-row-start-center gap-5px">
-              <template v-for="i in 3">
-                <select :value="config.simulation.berryList[i - 1]" @input="config.simulation.berryList[i - 1] = $event.target.value || null">
-                  <option value="">-</option>
-                  <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}({{ berry.type }})</option>
-                </select>
-              </template>
-            </div>
-            <div v-else class="flex-row-start-center gap-5px">
-              <template v-for="berry in Field.map[config.simulation.field]?.berryList ?? []">
-                <select disabled>
-                  <option value="">{{ berry }}</option>
-                </select>
-              </template>
+            <div class="flex-row-start-start">
+              <div
+                v-for="i in [0, 1, 2]"
+                class="flex-column-start-start flex-110"
+              >
+                <div class="fw-b mb-5px">
+                  きのみ{{ i + 1 }}
+                  <template v-if="selectedField.ex && i == 0">(メイン)</template>
+                </div>
+                <InputRadio
+                  v-for="berry in berryList"
+                  v-model="config.simulation.berryList[i]"
+                  :value="berry.name"
+                  :disabled="
+                    (selectedField?.berryOptionList && !selectedField.berryOptionList[i].includes(berry.name))
+                    || (selectedField?.berryList && selectedField?.berryList[i] != berry.name)
+                  "
+                  :override="
+                    selectedField?.berryList
+                    ? selectedField?.berryList[i] == berry.name
+                    : null
+                  "
+                >
+                  <img :src="Berry.map[berry.name]?.img" :alt="berry.name" class="w-20px">
+                  {{ berry.name }}
+                </InputRadio>
+              </div>
             </div>
           </td>
         </tr>
         <tr>
-          <th>モード</th>
+          <th>EX設定</th>
           <td>
             <div class="flex-column-start-start gap-3px">
-              <InputRadio v-model="config.simulation.fieldEx" :value="null">通常モード</InputRadio>
-              <InputRadio v-model="config.simulation.fieldEx" :value="1">EXモード(きのみx2.4)</InputRadio>
-              <InputRadio v-model="config.simulation.fieldEx" :value="2">EXモード(食材+1/+2)</InputRadio>
-              <InputRadio v-model="config.simulation.fieldEx" :value="3">EXモード(スキルx1.25)</InputRadio>
-              
-              <div class="flex-row-start-center gap-5px">
-                EXメイン：
-                <select :value="config.simulation.fieldExMainBerry" @input="config.simulation.fieldExMainBerry = $event.target.value || null">
-                  <option value="">-</option>
-                  <option v-for="berry in Berry.list" :value="berry.name">{{ berry.name }}({{ berry.type }})</option>
-                </select>
-              </div>
-              <DangerAlert v-if="exBerryError">好きなきのみに無いものが選ばれています</DangerAlert>
+              <InputRadio v-model="config.simulation.fieldEx" :value="1" :disabled="!selectedField?.ex">きのみエナジー x2.4</InputRadio>
+              <InputRadio v-model="config.simulation.fieldEx" :value="2" :disabled="!selectedField?.ex">食材+1 / +2</InputRadio>
+              <InputRadio v-model="config.simulation.fieldEx" :value="3" :disabled="!selectedField?.ex">スキル x1.25</InputRadio>
             </div>
           </td>
         </tr>
