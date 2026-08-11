@@ -79,7 +79,6 @@ const fieldList = computed(() => {
   return {
     dataList: [
       ...Field.list.map(x => x.name),
-      ...Field.list.filter(x => x.ex).map(x => `${x.name}EX`),
     ].map(fieldName => {
       const result = {
         name: fieldName,
