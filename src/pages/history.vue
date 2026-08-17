@@ -23,6 +23,23 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/8/17">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ピカチュウ(キャプテン)、カヌチャン、ナカヌチャン、デカヌチャン追加</li>
+            <li>
+              基準確認ページにグラフを追加
+              <ul>
+                <li>あなたのプレイスタイルにおけるポケモンの強弱が確認できます</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/8/11">
       <ul>
         <li>

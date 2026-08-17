@@ -36,10 +36,21 @@ self.addEventListener('message', async (event: {
   // サブスキルの組み合わせを列挙
   const subSkillCombinationList = event.data.subSkillCombinationList.map(subSkillCombination => {
     const weightList = [];
-    if (subSkillCombination[0]) weightList.push({ yumebo: false, risabo: false, weight: subSkillCombination[0][0], ids: subSkillCombination[0].slice(1) })
-    if (subSkillCombination[1]) weightList.push({ yumebo:  true, risabo: false, weight: subSkillCombination[1][0], ids: subSkillCombination[1].slice(1) })
-    if (subSkillCombination[2]) weightList.push({ yumebo: false, risabo:  true, weight: subSkillCombination[2][0], ids: subSkillCombination[2].slice(1) })
-    if (subSkillCombination[3]) weightList.push({ yumebo:  true, risabo:  true, weight: subSkillCombination[3][0], ids: subSkillCombination[3].slice(1) })
+
+    // IDからサブスキル名への変換は組み合わせごとに一度だけ行う。
+    // ポケモン・食材・性格ごとの内側のループで変換すると大量の配列が生成されるため。
+    const addWeight = (ids: number[] | undefined, yumebo: boolean, risabo: boolean) => {
+      if (ids) weightList.push({
+        yumebo,
+        risabo,
+        weight: ids[0],
+        subSkillList: ids.slice(1).map(id => SubSkill.idMap[id].name),
+      });
+    };
+    addWeight(subSkillCombination[0], false, false);
+    addWeight(subSkillCombination[1], true,  false);
+    addWeight(subSkillCombination[2], false, true);
+    addWeight(subSkillCombination[3], true,  true);
     return {
       subSkillList: subSkillCombination.s.map(id => SubSkill.idMap[id].name),
       weightList,
@@ -76,7 +87,11 @@ self.addEventListener('message', async (event: {
       const foodNameList = foodIndexList.map((f) => pokemon.foodNameList[f]);
       if (foodNameList.includes(undefined)) continue;
       
-      const scoreList = [];
+      // ゆめのかけら／リサーチEXPボーナスの有無で変わるのはエナジースコアだけ。
+      // そのため、エナジーはボーナス別、その他6項目はシミュレーション結果別に保持する。
+      // 全項目をボーナス別に保持すると、6項目のソート対象が最大4倍になってしまう。
+      const energyScoreList = [];
+      const commonScoreList = [];
 
       const simulatedPokemon = simulator.fromEvaluate(
         pokemon,
@@ -102,6 +117,10 @@ self.addEventListener('message', async (event: {
             throw '計算エラーが発生しました。'
           }
 
+          let commonWeight = 0;
+          let commonSubSkillList: string[] | null = null;
+
+          // エナジーはボーナスの組み合わせごとに値が異なるため、個別に記録する。
           for(const weight of weightList) {
             let score = simulator.selectEvaluateToScore(eachResult, weight.yumebo, weight.risabo);
             const rawScore = score;
@@ -119,22 +138,32 @@ self.addEventListener('message', async (event: {
               score += rawScore * (config.selectEvaluate.nature.expDown.rate - 1);
             }
 
-            const obj = [
+            energyScoreList.push([
               score,
-              eachResult.berryNumPerDay,
-              eachResult.foodNumPerDay,
-              eachResult.skillPerDay,
-              food1,
-              food2,
-              food3,
               rawScore / eachResult.averageHelpRate, // baseScore
               eachResult.pickupEnergyPerHelp, // pickupEnergyPerHelp
-              weight.ids.map(id => SubSkill.idMap[id].name), // subSkillList
+              weight.subSkillList,
               eachResult.nature?.name,              // nature
               weight.weight * natureWeight,             // weight
-            ]
-            scoreList.push(obj);
+            ]);
+            commonWeight += weight.weight * natureWeight;
+            commonSubSkillList ??= weight.subSkillList;
           }
+
+          // きのみ・食材・スキル回数はボーナスの影響を受けない。
+          // 同じ値を複製せず、各ボーナスの重みだけを合算して1件にまとめる。
+          // 同値の要素を重み付きで統合しても、後段で得られるパーセンタイル値は変わらない。
+          commonScoreList.push([
+            eachResult.berryNumPerDay,
+            eachResult.foodNumPerDay,
+            eachResult.skillPerDay,
+            food1,
+            food2,
+            food3,
+            commonSubSkillList,
+            eachResult.nature?.name,
+            commonWeight,
+          ]);
 
           if(++count % 1000 == 0) {
             // console.log(count, countMax);
@@ -157,24 +186,40 @@ self.addEventListener('message', async (event: {
         baseScore: null,
         pickupEnergyPerHelp: null,
       };
-      for(const [index, key] of ['energy', 'berry', 'food', 'skill', 'food1', 'food2', 'food3'].entries()) {
-        scoreList.sort((a, b) => a[index] - b[index])
 
-        let weightSum = 0;
-        let nextIndex = 0;
-        for(let i = 0; i < scoreList.length; i++) {
-          const [energy, berry, food, skill, food1, food2, food3, baseScore, pickupEnergyPerHelp, subSkillList, nature, weight] = scoreList[i];
+      // スコアを昇順に並べ、累積重みが各パーセンタイルの位置を含む要素を採用する。
+      // エナジーだけはサポート系スキル評価の基準値も同時に取得する。
+      energyScoreList.sort((a, b) => a[0] - b[0]);
+      let weightSum = 0;
+      let nextIndex = 0;
+      for(const [energy, baseScore, pickupEnergyPerHelp, subSkillList, nature, weight] of energyScoreList) {
+        const nextWeightSum = weightSum + weight;
+        while (weightSum <= nextIndex && nextIndex < nextWeightSum && percentile.energy.length <= 100) {
+          if (percentile.energy.length == config.selectEvaluate.supportBorder) {
+            scoreForHealerEvaluateList.push(baseScore);
+            scoreForSupportEvaluateList.push(pickupEnergyPerHelp);
+            percentile.baseScore = baseScore;
+            percentile.pickupEnergyPerHelp = pickupEnergyPerHelp;
+          }
+          percentile.energy.push({ score: energy, subSkillList, nature });
+          nextIndex = Math.round((totalWeight - 1) * percentile.energy.length / 100);
+        }
+        weightSum = nextWeightSum;
+      }
 
-          const tmp = { energy, berry, food, skill, food1, food2, food3 }
+      // エナジー以外の6項目は、重みを統合した小さい配列を項目ごとにソートする。
+      for(const [index, key] of ['berry', 'food', 'skill', 'food1', 'food2', 'food3'].entries()) {
+        commonScoreList.sort((a, b) => a[index] - b[index])
+
+        weightSum = 0;
+        nextIndex = 0;
+        for(const item of commonScoreList) {
+          const subSkillList = item[6];
+          const nature = item[7];
+          const weight = item[8];
           const nextWeightSum = weightSum + weight
           while (weightSum <= nextIndex && nextIndex < nextWeightSum && percentile[key].length <= 100) {
-            if (index == 0 && percentile[key].length == config.selectEvaluate.supportBorder) {
-              scoreForHealerEvaluateList.push(baseScore)
-              scoreForSupportEvaluateList.push(pickupEnergyPerHelp)
-              percentile.baseScore = baseScore
-              percentile.pickupEnergyPerHelp = pickupEnergyPerHelp
-            }
-            percentile[key].push({ score: tmp[key], subSkillList, nature });
+            percentile[key].push({ score: item[index], subSkillList, nature });
             nextIndex = Math.round((totalWeight - 1) * percentile[key].length / 100)
           }
           weightSum = nextWeightSum;

@@ -12,10 +12,29 @@ import EvaluateTableWorker from '../models/simulation/evaluate-simulator?worker'
 import SubSkill from '../data/sub-skill';
 import Nature from '@/data/nature';
 import SubSkillCombinationWorker from '@/models/sub-skill-combination-worker?worker';
+import TabList from '@/components/tab-list.vue';
+import Berry from '@/data/berry';
+import { Scatter } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  ScatterController,
+} from 'chart.js';
+
+ChartJS.register(
+  LinearScale,
+  PointElement,
+  Tooltip,
+  ScatterController,
+);
 
 let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
 let lv = ref(lvList.at(-1))
 let step = ref(5);
+let selectedTab = ref('graph');
+let graphPercentile = ref(100);
 
 let evaluateTable = ref(null);
 let evaluateTablePromise = (async () => {
@@ -58,6 +77,209 @@ let columnList = computed(() => {
   ]
 })
 
+const specialtyList = ['きのみ', '食材', 'スキル'];
+const graphCategoryList = Berry.typeList.flatMap(berry =>
+  specialtyList.map(specialty => ({
+    type: berry.type,
+    specialty,
+    label: `${berry.type}・${specialty}`,
+  }))
+);
+
+const normalizedGraphPercentile = computed(() => {
+  const value = Math.round(Number(graphPercentile.value));
+  return Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : 100;
+});
+
+const graphPointList = computed(() => {
+  // 食材構成が複数あるポケモンは、指定厳選度で最も高い値を代表値とする。
+  const pokemonMap = new Map();
+  for(const row of evaluateTablePokemonList.value) {
+    const value = row[normalizedGraphPercentile.value];
+    const current = pokemonMap.get(row.name);
+    if (value != null && (current == null || value > current.value)) {
+      pokemonMap.set(row.name, { name: row.name, value });
+    }
+  }
+
+  const categoryMap = new Map(graphCategoryList.map((category, index) => [category.label, index]));
+  const groupedPointList = new Map();
+  for(const point of pokemonMap.values()) {
+    const pokemon = Pokemon.map[point.name];
+    if (!specialtyList.includes(pokemon.specialty)) continue;
+
+    const categoryIndex = categoryMap.get(`${pokemon.type}・${pokemon.specialty}`);
+    if (categoryIndex == null) continue;
+    if (!groupedPointList.has(categoryIndex)) groupedPointList.set(categoryIndex, []);
+    groupedPointList.get(categoryIndex).push({ ...point, pokemon, categoryIndex });
+  }
+
+  const result = [];
+  for(const pointList of groupedPointList.values()) {
+    pointList.sort((a, b) => a.value - b.value || a.name.localeCompare(b.name));
+    pointList.forEach((point, index) => {
+      // 同じカテゴリの点が完全に重ならないよう、列の中だけで少し左右にずらす。
+      const offset = pointList.length <= 1 ? 0 : (index / (pointList.length - 1) - 0.5) * 0.64;
+      result.push({
+        x: point.categoryIndex + offset,
+        y: point.value,
+        name: point.name,
+        categoryIndex: point.categoryIndex,
+        backgroundColor: point.pokemon.berry.typeColor,
+      });
+    });
+  }
+  return result;
+});
+
+const graphMedian = computed(() => {
+  const valueList = graphPointList.value.map(point => point.y).sort((a, b) => a - b);
+  if (valueList.length == 0) return null;
+
+  const middle = Math.floor(valueList.length / 2);
+  return valueList.length % 2 == 0
+    ? (valueList[middle - 1] + valueList[middle]) / 2
+    : valueList[middle];
+});
+
+const medianLinePlugin = {
+  id: 'medianLine',
+  beforeDatasetsDraw(chart) {
+    if (graphMedian.value == null) return;
+
+    const { ctx, chartArea, scales } = chart;
+    const y = scales.y.getPixelForValue(graphMedian.value);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(chartArea.left, y);
+    ctx.lineTo(chartArea.right, y);
+    ctx.strokeStyle = '#E00';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  },
+  afterEvent(chart, args) {
+    if (graphMedian.value == null) return;
+
+    const { event } = args;
+    const { chartArea, scales } = chart;
+    const medianY = scales.y.getPixelForValue(graphMedian.value);
+    const hovered = event.x >= chartArea.left
+      && event.x <= chartArea.right
+      && event.y >= chartArea.top
+      && event.y <= chartArea.bottom
+      && Math.abs(event.y - medianY) <= 5;
+
+    if (chart.$medianLineHovered != hovered
+      || chart.$medianLineTooltipX != event.x
+      || chart.$medianLineTooltipY != medianY) {
+      chart.$medianLineHovered = hovered;
+      chart.$medianLineTooltipX = event.x;
+      chart.$medianLineTooltipY = medianY;
+      args.changed = true;
+    }
+  },
+  afterDraw(chart) {
+    if (!chart.$medianLineHovered) return;
+
+    const { ctx, chartArea } = chart;
+    const text = '中央値';
+    const padding = 6;
+    ctx.save();
+    ctx.font = '12px sans-serif';
+    const width = ctx.measureText(text).width + padding * 2;
+    const height = 24;
+    const x = Math.min(chart.$medianLineTooltipX + 8, chartArea.right - width);
+    const y = Math.max(chart.$medianLineTooltipY - height - 8, chartArea.top);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = '#FFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + width / 2, y + height / 2);
+    ctx.restore();
+  },
+};
+
+const pokemonNamePlugin = {
+  id: 'pokemonName',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea } = chart;
+    const meta = chart.getDatasetMeta(0);
+    ctx.save();
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.fillStyle = '#333';
+    meta.data.forEach((element, index) => {
+      const point = chart.data.datasets[0].data[index];
+      if (element.x < chartArea.left || element.x > chartArea.right || element.y < chartArea.top || element.y > chartArea.bottom) return;
+      const y = element.y - 5 - (index % 2) * 11;
+      ctx.strokeText(point.name, element.x, y);
+      ctx.fillText(point.name, element.x, y);
+    });
+    ctx.restore();
+  },
+};
+
+const graphData = computed(() => ({
+  data: {
+    datasets: [{
+      label: `${normalizedGraphPercentile.value}%の値`,
+      data: graphPointList.value,
+      pointBackgroundColor: graphPointList.value.map(point => point.backgroundColor),
+      pointBorderColor: '#555',
+      pointBorderWidth: 1,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }],
+  },
+  options: {
+    animation: false,
+    maintainAspectRatio: false,
+    responsive: true,
+    layout: { padding: { top: 24 } },
+    scales: {
+      x: {
+        type: 'linear',
+        min: -0.5,
+        max: graphCategoryList.length - 0.5,
+        ticks: {
+          stepSize: 1,
+          maxRotation: 0,
+          callback(value) {
+            const category = graphCategoryList[value];
+            return category ? [category.type, category.specialty] : '';
+          },
+        },
+        grid: {
+          color: context => Number.isInteger(context.tick.value) ? '#DDD' : 'transparent',
+        },
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: '期待値',
+        },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: items => items[0]?.raw?.name ?? '',
+          label: item => `${graphCategoryList[item.raw.categoryIndex]?.label}: ${Math.round(item.raw.y).toLocaleString()}`,
+        },
+      },
+    },
+  },
+  plugins: [medianLinePlugin, pokemonNamePlugin],
+}));
+
 // サブスキルの組合せを計算する
 const subSkillCombinationListPromise = (async () => {
   const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1)
@@ -71,16 +293,16 @@ const subSkillCombinationListPromise = (async () => {
 })()
 
 async function showDetail(pokemon, p) {
-  
+
   asyncWatcher.run(async (progressCounter) => {
     await evaluateTablePromise
     const subSkillCombinationList = await subSkillCombinationListPromise;
 
-    const subSkillNum = 
-      lv.value < 10 ? 0 : 
-      lv.value < 25 ? 1 : 
-      lv.value < 50 ? 2 : 
-      lv.value < 70 ? 3 : 
+    const subSkillNum =
+      lv.value < 10 ? 0 :
+      lv.value < 25 ? 1 :
+      lv.value < 50 ? 2 :
+      lv.value < 70 ? 3 :
       lv.value < 80 ? 4 : 5;
 
 
@@ -119,15 +341,20 @@ async function showDetail(pokemon, p) {
 <template>
   <div class="page">
 
-    <SettingList>
+    <TabList>
+      <div :class="{ active: selectedTab == 'graph' }" @click="selectedTab = 'graph'">グラフ</div>
+      <div :class="{ active: selectedTab == 'table' }" @click="selectedTab = 'table'">一覧表</div>
+    </TabList>
+
+    <SettingList class="mt-10px">
       <div>
         <label>Lv</label>
         <select v-model="lv">
           <option v-for="lv in lvList" :value="lv">{{ lv }}</option>
         </select>
       </div>
-      
-      <div>
+
+      <div v-if="selectedTab == 'table'">
         <label>ステップ</label>
         <select :value="step" @input="step = Number($event.target.value)">
           <option :value="1">1</option>
@@ -136,9 +363,20 @@ async function showDetail(pokemon, p) {
           <option :value="10">10</option>
         </select>
       </div>
+
+      <div v-else>
+        <label>表示する厳選度</label>
+        <div><input class="w-50px" type="number" min="0" max="100" step="1" v-model.number="graphPercentile"> %</div>
+      </div>
     </SettingList>
 
-    <div class="scroll" style="height: 600px;">
+    <div v-if="selectedTab == 'graph'" class="graph-scroll">
+      <div class="graph">
+        <Scatter v-bind="graphData" />
+      </div>
+    </div>
+
+    <div v-else class="scroll" style="height: 600px;">
       <SortableTable :dataList="evaluateTablePokemonList" :columnList="columnList" :fixColumn="2">
 
         <template #foodList="{ data }">
@@ -173,13 +411,26 @@ async function showDetail(pokemon, p) {
     position: relative;
   }
 
+  .graph-scroll {
+    flex: 1 1 0;
+    min-height: 500px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .graph {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+  }
+
   .pokemon-list {
     img {
       width: 24px;
       height: 24px;
     }
   }
-  
+
   .food {
     width: 24px;
     height: 24px;
@@ -224,6 +475,13 @@ async function showDetail(pokemon, p) {
       background-color: #DEF;
     }
   }
+}
+
+button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
 </style>
