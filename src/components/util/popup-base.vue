@@ -48,3 +48,29 @@ const $emit = defineEmits(['close'])
 }
 
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .popup-base {
+    width: calc(100vw - 8px) !important;
+    max-width: calc(100vw - 8px) !important;
+    max-height: calc(100dvh - 8px);
+    overflow: auto;
+    border-radius: 5px;
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 6px 8px;
+      font-size: 16px;
+      background-color: #FFF;
+    }
+
+    .body-wrapper {
+      min-width: 0;
+      padding: 8px;
+    }
+  }
+}
+</style>

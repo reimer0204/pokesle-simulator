@@ -52,3 +52,20 @@ import Popup from './popup.ts'
 
 }
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .popup-area .scroll {
+    padding: 4px 0;
+
+    .popup {
+      min-height: 100%;
+      justify-content: flex-start;
+
+      > * {
+        max-width: calc(100% - 8px);
+      }
+    }
+  }
+}
+</style>

@@ -278,6 +278,63 @@ self.addEventListener('message', async (event) => {
 
           helpRate.calcTeamHeal(pokemonList)
 
+          // ほっぺすりすりは4匹から1匹を選んだ後に再発動抽選を行うため、対象ごとの確率には選択確率も掛ける。
+          // トゲデマルが複数いる場合は追加発動したほっぺすりすりが相手を再発動させ得るので、期待回数が収束するまで少数回反復する。
+          // まず各ポケモンが自力で発動する通常回数を求め、追加発動回数を算出する際の基準値にする。
+          const baseSkillPerDayMap = new Map<SimulatedPokemon, number>(
+            pokemonList.map(pokemon => [pokemon, simulator.calcSkillPerDay(pokemon)])
+          );
+
+          // 反復中の「通常発動＋ほっぺすりすりによる追加発動」の推定値を保持する。
+          let totalSkillPerDayMap = new Map(baseSkillPerDayMap);
+
+          // 追加発動を発生させる側だけを抽出し、対象がいないチームでは反復処理を行わない。
+          const togedemaruList = pokemonList.filter(
+            pokemon => pokemon.base.skill.name == 'ほっぺすりすり(げんきエールS)'
+          );
+
+          for(let iteration = 0; iteration < 10 && togedemaruList.length; iteration++) {
+            // 前回分へ上乗せすると同じ効果を重複加算するため、毎回通常発動回数から計算し直す。
+            const nextTotalSkillPerDayMap = new Map(baseSkillPerDayMap);
+
+            for(const executor of togedemaruList) {
+              // 前回の反復で増えた発動も、次のほっぺすりすりを発生させる回数として扱う。
+              const executorSkillPerDay = totalSkillPerDayMap.get(executor) ?? 0;
+
+              for(const target of pokemonList) {
+                // ほっぺすりすりは使用者自身を対象にできないため、自分への追加分は計算しない。
+                if (executor == target) continue;
+
+                // 自分以外から対象が選ばれる確率と、選ばれた対象が再発動可能になる確率を求める。
+                const targetSelectRate = 1 / (pokemonList.length - 1);
+                const reactivateRate = 1 - (1 - target.skillRate) ** (executor.fixedSkillLv + 1);
+
+                // 使用者の発動回数に両確率を掛けた期待回数を、対象側の発動回数へ加算する。
+                nextTotalSkillPerDayMap.set(
+                  target,
+                  (nextTotalSkillPerDayMap.get(target) ?? 0) + executorSkillPerDay * targetSelectRate * reactivateRate
+                );
+              }
+            }
+
+            // 全ポケモンについて前回値との差を調べ、相互再発動の期待回数が収束したか判定する。
+            const difference = Math.max(...pokemonList.map(pokemon =>
+              Math.abs((nextTotalSkillPerDayMap.get(pokemon) ?? 0) - (totalSkillPerDayMap.get(pokemon) ?? 0))
+            ));
+            totalSkillPerDayMap = nextTotalSkillPerDayMap;
+
+            // 選択確率が1/4なので通常は数回で十分収束する。微小な差になった時点で不要な反復を打ち切る。
+            if (difference < 1e-6) break;
+          }
+
+          // calcHelpには追加分だけを渡すため、収束後の合計回数から通常発動回数を差し引く。
+          const additionalSkillPerDayMap = new Map<SimulatedPokemon, number>(
+            pokemonList.map(pokemon => [
+              pokemon,
+              (totalSkillPerDayMap.get(pokemon) ?? 0) - (baseSkillPerDayMap.get(pokemon) ?? 0),
+            ])
+          );
+
           for(let pokemon of pokemonList) {
             simulator.calcHelp(
               pokemon,
@@ -286,6 +343,8 @@ self.addEventListener('message', async (event) => {
               {
                 pokemonList: pokemonList,
                 helpBoostCount: typeSetMap[pokemon.base.type].size,
+                // 追加効果は再発動した対象のスキルとして出力へ反映する。
+                additionalSkillPerDay: additionalSkillPerDayMap.get(pokemon) ?? 0,
               },
             )
             

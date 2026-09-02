@@ -212,7 +212,6 @@ interface SimulatedPokemon extends FoodNames {
     weight: number,
     skillLv?: number,
     copy?: SimulatedPokemon,
-    pokemon?: SimulatedPokemon,
   }[];
   selfHealList: { effect: number, time: number, night?: boolean }[],
   otherHealList: { effect: number, time: number, night?: boolean }[],

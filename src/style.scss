@@ -43,3 +43,66 @@ input[type=text], input[type=number] {
   color: #08C;
   font-weight: bold;
 }
+
+// スマートフォンでは、ページ全体ではなく表やタブ自身を必要に応じてスクロールさせる。
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  html, body, #app {
+    font-size: 10px;
+    overflow: hidden;
+  }
+
+  button {
+    padding: 4px 7px;
+  }
+
+  input, select, textarea {
+    max-width: 100%;
+    min-height: 26px;
+  }
+
+  .app > main {
+    min-width: 0;
+    padding: 4px !important;
+    overflow: hidden;
+  }
+
+  .page,
+  .async-watcher-area,
+  .sortable-table,
+  .toggle-area {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  // 各画面で個別実装されているタブも、1行のまま指で横移動できるよう統一する。
+  .tab-list {
+    flex-wrap: nowrap !important;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+
+    > * {
+      flex: 0 0 auto;
+      padding: 5px 9px !important;
+      white-space: nowrap;
+    }
+  }
+
+  // 固定列数のインライングリッドは、狭い画面では縦積みにする。
+  .page [style*="grid-template-columns"],
+  .popup-base [style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  [style*="width: calc(100vw"] {
+    width: calc(100vw - 16px) !important;
+  }
+
+  .w-300px,
+  .w-400px,
+  .w-500px,
+  .w-600px {
+    width: 100% !important;
+  }
+}

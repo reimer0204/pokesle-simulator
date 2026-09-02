@@ -3,10 +3,31 @@ import InputNumber from '@/components/form/input-number.vue';
 import { Cooking, Food } from '../../data/food_and_cooking';
 import InputRadio from '@/components/form/input-radio.vue';
 
+const COOKING_NUM_STORAGE_KEY = 'dataCookingNum';
+const savedCookingNumMap = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(COOKING_NUM_STORAGE_KEY)) ?? {};
+  } catch {
+    return {};
+  }
+})();
+
 const cookingList = reactive(structuredClone(Cooking.list));
-cookingList.forEach(cooking => cooking.num = 0)
+cookingList.forEach(cooking => {
+  const savedNum = Number(savedCookingNumMap[cooking.name]);
+  cooking.num = Number.isFinite(savedNum) ? savedNum : 0;
+})
 cookingList.sort((a, b) => b.energy - a.energy);
 cookingList.sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : 0);
+
+watch(cookingList, () => {
+  const cookingNumMap = Object.fromEntries(
+    cookingList
+      .filter(cooking => Number(cooking.num) != 0)
+      .map(cooking => [cooking.name, Number(cooking.num)])
+  );
+  localStorage.setItem(COOKING_NUM_STORAGE_KEY, JSON.stringify(cookingNumMap));
+});
 
 const requireCountMode = ref(0);
 const requireFoodList = computed(() => {
@@ -117,6 +138,33 @@ const requireFoodList = computed(() => {
 
   .require-food-list {
     width: 240px;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .page {
+    flex-direction: column;
+    overflow: hidden;
+
+    > .cooking-list {
+      flex: 1 1 60%;
+      min-height: 220px;
+    }
+
+    .vertical-line {
+      width: 100%;
+      height: 1px;
+      margin: 5px 0;
+    }
+
+    .require-food-list {
+      flex: 1 1 40%;
+      width: 100%;
+      min-height: 160px;
+      overflow: auto;
+    }
   }
 }
 </style>

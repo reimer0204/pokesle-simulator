@@ -257,8 +257,9 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         あなたのプレイスタイルに応じて下記サブスキル・せいかくについての補正値を設定することができます。
       </div>
 
-      <div class="flex-row-start-start mt-10px gap-10px">
-        <DesignTable>
+      <div class="experience-setting-list mt-10px gap-10px">
+        <div class="design-table-scroll">
+          <DesignTable>
           <thead>
             <tr>
               <th></th>
@@ -343,7 +344,8 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               </td>
             </tr>
           </tbody>
-        </DesignTable>
+          </DesignTable>
+        </div>
 
         <SettingList>
           <div>
@@ -382,8 +384,9 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
     <ToggleArea open>
       <template #headerText>とくい毎設定・詳細設定</template>
 
-      <DesignTable>
-        <thead>
+      <div class="design-table-scroll">
+        <DesignTable>
+          <thead>
           <tr>
             <th></th>
             <th v-for="specialty in specialtyList">{{ specialty }}</th>
@@ -508,8 +511,9 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               </small>
             </td>
           </tr>
-        </tbody>
-      </DesignTable>
+          </tbody>
+        </DesignTable>
+      </div>
     </ToggleArea>
 
     <ToggleArea open>
@@ -553,6 +557,20 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
     width: 100%;
   }
 
+  // 列数の多い設定表は、折りたたみ領域に切り取られないよう専用領域内で横スクロールさせる。
+  .design-table-scroll {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .experience-setting-list {
+    display: flex;
+    align-items: flex-start;
+  }
+
   .group {
     display: flex;
     flex-direction: column;
@@ -580,6 +598,18 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
     input {
       margin-right: 10px;
     }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .experience-setting-list {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .design-table-scroll {
+    width: 100%;
   }
 }
 </style>

@@ -378,7 +378,7 @@ async function showEditPopup(pokemon) {
       </SettingButton>
     </div>
 
-    <div class="flex-column-start-start w-100 flex-110 mt-5px gap-5px">
+    <div class="simulation-content flex-column-start-start w-100 mt-5px gap-5px">
       <SettingList class="align-self-stretch">
         <div>
           <label>現在のエナジー</label>
@@ -807,6 +807,10 @@ async function showEditPopup(pokemon) {
     }
   }
 
+  .simulation-content {
+    flex: 1 1 0;
+  }
+
   .simulation-result {
     flex: 1 1 100px;
     border: 1px #CCC solid;
@@ -867,6 +871,28 @@ async function showEditPopup(pokemon) {
 
       .sub-skill-list {
         display: flex;
+      }
+    }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .page {
+    overflow-y: auto;
+
+    // スマートフォンでは結果領域の高さを固定せず、設定から結果までページ全体で縦スクロールする。
+    .simulation-content {
+      flex: 0 0 auto;
+    }
+
+    .simulation-result {
+      flex: 0 0 auto;
+      overflow: visible;
+
+      .scroll-area {
+        flex: 0 0 auto;
+        overflow-x: auto;
+        overflow-y: visible;
       }
     }
   }

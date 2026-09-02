@@ -67,3 +67,22 @@ const props = defineProps({
 }
 
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .setting-list {
+    width: 100%;
+    gap: 3px;
+
+    &.grid {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    > div {
+      min-width: 0;
+      max-width: 100%;
+      padding: 3px 4px;
+    }
+  }
+}
+</style>

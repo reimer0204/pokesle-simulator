@@ -57,7 +57,7 @@ function reset() {
   config.simulation.eventBonusTypeSkillRate = 1;
   config.simulation.eventBonusTypeSkillLv = 0;
   config.simulation.eventBonusTypeBag = 0;
-  config.simulation.eventBonusTypeBagRate = 0;
+  config.simulation.eventBonusTypeBagRate = 1;
   config.simulation.eventBonus.skill.berryBurst = 1;
   config.simulation.eventBonus.skill.foodGet = 1;
 }

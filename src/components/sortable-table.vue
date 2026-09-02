@@ -501,3 +501,29 @@ function onClickRow(event, data) {
   }
 }
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .sortable-table {
+    min-width: 0;
+
+    > .scroll,
+    > div:first-child {
+      max-width: 100%;
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table > thead > tr > th,
+    table > tbody > tr > td {
+      padding: 2px 3px;
+    }
+
+    .pager {
+      gap: 2px;
+      padding: 3px;
+    }
+  }
+}
+</style>

@@ -139,6 +139,12 @@ const skillCheckList = computed(() => {
   flex-direction: column;
   align-items: stretch;
   height: 100%;
+  min-height: 0;
+
+  > .async-watcher-area {
+    min-height: 0;
+    overflow: hidden;
+  }
 
   .scroll-x {
     overflow-x: scroll;
@@ -157,6 +163,7 @@ const skillCheckList = computed(() => {
 
 .tab-list {
   display: flex;
+  flex: 0 0 auto;
   border-bottom: 3px #CCC solid;
 
   & > a {

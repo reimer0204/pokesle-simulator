@@ -101,8 +101,8 @@ watch(() => [
 
 <template>
   <div class="page">
-    <div class="flex-column-start-start gap-5px">
-      <div>
+    <div class="checklist-settings-scroll">
+      <div class="checklist-settings-table">
         <DesignTable>
           <tr>
             <th :rowspan="config.summary.checklist.pokemonCondition.list.length + 3">各ポケモン<br>厳選基準</th>
@@ -389,6 +389,8 @@ watch(() => [
 .page {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
   padding-bottom: 10px;
 
   .scroll-x {
@@ -400,6 +402,22 @@ watch(() => [
     display: flex;
     flex-direction: column;
   }
+}
+
+// 設定表は列数が多いため、画面全体を押し広げず、この領域内だけを横スクロールさせる。
+.checklist-settings-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.checklist-settings-table {
+  width: max-content;
+  min-width: 100%;
 }
 
 .caution {

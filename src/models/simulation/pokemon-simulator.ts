@@ -740,21 +740,6 @@ class PokemonSimulator {
         }
       }
       
-      if (pokemon.base.skill.name == 'ほっぺすりすり(げんきエールS)') {
-        pokemon.skillWeightList = [{ skill: pokemon.base.skill, weight: 1 }]
-        for(let subPokemon of pokemonList) {
-          if (pokemon != subPokemon) {
-            for(let { skill, weight } of subPokemon.skillWeightList) {
-              pokemon.skillWeightList.push({
-                pokemon: subPokemon,
-                skill,
-                weight: weight * (1 - (1 - subPokemon.skillRate) ** pokemon.fixedSkillLv),
-                skillLv: subPokemon.fixedSkillLv
-              })
-            }
-          }
-        }
-      }
     }
 
 
@@ -798,6 +783,52 @@ class PokemonSimulator {
     return pokemon
   }
 
+  // チーム確定後のげんき補正を使い、ほっぺすりすりによる追加分を含まない通常のスキル発動回数を求める。
+  // チームシミュレーター側で先に通常回数を揃えることで、トゲデマル同士の相互再発動を計算順に依存せず近似できる。
+  calcSkillPerDay(pokemon: SimulatedPokemon) {
+    // チーム内の回復効果まで反映済みの速度・おてつだい倍率から、昼と睡眠中のおてつだい回数を求める。
+    const dayHelpNum = this.#dayLength / pokemon.speed * pokemon.dayHelpRate;
+    const nightHelpNum = this.#nightLength / pokemon.speed * pokemon.nightHelpRate;
+
+    // 所持上限がない場合はスキル抽選が発生しないため、発動回数を0として扱う。
+    if (pokemon.bag <= 0) return 0;
+
+    // 昼は確認間隔、夜は睡眠時間を基にしつつ、所持上限に達するまでの回数を抽選可能回数の上限にする。
+    const daySkillableNum = Math.min(dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum);
+    const nightSkillableNum = Math.min(nightHelpNum, pokemon.bagFullHelpNum);
+
+    if (pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール') {
+      // スキルとくいは最大2回分を持ち越せるため、睡眠中に0回・1回・2回発動可能になる確率を分けて求める。
+      const nightNoHit = (1 - pokemon.ceilSkillRate) ** nightSkillableNum;
+      const nightOneHit = nightSkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (nightSkillableNum - 1) * pokemon.ceilSkillRate * nightSkillableNum : 0;
+      const nightTwoHit = nightSkillableNum >= 2 ? 1 - nightNoHit - nightOneHit : 0;
+
+      if (this.#expectType[pokemon.base.skill.name] == 0) {
+        // 通常の期待値計算では、昼も0回・1回・2回発動する確率から1日分の回数を合算する。
+        const dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
+        const dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
+        const dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0;
+
+        return (dayOneHit + dayTwoHit * 2) * (this.config.checkFreq - 1)
+          + nightOneHit + nightTwoHit * 2;
+      }
+
+      // 下振れ基準では昼の発動回数を確率境界から求め、睡眠中の期待回数と合算する。
+      return this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 2)
+        + nightOneHit + nightTwoHit * 2;
+    }
+
+    if (this.#expectType[pokemon.base.skill.name] == 0) {
+      // スキルとくい以外は1回まで持ち越す前提で、昼と睡眠中に1回以上当たる確率を合算する。
+      return (1 - (1 - pokemon.ceilSkillRate) ** daySkillableNum) * (this.config.checkFreq - 1)
+        + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum);
+    }
+
+    // 下振れ基準でも持ち越し上限は1回とし、昼の確率境界と睡眠中に1回以上当たる確率を合算する。
+    return this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 1)
+      + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum);
+  }
+
   calcHelp(
     pokemon: SimulatedPokemon, 
     modeOption: {
@@ -805,9 +836,11 @@ class PokemonSimulator {
       helpBoostCount?: number,
       scoreForHealerEvaluate?: number,
       scoreForSupportEvaluate?: number,
+      // ほっぺすりすりによって、このポケモンのスキルが追加で発動する1日あたりの期待回数。
+      additionalSkillPerDay?: number,
     } = {}, timeCounter = null
   ) {
-    let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, } = modeOption;
+    let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, additionalSkillPerDay = 0, } = modeOption;
 
     pokemon.dayHelpNum   = this.#dayLength / pokemon.speed * pokemon.dayHelpRate;
     pokemon.nightHelpNum = this.#nightLength / pokemon.speed * pokemon.nightHelpRate;
@@ -864,47 +897,8 @@ class PokemonSimulator {
     // きのみor食材エナジー/日
     pokemon.pickupEnergyPerDay = pokemon.bEpD + pokemon.fEpD;
 
-    // スキル発動回数の期待値を計算(チェックごとの確率の総和)
-    if (pokemon.bag > 0) {
-      let daySkillableNum = Math.min(pokemon.dayHelpNum / (this.config.checkFreq - 1), pokemon.bagFullHelpNum);
-      let nightSkillableNum = Math.min(pokemon.nightHelpNum, pokemon.bagFullHelpNum);
-
-      if (pokemon.base.specialty == 'スキル' || pokemon.base.specialty == 'オール') {
-        let nightNoHit = (1 - pokemon.ceilSkillRate) ** nightSkillableNum;
-        let nightOneHit = nightSkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (nightSkillableNum - 1) * pokemon.ceilSkillRate * nightSkillableNum : 0;
-        let nightTwoHit = nightSkillableNum >= 2 ? 1 - nightNoHit - nightOneHit : 0;
-
-        if (this.#expectType[pokemon.base.skill.name] == 0) {
-          // 通常期待値
-          let dayNoHit = (1 - pokemon.ceilSkillRate) ** daySkillableNum;
-          let dayOneHit = daySkillableNum >= 1 ? (1 - pokemon.ceilSkillRate) ** (daySkillableNum - 1) * pokemon.ceilSkillRate * daySkillableNum : 0;
-          let dayTwoHit = daySkillableNum >= 2 ? 1 - dayNoHit - dayOneHit : 0
-
-          pokemon.skillPerDay =
-            (dayOneHit + dayTwoHit * 2) * (this.config.checkFreq - 1)
-            + nightOneHit + nightTwoHit * 2
-        } else {
-          // 下振れ
-          pokemon.skillPerDay = 
-            this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 2)
-            + nightOneHit + nightTwoHit * 2
-        }
-      } else {
-        if (this.#expectType[pokemon.base.skill.name] == 0) {
-          // 通常期待値
-          pokemon.skillPerDay =
-            (1 - (1 - pokemon.ceilSkillRate) ** daySkillableNum) * (this.config.checkFreq - 1)
-            + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum)
-        } else {
-          // 下振れ
-          pokemon.skillPerDay = 
-            this.#probBorder.skill(pokemon.ceilSkillRate, daySkillableNum, this.config.checkFreq - 1, 1)
-            + (1 - (1 - pokemon.ceilSkillRate) ** nightSkillableNum)
-        }
-      }
-    } else {
-      pokemon.skillPerDay = 0;
-    }
+    // 通常発動回数に追加分を合算し、対象ポケモン自身の既存スキル効果計算へそのまま反映する。
+    pokemon.skillPerDay = this.calcSkillPerDay(pokemon) + additionalSkillPerDay;
     
     // スキルエナジー/日
     pokemon.skillEnergy = 0;
@@ -913,8 +907,8 @@ class PokemonSimulator {
 
     let totalCookingPowerUpEffect = 0;
     
-    for(let { skill, weight, skillLv, copy, pokemon: overrideExecutor } of pokemon.skillWeightList) {
-      const executor = overrideExecutor || pokemon;
+    for(let { skill, weight, skillLv, copy } of pokemon.skillWeightList) {
+      const executor = pokemon;
 
       if (skillLv == null) {
         skillLv = (skill.effect.length >= executor.fixedSkillLv ? executor.fixedSkillLv : skill.effect.length) - 1;

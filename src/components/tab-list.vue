@@ -26,3 +26,19 @@
   }
 }
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .tab-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    > * {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      white-space: nowrap;
+    }
+  }
+}
+</style>

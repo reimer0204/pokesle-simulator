@@ -208,3 +208,53 @@ document.addEventListener("visibilitychange", () => {
   }
 }
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .app > header {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    max-width: 100vw;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+
+    h1 {
+      flex: 0 0 auto;
+      font-size: 14px;
+      padding: 6px;
+      margin-right: 2px;
+    }
+
+    .block {
+      flex: 0 0 auto;
+      gap: 2px;
+
+      > div > h2 {
+        display: none;
+      }
+
+      > div > div {
+        gap: 1px;
+      }
+    }
+
+    a {
+      min-height: 36px;
+      padding: 3px 5px;
+      font-size: 9px;
+      white-space: nowrap;
+
+      br {
+        display: none;
+      }
+    }
+
+    .new-version {
+      flex: 0 0 auto;
+      margin: 0 4px !important;
+      font-size: 9px;
+    }
+  }
+}
+</style>

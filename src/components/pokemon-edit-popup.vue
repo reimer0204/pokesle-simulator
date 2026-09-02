@@ -833,3 +833,22 @@ const candyInfo = computed(() => {
 
 }
 </style>
+
+<style lang="scss" scoped>
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .edit-pokemon-popup {
+    .edit-area {
+      overflow-x: auto;
+
+      select {
+        min-width: 100px;
+      }
+    }
+
+    .select-area {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  }
+}
+</style>

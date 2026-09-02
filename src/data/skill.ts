@@ -287,6 +287,6 @@ class Skill {
 
 Skill.map['へんしん(スキルコピー)'].evaluateEnergy = Skill.map['へんしん(スキルコピー)'].effect.map((_, i): number => Skill.map['エナジーチャージM'].effect[i])
 Skill.map['ものまね(スキルコピー)'].evaluateEnergy = Skill.map['ものまね(スキルコピー)'].effect.map((_, i): number => Skill.map['エナジーチャージM'].effect[i])
-Skill.map['ほっぺすりすり(げんきエールS)'].evaluateEnergy = Skill.map['ほっぺすりすり(げんきエールS)'].effect.map((_, i): number => Math.round(Skill.map['エナジーチャージM'].effect.at(-1) * (1 - (1 - 0.15) ** (i + 1))))
+Skill.map['ほっぺすりすり(げんきエールS)'].evaluateEnergy = Skill.map['ほっぺすりすり(げんきエールS)'].effect.map((_, i): number => Math.round(Skill.map['エナジーチャージM'].effect.at(-1) * (1 - (1 - 0.15) ** (i + 2))))
 
 export default Skill;

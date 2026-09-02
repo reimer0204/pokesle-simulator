@@ -646,9 +646,6 @@ function toggleFavorite(data: SimulatedPokemon) {
 
       <div class="flex-row-start-center gap-5px">
         <button @click="addPokemon">ポケモン新規追加</button>
-        <div>
-          PTシミュは別ページに移りました
-        </div>
         <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
         <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
           Googleスプレッドシート連携
