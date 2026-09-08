@@ -44,11 +44,22 @@ input[type=text], input[type=number] {
   font-weight: bold;
 }
 
-// スマートフォンでは、ページ全体ではなく表やタブ自身を必要に応じてスクロールさせる。
+// スマートフォンでは、表やタブは必要に応じて内部スクロールさせつつ、
+// 固有のスクロール領域を持たないページもmainで縦スクロールできるようにする。
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
   html, body, #app {
     font-size: 10px;
     overflow: hidden;
+  }
+
+  // 100vhにはAndroidのブラウザUIやシステムナビゲーション領域が含まれる場合があるため、
+  // 実際に表示できる高さへ追従するdvhを使い、画面下部の操作が隠れないようにする。
+  body {
+    min-height: 0;
+  }
+
+  #app {
+    height: 100dvh;
   }
 
   button {
@@ -62,8 +73,11 @@ input[type=text], input[type=number] {
 
   .app > main {
     min-width: 0;
-    padding: 4px !important;
-    overflow: hidden;
+    // 端末のホームインジケーターやナビゲーションバーと重ならない領域を確保する。
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .page,
@@ -72,6 +86,19 @@ input[type=text], input[type=number] {
   .toggle-area {
     min-width: 0;
     max-width: 100%;
+  }
+
+  // 親で高さを制限している表は、テーブル自身のスクロール領域を画面高へ収める。
+  // 横スクロール用の内部ラッパーが内容の高さまで伸びると、表の上での縦スワイプが
+  // 親のスクロールへ渡らない端末がある。
+  .scroll > .sortable-table {
+    height: 100%;
+    min-height: 0;
+
+    > div:first-child {
+      height: 100%;
+      min-height: 0;
+    }
   }
 
   // 各画面で個別実装されているタブも、1行のまま指で横移動できるよう統一する。

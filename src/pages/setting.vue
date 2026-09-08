@@ -385,7 +385,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
       <template #headerText>とくい毎設定・詳細設定</template>
 
       <div class="design-table-scroll">
-        <DesignTable>
+        <DesignTable class="specialty-setting-table">
           <thead>
           <tr>
             <th></th>
@@ -566,6 +566,17 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
     -webkit-overflow-scrolling: touch;
   }
 
+  // 項目名が折り返されすぎないよう、とくい毎設定の先頭列には最低限の幅を確保する。
+  .specialty-setting-table tr > th:first-child {
+    min-width: 100px;
+  }
+
+  // 下振れ設定と説明文が極端に細くならないよう、該当する2列にも最低幅を設ける。
+  .specialty-setting-table tr > :nth-last-child(3),
+  .specialty-setting-table tr > :last-child {
+    min-width: 100px;
+  }
+
   .experience-setting-list {
     display: flex;
     align-items: flex-start;
@@ -610,6 +621,13 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
 
   .design-table-scroll {
     width: 100%;
+  }
+
+  // 横スクロール中も編集対象の項目名を確認できるよう、スマートフォンでは先頭列を固定する。
+  .specialty-setting-table tr > th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
   }
 }
 </style>

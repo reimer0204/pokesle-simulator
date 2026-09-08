@@ -2,6 +2,7 @@
 import Pokemon from '../../data/pokemon';
 import Berry from '../../data/berry';
 import { Food, Cooking } from '../../data/food_and_cooking';
+import InputCheckbox from '../../components/form/input-checkbox.vue';
 
 const pokemonListLastOnly = ref(false);
 const pokemonList = computed(() => {
@@ -16,7 +17,7 @@ const pokemonList = computed(() => {
 <template>
   <div class="page">
     <div class="flex-row-start-center gap-10px">
-      <label><input type="checkbox" v-model="pokemonListLastOnly" />最終進化のみ</label>
+      <InputCheckbox v-model="pokemonListLastOnly">最終進化のみ</InputCheckbox>
     </div>
 
     <div class="scroll">

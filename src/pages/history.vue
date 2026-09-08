@@ -23,6 +23,46 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/9/8">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>
+              スマートフォンでもある程度使えるよう改善
+              <ul>
+                <li>スマートフォン用にUIを調整するのは追々やります</li>
+              </ul>
+            </li>
+            <li>
+              ポケモン追加、食材数設定をスクリーンショットから出来るよう改善
+              <ul>
+                <li>上手くいかなかったものについてはDiscordで共有していただければ今後の参考にします</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          不具合修正
+          <ul>
+            <li>シミュレーション時にスキルコピーを2匹以上編成するケースが含まれるとエラーが発生する不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
+    <HistoryItem date="2026/9/3">
+      <ul>
+        <li>
+          不具合修正
+          <ul>
+            <li>イベントボーナス設定内のリセットをすると所持数が1倍ではなく0倍になっていた不具合を修正</li>
+            <li>トゲデマルとゆびをふる持ちのポケモンを含むチームシミュレーションでエラーが発生する不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/8/17">
       <ul>
         <li>
@@ -1387,7 +1427,10 @@ config.version.history = Version.HISTORY;
 
 <style lang="scss" scoped>
 .page {
+  height: 100%;
   padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 
   .senden {
     // font-weight: ;

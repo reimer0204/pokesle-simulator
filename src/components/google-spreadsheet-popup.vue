@@ -2,6 +2,7 @@
 import config from '../models/config.ts';
 import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PopupBase from './util/popup-base.vue';
+import InputCheckbox from './form/input-checkbox.vue';
 
 const $emit = defineEmits(['close']);
 
@@ -30,9 +31,18 @@ function copyUrl() {
     <main>
       <h2>初期設定の手順</h2>
       <ol>
-        <li>適当なGoogleスプレッドシートを用意する</li>
         <li>
-          拡張機能＞Apps Scriptを開き、サンプルプログラムを消して下記プログラムをペーストする
+          適当な<a href="https://sheets.google.com" target="_blank" rel="noopener noreferrer">Googleスプレッドシート</a>を用意する
+          <ol>
+            <li>スマートフォンでアプリが開いてしまう場合、連携に使うスプレッドシートを作成</li>
+            <li>「⋮」＞「共有とエクスポート」＞「リンクをコピー」</li>
+            <li>ブラウザでURLを貼り付け、PC版サイトで開く</li>
+          </ol>
+        </li>
+
+        <li>
+          拡張機能＞Apps Scriptを開き、サンプルプログラムを消して下記プログラムをペーストする<br>
+          ※スマートフォンの場合はメニュー部の「…」に隠れていることがあります
           <code>{{ `
 const doPost = (e) => {
   const { sheet, pokemonList } = JSON.parse(e.parameter.json);
@@ -56,7 +66,7 @@ const doGet = (e) => {
       <input type="text" v-model="config.pokemonBox.gs.sheet" placeholder="連携用シート名">
       <small>エクスポート時に一度シートの内容はクリアされるので、連携用のまっさらなシートを用意してください。</small>
 
-      <label><input type="checkbox" v-model="config.pokemonBox.gs.autoExport">ポケモンの情報を編集する度にエクスポートする</label>
+      <InputCheckbox v-model="config.pokemonBox.gs.autoExport">ポケモンの情報を編集する度にエクスポートする</InputCheckbox>
 
       <button @click="exportSpreadsheet">エクスポート</button>
       <button @click="importSpreadsheet" class="mt-50px">インポート</button>

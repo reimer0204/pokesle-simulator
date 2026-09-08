@@ -1,7 +1,6 @@
 import PokemonSimulator from './pokemon-simulator'
 
 import { Food, Cooking } from '../../data/food_and_cooking'
-import Berry from '../../data/berry';
 import Field from '../../data/field.ts';
 import Skill from '../../data/skill';
 import NightCapPikachu from '../../data/nightcap_pikachu';
@@ -52,28 +51,23 @@ self.addEventListener('message', async (event) => {
       
       const freeCandy = config.candy.bag.s * 3 + config.candy.bag.m * 20 + config.candy.bag.l * 100
 
-      // 組み合わせを列挙
-      let combinationList = [];
-      if (pickup > 0) {
+      // 全組み合わせを配列へ保持せず、同じ列挙順で逐次処理する。
+      // 候補数が多いときの開始遅延とWorkerのメモリ使用量を抑えるため。
+      function* getCombinations() {
+        if (pickup <= 0) {
+          yield { combination: [], aboutScore: 0 };
+          return;
+        }
+
         for(let top of topList) {
           let combination = [top, ...new Array(pickup - 1).fill(0).map((_, i) => i + top + 1)];
           let combinationLimit = new Array(pickup).fill(0).map((_, i) => i > 0 ? targetNum - pickup + i : top);
           combinationLoop: while(true) {
             let aboutScore = 0;
-            if (targetPokemonList) {
-              for(let index of combination) {
-                aboutScore += targetPokemonList[index].score
-              }
+            for(let index of combination) {
+              aboutScore += targetPokemonList[index].score;
             }
-
-            combinationList.push({ combination: [...combination], aboutScore })
-
-            if (combinationList.length % 10000 == 0) {
-              postMessage({
-                status: 'progress',
-                body: combinationList.length / pattern * 0.1,
-              })
-            }
+            yield { combination: [...combination], aboutScore };
 
             for(let i = pickup - 1; i >= 0; i--) {
               combination[i]++;
@@ -90,8 +84,6 @@ self.addEventListener('message', async (event) => {
             }
           }
         }
-      } else {
-        combinationList.push({ combination: [], aboutScore: 0 })
       }
       
       let nightCapPikachu = null;
@@ -118,6 +110,16 @@ self.addEventListener('message', async (event) => {
       let targetCookingList = config.simulation.cookingType
         ? cookingListMap[config.simulation.cookingType]
         : cookingList.filter(c => config.simulation.enableCooking[c.name] || c.foodNum == 0).sort((a, b) => b.fixAddEnergy - a.fixAddEnergy);
+      const cookingTimingList = [];
+      if (config.teamSimulation.day != null) {
+        for(let i = 0; i < config.teamSimulation.cookingNum ?? 3; i++) {
+          cookingTimingList.push({ week: (config.teamSimulation.day + Math.floor(i / 3)) % 7, i: i % 3 });
+        }
+      } else {
+        for(let i = 0; i < 21; i++) {
+          cookingTimingList.push({ week: Math.floor(i / 3), i: i % 3 });
+        }
+      }
 
       let foodCommonRate = (config.teamSimulation.day == null) ? ((2 * 0.1 + 0.9) * 6 + (3 * 0.3 + 0.7)) / 7
         : config.teamSimulation.day == 6 ? 1.3
@@ -155,10 +157,13 @@ self.addEventListener('message', async (event) => {
       let dayLength = config.teamSimulation.day != null ? 1 : 7;
       let food0Map = { ...Object.fromEntries(Food.list.map(f => [f.name, 0])) };
       let defaultFoodNum = { ...food0Map, ...config.foodDefaultNum };
+      const requiredTypeNum = Object.entries(config.teamSimulation.require.typeNum)
+        .filter(([, num]) => num > 0);
+      const totalPattern = Math.max(pattern * fixedCombinationList.length, 1);
 
       for(const fixedPokemonList of fixedCombinationList) {
         const fixedAboutScore = fixedPokemonList.reduce((a, x) => a + x.score, 0);
-        combinationLoop: for(let { aboutScore, combination } of combinationList) {
+        combinationLoop: for(let { aboutScore, combination } of getCombinations()) {
 
           // 概算値の時点でボーダーを超えていなければこの組み合わせは計算するまでもないのでスキップ
           if ((aboutScore + fixedAboutScore) * dayLength < borderScore) {
@@ -188,6 +193,7 @@ self.addEventListener('message', async (event) => {
           let skillShard = 0;
           let bonusShard = 0;
           let typeSetMap: { [key: string]: Set<string> } = {};
+          let typeCountMap: { [key: string]: number } = {};
           let noDuplicateCheck = new Set();
           let resultOption = {};
           let legendNum = 0;
@@ -219,6 +225,7 @@ self.addEventListener('message', async (event) => {
 
             if (typeSetMap[pokemon.base.type] === undefined) typeSetMap[pokemon.base.type] = new Set();
             typeSetMap[pokemon.base.type].add(pokemon.base.name);
+            typeCountMap[pokemon.base.type] = (typeCountMap[pokemon.base.type] ?? 0) + 1;
 
             // 通常といつ育モードは同じPTに入らない
             if (!noDuplicateCheck.has(pokemon.box!.index)) {
@@ -245,11 +252,8 @@ self.addEventListener('message', async (event) => {
           }
 
           // タイプの匹数が指定されているならチェック
-          for(let berry of Berry.list) {
-            if(
-              config.teamSimulation.require.typeNum[berry.type] > 0
-              && pokemonList.filter(pokemon => pokemon.base.type == berry.type).length < config.teamSimulation.require.typeNum[berry.type]
-            ) {
+          for(const [type, requiredNum] of requiredTypeNum) {
+            if ((typeCountMap[type] ?? 0) < requiredNum) {
               continue combinationLoop;
             }
           }
@@ -402,16 +406,6 @@ self.addEventListener('message', async (event) => {
           }
 
           // 料理
-          // 食材の総数と平均エナジー計算
-          let averageFoodEnergy = 0;
-          let sumFoodCount = 0;
-          for(const food of Food.list) {
-            averageFoodEnergy += food.energy * foodNum[food.name];
-            sumFoodCount += foodNum[food.name];
-          }
-          averageFoodEnergy /= sumFoodCount;
-          averageFoodEnergy = averageFoodEnergy || 0;
-
           // なべのサイズ、食材が足りていて、エナジーが最も高い料理を21回分計算
           // 最終エナジーを評価する場合は日曜優先で良い料理を作成、そうでなければ月曜から作成
           const selectedCookingList = [];
@@ -419,17 +413,6 @@ self.addEventListener('message', async (event) => {
           let cookingList = [];
           let remainFoodEnergy = 0;
           if (config.simulation.cookingWeight > 0) {
-            let cookingTimingList = [];
-            if (config.teamSimulation.day != null) {
-              for(let i = 0; i < config.teamSimulation.cookingNum ?? 3; i++) {
-                cookingTimingList.push({ week: (config.teamSimulation.day + Math.floor(i / 3)) % 7, i: i % 3 });
-              }
-            } else {
-              for(let i = 0; i < 21; i++) {
-                cookingTimingList.push({ week: Math.floor(i / 3), i: i % 3 });
-              }
-            }
-            
             for(let { week, i } of cookingTimingList) {
               let potSize = Math.round(
                 (
@@ -582,8 +565,9 @@ self.addEventListener('message', async (event) => {
               shardBonusCount,
               researchExpBonusCount,
               // baseScoreList: pokemonList.map(pokemon => (pokemon['きのみ期待値/日'] + pokemon['自己完結スキル期待値/日']) * helpBonus + pokemon['手伝期待値/回'] * otesapo / 5),
-              pokemonList: pokemonList.map(x => ({
-                ...x,
+              pokemonList: pokemonList.map(({ skillWeightList, ...pokemon }) => ({
+                // スキルコピーの参照先がチーム内のポケモンを指すため、結果をJSON化する前に計算用リストを除外する。
+                ...pokemon,
                 otherHealList: undefined,
                 selfHealList: undefined,
               })),
@@ -619,7 +603,7 @@ self.addEventListener('message', async (event) => {
             postMessage({
               status: 'progress',
               body: {
-                progress: count / combinationList.length * 0.9 + 0.1,
+                progress: count / totalPattern * 0.9 + 0.1,
                 bestResult,
               }
             })

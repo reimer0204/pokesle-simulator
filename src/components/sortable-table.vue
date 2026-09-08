@@ -341,6 +341,9 @@ function onClickRow(event, data) {
 
   table {
     display: grid;
+    // sticky列の固定範囲はtable本体の幅までなので、全列の合計幅をtableにも持たせる。
+    // 表示領域幅のままだと、それを超えて横スクロールした時点で固定列まで流れてしまう。
+    min-width: max-content;
     grid-template-columns: repeat(v-bind(enableColumnListLength), max-content);
     gap: 0;
     // white-space: nowrap;

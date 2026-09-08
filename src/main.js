@@ -93,8 +93,18 @@ const router = createRouter({
     { path: '/history', component: HistoryPage },
     { path: '/credit', component: CreditPage },
     { path: '/evaluate-table', component: EvaluateTable },
+    // OCRライブラリは大きいため、スクショ追加画面を開いた場合だけ読み込む。
+    { path: '/screenshot-import', component: () => import('./pages/screenshot-import.vue') },
   ]
 });
+
+// デザインシステムは開発中のUI確認専用であり、公開ビルドにはルートも成果物も含めない。
+if (import.meta.env.DEV) {
+  router.addRoute({
+    path: '/design_system',
+    component: () => import(/* @vite-ignore */ './pages/design-system.vue'),
+  })
+}
 
 import VueGtag from 'vue-gtag'
 app.use(VueGtag, {

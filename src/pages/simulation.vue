@@ -38,8 +38,44 @@ const targetHour = ref(24);
 const initialCookingChange = ref(0);
 const initialCookingPowerUp = ref(0);
 const beforeEnergy = ref(0);
+const foodBagImageInput = ref<HTMLInputElement | null>(null);
+const foodBagReading = ref(false);
+const foodBagReadStatus = ref('');
 
 const loadedPokemonBoxList = ref(PokemonBox.list);
+
+function selectFoodBagImage() {
+  foodBagImageInput.value?.click();
+}
+
+async function readFoodBagImage(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const image = Array.from(input.files ?? []).find(file => file.type.startsWith('image/'));
+  // 同じ画像を選び直した場合にもchangeが発火するよう、処理開始後に選択内容をクリアする。
+  input.value = '';
+  if (!image) return;
+
+  foodBagReading.value = true;
+  foodBagReadStatus.value = '食材バッグのスクショを読み取っています';
+  let reader: InstanceType<(typeof import('@/models/ocr/food-bag-image-reader'))['default']> | null = null;
+  try {
+    // OCRライブラリをシミュレーション画面の初期表示へ含めないため、スクリーンショット選択時だけ読み込む。
+    const { default: FoodBagImageReader } = await import('@/models/ocr/food-bag-image-reader');
+    reader = new FoodBagImageReader();
+    const result = await reader.read(image);
+    const foodNumMap = new Map(result.foodList.map(food => [food.name, food.num]));
+    for(const food of Food.list) config.foodDefaultNum[food.name] = foodNumMap.get(food.name) ?? 0;
+    // OCR結果を確認・編集できる入力欄へ反映するため、無制限表示を解除する。
+    config.foodUnlimited = false;
+    foodBagReadStatus.value = `${result.foodList.length}種類の食材を読み取りました`;
+  } catch (exception) {
+    console.error(exception);
+    foodBagReadStatus.value = exception instanceof Error ? exception.message : '食材バッグのスクショを読み取れませんでした。';
+  } finally {
+    await reader?.terminate();
+    foodBagReading.value = false;
+  }
+}
 
 const filterResult = computed(() => PokemonFilter.filter(toRaw(loadedPokemonBoxList.value), config.simulation.filter));
 
@@ -372,8 +408,8 @@ async function showEditPopup(pokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>エナジー内訳</th><td><label><input type="checkbox" v-model="config.teamSimulation.result.detail">エナジー内訳</label></td></tr>
-          <tr><th>食材情報</th><td><label><input type="checkbox" v-model="config.teamSimulation.result.food">食材情報</label></td></tr>
+          <tr><th>エナジー内訳</th><td><InputCheckbox v-model="config.teamSimulation.result.detail">エナジー内訳</InputCheckbox></td></tr>
+          <tr><th>食材情報</th><td><InputCheckbox v-model="config.teamSimulation.result.food">食材情報</InputCheckbox></td></tr>
         </SettingTable>
       </SettingButton>
     </div>
@@ -488,30 +524,37 @@ async function showEditPopup(pokemon) {
         <div class="flex-110 w-100 flex-column-start-stretch">
           <label>所持食材</label>
           <div>
-            <div class="default-food-list gap-1px">
-              <template v-for="food in Food.list">
-                <label>{{ food.name }}</label>
+            <div class="default-food-list">
+              <div v-for="food in Food.list" class="flex-row-start-center">
+                <label class="w-80px">{{ food.name }}</label>
                 <label>：</label>
                 <div>
                   <input
                     v-if="!config.foodUnlimited"
                     type="number"
-                    class="w-50px"
+                    class="w-40px"
                     :value="config.foodDefaultNum[food.name]"
                     @input="config.foodDefaultNum[food.name] = $event.target.value ? Number($event.target.value) : 0"
                   >
                   <input
                     v-else 
                     type="number"
-                    class="w-50px"
+                    class="w-40px"
                     value="9999"
                     disabled
                   >
                 </div>
-              </template>
-              <div class="flex-row-end-center" style="grid-column: span 3;">
+              </div>
+              <div>
                 <InputCheckbox v-model="config.foodUnlimited">食材無制限</InputCheckbox>
               </div>
+              <div class="flex-row-end-center">
+                <input ref="foodBagImageInput" class="food-bag-image-input" type="file" accept="image/*" @change="readFoodBagImage">
+                <button type="button" :disabled="foodBagReading" @click="selectFoodBagImage">
+                  {{ foodBagReading ? '食材バッグを読取中…' : '食材バッグのスクショから読取' }}
+                </button>
+              </div>
+              <small v-if="foodBagReadStatus" style="grid-column: span 3;" class="text-align-right">{{ foodBagReadStatus }}</small>
             </div>
           </div>
         </div>
@@ -530,7 +573,14 @@ async function showEditPopup(pokemon) {
                 " />
               </template>
 
+              <div class="result-table-scroll">
               <table>
+                <colgroup>
+                  <col class="result-header-column">
+                  <col class="result-header-column">
+                  <col v-for="pokemon in result.pokemonList" class="result-pokemon-column">
+                  <col>
+                </colgroup>
                 <thead>
                   <tr>
                     <th></th>
@@ -761,6 +811,7 @@ async function showEditPopup(pokemon) {
                   </template>
                 </tbody>
               </table>
+              </div>
             </ToggleArea>
           </template>
           <template v-if="simulationResult.teamList.length == 0">
@@ -794,8 +845,11 @@ async function showEditPopup(pokemon) {
   }
 
   .default-food-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 100px 1em 50px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px 5px;
+    // display: grid;
+    // grid-template-columns: repeat(auto-fill, 100px 1em 50px);
     align-items: center;
 
     label {
@@ -804,6 +858,10 @@ async function showEditPopup(pokemon) {
 
     input {
       margin-right: 10px;
+    }
+
+    .food-bag-image-input {
+      display: none;
     }
   }
 
@@ -825,27 +883,90 @@ async function showEditPopup(pokemon) {
 
     .toggle-area {
       flex: 0 0 auto;
+      min-width: 0;
       max-width: 1100px;
     }
 
+    .result-table-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
     table {
-      width: 100%;
-      border-collapse: collapse;
+      --result-header-column-width: 80px;
+      width: max-content;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+
+      .result-header-column {
+        width: var(--result-header-column-width);
+      }
+
+      .result-pokemon-column {
+        width: 110px;
+      }
+
+      thead th:first-child,
+      tbody th.vertical,
+      tbody th[rowspan] {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        width: var(--result-header-column-width);
+        min-width: var(--result-header-column-width);
+        max-width: var(--result-header-column-width);
+      }
+
+      tbody th[colspan="2"] {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        width: calc(var(--result-header-column-width) * 2);
+        min-width: calc(var(--result-header-column-width) * 2);
+        max-width: calc(var(--result-header-column-width) * 2);
+      }
+
+      thead th:nth-child(2),
+      tbody th:not(.vertical):not([rowspan]):not([colspan]) {
+        position: sticky;
+        left: var(--result-header-column-width);
+        z-index: 2;
+        width: var(--result-header-column-width);
+        min-width: var(--result-header-column-width);
+        max-width: var(--result-header-column-width);
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
 
       th {
         font-weight: bold;
       }
       th, td {
-        border: 1px #000 solid;
+        border-color: #000;
+        border-style: solid;
+        border-width: 0 1px 1px 0;
         vertical-align: middle;
         padding: 2px 3px;
       }
+
+      thead tr:first-child > * {
+        border-top-width: 1px;
+      }
+
+      thead tr:first-child > :first-child,
+      tbody th.vertical,
+      tbody th[rowspan],
+      tbody th[colspan="2"] {
+        border-left-width: 1px;
+      }
+
       th {
         font-weight: bold;
         white-space: nowrap;
         background: rgb(66, 85, 158);
         color: #FFF;
-        border: 1px #FFF solid;
+        border-color: #FFF;
       }
 
       img {
@@ -893,6 +1014,14 @@ async function showEditPopup(pokemon) {
         flex: 0 0 auto;
         overflow-x: auto;
         overflow-y: visible;
+      }
+
+      .result-header-column {
+        width: 50px;
+      }
+
+      table {
+        --result-header-column-width: 50px;
       }
     }
   }

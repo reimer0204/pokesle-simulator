@@ -149,8 +149,8 @@ const columnList = computed(() => {
       </div>
     </SettingList>
 
-    <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="mt-10px">
-      <div class="scroll">
+    <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="mt-10px flex-110 minh-0 flex-column">
+      <div class="scroll flex-110">
         <SortableTable class="pokemon-list" :dataList="pokemonList" :columnList="columnList" :fixColumn="1">
           <template #foodList="{ data, value }">
             <FoodList :pokemon="data" />

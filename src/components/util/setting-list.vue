@@ -47,7 +47,7 @@ const props = defineProps({
       font-size: 80%;
       font-weight: bold;
 
-      &:has(input[type="checkbox"]) {
+      &:has(.input-checkbox) {
         display: inline-flex;
         flex-direction: row;
         align-items: center;

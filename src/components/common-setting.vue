@@ -216,13 +216,13 @@ const berryList = computed(() => {
         
         <tr>
           <th>キャンプチケット</th>
-          <td><label><input type="checkbox" v-model="config.simulation.campTicket">使う</label></td>
+          <td><InputCheckbox v-model="config.simulation.campTicket">使う</InputCheckbox></td>
         </tr>
         
         <tr>
           <th>げんき</th>
           <td>
-            <label><input type="checkbox" v-model="config.simulation.genkiFull">常に100%として計算</label>
+            <InputCheckbox v-model="config.simulation.genkiFull">常に100%として計算</InputCheckbox>
             <div class="w-400px">
               <small>
                 げんきマクラを使用する週や、笛使用時の編成を検討する場合に使用してください。
@@ -448,7 +448,7 @@ const berryList = computed(() => {
       <tr>
         <th>いつ育育成</th>
         <td>
-          <label><input type="checkbox" v-model="config.simulation.bagOverOperation">する</label>
+          <InputCheckbox v-model="config.simulation.bagOverOperation">する</InputCheckbox>
           <div><small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small></div>
         </td>
       </tr>
@@ -486,14 +486,14 @@ const berryList = computed(() => {
       <tr>
         <th>育成仮定</th>
         <td>
-          <label v-if="!props.fix"><input type="checkbox" v-model="config.simulation.fix">する</label>
-          <label v-else><input type="checkbox" checked disabled>する</label>
+          <InputCheckbox v-if="!props.fix" v-model="config.simulation.fix">する</InputCheckbox>
+          <InputCheckbox v-else :modelValue="true" disabled>する</InputCheckbox>
         </td>
       </tr>
       <tr>
         <th>仮定条件</th>
         <td>
-          <div               ><label><input type="checkbox" v-model="config.simulation.fixCheckList" :disabled="!config.simulation.fix && !props.fix">厳選チェックリストに該当</label></div>
+          <div               ><InputCheckbox v-model="config.simulation.fixCheckList" :disabled="!config.simulation.fix && !props.fix">厳選チェックリストに該当</InputCheckbox></div>
           <div class="mt-3px">エナジー厳選度 <input type="number" class="w-50px" :value="config.simulation.fixBorder"          @input="config.simulation.fixBorder          = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
           <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" :value="config.simulation.fixBorderSpecialty" @input="config.simulation.fixBorderSpecialty = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
 
@@ -535,15 +535,15 @@ const berryList = computed(() => {
       <tr>
         <th>進化</th>
         <td>
-          <div><label><input type="checkbox" v-model="config.simulation.fixEvolve" :disabled="!config.simulation.fix || config.simulation.fixResourceMode == 1">最終進化にしたと仮定</label></div>
+          <div><InputCheckbox v-model="config.simulation.fixEvolve" :disabled="!config.simulation.fix || config.simulation.fixResourceMode == 1">最終進化にしたと仮定</InputCheckbox></div>
           <small>イーブイ等、複数の進化先がある場合は全ての進化先をシミュレーションします。</small>
-          <div><label><input type="checkbox" v-model="config.simulation.fixEvolveExcludeSleep" :disabled="!config.simulation.fix">睡眠時間が必要な進化を除く</label></div>
+          <div><InputCheckbox v-model="config.simulation.fixEvolveExcludeSleep" :disabled="!config.simulation.fix">睡眠時間が必要な進化を除く</InputCheckbox></div>
         </td>
       </tr>
       <tr>
         <th>サブスキルの種</th>
         <td>
-          <div><label><input type="checkbox"            v-model="config.simulation.fixSubSkillSeed" :disabled="!config.simulation.fix">最大まで与えたものとして仮定</label></div>
+          <div><InputCheckbox v-model="config.simulation.fixSubSkillSeed" :disabled="!config.simulation.fix">最大まで与えたものとして仮定</InputCheckbox></div>
           <small>サブスキルの種を与えたと仮定</small>
         </td>
       </tr>
@@ -697,7 +697,7 @@ const berryList = computed(() => {
       <tr>
         <th>リサーチランク</th>
         <td>
-          <div><label><input type="checkbox" v-model="config.simulation.researchRankMax">カンスト</label></div>
+          <div><InputCheckbox v-model="config.simulation.researchRankMax">カンスト</InputCheckbox></div>
           <small class="w-100px">リサボをゆめのかけらとして評価するか</small>
         </td>
       </tr>

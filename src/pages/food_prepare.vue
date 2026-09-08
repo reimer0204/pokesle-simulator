@@ -15,6 +15,7 @@ import Popup from '../models/popup/popup.ts';
 import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worker';
 import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';
+import InputCheckbox from '../components/form/input-checkbox.vue';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
@@ -462,8 +463,8 @@ async function showEditPopup(pokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>エナジー内訳</th><td><label><input type="checkbox" v-model="config.teamSimulation.result.detail">エナジー内訳</label></td></tr>
-          <tr><th>食材情報</th><td><label><input type="checkbox" v-model="config.teamSimulation.result.food">食材情報</label></td></tr>
+          <tr><th>エナジー内訳</th><td><InputCheckbox v-model="config.teamSimulation.result.detail">エナジー内訳</InputCheckbox></td></tr>
+          <tr><th>食材情報</th><td><InputCheckbox v-model="config.teamSimulation.result.food">食材情報</InputCheckbox></td></tr>
         </SettingTable>
       </SettingButton>
     </div>
@@ -473,7 +474,7 @@ async function showEditPopup(pokemon) {
         <div>
           <label>当日食材取得量</label>
           <div>
-            <label><input type="checkbox" v-model="addFood">当日拾う食材を加味する</label>
+            <InputCheckbox v-model="addFood">当日拾う食材を加味する</InputCheckbox>
             <small class="mt-5px">ワカクサに行く場合など、来週のチームが<br>確定しない場合はチェックを外してください。</small>
           </div>
         </div>

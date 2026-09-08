@@ -97,7 +97,10 @@
 
 <style lang="scss" scoped>
 .page {
+  height: 100%;
   padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 
   h2 {
     font-size: 24px;

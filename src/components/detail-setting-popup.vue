@@ -1,6 +1,7 @@
 <script setup>
 import config from '../models/config.ts';
 import PopupBase from './util/popup-base.vue';
+import InputCheckbox from './form/input-checkbox.vue';
 
 </script>
 
@@ -32,7 +33,7 @@ import PopupBase from './util/popup-base.vue';
       <div>
         <label>リサーチランク</label>
         <div>
-          <label><input type="checkbox" v-model="config.simulation.researchRankMax">カンスト</label>
+          <InputCheckbox v-model="config.simulation.researchRankMax">カンスト</InputCheckbox>
           <small class="w-100px">リサボをゆめのかけらとして評価するか</small>
         </div>
       </div>

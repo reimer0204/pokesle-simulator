@@ -366,8 +366,8 @@ function toggleFavorite(data: SimulatedPokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>サブスキル名省略</th><td><label><input type="checkbox" v-model="config.pokemonList.subSkillShort" />サブスキル名省略</label></td></tr>
-          <tr><th>メモ</th><td><label><input type="checkbox" v-model="config.pokemonList.memo" />メモを列として表示</label></td></tr>
+          <tr><th>サブスキル名省略</th><td><InputCheckbox v-model="config.pokemonList.subSkillShort">サブスキル名省略</InputCheckbox></td></tr>
+          <tr><th>メモ</th><td><InputCheckbox v-model="config.pokemonList.memo">メモを列として表示</InputCheckbox></td></tr>
           <tr>
             <th>厳選</th>
             <td>
@@ -383,13 +383,13 @@ function toggleFavorite(data: SimulatedPokemon) {
                 </div>
               </div>
               <div class="mt-5px">
-                <label><input type="checkbox" v-model="config.pokemonList.selectEnergy" />厳選元値表示</label>
+                <InputCheckbox v-model="config.pokemonList.selectEnergy">厳選元値表示</InputCheckbox>
                 <div class="w-300px">
                   <small>厳選度の場合はエナジー、とくい厳選度の場合はその分野の数量を表示するかどうかのオプションです。</small>
                 </div>
               </div>
               <div class="mt-5px">
-                <label><input type="checkbox" v-model="config.pokemonList.selectDetail" />最適でない進化先の厳選値も表示</label>
+                <InputCheckbox v-model="config.pokemonList.selectDetail">最適でない進化先の厳選値も表示</InputCheckbox>
                 <div class="w-300px">
                   <small>進化先が複数あるポケモンについて、最も適正が高い進化先以外の結果もすべて表示します。</small>
                 </div>
@@ -400,19 +400,19 @@ function toggleFavorite(data: SimulatedPokemon) {
             <th>アメ情報</th>
             <td>
               <div class="flex-column gap-5px">
-                <div><label><input type="checkbox" v-model="config.pokemonList.candy" />アメ情報</label></div>
+                <div><InputCheckbox v-model="config.pokemonList.candy">アメ情報</InputCheckbox></div>
                 <div>ブーストEXP倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostMultiply"> 倍</div>
                 <div>ブーストかけら倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostShard"> 倍</div>
               </div>
             </td>
           </tr>
-          <tr><th>基礎情報</th><td><label><input type="checkbox" v-model="config.pokemonList.baseInfo" />基礎情報</label></td></tr>
-          <tr><th>食材数</th><td><label><input type="checkbox" v-model="config.pokemonList.foodInfo" />食材数</label></td></tr>
-          <tr><th>シミュ詳細</th><td><label><input type="checkbox" v-model="config.pokemonList.simulatedInfo" />シミュ詳細</label></td></tr>
+          <tr><th>基礎情報</th><td><InputCheckbox v-model="config.pokemonList.baseInfo">基礎情報</InputCheckbox></td></tr>
+          <tr><th>食材数</th><td><InputCheckbox v-model="config.pokemonList.foodInfo">食材数</InputCheckbox></td></tr>
+          <tr><th>シミュ詳細</th><td><InputCheckbox v-model="config.pokemonList.simulatedInfo">シミュ詳細</InputCheckbox></td></tr>
           <tr>
             <th>表示設定</th>
             <td>
-              <div><label><input type="checkbox" v-model="config.pokemonList.fixScore" />スコアまで列固定</label></div>
+              <div><InputCheckbox v-model="config.pokemonList.fixScore">スコアまで列固定</InputCheckbox></div>
               <div class="mt-5px">1ページ表示件数&nbsp;<input type="number" class="w-50px" v-model="config.pokemonList.pageUnit"> 件</div>
             </td>
           </tr>
@@ -644,8 +644,9 @@ function toggleFavorite(data: SimulatedPokemon) {
         </SortableTable>
       </AsyncWatcherArea>
 
-      <div class="flex-row-start-center gap-5px">
+      <div class="box-actions flex-row-start-center gap-5px">
         <button @click="addPokemon">ポケモン新規追加</button>
+        <button @click="$router.push('/screenshot-import')">スクショから追加(β版)</button>
         <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
         <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
           Googleスプレッドシート連携
@@ -680,8 +681,9 @@ function toggleFavorite(data: SimulatedPokemon) {
           </SortableTable>
         </AsyncWatcherArea>
 
-        <div class="flex-row-start-center gap-5px">
+        <div class="box-actions flex-row-start-center gap-5px">
           <button @click="addPokemon">ポケモン新規追加</button>
+          <button @click="$router.push('/screenshot-import')">スクショから追加(β版)</button>
           <div>
             PTシミュは別ページに移りました
           </div>
@@ -843,6 +845,23 @@ function toggleFavorite(data: SimulatedPokemon) {
     }
     .sortable-table {
       flex: 1 1 0;
+    }
+
+    // 下部の操作群は表に押しつぶされないよう固定し、狭い画面では複数行に折り返す。
+    .box-actions {
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .page .pokemon-list .box-actions {
+    width: 100%;
+
+    // 折り返し後に自動マージンが大きな空白を作らないよう、モバイルでは解除する。
+    .ml-auto {
+      margin-left: 0 !important;
     }
   }
 }

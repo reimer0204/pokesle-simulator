@@ -13,9 +13,21 @@ interface PopupShowPromise extends Promise<any> {
 
 class Popup {
   static list = reactive<PopupType[]>([]);
+  private static uuidSequence = 0;
+
+  private static createUuid() {
+    const randomUuid = globalThis.crypto?.randomUUID?.();
+    if (randomUuid) {
+      return 'p' + randomUuid.replace(/-/g, '');
+    }
+
+    // Android実機からLAN内のHTTP環境へアクセスするとrandomUUIDが利用できないため、
+    // DOM要素の紐付けに必要な一意性を時刻とページ内連番で補う。
+    return `p${Date.now().toString(36)}${(this.uuidSequence++).toString(36)}`;
+  }
 
   static show(component: any, bind?: object) {
-    let uuid = 'p' + self.crypto.randomUUID().replace(/-/g, '');
+    let uuid = this.createUuid();
     
     let close: Function;
     const promise = new Promise(resolve => {
