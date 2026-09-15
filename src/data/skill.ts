@@ -273,6 +273,19 @@ class Skill {
       ],
       shard: true
     },
+    {
+      name: 'サイコブレイク(きのみゾーン)',
+      effect: [
+        { energy: 1408, zone: 0.6 },
+        { energy: 2002, zone: 0.8 },
+        { energy: 2762, zone: 1.0 },
+        { energy: 3813, zone: 1.2 },
+        { energy: 5264, zone: 1.6 },
+        { energy: 7274, zone: 2.0 },
+      ],
+      metronome: false,
+      copyable: false,
+    },
     { name: 'へんしん(スキルコピー)', effect: [ null,   null,    null,   null,   null,   null, null], metronome: false, copyable: false },
     { name: 'ものまね(スキルコピー)', effect: [ null,   null,    null,   null,   null,   null, null], metronome: false, copyable: false },
     { name: 'ゆびをふる',             effect: [ null,   null,    null,   null,   null,   null, null], team: true, },

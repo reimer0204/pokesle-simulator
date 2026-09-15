@@ -395,7 +395,7 @@ function onClickRow(event, data) {
 
         & > th, & > td {
           padding: 3px 5px;
-          background-color: #FFF;
+          background-color: var(--color-surface);
           white-space: pre-line;
           vertical-align: middle;
 
@@ -406,7 +406,7 @@ function onClickRow(event, data) {
         }
 
         &:nth-child(odd) > td {
-          background-color: #F8F8F8;
+          background-color: var(--color-surface-subtle);
         }
 
         &.disabled > td {
@@ -418,9 +418,9 @@ function onClickRow(event, data) {
     & > thead  > tr > th {
       display: flex;
       gap: 5px;
-      background-color: rgb(66, 85, 158);
+      background-color: var(--color-primary-strong);
       // background-color: #b6c9f1;
-      border: 1px #FFF solid;
+      border: 1px solid #FFF;
       color: #FFF;
       justify-content: center;
       align-items: center;
@@ -431,10 +431,10 @@ function onClickRow(event, data) {
       display: flex;
       justify-content: left;
       align-items: center;
-      border-bottom: 1px #CCC solid;
+      border-bottom: 1px solid var(--color-line);
 
       &:has(~ :hover), &:hover, &:hover ~ td {
-        background-color: rgb(235, 245, 255);
+        background-color: var(--color-mint-soft);
       }
     }
   }
@@ -450,9 +450,9 @@ function onClickRow(event, data) {
     right: 0;
     z-index: 3;
 
-    color: #888;
-    background-color: #FFF;
-    border-top: 1px #CCC solid;
+    color: var(--color-muted);
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-line);
     padding: 0.5em;
     user-select: none;
 
@@ -466,11 +466,11 @@ function onClickRow(event, data) {
       cursor: pointer;
 
       &:hover {
-        background-color: #F8F8F8;
+        background-color: var(--color-primary-soft);
       }
 
       &.active {
-        background-color: rgb(70, 91, 177);
+        background-color: var(--color-primary);
         color: #FFF;
       }
     }

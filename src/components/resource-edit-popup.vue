@@ -28,9 +28,9 @@ const seedPokemonList = computed(() => {
     </div>
     <div class="flex-row-start-center gap-5px mt-10px">
       <label>ばんのうアメ</label>
-      S: <input type="number" class="w-50px" v-model.number="config.candy.bag.s" placeholder="">
-      M: <input type="number" class="w-50px" v-model.number="config.candy.bag.m" placeholder="">
-      L: <input type="number" class="w-50px" v-model.number="config.candy.bag.l" placeholder="">
+      S: <InputNumber type="number" class="w-50px" v-model.number="config.candy.bag.s" placeholder="" />
+      M: <InputNumber type="number" class="w-50px" v-model.number="config.candy.bag.m" placeholder="" />
+      L: <InputNumber type="number" class="w-50px" v-model.number="config.candy.bag.l" placeholder="" />
     </div>
     <small class="mt-5px">
       ばんのうアメは各ポケモンに使用できる量を指定してください。<br>
@@ -43,7 +43,7 @@ const seedPokemonList = computed(() => {
       { key: 'num', name: 'アメ数', template: 'candy', convert: data => config.candy.bag[data.candyName] },
     ]" scroll>
       <template #candy="{ data }">
-        <input type="number" class="w-80px" v-model.number="config.candy.bag[data.candyName]" />
+        <InputNumber type="number" class="w-80px" v-model.number="config.candy.bag[data.candyName]" />
       </template>
     </SortableTable>
 

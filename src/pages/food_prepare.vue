@@ -387,25 +387,25 @@ async function showEditPopup(pokemon) {
             <th rowspan="5">対象ポケモン</th>
             <th>きのみスコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>食材スコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>総合スコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>サポート抜きスコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
@@ -422,7 +422,7 @@ async function showEditPopup(pokemon) {
           <tr>
             <th colspan="2">結果表示</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.resultNum" class="w-50px"> 件</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.resultNum" class="w-50px" /> 件</div>
             </td>
           </tr>
         </SettingTable>
@@ -449,9 +449,9 @@ async function showEditPopup(pokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>日中手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222"> %以上(最大222%)</div></td></tr>
-          <tr><th>夜間手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222"> %以上(最大222%)</div></td></tr>
-          <tr><th>睡眠EXPボーナス</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp"> 匹以上</div></td></tr>
+          <tr><th>日中手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
+          <tr><th>夜間手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
+          <tr><th>睡眠EXPボーナス</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp" /> 匹以上</div></td></tr>
         </SettingTable>
       </SettingButton>
       
@@ -481,7 +481,7 @@ async function showEditPopup(pokemon) {
 
         <div>
           <label>料理回数</label>
-          <div><input type="number" v-model="cookingNum"></div>
+          <div><InputNumber type="number" v-model="cookingNum" /></div>
         </div>
 
         <div class="flex-column-start-stretch">
@@ -490,17 +490,17 @@ async function showEditPopup(pokemon) {
             <div class="flex-row-start-center gap-10px">
               <div class="flex-row-start-center gap-3px">
                 <label>カレー：</label>
-                <input type="number" class="w-50px" :value="weights['カレー']" @input="weights['カレー'] = Number($event.target.value) || 0">
+                <InputNumber type="number" class="w-50px" :model-value="weights['カレー']" @update:model-value="weights['カレー'] = $event ?? 0" />
                 %
               </div>
               <div class="flex-row-start-center gap-3px">
                 <label>サラダ：</label>
-                <input type="number" class="w-50px" :value="weights['サラダ']" @input="weights['サラダ'] = Number($event.target.value) || 0">
+                <InputNumber type="number" class="w-50px" :model-value="weights['サラダ']" @update:model-value="weights['サラダ'] = $event ?? 0" />
                 %
               </div>
               <div class="flex-row-start-center gap-3px">
                 <label>デザート：</label>
-                <input type="number" class="w-50px" :value="weights['デザート']" @input="weights['デザート'] = Number($event.target.value) || 0">
+                <InputNumber type="number" class="w-50px" :model-value="weights['デザート']" @update:model-value="weights['デザート'] = $event ?? 0" />
                 %
               </div>
             </div>
@@ -509,15 +509,15 @@ async function showEditPopup(pokemon) {
         </div>
         <div>
           <label>料理候補</label>
-          <div class="flex-row-start-center gap-2px">上位<input type="number" class="w-50px" v-model="top">件</div>
+          <div class="flex-row-start-center gap-2px">上位<InputNumber type="number" class="w-50px" v-model="top" />件</div>
         </div>
         <div>
           <label>食材バッグ</label>
-          <div><input type="number" class="w-50px" v-model="bagSize"></div>
+          <div><InputNumber type="number" class="w-50px" v-model="bagSize" /></div>
         </div>
       </SettingList>
 
-      <button @click="simulation">シミュレーション実行</button>
+      <FormButton @click="simulation">シミュレーション実行</FormButton>
 
       <AsyncWatcherArea class="flex-column-start-stretch w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
         <div class="scroll-area flex-column-start-stretch w-100 gap-20px">

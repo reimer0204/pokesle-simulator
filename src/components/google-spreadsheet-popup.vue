@@ -60,16 +60,16 @@ const doGet = (e) => {
       </ol>
 
       <div class="flex-row-start-center gap-5px">
-        <input class="flex-110" type="password" v-model="config.pokemonBox.gs.url" placeholder="ウェブアプリのURLを入力">
-        <button @click="copyUrl">コピー</button>
+        <InputPassword class="flex-110" type="password" v-model="config.pokemonBox.gs.url" placeholder="ウェブアプリのURLを入力" />
+        <FormButton @click="copyUrl">コピー</FormButton>
       </div>
-      <input type="text" v-model="config.pokemonBox.gs.sheet" placeholder="連携用シート名">
+      <InputText type="text" v-model="config.pokemonBox.gs.sheet" placeholder="連携用シート名" />
       <small>エクスポート時に一度シートの内容はクリアされるので、連携用のまっさらなシートを用意してください。</small>
 
       <InputCheckbox v-model="config.pokemonBox.gs.autoExport">ポケモンの情報を編集する度にエクスポートする</InputCheckbox>
 
-      <button @click="exportSpreadsheet">エクスポート</button>
-      <button @click="importSpreadsheet" class="mt-50px">インポート</button>
+      <FormButton @click="exportSpreadsheet">エクスポート</FormButton>
+      <FormButton @click="importSpreadsheet" class="mt-50px">インポート</FormButton>
     </main> 
   </PopupBase>
 </template>

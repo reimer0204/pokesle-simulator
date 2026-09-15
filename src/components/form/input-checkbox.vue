@@ -16,8 +16,8 @@ const emits = defineEmits(['update:modelValue'])
     @click="!props.readonly && !props.disabled && emits('update:modelValue', !props.modelValue)"
   >
     <svg viewBox="0 0 100 100">
-      <rect x="5" y="5" width="90" height="90" fill="#FFF" stroke="#888" stroke-width="10" rx="20" ry="20" />
-      <path d="M20,43 L40,68 L80,28" fill="none" stroke="#2C0" stroke-width="15" v-if="props.modelValue" />
+      <rect x="5" y="5" width="90" height="90" fill="#FFF" stroke="#bec6d6" stroke-width="10" rx="20" ry="20" />
+      <path d="M20,43 L40,68 L80,28" fill="none" stroke="#59a98f" stroke-width="15" v-if="props.modelValue" />
     </svg>
     <slot />
   </div>
@@ -32,6 +32,9 @@ const emits = defineEmits(['update:modelValue'])
 
   cursor: pointer;
   user-select: none;
+  color: var(--color-ink);
+
+  &:hover:not(.disabled) svg { filter: drop-shadow(0 1px 1px #66769a55); }
 
   svg {
     width: 1.2em;
@@ -41,5 +44,7 @@ const emits = defineEmits(['update:modelValue'])
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &:focus-visible { outline: 3px solid #ffd166aa; border-radius: 4px; }
 }
 </style>

@@ -23,6 +23,30 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/9/15">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>
+              ミュウツー追加
+              <ul>
+                <li>週全体の稼ぎを考えるか最終エナジーを考えるかで評価軸が異なるのですが、今は一旦前者にしています。</li>
+              </ul>
+            </li>
+            <li>デザインを大幅改修</li>
+            <li>
+              食材準備ページを別機能に変更
+              <ul>
+                <li>純粋に備蓄する量だけを計算する機能に変更しました。</li>
+                <li>もし旧verのものを活用していた方がいたらDiscordで連絡ください。何か考えます。</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/9/8">
       <ul>
         <li>

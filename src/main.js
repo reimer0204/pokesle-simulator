@@ -23,6 +23,7 @@ import { createWebHashHistory, createRouter } from 'vue-router'
 import IndexPage from './pages/index.vue'
 import SimulationPage from './pages/simulation.vue'
 import FoodPreparePage from './pages/food_prepare.vue'
+import FoodStockPage from './pages/food_stock.vue'
 import BoxSummaryPage from './pages/box-summary.vue'
 import BoxSummaryPokemonPage from './pages/box-summary/pokemon.vue'
 import BoxSummaryBerryPage from './pages/box-summary/berry.vue'
@@ -55,6 +56,7 @@ const router = createRouter({
     // { path: '/box-summary', component: BoxSummaryPage },
     { path: '/simulation', component: SimulationPage },
     { path: '/food-prepare', component: FoodPreparePage },
+    { path: '/food-stock', component: FoodStockPage },
     { path: '/box-summary', component: BoxSummaryPage,
       children: [
         { path: 'pokemon', component: BoxSummaryPokemonPage },

@@ -349,24 +349,24 @@ async function showDetail(pokemon, p) {
     <SettingList class="mt-10px">
       <div>
         <label>Lv</label>
-        <select v-model="lv">
+        <InputSelect v-model="lv">
           <option v-for="lv in lvList" :value="lv">{{ lv }}</option>
-        </select>
+        </InputSelect>
       </div>
 
       <div v-if="selectedTab == 'table'">
         <label>ステップ</label>
-        <select :value="step" @input="step = Number($event.target.value)">
+        <InputSelect v-model.number="step">
           <option :value="1">1</option>
           <option :value="2">2</option>
           <option :value="5">5</option>
           <option :value="10">10</option>
-        </select>
+        </InputSelect>
       </div>
 
       <div v-else>
         <label>表示する厳選度</label>
-        <div><input class="w-50px" type="number" min="0" max="100" step="1" v-model.number="graphPercentile"> %</div>
+        <div><InputNumber class="w-50px" type="number" min="0" max="100" step="1" v-model.number="graphPercentile" /> %</div>
       </div>
     </SettingList>
 

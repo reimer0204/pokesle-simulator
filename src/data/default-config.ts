@@ -78,7 +78,7 @@ const defaultConfig = {
     field: 'ワカクサ本島',
     fieldEx: 1,
     fieldExMainBerry: '',
-    fieldBonus: 75,
+    fieldBonus: 85,
     berryList: ['', '', ''],
     cookingType: 'カレー',
     cookingRecipeLv: 55,
@@ -297,6 +297,20 @@ const defaultConfig = {
       m: 0,
       l: 0,
     },
+  },
+
+  foodStock: {
+    weight: {
+      カレー: 100,
+      サラダ: 100,
+      デザート: 100,
+    },
+    bagSize: 800,
+    cookingNum: 21,
+    candidateNum: 8,
+    minFoodNum: 0,
+    maxFoodNum: 999,
+    surplusFoodNum: 0,
   },
 
   // 起床時元気評価

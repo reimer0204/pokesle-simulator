@@ -24,8 +24,8 @@ const isOpen = ref(props.open);
 
 <style lang="scss" scoped>
 .toggle-area {
-  border: 1px #CCC solid;
-  border-radius: 5px;
+  border: 1px solid var(--color-line);
+  border-radius: 7px;
   overflow: hidden;
   flex: 0 0 auto;
 
@@ -34,7 +34,8 @@ const isOpen = ref(props.open);
     align-items: center;
     font-size: 18px;
     padding: 5px;
-    background-color: #F8F8F8;
+    background: linear-gradient(90deg, var(--color-primary-soft), #FFF);
+    color: var(--color-primary-strong);
 
     svg {
       margin-left: auto;
@@ -44,7 +45,7 @@ const isOpen = ref(props.open);
 
   &.open {
     h2 {
-      border-bottom: 1px #CCC solid;
+      border-bottom: 1px solid var(--color-line);
     }
   }
 

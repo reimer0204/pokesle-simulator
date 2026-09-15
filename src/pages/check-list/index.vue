@@ -118,12 +118,12 @@ watch(() => [
             <td colspan="2">
               <div class="flex-column gap-5px">
                 <div class="flex-row-start-center gap-5px">
-                  基準レベル：<select
+                  基準レベル：<InputSelect
                     v-model="config.summary.checklist.pokemonCondition.selectLv"
                   >
                   <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
                   <option value="max">全レベル内最大値</option>
-                  </select>
+                  </InputSelect>
                 </div>
                 <InputRadio v-model="config.simulation.selectType" :value="0">厳選度</InputRadio>
                 <InputRadio v-model="config.simulation.selectType" :value="1">2段階評価</InputRadio>
@@ -141,7 +141,7 @@ watch(() => [
           <tr v-for="(item, index) in config.summary.checklist.pokemonCondition.list">
             <td>
               <div class="flex-row-start-center gap-5px">
-                <select
+                <InputSelect
                   :value="`${item.type}${item.target ? `_${item.target}` : ''}`"
                   @input="($event) => {
                     const [type, target] = $event.target.value.split('_')
@@ -160,7 +160,7 @@ watch(() => [
                   >
                     {{ pokemon.name }}
                   </option>
-                </select>
+                </InputSelect>
                 
                 <template v-for="combine of ['aaa', 'aab', 'aac', 'aba', 'abb', 'abc']">
                   <InputCheckbox v-model="item[combine]">{{ combine.toUpperCase() }}</InputCheckbox>
@@ -194,7 +194,7 @@ watch(() => [
           <tr>
             <td colspan="2">
               <div class="flex-row-start-center gap-10px">
-                <button @click="config.summary.checklist.pokemonCondition.list.push({
+                <FormButton @click="config.summary.checklist.pokemonCondition.list.push({
                   type: 0,
                   target: null,
                   aaa: true,
@@ -205,7 +205,7 @@ watch(() => [
                   abc: true,
                   energyBorder: null,
                   specialtyBorder: null,
-                })">追加</button>
+                })">追加</FormButton>
 
                 <SettingButton title="非表示ポケモン設定">
                   <template #label>
@@ -264,11 +264,11 @@ watch(() => [
                   >
 
                     <div class="flex-row-start-center gap-5px">
-                      <select
+                      <InputSelect
                         v-model="config.summary.checklist.food.borderLv"
                       >
                         <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
-                      </select>
+                      </InputSelect>
                       における<br>
                     </div>
                     <div>
@@ -332,11 +332,11 @@ watch(() => [
               <div class="flex-column-start-stretch gap-5px">
                 <h3>厳選基準</h3>
                 <div class="flex-row-start-center gap-5px">
-                  <select
+                  <InputSelect
                     v-model="config.summary.checklist.skill.borderLv"
                   >
                     <option v-for="lv in lvList" :value="lv">Lv. {{ lv }}</option>
-                  </select>
+                  </InputSelect>
                   における<br>
                 </div>
                 <div>

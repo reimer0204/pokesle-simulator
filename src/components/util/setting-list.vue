@@ -32,7 +32,9 @@ const props = defineProps({
   }
 
   & > :deep(div) {
-    border-left: 3px #CCC solid;
+    border-left: 3px solid var(--color-mint);
+    border-radius: 4px;
+    background: var(--color-surface);
 
     display: flex;
     flex-direction: column;
@@ -43,7 +45,7 @@ const props = defineProps({
     padding: 3px 5px;
 
     label {
-      color: #666;
+      color: var(--color-muted);
       font-size: 80%;
       font-weight: bold;
 

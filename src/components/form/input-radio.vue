@@ -24,8 +24,8 @@ function onClick() {
 <template>
   <div class="input-radio" @click="onClick" :class="{ disabled }">
     <svg viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r="45" fill="#FFF" stroke="#888" stroke-width="10" rx="20" ry="20" />
-      <circle cx="50" cy="50" r="25" fill="#2C0" stroke-width="15" v-if="isChecked" />
+      <circle cx="50" cy="50" r="45" fill="#FFF" stroke="#bec6d6" stroke-width="10" rx="20" ry="20" />
+      <circle cx="50" cy="50" r="25" fill="#66769a" stroke-width="15" v-if="isChecked" />
     </svg>
     <slot />
   </div>
@@ -40,6 +40,9 @@ function onClick() {
 
   cursor: pointer;
   user-select: none;
+  color: var(--color-ink);
+
+  &:hover:not(.disabled) svg { filter: drop-shadow(0 1px 1px #66769a55); }
 
   svg {
     width: 1em;

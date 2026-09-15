@@ -61,7 +61,7 @@ document.addEventListener("visibilitychange", () => {
           <h2>シミュレーション</h2>
           <div>
             <router-link to="/simulation">チーム編成</router-link>
-            <router-link to="/food-prepare">食材準備</router-link>
+            <router-link to="/food-stock">食材準備</router-link>
           </div>
         </div>
         <div>
@@ -93,9 +93,9 @@ document.addEventListener("visibilitychange", () => {
 
 
 
-      <button v-if="newVersion" class="new-version ml-auto mr-10px" @click="reloadBrowser">
+      <FormButton v-if="newVersion" class="new-version ml-auto mr-10px" @click="reloadBrowser">
         新しいバージョンが<br>公開されています
-      </button>
+      </FormButton>
     </header>
     <main>
       <template v-if="browserSupportError == null">
@@ -123,7 +123,7 @@ document.addEventListener("visibilitychange", () => {
     align-items: center;
     flex-wrap: wrap;
 
-    background-color: rgb(49, 50, 58);
+    background: linear-gradient(110deg, #3a465d, #526079 68%, #5c6b86);
     color: #FFF;
 
     h1 {
@@ -146,7 +146,7 @@ document.addEventListener("visibilitychange", () => {
           padding: 5px 5px 3px;
           flex: 0 0 auto;
           font-weight: normal;
-          color: #888;
+          color: #d8dde7;
         }
 
         & > div {
@@ -175,7 +175,8 @@ document.addEventListener("visibilitychange", () => {
       }
 
       &:hover, &.router-link-active {
-        background: #FFF2;
+        background: rgb(255 255 255 / 12%);
+        box-shadow: inset 0 -3px 0 #7ac6b4;
       }
 
       .caution {
@@ -186,7 +187,7 @@ document.addEventListener("visibilitychange", () => {
         height: 20px;
         border: 2px #FFF solid;
         border-radius: 50%;
-        background-color: red;
+        background-color: var(--color-accent);
         color: #FFF;
       }
     }
@@ -196,13 +197,14 @@ document.addEventListener("visibilitychange", () => {
     position: relative;
     flex: 1 1 0;
     padding: 10px;
+    background: var(--color-surface-subtle);
     z-index: 1;
     min-height: 0;
   }
 
   .new-version {
     text-align: center;
-    background-color: rgb(255, 139, 30);
+    background-color: var(--color-accent);
     padding: 4px 12px;
     border-radius: 5px;
     font-weight: bold;

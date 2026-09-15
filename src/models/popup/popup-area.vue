@@ -64,6 +64,8 @@ import Popup from './popup.ts'
 
       > * {
         max-width: calc(100% - 8px);
+        // 余白がある時だけ中央寄せにし、画面より高いポップアップは先頭からスクロールできるようにする。
+        margin: auto 0;
       }
     }
   }

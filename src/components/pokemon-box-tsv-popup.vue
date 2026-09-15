@@ -61,37 +61,37 @@ function importList() {
     列番号を空にするとインポート・エクスポートの対象外となり、特にインポート時は情報が欠損することになるので注意してください。
 
     <SettingList class="mt-10px">
-      <div><label>名前</label><input type="number" v-model="config.pokemonBox.tsv.name" placeholder="なし"></div>
-      <div><label>Lv</label><input type="number" v-model="config.pokemonBox.tsv.lv" placeholder="なし"></div>
-      <div><label>スキルLv</label><input type="number" v-model="config.pokemonBox.tsv.skillLv" placeholder="なし"></div>
-      <div><label>食材ABC</label><input type="number" v-model="config.pokemonBox.tsv.foodABC" placeholder="なし"></div>
-      <div><label>食材1</label><input type="number" v-model="config.pokemonBox.tsv.foodList[0]" placeholder="なし"></div>
-      <div><label>食材2</label><input type="number" v-model="config.pokemonBox.tsv.foodList[1]" placeholder="なし"></div>
-      <div><label>食材3</label><input type="number" v-model="config.pokemonBox.tsv.foodList[2]" placeholder="なし"></div>
-      <div><label>サブスキル1</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[0]" placeholder="なし"></div>
-      <div><label>サブスキル2</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[1]" placeholder="なし"></div>
-      <div><label>サブスキル3</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[2]" placeholder="なし"></div>
-      <div><label>サブスキル4</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[3]" placeholder="なし"></div>
-      <div><label>サブスキル5</label><input type="number" v-model="config.pokemonBox.tsv.subSkillList[4]" placeholder="なし"></div>
-      <div><label>せいかく</label><input type="number" v-model="config.pokemonBox.tsv.nature" placeholder="なし"></div>
-      <div><label>色違い</label><input type="number" v-model="config.pokemonBox.tsv.shiny" placeholder="なし"></div>
-      <div><label>固定</label><input type="number" v-model="config.pokemonBox.tsv.fix" placeholder="なし"></div>
-      <div><label>睡眠時間</label><input type="number" v-model="config.pokemonBox.tsv.sleepTime" placeholder="なし"></div>
-      <div><label>目標Lv</label><input type="number" v-model="config.pokemonBox.tsv.training" placeholder="なし"></div>
-      <div><label>次Lv迄のExp</label><input type="number" v-model="config.pokemonBox.tsv.nextExp" placeholder="なし"></div>
-      <div><label>メモ</label><input type="number" v-model="config.pokemonBox.tsv.memo" placeholder="なし"></div>
-      <div><label>お気に入り</label><input type="number" v-model="config.pokemonBox.tsv.favorite" placeholder="なし"></div>
+      <div><label>名前</label><InputNumber type="number" v-model="config.pokemonBox.tsv.name" placeholder="なし" /></div>
+      <div><label>Lv</label><InputNumber type="number" v-model="config.pokemonBox.tsv.lv" placeholder="なし" /></div>
+      <div><label>スキルLv</label><InputNumber type="number" v-model="config.pokemonBox.tsv.skillLv" placeholder="なし" /></div>
+      <div><label>食材ABC</label><InputNumber type="number" v-model="config.pokemonBox.tsv.foodABC" placeholder="なし" /></div>
+      <div><label>食材1</label><InputNumber type="number" v-model="config.pokemonBox.tsv.foodList[0]" placeholder="なし" /></div>
+      <div><label>食材2</label><InputNumber type="number" v-model="config.pokemonBox.tsv.foodList[1]" placeholder="なし" /></div>
+      <div><label>食材3</label><InputNumber type="number" v-model="config.pokemonBox.tsv.foodList[2]" placeholder="なし" /></div>
+      <div><label>サブスキル1</label><InputNumber type="number" v-model="config.pokemonBox.tsv.subSkillList[0]" placeholder="なし" /></div>
+      <div><label>サブスキル2</label><InputNumber type="number" v-model="config.pokemonBox.tsv.subSkillList[1]" placeholder="なし" /></div>
+      <div><label>サブスキル3</label><InputNumber type="number" v-model="config.pokemonBox.tsv.subSkillList[2]" placeholder="なし" /></div>
+      <div><label>サブスキル4</label><InputNumber type="number" v-model="config.pokemonBox.tsv.subSkillList[3]" placeholder="なし" /></div>
+      <div><label>サブスキル5</label><InputNumber type="number" v-model="config.pokemonBox.tsv.subSkillList[4]" placeholder="なし" /></div>
+      <div><label>せいかく</label><InputNumber type="number" v-model="config.pokemonBox.tsv.nature" placeholder="なし" /></div>
+      <div><label>色違い</label><InputNumber type="number" v-model="config.pokemonBox.tsv.shiny" placeholder="なし" /></div>
+      <div><label>固定</label><InputNumber type="number" v-model="config.pokemonBox.tsv.fix" placeholder="なし" /></div>
+      <div><label>睡眠時間</label><InputNumber type="number" v-model="config.pokemonBox.tsv.sleepTime" placeholder="なし" /></div>
+      <div><label>目標Lv</label><InputNumber type="number" v-model="config.pokemonBox.tsv.training" placeholder="なし" /></div>
+      <div><label>次Lv迄のExp</label><InputNumber type="number" v-model="config.pokemonBox.tsv.nextExp" placeholder="なし" /></div>
+      <div><label>メモ</label><InputNumber type="number" v-model="config.pokemonBox.tsv.memo" placeholder="なし" /></div>
+      <div><label>お気に入り</label><InputNumber type="number" v-model="config.pokemonBox.tsv.favorite" placeholder="なし" /></div>
     </SettingList>
 
     <div class="flex-row gap-10px mt-10px">
       <div class="flex-column gap-5px flex-110">
-        <button @click="exportList">エクスポート</button>
+        <FormButton @click="exportList">エクスポート</FormButton>
         <textarea v-model="exportText"></textarea>
       </div>
       <div class="vr"></div>
       <div class="flex-column gap-5px flex-110">
         <textarea v-model="importText"></textarea>
-        <button @click="importList" :disabled="importText.length == 0">インポート</button>
+        <FormButton @click="importList" :disabled="importText.length == 0">インポート</FormButton>
       </div>
     </div>
 

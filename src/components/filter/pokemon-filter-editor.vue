@@ -39,7 +39,7 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
 <template>
   <div class="pokemon-filter">
 
-    <input-checkbox v-model="props.modelValue.enable">除外フィルタを有効にする</input-checkbox>
+    <InputCheckbox v-model="props.modelValue.enable">除外フィルタを有効にする</InputCheckbox>
 
     <div class="list-wrapper mt-10px">
       <div class="item">
@@ -82,26 +82,26 @@ const newConditionType = computed(() => PokemonFilter.TYPE_LIST.find(x => x.id =
     </div>
 
     <div class="flex-row-start-center gap-5px mt-10px">
-      <select v-model="newCondition.type">
+      <InputSelect v-model="newCondition.type">
         <option v-for="type in PokemonFilter.TYPE_LIST" :value="type.id">{{ type.name }}</option>
-      </select>
+      </InputSelect>
 
-      <select v-if="newConditionType?.input == 'pokemon'" v-model="newCondition.value" class="w-200px">
+      <InputSelect v-if="newConditionType?.input == 'pokemon'" v-model="newCondition.value" class="w-200px">
         <option v-for="pokemon in Pokemon.nameSortList" :value="pokemon.name">{{ pokemon.name }}</option>
-      </select>
-      <select v-if="newConditionType?.input == 'last_pokemon'" v-model="newCondition.value" class="w-200px">
+      </InputSelect>
+      <InputSelect v-if="newConditionType?.input == 'last_pokemon'" v-model="newCondition.value" class="w-200px">
         <option v-for="pokemon in lastPokemonList" :value="pokemon.name">{{ pokemon.name }}</option>
-      </select>
+      </InputSelect>
       <div v-if="newConditionType?.input == 'lv'">
-        <input type="number" v-model="newCondition.value" class="w-50px" />
+        <InputNumber type="number" v-model="newCondition.value" class="w-50px" />
         Lv
       </div>
-      <select v-if="newConditionType?.input == 'skill'" v-model="newCondition.value" class="w-200px">
+      <InputSelect v-if="newConditionType?.input == 'skill'" v-model="newCondition.value" class="w-200px">
         <option v-for="skill in Skill.list" :value="skill.name">{{ skill.name }}</option>
-      </select>
+      </InputSelect>
 
-      <button @click="add(true)" :disabled="!enableAdd" class="ml-auto">追加</button>
-      <button @click="add(false)" :disabled="!enableAdd">除外</button>
+      <FormButton @click="add(true)" :disabled="!enableAdd" class="ml-auto">追加</FormButton>
+      <FormButton @click="add(false)" :disabled="!enableAdd">除外</FormButton>
 
     </div>
   </div>

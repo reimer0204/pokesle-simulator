@@ -6,8 +6,9 @@
 
 <style lang="scss" scoped>
 .danger-alert {
-  border-color: #d80036;
-  background-color: #ff004013;
-  color: #d80036;
+  border-color: #e7c2c8;
+  border-left-color: var(--color-danger);
+  background-color: #fbf1f2;
+  color: #9f5864;
 }
 </style>

@@ -1,11 +1,30 @@
 @import url(./reset.scss);
 @import url(./bootstrap.scss);
 
+:root {
+  --color-ink: #30394d;
+  --color-muted: #6b7486;
+  --color-primary: #66769a;
+  --color-primary-strong: #4d5d7d;
+  --color-primary-soft: #eff1f6;
+  --color-mint: #59a98f;
+  --color-mint-soft: #edf7f3;
+  --color-accent: #df8650;
+  --color-accent-strong: #c96e3d;
+  --color-danger: #bf6575;
+  --color-danger-strong: #a85162;
+  --color-line: #dce0e8;
+  --color-surface: #fffefd;
+  --color-surface-subtle: #f6f7f9;
+  --shadow-control: 0 1px 0 rgb(48 58 77 / 12%);
+}
+
 html, body, #app {
   width: 100%;
   height: 100%;
   font-size: 12px;
-  color: #222;
+  color: var(--color-ink);
+  background: var(--color-surface-subtle);
 
   font-family: "Helvetica Neue",
     Arial,
@@ -16,32 +35,78 @@ html, body, #app {
 }
 
 button {
-  background-color: #08C;
+  background-color: var(--color-primary);
   color: #FFF;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 6px;
+  box-shadow: var(--shadow-control);
+  padding: 5px 11px;
   font-weight: bold;
+  cursor: pointer;
+  transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-strong);
+    box-shadow: 0 3px 0 rgb(49 66 132 / 20%);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #ffd166aa;
+    outline-offset: 2px;
+  }
 
   &.important {
-    background-color: #E40;
+    background-color: var(--color-danger);
+
+    &:hover:not(:disabled) { background-color: var(--color-danger-strong); }
   }
 
   &:disabled {
-    background-color: #CCC;
+    background-color: #b7c0da;
+    box-shadow: none;
+    cursor: not-allowed;
   }
 }
 
-input[type=text], input[type=number] {
-  border: 1px #888 solid;
-  border-radius: 3px;
+input[type=text], input[type=number], input[type=password], select {
+  min-height: 25px;
+  padding: 2px 5px;
+  border: 1px solid #c7cdda;
+  border-radius: 5px;
+  background-color: #FFF;
+  color: var(--color-ink);
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+
+  &:hover:not(:disabled) { border-color: #909bb3; }
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px #b7c0d955;
+    outline: none;
+  }
+  &:disabled { background-color: #eef1f8; color: #8290ad; }
 }
 
+input[type=file] {
+  color: var(--color-muted);
 
+  &::file-selector-button {
+    margin-right: 6px;
+    padding: 3px 7px;
+    border: 1px solid #c7cdda;
+    border-radius: 5px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    font-weight: bold;
+    cursor: pointer;
+  }
+}
 
 .link {
-  color: #08C;
+  color: var(--color-primary);
   font-weight: bold;
+
+  &:hover { color: var(--color-primary-strong); }
 }
 
 // スマートフォンでは、表やタブは必要に応じて内部スクロールさせつつ、

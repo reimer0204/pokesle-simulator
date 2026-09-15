@@ -80,12 +80,12 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
       <SettingList>
         <div>
           <label>睡眠時間</label>
-          <div><input type="number" step="0.1" v-model="editConfig.sleepTime"> 時間</div>
+          <div><InputNumber type="number" step="0.1" v-model="editConfig.sleepTime" /> 時間</div>
         </div>
 
         <div>
           <label>日中タップ回数</label>
-          <div><input type="number" step="1" v-model="editConfig.checkFreq"> 回</div>
+          <div><InputNumber type="number" step="1" v-model="editConfig.checkFreq" /> 回</div>
         </div>
       </SettingList>
     </ToggleArea>
@@ -97,7 +97,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         <div>
           <label>下振れ考慮ボーダー</label>
           <div class="flex-column gap-5px">
-            <div><input type="number" class="w-40px" v-model="editConfig.selectEvaluate.expectType.border" step="1" min="0" max="100" >&nbsp;%</div>
+            <div><InputNumber type="number" class="w-40px" v-model="editConfig.selectEvaluate.expectType.border" step="1" min="0" max="100"  />&nbsp;%</div>
           </div>
           <small class="mt-5px w-150px">
             下振れ考慮するかどうかは次の「とくい毎設定・詳細設定」にあります。<br>
@@ -123,12 +123,12 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         </div>
         <div>
           <label>エナジー/ゆめのかけら</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergyRate" step="1"></div>
+          <div><InputNumber type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergyRate" step="1" /></div>
           <small>ゆめのかけら1個を得る<br>のに必要なエナジー</small>
         </div>
         <div>
           <label>ゆめのかけらゲット評価</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergy" step="1"></div>
+          <div><InputNumber type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardEnergy" step="1" /></div>
           <small>
             1個あたり何エナジー<br>として換算するか<br>
             <HelpButton title="ゆめのかけらゲット評価値の設定について" markdown="
@@ -148,7 +148,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         </div>
         <div>
           <label>ゆめのかけらボーナス評価</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardBonus" step="1"> %</div>
+          <div><InputNumber type="number" class="w-80px" v-model="editConfig.selectEvaluate.shardBonus" step="1" /> %</div>
           <small>
             0%:エナジー換算しない<br>
             100%:エナジー6%アップとして評価
@@ -156,8 +156,8 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         </div>
         <div>
           <label>サポートスキル評価用</label>
-          <div>厳選ライン：<input type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportBorder" step="1"> %</div>
-          <div>上位：<input type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportRankNum" step="1"> %</div>
+          <div>厳選ライン：<InputNumber type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportBorder" step="1" /> %</div>
+          <div>上位：<InputNumber type="number" class="w-40px" v-model="editConfig.selectEvaluate.supportRankNum" step="1" /> %</div>
           <small class="w-120px">
             サポートスキル評価時に参照する他ポケモンの厳選度と上位何%を使用するか
           </small>
@@ -168,7 +168,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
             <InputRadio v-model="editConfig.selectEvaluate.cookingPowerUpType" :value="0">3種のうち最大</InputRadio>
             <InputRadio v-model="editConfig.selectEvaluate.cookingPowerUpType" :value="1">3種の平均</InputRadio>
           </div>
-          <div>上記の <input type="number" class="w-40px" v-model="editConfig.selectEvaluate.cookingPowerUpRate" step="1"> %</div>
+          <div>上記の <InputNumber type="number" class="w-40px" v-model="editConfig.selectEvaluate.cookingPowerUpRate" step="1" /> %</div>
           <small class="w-120px">
             なべ拡張の1個分を何エナジーとして評価するか            
             <HelpButton title="料理パワーアップの評価方法" :markdown="`
@@ -190,7 +190,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         </div>
         <div>
           <label>仮定ヒーラー</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.healer" step="1"></div>
+          <div><InputNumber type="number" class="w-80px" v-model="editConfig.selectEvaluate.healer" step="1" /></div>
           <small>
             性格のげんき補正評価用の<br>1日の回復量
           </small>
@@ -205,7 +205,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         </div>
         <div>
           <label>おてつだいボーナス評価</label>
-          <div><input type="number" class="w-80px" v-model="editConfig.selectEvaluate.teamHelpBonus" step="1" min="0" max="4"> 匹</div>
+          <div><InputNumber type="number" class="w-80px" v-model="editConfig.selectEvaluate.teamHelpBonus" step="1" min="0" max="4" /> 匹</div>
           <small>
             自分以外の4匹におてつだいボーナスが何匹いるか指定します。<br>
             3が一番おてつだいボーナス＋おてつだいスピードMを高く評価できます。
@@ -231,7 +231,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         <div>
           <label>おやすみリボン</label>
           <div>
-            <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.pokemonSleepTime"> 時間</div>
+            <div><InputNumber type="number" class="w-50px" v-model="editConfig.selectEvaluate.pokemonSleepTime" /> 時間</div>
           </div>
         </div>
         <div>
@@ -273,22 +273,22 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               <td>
                 <div>
                   ＋
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     v-model="editConfig.selectEvaluate.subSkill.suiminExpBonus.add"
-                    step="1">
+                    step="1" />
                 </div>
               </td>
               <td>
                 <div>
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     :value="editConfig.selectEvaluate.subSkill.suiminExpBonus.rate * 100"
                     @input="editConfig.selectEvaluate.subSkill.suiminExpBonus.rate = Number($event.target.value) / 100"
                     step="1"
-                  >
+                   />
                   %
                 </div>
               </td>
@@ -298,22 +298,22 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               <td>
                 <div>
                   ＋
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     v-model="editConfig.selectEvaluate.nature.expUp.add"
-                    step="1">
+                    step="1" />
                 </div>
               </td>
               <td>
                 <div>
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     :value="editConfig.selectEvaluate.nature.expUp.rate * 100"
                     @input="editConfig.selectEvaluate.nature.expUp.rate = Number($event.target.value) / 100"
                     step="1"
-                  >
+                   />
                   %
                 </div>
               </td>
@@ -323,22 +323,22 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               <td>
                 <div>
                   ＋
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     v-model="editConfig.selectEvaluate.nature.expDown.add"
-                    step="1">
+                    step="1" />
                 </div>
               </td>
               <td>
                 <div>
-                  <input
+                  <InputNumber
                     type="number"
                     class="w-50px"
                     :value="editConfig.selectEvaluate.nature.expDown.rate * 100"
                     @input="editConfig.selectEvaluate.nature.expDown.rate = Number($event.target.value) / 100"
                     step="1"
-                  >
+                   />
                   %
                 </div>
               </td>
@@ -351,7 +351,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           <div>
             <label>経験値のエナジー換算</label>
             <div class="flex-column gap-5px">
-              <div><input type="number" class="w-40px" v-model="editConfig.selectEvaluate.energyPerCandy" step="1" min="0" max="100" >&nbsp;エナジー / 25経験値</div>
+              <div><InputNumber type="number" class="w-40px" v-model="editConfig.selectEvaluate.energyPerCandy" step="1" min="0" max="100"  />&nbsp;エナジー / 25経験値</div>
             </div>
             <small class="mt-5px w-150px">
               アメを獲得するスキルのエナジー計算に利用されます。
@@ -399,7 +399,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           <tr>
             <th>きのみ評価</th>
             <td v-for="specialty in specialtyList">
-              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].berryEnergyRate" step="1"> %</div>
+              <div><InputNumber type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].berryEnergyRate" step="1" /> %</div>
             </td>
             <td></td>
             <td></td>
@@ -413,7 +413,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
           <tr>
             <th>食材評価</th>
             <td v-for="specialty in specialtyList">
-              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodEnergyRate" step="1"> %</div>
+              <div><InputNumber type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodEnergyRate" step="1" /> %</div>
             </td>
             <td>
               <div class="flex-column-start-start gap-5px">
@@ -435,7 +435,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
               食材ゲット評価
             </th>
             <td v-for="specialty in specialtyList">
-              <div><input type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodGetRate" step="1"> %</div>
+              <div><InputNumber type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].foodGetRate" step="1" /> %</div>
             </td>
             <td></td>
             <td></td>
@@ -459,9 +459,8 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
                 <InputRadio v-model="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type" :value="3">
                   <div class="flex-row-start-center white-space-nowrap gap-5px">
                     指定レベル
-                    <input type="number" class="w-50px" :value="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].lv"
-                      @input="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].lv = $event.target.value ? Number($event.target.value) : null"
-                      :disabled="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type != 3">
+                    <InputNumber type="number" class="w-50px" v-model="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].lv"
+                      :disabled="editConfig.selectEvaluate.specialty[specialty].skillLv[skill.name].type != 3" />
                   </div>
                 </InputRadio>
               </div>
@@ -480,13 +479,12 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
                     class="flex-row-start-center"
                   >
                     <div>Lv{{ i + 1 }}：</div>
-                    <input
+                    <InputNumber
                       type="number"
                       class="text-align-right w-60px"
-                      :value="editConfig.selectEvaluate.skillEnergy[skill.name][i]"
-                      @input="editConfig.selectEvaluate.skillEnergy[skill.name][i] = Number($event.target.value) || null"
+                      v-model="editConfig.selectEvaluate.skillEnergy[skill.name][i]"
                       :placeholder="energy"
-                    >
+                     />
                   </div>
                 </div>
                 <div v-if="
@@ -523,7 +521,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
         <div>
           <label>スレッド数</label>
           <div>
-            <input type="number" step="1" v-model="editConfig.workerNum" min="1" max="100">
+            <InputNumber type="number" step="1" v-model="editConfig.workerNum" min="1" max="100" />
             <small>ワーカースレッドの数を指定します。</small>
           </div>
         </div>
@@ -534,7 +532,7 @@ const specialtyList = ['きのみ', '食材', 'スキル', 'オール']
       厳選情報の計算が完了しました。ボックス画面から厳選情報を確認できます。
     </BaseAlert>
 
-    <button @click="save">設定を保存して厳選情報を計算する</button>
+    <FormButton @click="save">設定を保存して厳選情報を計算する</FormButton>
   </div>
 </template>
 

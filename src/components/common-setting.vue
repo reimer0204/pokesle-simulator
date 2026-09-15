@@ -101,9 +101,11 @@ const berryList = computed(() => {
         
         FB:{{ config.simulation.fieldBonus }}
         
-        <span v-if="config.simulation.fieldEx == 1" class="caution">EXきのみ</span>
-        <span v-if="config.simulation.fieldEx == 2" class="caution">EX食材</span>
-        <span v-if="config.simulation.fieldEx == 3" class="caution">EXスキル</span>
+        <template v-if="Field.map[config.simulation.field]?.ex">
+          <span v-if="config.simulation.fieldEx == 1" class="caution">EXきのみ</span>
+          <span v-if="config.simulation.fieldEx == 2" class="caution">EX食材</span>
+          <span v-if="config.simulation.fieldEx == 3" class="caution">EXスキル</span>
+        </template>
 
         <span>
           {{ config.simulation.cookingType }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
@@ -190,24 +192,24 @@ const berryList = computed(() => {
         <tr>
           <th>フィールドボーナス</th>
           <td>
-            <input type="number" class="w-40px" v-model="config.simulation.fieldBonus" step="1"> %
+            <InputNumber type="number" class="w-40px" v-model="config.simulation.fieldBonus" step="1" /> %
           </td>
         </tr>
         
         <tr>
           <th>種類</th>
           <td>
-            <select v-model="config.simulation.cookingType">
+            <InputSelect v-model="config.simulation.cookingType">
               <option value="カレー">カレー・シチュー</option>
               <option value="サラダ">サラダ</option>
               <option value="デザート">デザート・ドリンク</option>
-            </select>
+            </InputSelect>
           </td>
         </tr>
         <tr>
           <th>料理評価倍率</th>
           <td>
-            <input type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1"> 倍
+            <InputNumber type="number" class="w-80px" v-model="config.simulation.cookingWeight" step="0.1" /> 倍
             <div class="w-400px"><small>
               イベント等で料理エナジーにボーナスがかかっている場合に設定してください。<br>また、イベント週以外でもきのみエナジー度外視でレシピレベルを育てる場合などはこの値を大きくすると、料理を重視したシミュレーションが出来ます。
             </small></div>
@@ -297,25 +299,25 @@ const berryList = computed(() => {
       </tr>
       <tr>
         <th>きのみ</th>
-        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBerry" > 個追加</td>
+        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBerry"  /> 個追加</td>
       </tr>
       <tr>
         <th>食材</th>
-        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood" > 個追加</td>
+        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood"  /> 個追加</td>
       </tr>
       <tr>
         <th>スキル倍率</th>
-        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillRate" step="0.1" > 倍</td>
+        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillRate" step="0.1"  /> 倍</td>
       </tr>
       <tr>
         <th>スキルレベル</th>
-        <td><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv" > Lv追加</td>
+        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv"  /> Lv追加</td>
       </tr>
       <tr>
         <th>所持数</th>
         <td>
           <div class="flex-row-start-center gap-1em">
-            <div><input type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag" > 個追加</div>
+            <div><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag"  /> 個追加</div>
             <div><InputNumber class="w-60px" v-model="config.simulation.eventBonusTypeBagRate" :step="0.1" /> 倍</div>
           </div>
         </td>
@@ -338,7 +340,7 @@ const berryList = computed(() => {
       </tr>
       <tr>
         <td>
-          <button @click="reset">リセット</button>
+          <FormButton @click="reset">リセット</FormButton>
         </td>
       </tr>
     </SettingTable>
@@ -494,8 +496,8 @@ const berryList = computed(() => {
         <th>仮定条件</th>
         <td>
           <div               ><InputCheckbox v-model="config.simulation.fixCheckList" :disabled="!config.simulation.fix && !props.fix">厳選チェックリストに該当</InputCheckbox></div>
-          <div class="mt-3px">エナジー厳選度 <input type="number" class="w-50px" :value="config.simulation.fixBorder"          @input="config.simulation.fixBorder          = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
-          <div class="mt-3px">とくい厳選度   <input type="number" class="w-50px" :value="config.simulation.fixBorderSpecialty" @input="config.simulation.fixBorderSpecialty = Number($event.target.value) || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-"> %以上のみ</div>
+          <div class="mt-3px">エナジー厳選度 <InputNumber type="number" class="w-50px" :model-value="config.simulation.fixBorder"          @update:model-value="config.simulation.fixBorder          = $event || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-" /> %以上のみ</div>
+          <div class="mt-3px">とくい厳選度   <InputNumber type="number" class="w-50px" :model-value="config.simulation.fixBorderSpecialty" @update:model-value="config.simulation.fixBorderSpecialty = $event || null" :disabled="!config.simulation.fix && !props.fix" placeholder="-" /> %以上のみ</div>
 
           <div class="mt-3px">
             <SettingButton title="除外フィルタ">
@@ -521,14 +523,14 @@ const berryList = computed(() => {
             <InputRadio v-model="config.simulation.fixResourceMode" :value="0">指定Lv・進化まで(アメ・ゆめかけを考慮しない)</InputRadio>
             <InputRadio v-model="config.simulation.fixResourceMode" :value="1">アメ・ゆめかけを使えるだけ使う</InputRadio>
             <InputRadio v-model="config.simulation.fixResourceMode" :value="2">指定Lv・進化までアメ・ゆめかけを使えるだけ使う</InputRadio>
-            <div><button @click="showResourceEditPopup">アメ・ゆめのかけら管理</button></div>
+            <div><FormButton @click="showResourceEditPopup">アメ・ゆめのかけら管理</FormButton></div>
           </div>
         </td>
       </tr>
       <tr>
         <th>Lv</th>
         <td>
-          <div><input type="number" class="w-40px" v-model="config.simulation.fixLv" :disabled="!config.simulation.fix || config.simulation.fixResourceMode == 1"> Lvまで育てたと仮定</div>
+          <div><InputNumber type="number" class="w-40px" v-model="config.simulation.fixLv" :disabled="!config.simulation.fix || config.simulation.fixResourceMode == 1" /> Lvまで育てたと仮定</div>
           <small>指定レベル以上のポケモンはそのままでシミュレーションします。</small>
         </td>
       </tr>
@@ -579,16 +581,16 @@ const berryList = computed(() => {
         <tr>
           <th>厳選設定</th>
           <td>
-            <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
+            <InputSelect v-model.number="config.simulation.selectType">
               <option value="0">厳選度</option>
               <option value="1">2段階評価</option>
-            </select>
+            </InputSelect>
           </td>
         </tr>
         <tr v-if="config.simulation.selectType == 1">
           <th>目標スコア</th>
           <td>
-            <div><input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %</div>
+            <div><InputNumber type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1" /> %</div>
             <div class="w-300px">
               <small>
                 例えば90%にすると、厳選度90%の個体に対しこの個体が稼ぐエナジーが何%あるか計算します。<br>
@@ -629,7 +631,7 @@ const berryList = computed(() => {
       <tr>
         <th>下振れ補正ボーダー</th>
         <td>
-          <div><input type="number" class="w-80px" v-model="config.simulation.expectType.border" step="1"> %</div>
+          <div><InputNumber type="number" class="w-80px" v-model="config.simulation.expectType.border" step="1" /> %</div>
         </td>
       </tr>
       <tr>
@@ -664,18 +666,18 @@ const berryList = computed(() => {
       <tr>
         <th>なべの大きさ</th>
         <td>
-          <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
+          <div><InputNumber type="number" v-model="config.simulation.potSize" min="0" /> 個</div>
         </td>
       </tr>
       <tr>
         <th>ナイトキャップピカチュウ</th>
         <td>
           <div>
-            <input
+            <InputNumber
               type="number" class="w-80px"
               v-model="config.teamSimulation.nightCapPikachu"
               min="0" :max="NightCapPikachu.list.length"
-            >
+             />
             Lv
           </div>
           <small>
@@ -686,7 +688,7 @@ const berryList = computed(() => {
       <tr>
         <th>ゆめのかけら評価</th>
         <td>
-          <div><input type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1"> %</div>
+          <div><InputNumber type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1" /> %</div>
           <small>
             0%:エナジーだけで評価<br>
             100%:ゆめのかけらで評価<br>
@@ -704,14 +706,14 @@ const berryList = computed(() => {
       <tr>
         <th>睡眠時間</th>
         <td>
-          <input class="w-50px" type="number" step="0.1" v-model="config.sleepTime"> 時間
+          <InputNumber class="w-50px" type="number" step="0.1" v-model="config.sleepTime" /> 時間
           <DangerAlert class="mt-5px">睡眠時間を変更すると厳選情報の再計算が必要です</DangerAlert>
         </td>
       </tr>
       <tr>
         <th>チェック頻度</th>
         <td>
-          <input class="w-50px" type="number" step="1" v-model="config.checkFreq"> 回
+          <InputNumber class="w-50px" type="number" step="1" v-model="config.checkFreq" /> 回
           <DangerAlert class="mt-5px">チェック頻度を変更すると厳選情報の再計算が必要です</DangerAlert>
         </td>
       </tr>
@@ -719,8 +721,8 @@ const berryList = computed(() => {
         <th>スレッド数</th>
         <td>
           <div class="flex-row-start-center gap-5px">
-            <input class="w-50px" type="number" step="1" v-model="workerNum">
-            <button @click="saveWorkerNum">保存して再読み込み</button>
+            <InputNumber class="w-50px" type="number" step="1" v-model="workerNum" />
+            <FormButton @click="saveWorkerNum">保存して再読み込み</FormButton>
           </div>
           <DangerAlert class="mt-5px">スレッド数を増やすと処理が速くなりますが、メモリやCPUの負荷が増加します</DangerAlert>
         </td>

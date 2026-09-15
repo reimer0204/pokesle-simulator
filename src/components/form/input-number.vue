@@ -1,9 +1,12 @@
 <script setup>
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps({
   modelValue: {},
   percent: { type: Boolean, default: false },
 })
-const emits = defineEmits(['update:modelValue'])
+const emits = defineEmits(['update:modelValue', 'keydown'])
+const input = ref()
 
 const value = computed({
   get() {
@@ -20,10 +23,22 @@ const value = computed({
     }
   }
 })
+
+defineExpose({
+  focus: () => input.value?.focus(),
+  select: () => input.value?.select(),
+})
 </script>
 
 <template>
-  <input class="input-number" type="number" v-model="value" />
+  <input
+    ref="input"
+    v-bind="$attrs"
+    class="form-input input-number"
+    type="number"
+    v-model="value"
+    @keydown="emits('keydown', $event)"
+  />
 </template>
 
 <style lang="scss" scoped>

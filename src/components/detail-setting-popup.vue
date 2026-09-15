@@ -14,14 +14,14 @@ import InputCheckbox from './form/input-checkbox.vue';
       <div>
         <label>なべの大きさ</label>
         <div>
-          <div><input type="number" v-model="config.simulation.potSize" min="0"> 個</div>
+          <div><InputNumber type="number" v-model="config.simulation.potSize" min="0" /> 個</div>
         </div>
       </div>
 
       <div>
         <label>ゆめのかけら評価</label>
         <div>
-          <div><input type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1"> %</div>
+          <div><InputNumber type="number" class="w-80px" v-model="config.simulation.shardWeight" step="1" /> %</div>
           <small>
             0%:エナジーだけで評価<br>
             100%:ゆめのかけらで評価<br>

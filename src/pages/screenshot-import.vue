@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
     <div class="file-input-area">
       <label>
         ポケモン詳細のスクリーンショット
-        <input type="file" accept="image/*" multiple :disabled="loading" @change="onFileChange">
+        <InputFile type="file" accept="image/*" multiple :disabled="loading" @change="onFileChange" />
       </label>
     </div>
 
@@ -288,15 +288,15 @@ onBeforeUnmount(() => {
 
       <div class="actions">
         <p>最新のポケモンが一番上に来るようにしてください。</p>
-        <button type="button" :disabled="loading" @click="reverseRows">順番を逆にする</button>
-        <button
+        <FormButton type="button" :disabled="loading" @click="reverseRows">順番を逆にする</FormButton>
+        <FormButton
           type="button"
           class="save-button"
           :disabled="loading || selectedRowList.length == 0"
           @click="saveSelectedPokemon"
         >
           選択したポケモン{{ selectedRowList.length }}匹を保存
-        </button>
+        </FormButton>
       </div>
     </template>
   </div>

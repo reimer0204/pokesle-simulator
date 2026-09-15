@@ -346,7 +346,7 @@ addEventListener('message', async (event) => {
 
       simulator.calcTeamHeal([pokemon])
 
-      simulator.calcHelp(pokemon)
+      simulator.calcHelp(pokemon, { boxPokemonList: pokemonList })
 
       // スコアを一旦計算する
       pokemon.tmpScore = pokemon.energyPerDay * (100 + config.simulation.fieldBonus) / 100;

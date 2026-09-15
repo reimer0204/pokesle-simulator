@@ -10,22 +10,22 @@
   border-collapse: collapse;
 
   th, td {
-    padding: 8px 8px;
+    padding: 6px 7px;
   }
 
   th {
-    background-color: rgb(66, 85, 158);
+    background-color: var(--color-primary-strong);
     color: #FFF;
-    border: 1px #FFF solid;
+    border: 1px solid #FFF;
   }
 
   tbody {
     tr > td {
-      border-bottom: 1px #CCC solid;
+      border-bottom: 1px solid var(--color-line);
     }
 
     tr:nth-child(odd) > td {
-      background-color: #F8F8F8;
+      background-color: var(--color-surface-subtle);
     }
   }
 
@@ -44,24 +44,24 @@
     & > thead  > tr > th {
       display: flex;
       gap: 5px;
-      background-color: rgb(66, 85, 158);
+      background-color: var(--color-primary-strong);
       // background-color: #b6c9f1;
       border: 1px #FFF solid;
       color: #FFF;
       justify-content: center;
       align-items: center;
       text-align: center;
-      border-bottom: 1px #CCC solid;
+      border-bottom: 1px solid var(--color-line);
     }
 
     & > tbody  > tr > td {
       display: flex;
       justify-content: left;
       align-items: center;
-      border-bottom: 1px #CCC solid;
+      border-bottom: 1px solid var(--color-line);
 
       &:has(~ :hover), &:hover, &:hover ~ td {
-        background-color: rgb(235, 245, 255);
+        background-color: var(--color-mint-soft);
       }
     }
   }

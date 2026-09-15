@@ -518,6 +518,7 @@ class PokemonSimulator {
     )
     * berryRate / 100
     * this.#berryEnergyWeight
+    pokemon.berryRate = berryRate;
 
     // きのみの個数
     pokemon.berryNum = ((pokemon.base.specialty == 'きのみ' || pokemon.base.specialty == 'オール') ? 2 : 1)
@@ -833,6 +834,7 @@ class PokemonSimulator {
     pokemon: SimulatedPokemon, 
     modeOption: {
       pokemonList?: SimulatedPokemon[],
+      boxPokemonList?: PokemonBoxType[],
       helpBoostCount?: number,
       scoreForHealerEvaluate?: number,
       scoreForSupportEvaluate?: number,
@@ -840,7 +842,11 @@ class PokemonSimulator {
       additionalSkillPerDay?: number,
     } = {}, timeCounter = null
   ) {
-    let { pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate, additionalSkillPerDay = 0, } = modeOption;
+    let {
+      pokemonList, helpBoostCount, scoreForHealerEvaluate, scoreForSupportEvaluate,
+      additionalSkillPerDay = 0,
+      boxPokemonList = [],
+    } = modeOption;
 
     pokemon.dayHelpNum   = this.#dayLength / pokemon.speed * pokemon.dayHelpRate;
     pokemon.nightHelpNum = this.#nightLength / pokemon.speed * pokemon.nightHelpRate;
@@ -1232,6 +1238,54 @@ class PokemonSimulator {
 
           } else if (this.mode == PokemonSimulator.MODE_TEAM) {
             // スキルコピーと同様の仕組みで計算
+          }
+
+        case 'サイコブレイク(きのみゾーン)':
+          if (this.mode == PokemonSimulator.MODE_SELECT) {
+            // このタイプのきのみが最も稼げるポケモン上位5匹を抽出、1日あたりのきのみの数を合計
+            // その時のLvのきのみ、好みボーナス、月曜に起用する場合火曜～日曜の21回評価される分を7日で割る
+            energyPerSkill = 
+              executor.base.berry.energy
+              * 2
+              * (1.025 ** (executor.lv - 1))
+              * Pokemon.list.filter(x => x.berry.name == executor.base.berry.name)
+                .map(x => 
+                  (x.specialty == 'きのみ' || x.specialty == 'オール' ? 3 : 2)
+                  * 86400 / (x.help * 0.65 * (1 - (executor.lv - 1) * 0.002)) / 0.45
+                )
+                .sort((a, b) => b - a)
+                .slice(0, 5)
+                .reduce((sum, num) => sum + num, 0)
+              * 21 / 7
+              * effect.zone / 100
+              + effect.energy;
+
+          } else {
+            // 今日の曜日から、翌日以降の効果量を計算
+
+            const dayRate = 
+              this.config.teamSimulation.day >= 0 ? (6 - this.config.teamSimulation.day) / 2
+              : 1.5;
+            
+            // ボックス内のポケモンのうち、同じきのみを好むポケモンの上位5匹を抽出、1日あたりのきのみの数を合計
+            const boxTop5 = boxPokemonList
+              .filter(x => Pokemon.map[x.name]?.berry.name == executor.base.berry.name)
+              .map(x => 
+                (Pokemon.map[x.name]?.specialty == 'きのみ' || Pokemon.map[x.name]?.specialty == 'オール' ? 3 : 2)
+                * 86400 / (Pokemon.map[x.name].help * 0.65 * (1 - (x.lv - 1) * 0.002)) / 0.45
+              )
+              .sort((a, b) => b - a)
+              .slice(0, 5)
+              .reduce((sum, num) => sum + num, 0)
+
+            energyPerSkill = 
+              executor.base.berry.energy
+              * executor.berryRate / 100
+              * (1.025 ** (executor.lv - 1))
+              * boxTop5
+              * dayRate
+              * effect.zone / 100
+              + effect.energy;
           }
 
         case 'げんきオールS':

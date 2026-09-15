@@ -4,7 +4,7 @@ import { Food, Cooking } from '../../data/food_and_cooking'
 import Field from '../../data/field.ts';
 import Skill from '../../data/skill';
 import NightCapPikachu from '../../data/nightcap_pikachu';
-import type { SimulatedPokemon } from '@/type';
+import type { PokemonBoxType, SimulatedPokemon } from '@/type';
 import HelpRate from '../help-rate';
 
 let borderScore = 0;
@@ -21,13 +21,14 @@ self.addEventListener('message', async (event) => {
     if (type == 'simulate') {
       let bestResult = [];
       borderScore = -1;
-      let { targetNum, pickup, topList, pattern, fixedPokemonList, targetPokemonList, config } = body as {
+      let { targetNum, pickup, topList, pattern, fixedPokemonList, targetPokemonList, boxPokemonList, config } = body as {
         targetNum: number,
         pickup: number,
         topList: number[],
         pattern: number,
         fixedPokemonList: SimulatedPokemon[],
         targetPokemonList: SimulatedPokemon[],
+        boxPokemonList: PokemonBoxType[],
       };
       const helpRate = new HelpRate(config);
 
@@ -346,6 +347,7 @@ self.addEventListener('message', async (event) => {
               // totalOtherDayHealEffect,
               {
                 pokemonList: pokemonList,
+                boxPokemonList: boxPokemonList,
                 helpBoostCount: typeSetMap[pokemon.base.type].size,
                 // 追加効果は再発動した対象のスキルとして出力へ反映する。
                 additionalSkillPerDay: additionalSkillPerDayMap.get(pokemon) ?? 0,

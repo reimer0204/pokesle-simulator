@@ -257,6 +257,7 @@ async function simulation() {
 
           fixedPokemonList,
           targetPokemonList,
+          boxPokemonList: JSON.parse(JSON.stringify(loadedPokemonBoxList.value)),
           config: customConfig,
         }
       },
@@ -320,25 +321,25 @@ async function showEditPopup(pokemon) {
             <th rowspan="5">対象ポケモン</th>
             <th>きのみスコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>食材スコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>総合スコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
             <th>サポート抜きスコア</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px"> 匹</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px" /> 匹</div>
             </td>
           </tr>
           <tr>
@@ -355,7 +356,7 @@ async function showEditPopup(pokemon) {
           <tr>
             <th colspan="2">結果表示</th>
             <td>
-              <div>上位 <input type="number" v-model="config.teamSimulation.resultNum" class="w-50px"> 件</div>
+              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.resultNum" class="w-50px" /> 件</div>
             </td>
           </tr>
         </SettingTable>
@@ -382,12 +383,12 @@ async function showEditPopup(pokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>日中手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222"> %以上(最大222%)</div></td></tr>
-          <tr><th>夜間手伝い効率</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222"> %以上(最大222%)</div></td></tr>
-          <tr><th>睡眠EXPボーナス</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp"> 匹以上</div></td></tr>
-          <tr><th>きのみとくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['きのみ']"> 匹以上</div></td></tr>
-          <tr><th>食材とくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['食材']"> 匹以上</div></td></tr>
-          <tr><th>スキルとくい</th><td><div><input type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['スキル']"> 匹以上</div></td></tr>
+          <tr><th>日中手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
+          <tr><th>夜間手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
+          <tr><th>睡眠EXPボーナス</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp" /> 匹以上</div></td></tr>
+          <tr><th>きのみとくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['きのみ']" /> 匹以上</div></td></tr>
+          <tr><th>食材とくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['食材']" /> 匹以上</div></td></tr>
+          <tr><th>スキルとくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['スキル']" /> 匹以上</div></td></tr>
           <tr v-for="berry in Berry.typeList">
             <th :style="{ color: berry.typeColor }">{{ berry.type }}</th>
             <td>
@@ -418,13 +419,13 @@ async function showEditPopup(pokemon) {
       <SettingList class="align-self-stretch">
         <div>
           <label>現在のエナジー</label>
-          <div><input type="number" v-model="beforeEnergy"></div>
+          <div><InputNumber type="number" v-model="beforeEnergy" /></div>
         </div>
 
         <div>
           <label>曜日</label>
           <div>
-            <select :value="targetDay" @input="targetDay = Number($event.target.value)">
+            <InputSelect v-model.number="targetDay">
               <option value="-1">1週間</option>
               <option value="0">月曜</option>
               <option value="1">火曜</option>
@@ -433,7 +434,7 @@ async function showEditPopup(pokemon) {
               <option value="4">金曜</option>
               <option value="5">土曜</option>
               <option value="6">日曜</option>
-            </select>
+            </InputSelect>
           </div>
         </div>
 
@@ -441,8 +442,8 @@ async function showEditPopup(pokemon) {
           <label>時間</label>
           <div>
             <div>
-              <input v-if="targetDay != -1" type="number" v-model="targetHour" class="w-40px">
-              <input v-if="targetDay == -1" type="number" value="168" class="w-40px" disabled>
+              <InputNumber v-if="targetDay != -1" type="number" v-model="targetHour" class="w-40px" />
+              <InputNumber v-if="targetDay == -1" type="number" :model-value="168" class="w-40px" disabled />
                 時間
             </div>
           </div>
@@ -452,8 +453,8 @@ async function showEditPopup(pokemon) {
           <label>料理</label>
           <div>
             <div>
-              <input v-if="targetDay != -1" type="number" v-model="config.teamSimulation.cookingNum" class="w-50px">
-              <input v-if="targetDay == -1" type="number" value="21" class="w-50px" disabled>
+              <InputNumber v-if="targetDay != -1" type="number" v-model="config.teamSimulation.cookingNum" class="w-50px" />
+              <InputNumber v-if="targetDay == -1" type="number" :model-value="21" class="w-50px" disabled />
                 食分
             </div>
             <div class="w-150px">
@@ -468,7 +469,7 @@ async function showEditPopup(pokemon) {
           <label>料理チャンス</label>
           <div>
             <div>
-              <input type="number" v-model="initialCookingChange" class="w-50px">
+              <InputNumber type="number" v-model="initialCookingChange" class="w-50px" />
               %
             </div>
           </div>
@@ -478,7 +479,7 @@ async function showEditPopup(pokemon) {
           <label>料理パワーアップ</label>
           <div>
             <div>
-              <input type="number" v-model="initialCookingPowerUp" class="w-50px">
+              <InputNumber type="number" v-model="initialCookingPowerUp" class="w-50px" />
             </div>
           </div>
         </div>
@@ -492,12 +493,12 @@ async function showEditPopup(pokemon) {
                 <div class="flex-column-start-start gap-5px">
                   <InputRadio v-model="config.simulation.remainFoodMode" :value="1">以下割合で換算</InputRadio>
                   <div class="ml-16px">
-                    <input
+                    <InputNumber
+                      v-model="config.simulation.remainFoodRate"
                       type="number"
-                      :value="config.simulation.remainFoodRate * 100"
-                      @input="config.simulation.remainFoodRate = Number($event.target.value) / 100"
+                      percent
                       class="w-50px"
-                    >
+                     />
                     %
                   </div>
                 </div>
@@ -529,30 +530,30 @@ async function showEditPopup(pokemon) {
                 <label class="w-80px">{{ food.name }}</label>
                 <label>：</label>
                 <div>
-                  <input
+                  <InputNumber
                     v-if="!config.foodUnlimited"
                     type="number"
                     class="w-40px"
-                    :value="config.foodDefaultNum[food.name]"
-                    @input="config.foodDefaultNum[food.name] = $event.target.value ? Number($event.target.value) : 0"
-                  >
-                  <input
+                    :model-value="config.foodDefaultNum[food.name]"
+                    @update:model-value="config.foodDefaultNum[food.name] = $event ?? 0"
+                   />
+                  <InputNumber
                     v-else 
                     type="number"
                     class="w-40px"
-                    value="9999"
+                    :model-value="9999"
                     disabled
-                  >
+                   />
                 </div>
               </div>
               <div>
                 <InputCheckbox v-model="config.foodUnlimited">食材無制限</InputCheckbox>
               </div>
               <div class="flex-row-end-center">
-                <input ref="foodBagImageInput" class="food-bag-image-input" type="file" accept="image/*" @change="readFoodBagImage">
-                <button type="button" :disabled="foodBagReading" @click="selectFoodBagImage">
+                <InputFile ref="foodBagImageInput" class="food-bag-image-input" type="file" accept="image/*" @change="readFoodBagImage" />
+                <FormButton type="button" :disabled="foodBagReading" @click="selectFoodBagImage">
                   {{ foodBagReading ? '食材バッグを読取中…' : '食材バッグのスクショから読取' }}
-                </button>
+                </FormButton>
               </div>
               <small v-if="foodBagReadStatus" style="grid-column: span 3;" class="text-align-right">{{ foodBagReadStatus }}</small>
             </div>
@@ -560,7 +561,7 @@ async function showEditPopup(pokemon) {
         </div>
       </SettingList>
 
-      <button @click="simulation">シミュレーション実行</button>
+      <FormButton @click="simulation">シミュレーション実行</FormButton>
 
       <AsyncWatcherArea class="flex-column-start-stretch w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
         <div class="scroll-area flex-column-start-stretch w-100 gap-20px">
@@ -574,7 +575,7 @@ async function showEditPopup(pokemon) {
               </template>
 
               <div class="result-table-scroll">
-              <table>
+              <DesignTable>
                 <colgroup>
                   <col class="result-header-column">
                   <col class="result-header-column">
@@ -810,7 +811,7 @@ async function showEditPopup(pokemon) {
                     </tr>
                   </template>
                 </tbody>
-              </table>
+              </DesignTable>
               </div>
             </ToggleArea>
           </template>
@@ -942,7 +943,7 @@ async function showEditPopup(pokemon) {
       th {
         font-weight: bold;
       }
-      th, td {
+      td {
         border-color: #000;
         border-style: solid;
         border-width: 0 1px 1px 0;
@@ -964,9 +965,6 @@ async function showEditPopup(pokemon) {
       th {
         font-weight: bold;
         white-space: nowrap;
-        background: rgb(66, 85, 158);
-        color: #FFF;
-        border-color: #FFF;
       }
 
       img {

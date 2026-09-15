@@ -460,14 +460,12 @@ function toggleFavorite() {
 function moveFocus(event) {
 
   const inputElementList = [
-    nameInput.value,
-    lvInput.value,
-    // bagInput.value,
-    foodInput.value,
-    ...subSkillInputList.value,
-    natureInput.value,
+    nameInput.value.$el,
+    lvInput.value.$el,
+    foodInput.value.$el,
+    ...subSkillInputList.value.map(x => x.$el),
+    natureInput.value.$el,
   ]
-  // console.log(inputElementList)
   const index = inputElementList.indexOf(event.target)
   if (event.key === 'Enter' || event.key === 'ArrowDown') {
     if (index + 1 >= inputElementList.length) {
@@ -525,20 +523,20 @@ const candyInfo = computed(() => {
       <header>選択</header>
 
       <div>名前</div>
-      <input
+      <InputText
         type="text" ref="nameInput" v-model="assist.name" @keydown="moveFocus"
         placeholder="ローマ字/ひらがな/カタカナ"
       />
-      <select v-model="pokemon.name" class="w-200px">
+      <InputSelect v-model="pokemon.name" class="w-200px">
         <option v-for="pokemon in Pokemon.list" :value="pokemon.name">{{ pokemon.name }}</option>
-      </select>
+      </InputSelect>
 
       <div>Lv</div>
-      <input type="number" ref="lvInput" v-model="pokemon.lv" @keydown="moveFocus" />
-      <input type="number" v-model="pokemon.lv"/>
+      <InputNumber type="number" ref="lvInput" v-model="pokemon.lv" @keydown="moveFocus" />
+      <InputNumber type="number" v-model="pokemon.lv"/>
 
       <div>食材</div>
-      <input
+      <InputText
         type="text" ref="foodInput" v-model="assist.foodABC" @keydown="moveFocus"
         placeholder="AAB"
       />
@@ -553,19 +551,19 @@ const candyInfo = computed(() => {
           </div>
         </div>
         <div class="flex-row-start-center gap-5px">
-          <select v-for="i in 3" :value="pokemon.foodList[i - 1] ?? ''" @input="pokemon.foodList[i - 1] = $event.target.value || null" class="w-140px">
+          <InputSelect v-for="i in 3" :model-value="pokemon.foodList[i - 1] ?? ''" @update:model-value="pokemon.foodList[i - 1] = $event || null" class="w-140px">
             <option value="" v-if="kaihouPokemon">未開放</option>
             <option v-for="food in foodSelectList[i - 1]" :value="food">
               <img :src="Food.map[food].img">
               {{ food }}
             </option>
-          </select>
+          </InputSelect>
         </div>
       </div>
 
       <template v-for="(lv, i) in [10, 25, 50, 70, 80]">
         <div>サブスキル({{ lv }})</div>
-        <input
+        <InputText
           type="text" ref="subSkillInputList" v-model="assist.subSkillList[i]"
           @input="convertSubSkill(i)"
           @keydown="moveFocus"
@@ -574,36 +572,36 @@ const candyInfo = computed(() => {
 
         <div class="flex-row-start-center">
           <div class="w-40px text-align-right">{{ lv }}：</div>
-          <select :value="pokemon.subSkillList[i] || ''" @input="pokemon.subSkillList[i] = $event.target.value || null">
+          <InputSelect :model-value="pokemon.subSkillList[i] || ''" @update:model-value="pokemon.subSkillList[i] = $event || null">
             <option value="" v-if="kaihouPokemon">未開放</option>
             <option v-for="subSkill in subSkillNameSort" :value="subSkill.name">{{ subSkill.name }}</option>
-          </select>
+          </InputSelect>
         </div>
       </template>
 
       <div>せいかく</div>
-      <input
+      <InputText
         type="text" ref="natureInput" v-model="assist.nature" @keydown="moveFocus"
           @input="convertNature"
         placeholder="ローマ字/ひらがな/カタカナ"
       />
-      <select v-model="pokemon.nature">
+      <InputSelect v-model="pokemon.nature">
         <option v-for="nature in Nature.list" :value="nature.name">{{ nature.name }}</option>
-      </select>
+      </InputSelect>
 
       <div>スキルLv</div>
       <div></div>
-      <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
-      <input type="number" v-model="pokemon.skillLv" :placeholder="basePokemon ? basePokemon.evolveLv : '省略可'"/>
+      <!-- <InputNumber type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
+      <InputNumber type="number" v-model="pokemon.skillLv" :placeholder="basePokemon ? basePokemon.evolveLv : '省略可'"/>
 
       <div>睡眠時間</div>
       <div></div>
-      <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
-      <input type="number" v-model="pokemon.sleepTime" placeholder="省略可"/>
+      <!-- <InputNumber type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
+      <InputNumber type="number" v-model="pokemon.sleepTime" placeholder="省略可"/>
 
       <div>色違い</div>
       <div>Alt+Cで切り替え</div>
-      <!-- <input type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
+      <!-- <InputNumber type="number" ref="skillLvInput" v-model="pokemon.skillLv" @keypress.enter="foodInput.focus()"/> -->
       <label><InputCheckbox v-model="pokemon.shiny">色違い</InputCheckbox></label>
       
       <div>お気に入り</div>
@@ -612,20 +610,20 @@ const candyInfo = computed(() => {
 
       <div>メモ</div>
       <div></div>
-      <label><input class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
+      <label><InputText class="w-100" type="text" v-model="pokemon.memo" placeholder="メモ"/></label>
       
       <div>チームシミュ</div>
       <div></div>
-      <select v-model="pokemon.fix">
+      <InputSelect v-model="pokemon.fix">
         <option :value="null">候補対象</option>
         <option :value="1">固定</option>
         <option :value="-1">除外</option>
-      </select>
+      </InputSelect>
       
       <div>ボックス内No</div>
       <div></div>
       <label>
-        <input class="w-100" type="number" v-model.number="insertTo" placeholder="ボックス内No"/>
+        <InputNumber class="w-100" type="number" v-model.number="insertTo" placeholder="ボックス内No"/>
       </label>
     </div>
 
@@ -722,22 +720,22 @@ const candyInfo = computed(() => {
           <div>
             <label>次のレベルまでのEXP</label>
             <div>
-              <input class="w-80px" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
+              <InputNumber class="w-80px" type="number" v-model.number="pokemon.nextExp" placeholder="次のレベルまであと"/>
             </div>
           </div>
 
           <div>
             <label>目標レベル</label>
             <div>
-              <input class="w-80px" type="number" v-model.number="pokemon.training" placeholder="目標レベル"/> Lv
+              <InputNumber class="w-80px" type="number" v-model.number="pokemon.training" placeholder="目標レベル"/> Lv
             </div>
           </div>
 
           <div>
             <label>所持アメ</label>
             <div>
-              <input v-if="basePokemon" class="w-80px" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
-              <input v-else class="w-80px" type="number" disabled placeholder="アメ数"/>
+              <InputNumber v-if="basePokemon" class="w-80px" type="number" v-model.number="config.candy.bag[basePokemon.candyName]" placeholder="アメ数"/>
+              <InputNumber v-else class="w-80px" type="number" disabled placeholder="アメ数"/>
               個
             </div>
           </div>
@@ -753,11 +751,11 @@ const candyInfo = computed(() => {
     </ToggleArea>
 
     <div class="flex-row-start-center gap-10px mt-10px">
-      <button v-if="props.index != null" class="important" @click="deletePokemon">削除</button>
+      <FormButton v-if="props.index != null" class="important" @click="deletePokemon">削除</FormButton>
       <div class="flex-110"></div>
       <div class="x" @click="shareX"><img src="../img/x.svg"></div>
-      <button @click="save(true)" :disabled="saveDisabled" v-if="props.index == null">保存して続けて登録</button>
-      <button @click="save(false)" :disabled="saveDisabled">保存</button>
+      <FormButton @click="save(true)" :disabled="saveDisabled" v-if="props.index == null">保存して続けて登録</FormButton>
+      <FormButton @click="save(false)" :disabled="saveDisabled">保存</FormButton>
     </div>
   </PopupBase>
 </template>

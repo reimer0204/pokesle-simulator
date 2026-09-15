@@ -2,6 +2,7 @@
 import BaseAlert from '../components/alert/base-alert.vue';
 import DangerAlert from '../components/alert/danger-alert.vue';
 import DesignTable from '../components/design-table.vue';
+import ResultSummaryCard from '../components/result-summary-card.vue';
 import SettingButton from '../components/design/setting-button.vue';
 import SettingTable from '../components/design/setting-table.vue';
 import ToggleArea from '../components/design/toggle-area.vue';
@@ -24,11 +25,24 @@ const selectedMode = ref('normal');
 const number = ref(25);
 const nativeSelect = ref('standard');
 const demoWatcher = reactive({ executing: true, name: '処理中の表示例', progress: 0.65 });
+const colorPalette = [
+  ['Primary', '#66769A', '主要操作・見出し'],
+  ['Mint', '#59A98F', '選択・補助アクセント'],
+  ['Accent', '#DF8650', '注意・補助アクセント'],
+  ['Danger', '#BF6575', '重要操作・エラー・破壊的操作'],
+  ['Surface', '#F6F7F9', '背景・淡い面'],
+  ['Line', '#DCE0E8', '罫線・区切り'],
+];
 
 const componentCatalog = [
   ['フォーム', 'form/input-checkbox.vue', 'InputCheckbox', 'カスタムチェックボックス（通常・無効・読み取り専用）'],
   ['フォーム', 'form/input-radio.vue', 'InputRadio', 'カスタムラジオボタン'],
   ['フォーム', 'form/input-number.vue', 'InputNumber', '数値・割合入力'],
+  ['フォーム', 'form/input-text.vue', 'InputText', 'テキスト入力'],
+  ['フォーム', 'form/input-password.vue', 'InputPassword', 'パスワード入力'],
+  ['フォーム', 'form/input-file.vue', 'InputFile', 'ファイル入力'],
+  ['フォーム', 'form/input-select.vue', 'InputSelect', '選択リスト'],
+  ['フォーム', 'form/form-button.vue', 'FormButton', '標準・重要・無効状態のボタン'],
   ['通知', 'alert/base-alert.vue', 'BaseAlert', '情報通知'],
   ['通知', 'alert/danger-alert.vue', 'DangerAlert', '注意・再計算通知'],
   ['設定', 'design/setting-button.vue', 'SettingButton', 'ポップアップを開く設定ボタン'],
@@ -39,6 +53,7 @@ const componentCatalog = [
   ['一覧', 'sortable-table.vue', 'SortableTable', 'ソート・固定列・ページ送り対応テーブル'],
   ['一覧', 'tab-list.vue', 'TabList', 'ページ内タブ'],
   ['一覧', 'util/setting-list.vue', 'SettingList', '設定項目の並び'],
+  ['結果表示', 'result-summary-card.vue', 'ResultSummaryCard', '種類ごとの結果と補助値をまとめるサマリーカード'],
   ['ポップアップ', 'util/popup-base.vue', 'PopupBase', '共通ヘッダー・閉じる操作を持つポップアップ'],
   ['ポップアップ', 'table-popup.vue', 'TablePopup', '表を表示するポップアップ'],
   ['ポップアップ', 'pokemon-edit-popup.vue', 'PokemonEditPopup', 'ポケモン編集フロー'],
@@ -89,32 +104,43 @@ const tableColumns = [
       <a class="link" href="https://github.com/reimer0204/pokesle-simulator/tree/master/src/components" target="_blank">components を見る</a>
     </div>
 
+    <section class="color-section">
+      <h2>カラーパレット</h2>
+      <p class="source">実装元: <code>src/style.scss</code> のCSS変数。コンポーネントはこの共通色を使用します。</p>
+      <div class="color-palette">
+        <div v-for="[name, color, usage] in colorPalette" :key="name" class="color-token">
+          <i :style="{ backgroundColor: color }"></i>
+          <div><b>{{ name }}</b><small>{{ usage }}</small></div>
+        </div>
+      </div>
+    </section>
+
     <section>
-      <h2>ネイティブコントロール</h2>
-      <p class="source">実装元: <code>src/style.scss</code></p>
+      <h2>基本フォームコントロール</h2>
+      <p class="source">実装元: <code>components/form/</code>。ネイティブ要素を共通コンポーネントで包み、各画面の見た目と挙動を統一します。</p>
       <div class="showcase-row">
-        <button>標準ボタン</button>
-        <button class="important">重要操作</button>
-        <button disabled>無効</button>
+        <FormButton>標準ボタン</FormButton>
+        <FormButton class="important">重要操作</FormButton>
+        <FormButton disabled>無効</FormButton>
         <a class="link" href="#">テキストリンク</a>
         <span class="caution">!</span>
       </div>
       <div class="showcase-row">
-        <input type="text" value="テキスト入力" aria-label="テキスト入力例" />
-        <input type="number" value="10" aria-label="数値入力例" />
-        <select v-model="nativeSelect" aria-label="選択例"><option value="standard">選択肢</option><option value="other">別の選択肢</option></select>
-        <label class="file-input">画像ファイル <input type="file" accept="image/*" /></label>
+        <InputText model-value="テキスト入力" aria-label="テキスト入力例" />
+        <InputNumber :model-value="10" aria-label="数値入力例" />
+        <InputSelect v-model="nativeSelect" aria-label="選択例"><option value="standard">選択肢</option><option value="other">別の選択肢</option></InputSelect>
+        <label class="file-input">画像ファイル <InputFile accept="image/*" /></label>
       </div>
-      <p class="native-note">数値・テキスト・選択・ファイル入力と標準ボタンは、画面・設定部品に直接配置されている既存パターンです。チェック状態の入力はすべて <code>InputCheckbox</code> を使用します。</p>
+      <p class="native-note">数値・テキスト・ファイル入力とボタンは共通フォームコンポーネントを使用します。チェック状態の入力はすべて <code>InputCheckbox</code> を使用します。</p>
       <div class="catalog-scroll">
         <DesignTable class="native-catalog">
           <thead><tr><th>要素</th><th>見た目・用途</th><th>主な使用箇所</th></tr></thead>
           <tbody>
-            <tr><td><code>input[type=number]</code></td><td>枠線と角丸を持つ数値入力。単位・最小値・最大値・無効状態と組み合わせて使用。</td><td><code>components/common-setting.vue</code>、各設定・シミュレーション画面</td></tr>
-            <tr><td><code>input[type=text]</code></td><td>枠線と角丸を持つテキスト入力。検索語、名前、メモ、連携名に使用。</td><td><code>pages/index.vue</code>、<code>components/pokemon-edit-popup.vue</code>、<code>components/google-spreadsheet-popup.vue</code></td></tr>
-            <tr><td><code>select</code></td><td>ブラウザ標準の選択リスト。フィールド・料理種別などを選択。</td><td><code>components/common-setting.vue</code>、<code>components/filter/pokemon-filter-editor.vue</code></td></tr>
-            <tr><td><code>input[type=file]</code></td><td>ブラウザ標準のファイル選択。画像インポートに使用。</td><td><code>pages/simulation.vue</code>、<code>pages/screenshot-import.vue</code></td></tr>
-            <tr><td><code>button</code></td><td>青の標準ボタン、橙の重要ボタン、無効状態。</td><td><code>src/style.scss</code>、全ページ・ポップアップ</td></tr>
+            <tr><td><code>InputNumber</code></td><td>枠線と角丸を持つ数値入力。単位・最小値・最大値・無効状態と組み合わせて使用。</td><td><code>components/common-setting.vue</code>、各設定・シミュレーション画面</td></tr>
+            <tr><td><code>InputText</code></td><td>枠線と角丸を持つテキスト入力。検索語、名前、メモ、連携名に使用。</td><td><code>pages/index.vue</code>、<code>components/pokemon-edit-popup.vue</code>、<code>components/google-spreadsheet-popup.vue</code></td></tr>
+            <tr><td><code>InputSelect</code></td><td>ブラウザ標準の選択リスト。フィールド・料理種別などを選択。</td><td><code>components/common-setting.vue</code>、<code>components/filter/pokemon-filter-editor.vue</code></td></tr>
+            <tr><td><code>InputFile</code></td><td>ブラウザ標準のファイル選択。画像インポートに使用。</td><td><code>pages/simulation.vue</code>、<code>pages/screenshot-import.vue</code></td></tr>
+            <tr><td><code>FormButton</code></td><td>ブルーグレーの標準ボタン、Danger色の重要ボタン、無効状態。</td><td><code>src/style.scss</code>、全ページ・ポップアップ</td></tr>
           </tbody>
         </DesignTable>
       </div>
@@ -134,7 +160,7 @@ const tableColumns = [
         </div>
         <div class="component-sample">
           <code>form/input-number.vue · InputNumber</code>
-          <div class="showcase-row"><label class="inline-field">数値 <InputNumber v-model="number" class="w-60px" /></label><label class="inline-field">割合 <InputNumber :modelValue="0.125" percent class="w-60px" /></label></div>
+          <div class="showcase-row"><label class="inline-field">数値 <InputNumber v-model="number" class="w-60px" /></label><label class="inline-field">割合 <InputNumber :model-value="0.125" percent class="w-60px" /></label></div>
         </div>
       </div>
     </section>
@@ -206,6 +232,18 @@ const tableColumns = [
     </section>
 
     <section>
+      <h2>結果サマリー</h2>
+      <p class="source">実装元: <code>components/result-summary-card.vue</code>。種類ごとの結果や補助値を、見出しと行一覧でまとめて表示します。</p>
+      <div class="result-summary-examples">
+        <ResultSummaryCard title="カレー" summary="合計 420,426">
+          <div class="result-summary-row"><b>いあいぎりすき焼きカレー</b><span>2食</span></div>
+          <div class="result-summary-row"><b>めざめるパワーシチュー</b><span>1食</span></div>
+        </ResultSummaryCard>
+        <ResultSummaryCard title="準備食材量" summary="3種類の相乗平均：378,080" />
+      </div>
+    </section>
+
+    <section>
       <h2>状態表示・アイコン</h2>
       <p class="source">実装元: <code>components/status/</code>、<code>components/icon/</code></p>
       <div class="showcase-row status-samples">
@@ -222,7 +260,7 @@ const tableColumns = [
 
     <section>
       <h2>コンポーネント台帳</h2>
-      <p class="source">対象: <code>src/components/</code> 配下の全39コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。</p>
+      <p class="source">対象: <code>src/components/</code> 配下の全40コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。</p>
       <div class="catalog-scroll">
         <DesignTable class="catalog-table">
           <thead><tr><th>分類</th><th>コンポーネント</th><th>実装元</th><th>役割</th></tr></thead>
@@ -260,6 +298,11 @@ section {
 }
 
 .source { color: #777; font-size: 11px; margin-bottom: 10px; }
+.color-section { border-top: 0; padding-top: 0; }
+.color-palette { display: flex; flex-wrap: wrap; gap: 6px; }
+.color-token { display: flex; align-items: center; gap: 6px; min-width: 140px; padding: 5px 7px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-surface); }
+.color-token i { width: 20px; height: 20px; border: 1px solid rgb(39 49 79 / 15%); border-radius: 50%; box-shadow: 0 1px 2px rgb(39 49 79 / 15%); }
+.color-token div { display: flex; flex-direction: column; line-height: 1.2; }.color-token small { color: var(--color-muted); font-size: 10px; }
 code { background: #F3F3F3; border-radius: 3px; padding: 1px 3px; }
 .showcase-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 15px; margin: 8px 0; }
 .native-note { color: #666; margin: 10px 0; }.file-input { display: inline-flex; align-items: center; gap: 5px; }
@@ -273,6 +316,9 @@ code { background: #F3F3F3; border-radius: 3px; padding: 1px 3px; }
 .table-grid { display: grid; grid-template-columns: max-content minmax(300px, 550px); gap: 20px; align-items: start; }
 .overlay-samples { display: flex; flex-wrap: wrap; align-items: start; gap: 15px; }
 .popup-sample { width: 320px; }.progress-sample { width: 320px; height: 110px; border: 1px #DDD solid; padding: 12px; }
+.result-summary-examples { display: grid; grid-template-columns: repeat(2, minmax(260px, 360px)); gap: 10px; }
+.result-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 9px; border-top: 1px solid var(--color-line); }
+.result-summary-row span { white-space: nowrap; }
 .catalog-scroll { max-width: 100%; overflow: auto; }.catalog-table { min-width: 720px; }.catalog-table td { vertical-align: top; }
 .sortable-example { height: 160px; display: flex; flex-direction: column; }
 .sortable-example :deep(.sortable-table) { flex: 1 1 0; min-height: 0; }
@@ -285,7 +331,7 @@ code { background: #F3F3F3; border-radius: 3px; padding: 1px 3px; }
 
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
   .page-header { align-items: start; }.page-header > .link { white-space: nowrap; }
-  .alerts, .table-grid { grid-template-columns: minmax(0, 1fr); }
+  .alerts, .table-grid, .result-summary-examples { grid-template-columns: minmax(0, 1fr); }
   .sortable-example { max-width: 100%; }
 }
 </style>

@@ -30,14 +30,20 @@ const $emit = defineEmits(['close'])
 
 .popup-base {
   max-width: 90%;
-  background-color: #FFF;
-  border-radius: 10px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgb(40 49 91 / 22%);
 
   .header {
     padding: 8px 10px;
     font-size: 24px;
     font-weight: bold;
-    border-bottom: 1px #CCC solid;
+    border-bottom: 1px solid var(--color-line);
+    background: linear-gradient(90deg, var(--color-primary-soft), #FFF);
+    color: var(--color-primary-strong);
+    border-radius: 11px 11px 0 0;
   }
 
   .body-wrapper {
@@ -65,6 +71,7 @@ const $emit = defineEmits(['close'])
       padding: 6px 8px;
       font-size: 16px;
       background-color: #FFF;
+      border-radius: 4px 4px 0 0;
     }
 
     .body-wrapper {

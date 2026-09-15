@@ -49,20 +49,20 @@ const columnList = computed(() => {
           <div>
             <label>シミュレーション設定</label>
             <div>
-              <div class="flex-row-start-center gap-20px">
+              <div class="cooking-simulation-setting-inputs flex-row-start-center gap-20px">
                 <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType1">
                   実際のLv
                 </InputCheckbox>
                 <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType2">
-                  全て<input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" @click.stop />Lv
+                  全て<InputNumber type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeFixLv" @click.stop />Lv
                 </InputCheckbox>
                 <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType3">
-                  <input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" @click.stop />
+                  <InputNumber type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv" @click.stop />
                   回料理した際のLv
                 </InputCheckbox>
                 <InputCheckbox v-model.number="config.simulation.cookingRecipeLvType4">
                   基礎エナジーの
-                  <input type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv2" @click.stop />
+                  <InputNumber type="number" class="w-50px" v-model.number="config.simulation.cookingRecipeRepeatLv2" @click.stop />
                   %回料理した際のLv
                 </InputCheckbox>
               </div>
@@ -93,11 +93,11 @@ const columnList = computed(() => {
             </template>
             <template #lv1="{ data }">
               <template v-if="data.rate > 1">
-                <input
+                <InputNumber
                   class="w-50px"
                   @click.stop
                   v-model="config.simulation.cookingSettings[data.name].lv" type="number" min="1" :max="Cooking.maxRecipeLv"
-                >
+                 />
                 <template>{{ data.lv }}</template>
               </template>
               <template v-else>-</template>
@@ -140,6 +140,20 @@ const columnList = computed(() => {
       flex: 1 1 0;
       overflow: auto;
       position: relative;
+    }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .cooking-simulation-setting-inputs {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+
+    :deep(.input-checkbox) {
+      min-width: 0;
+      flex-wrap: nowrap;
+      white-space: nowrap;
     }
   }
 }

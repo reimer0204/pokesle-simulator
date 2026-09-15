@@ -32,12 +32,17 @@
 
 ## 4. UIとスタイル
 
-- 新しいUIを独自実装する前に、`SortableTable`、`SettingList`、`TabList`、`InputNumber`、`InputRadio`、`InputCheckbox`、`ToggleArea` など既存部品を再利用します。
+- UIを追加・変更する前に `src/pages/design-system.vue` を確認し、目的に合うデザインシステム部品を優先して使用します。該当部品がない場合のみ、既存画面に調和するUIを実装します。
+- 新しいUIを独自実装する前に、`DesignTable`、`SortableTable`、`SettingList`、`TabList`、`InputText`、`InputNumber`、`InputPassword`、`InputFile`、`InputSelect`、`InputRadio`、`InputCheckbox`、`FormButton`、`ToggleArea` など既存部品を再利用します。
+- 画面と共通表示コンポーネントでは、ネイティブな `input`、`select`、`button` を直接配置せず、`components/form/` の対応コンポーネントを使います。ネイティブ要素はフォームコンポーネントの実装内部に限定します。
+- `InputText`、`InputNumber`、`InputSelect` の編集値は原則として `v-model` で渡します。空欄時の `null` や `0` への変換など個別の正規化が必要な場合は、`model-value` と `@update:model-value` を対にして扱います。
 - 一覧は `SortableTable` の `columnList` と名前付きスロットを使い、ソート・固定列・数値表示の挙動を統一します。
 - ポップアップは原則として `Popup.show(Component, props)` を使い、結果が必要なら返されるPromiseを `await` します。
 - UI文言とドメインコメントは、既存画面に合わせて日本語を基本とします。
 - コンポーネント固有のスタイルは `<style lang="scss" scoped>` に置きます。
 - レイアウトや余白は `src/bootstrap.scss` のflex、幅、高さ、margin、padding、gap等のユーティリティを優先し、再利用できない見た目だけをscoped SCSSへ追加します。
+- 色は `src/style.scss` のCSS変数を優先し、広い面積には低彩度のブルーグレーとニュートラルな背景色を使います。主要操作はブルーグレー、補助的な選択状態はミント、重要操作・エラーはDanger、注意はオレンジを使い、鮮やかな色は状態を伝える範囲に留めます。表はセル余白をむやみに増やさず、背景色・罫線・ホバーで状態を伝えます。
+- レスポンシブ対応で表や一覧の構造を切り替える場合も、`DesignTable`、`SortableTable` 等の共通部品と同じトークン・余白・角丸を使い、画面幅によって見た目のデザインシステムを分断しません。
 - 画面全体は高さ制約と `min-height: 0`、flex、必要箇所のoverflowを意識し、既存のデスクトップ表示を崩さないようにします。
 - 画面は幅390px程度のスマートフォンでも操作できるようにします。ページ全体を横にはみ出させず、列数の多い表や入力グリッドなど横幅が必要な要素だけを内部スクロールさせます。
 - 幅600px以下の縦画面、または高さ500px以下・幅900px以下の横画面では、共通ヘッダーとタブを1行の横スクロール、固定列グリッドを縦積み、左右分割を上下分割へ切り替える既存のモバイル方針を維持します。

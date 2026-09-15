@@ -24,7 +24,7 @@ async function showPopup() {
 
 <template>
 
-  <button
+  <FormButton
     class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : showPopup()"
     :class="{
       important: props.important,
@@ -56,7 +56,7 @@ async function showPopup() {
         </slot>
       </div>
     </Teleport>
-  </button>
+  </FormButton>
 
 </template>
 
@@ -65,7 +65,7 @@ async function showPopup() {
   display: inline-flex;
   align-items: center;
 
-  background-color: #495057;
+  background-color: var(--color-primary-strong);
   color: #FFF;
 
   cursor: pointer;
@@ -77,20 +77,26 @@ async function showPopup() {
   }
 
   &.important {
-    background-color: #E40;
+    background-color: var(--color-accent);
   }
 }
 
 .popup {
   pointer-events: auto;
-  background-color: #FFF;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
   border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgb(40 49 91 / 20%);
   
   .header {
     padding: 10px 15px;
     font-size: 20px;
     font-weight: bold;
-    border-bottom: 1px #CCC solid;
+    border-bottom: 1px solid var(--color-line);
+    background: linear-gradient(90deg, var(--color-primary-soft), #FFF);
+    color: var(--color-primary-strong);
+    border-radius: 9px 9px 0 0;
   }
   
   .body-wrapper {

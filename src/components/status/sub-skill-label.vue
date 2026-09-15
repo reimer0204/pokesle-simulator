@@ -38,7 +38,7 @@ const subSkill = computed(() => props.subSkill);
 
   font-size: 80%;
   font-weight: bold;
-  border-radius: 3px;
+  border-radius: 5px;
 
   &.short {
     width: 5em;
@@ -50,9 +50,9 @@ const subSkill = computed(() => props.subSkill);
     font-weight: normal;
   }
 
-  &.sub-skill-1 { background-color: #F8F8F8; border: 1px #AAA solid; color: #333; }
-  &.sub-skill-2 { background-color: #E0F0FF; border: 1px #9BD solid; color: #333; }
-  &.sub-skill-3 { background-color: #FFF4D0; border: 1px #B97 solid; color: #422; }
+  &.sub-skill-1 { background-color: #f6f7fc; border: 1px solid #bfc8de; color: #3b4663; }
+  &.sub-skill-2 { background-color: #eaf5ff; border: 1px solid #9dc9ef; color: #2c5277; }
+  &.sub-skill-3 { background-color: #fff4d9; border: 1px solid #e5bd70; color: #76511f; }
 
   &.fix {
     color: #F00;

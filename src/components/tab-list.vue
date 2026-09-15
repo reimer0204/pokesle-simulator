@@ -8,20 +8,22 @@
 .tab-list {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 3px #CCC solid;
+  border-bottom: 2px solid var(--color-line);
   gap: 5px 0;
 
   & > ::v-deep(*) {
     padding: 5px 15px;
     text-decoration: none;
     color: inherit;
-    border-bottom: 3px #CCC solid;
-    margin-bottom: -3px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: 6px 6px 0 0;
 
     &.router-link-exact-active, &.active {
       font-weight: bold;
-      border-bottom: 3px #08C solid;
-      color: #08C;
+      border-bottom-color: var(--color-primary);
+      background: var(--color-primary-soft);
+      color: var(--color-primary-strong);
     }
   }
 }

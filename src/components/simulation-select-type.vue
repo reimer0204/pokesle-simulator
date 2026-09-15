@@ -16,16 +16,16 @@ import config from '../models/config.ts';
       <tr>
         <th>厳選設定</th>
         <td>
-          <select :value="config.simulation.selectType" @input="config.simulation.selectType = Number($event.target.value)">
+          <InputSelect v-model.number="config.simulation.selectType">
             <option value="0">パーセンタイル</option>
             <option value="1">目標スコア比</option>
-          </select>
+          </InputSelect>
         </td>
       </tr>
       <tr v-if="config.simulation.selectType == 1">
         <th>目標スコア</th>
         <td>
-          <div><input type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1"> %</div>
+          <div><InputNumber type="number" class="w-80px" v-model="config.simulation.selectBorder" step="1" /> %</div>
           <div class="w-300px">
             <small>
               例えば90%にすると、厳選度90%の個体に対しこの個体が稼ぐエナジーが何%あるか計算します。<br>

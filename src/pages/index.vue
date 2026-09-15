@@ -401,8 +401,8 @@ function toggleFavorite(data: SimulatedPokemon) {
             <td>
               <div class="flex-column gap-5px">
                 <div><InputCheckbox v-model="config.pokemonList.candy">アメ情報</InputCheckbox></div>
-                <div>ブーストEXP倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostMultiply"> 倍</div>
-                <div>ブーストかけら倍率&nbsp;<input type="number" class="w-50px" v-model="config.candy.boostShard"> 倍</div>
+                <div>ブーストEXP倍率&nbsp;<InputNumber type="number" class="w-50px" v-model="config.candy.boostMultiply" /> 倍</div>
+                <div>ブーストかけら倍率&nbsp;<InputNumber type="number" class="w-50px" v-model="config.candy.boostShard" /> 倍</div>
               </div>
             </td>
           </tr>
@@ -413,7 +413,7 @@ function toggleFavorite(data: SimulatedPokemon) {
             <th>表示設定</th>
             <td>
               <div><InputCheckbox v-model="config.pokemonList.fixScore">スコアまで列固定</InputCheckbox></div>
-              <div class="mt-5px">1ページ表示件数&nbsp;<input type="number" class="w-50px" v-model="config.pokemonList.pageUnit"> 件</div>
+              <div class="mt-5px">1ページ表示件数&nbsp;<InputNumber type="number" class="w-50px" v-model="config.pokemonList.pageUnit" /> 件</div>
             </td>
           </tr>
         </SettingTable>
@@ -425,26 +425,26 @@ function toggleFavorite(data: SimulatedPokemon) {
       <div>
         <label>表示モード</label>
         <div>
-          <select v-model.number="mode">
+          <InputSelect v-model.number="mode">
             <option value="normal">通常</option>
             <option value="cleaning">ボックス整理(簡易)</option>
             <option value="cleaning_detail">ボックス整理(詳細)</option>
             <option value="pureMint">まっしろミント</option>
-          </select>
+          </InputSelect>
         </div>
       </div>
       
       <div>
         <label>キーワード</label>
         <div>
-          <input type="text" class="w-200px" v-model="keyword" placeholder="名前、食材名、スキル名など" />
+          <InputText type="text" class="w-200px" v-model="keyword" placeholder="名前、食材名、スキル名など" />
         </div>
       </div>
 
       <div>
         <label>ボックス整理</label>
         <div class="flex-row-start-center gap-10px">
-          <button class="important" @click="deleteSelectedPokemon" :disabled="selectedPokemonList.length == 0">選択したポケモン({{ selectedPokemonList.length }}匹)を削除</button>
+          <FormButton class="important" @click="deleteSelectedPokemon" :disabled="selectedPokemonList.length == 0">選択したポケモン({{ selectedPokemonList.length }}匹)を削除</FormButton>
           <InputCheckbox v-if="mode == 'cleaning' || mode == 'cleaning_detail'" v-model="config.pokemonList.cleaning.shinyLock">色違いも整理備考に表示する</InputCheckbox>
         </div>
       </div>
@@ -600,19 +600,19 @@ function toggleFavorite(data: SimulatedPokemon) {
           </template>
 
           <template #candy="{ data, column }">
-            <input type="number" class="w-50px" v-model="config.candy.bag[data.base.candyName]" />
+            <InputNumber type="number" class="w-50px" v-model="config.candy.bag[data.base.candyName]" />
           </template>
 
           <template #training="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.training" @input="updateGrowthInfo(data)" />
+            <InputNumber type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.training" @update:model-value="updateGrowthInfo(data)" />
           </template>
 
           <template #nextExp="{ data, column }">
-            <input type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.nextExp" @input="updateGrowthInfo(data)" />
+            <InputNumber type="number" class="w-50px" v-model="PokemonBox.list[data.box.index].original.nextExp" @update:model-value="updateGrowthInfo(data)" />
           </template>
 
           <!-- <template #nextExp="{ data, column }">
-            <input type="number" class="w-50px" v-model="data.nextExp" @input="updateGrowthInfo(data)" />
+            <InputNumber type="number" class="w-50px" v-model="data.nextExp" @update:model-value="updateGrowthInfo(data)" />
           </template> -->
 
           <template #afterList="{ data, column }">
@@ -645,14 +645,14 @@ function toggleFavorite(data: SimulatedPokemon) {
       </AsyncWatcherArea>
 
       <div class="box-actions flex-row-start-center gap-5px">
-        <button @click="addPokemon">ポケモン新規追加</button>
-        <button @click="$router.push('/screenshot-import')">スクショから追加(β版)</button>
-        <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
-        <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
+        <FormButton @click="addPokemon">ポケモン新規追加</FormButton>
+        <FormButton @click="$router.push('/screenshot-import')">スクショから追加(β版)</FormButton>
+        <!-- <FormButton @click="simulationPrepareTeam">準備シミュ</FormButton> -->
+        <FormButton @click="showGoogleSpreadsheetPopup" class="ml-auto">
           Googleスプレッドシート連携
           <template v-if="PokemonBox.gsExportPromiseLocker.executing">(エクスポート中...)</template>
-        </button>
-        <button @click="showTsvPopup">TSVインポート/エクスポート</button>
+        </FormButton>
+        <FormButton @click="showTsvPopup">TSVインポート/エクスポート</FormButton>
       </div>
     </div>
 
@@ -676,23 +676,23 @@ function toggleFavorite(data: SimulatedPokemon) {
             :grid="4"
           >
             <template #dummy="{ data }">
-              <button @click="cleaningDetailPokemon = data.name; cleaningDetailTab = 1;">確認</button>
+              <FormButton @click="cleaningDetailPokemon = data.name; cleaningDetailTab = 1;">確認</FormButton>
             </template>
           </SortableTable>
         </AsyncWatcherArea>
 
         <div class="box-actions flex-row-start-center gap-5px">
-          <button @click="addPokemon">ポケモン新規追加</button>
-          <button @click="$router.push('/screenshot-import')">スクショから追加(β版)</button>
+          <FormButton @click="addPokemon">ポケモン新規追加</FormButton>
+          <FormButton @click="$router.push('/screenshot-import')">スクショから追加(β版)</FormButton>
           <div>
             PTシミュは別ページに移りました
           </div>
-          <!-- <button @click="simulationPrepareTeam">準備シミュ</button> -->
-          <button @click="showGoogleSpreadsheetPopup" class="ml-auto">
+          <!-- <FormButton @click="simulationPrepareTeam">準備シミュ</FormButton> -->
+          <FormButton @click="showGoogleSpreadsheetPopup" class="ml-auto">
             Googleスプレッドシート連携
             <template v-if="PokemonBox.gsExportPromiseLocker.executing">(エクスポート中...)</template>
-          </button>
-          <button @click="showTsvPopup">TSVインポート/エクスポート</button>
+          </FormButton>
+          <FormButton @click="showTsvPopup">TSVインポート/エクスポート</FormButton>
         </div>
       </div>
     </template>

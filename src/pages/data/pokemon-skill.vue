@@ -112,38 +112,38 @@ const columnList = computed(() => {
       <div>
         <label>Lv</label>
         <div>
-          <input class="w-50px" type="number" v-model="lv" /> Lv
+          <InputNumber class="w-50px" type="number" v-model="lv" /> Lv
         </div>
       </div>
 
       <div>
         <label>せいかく</label>
         <div>
-          <select v-model="nature">
+          <InputSelect v-model="nature">
             <option v-for="nature in Nature.list" :value="nature.name">
               {{ nature.name }}
               <template v-if="nature.good">({{ nature.good }}↑ / {{ nature.weak }}↓)</template>
             </option>
-          </select>
+          </InputSelect>
         </div>
       </div>
 
       <div>
         <label>サブスキル</label>
         <div>
-          <select v-model="subSkill">
+          <InputSelect v-model="subSkill">
             <option :value="0">-</option>
             <option :value="1">スキル確率アップS</option>
             <option :value="2">スキル確率アップM</option>
             <option :value="3">スキル確率アップS&スキル確率アップM</option>
-          </select>
+          </InputSelect>
         </div>
       </div>
 
       <div>
         <label>おてスピ短縮</label>
         <div>
-          <input class="w-50px" type="number" v-model="speed" max="35" /> %
+          <InputNumber class="w-50px" type="number" v-model="speed" max="35" /> %
         </div>
       </div>
 
