@@ -249,7 +249,7 @@ const chartOptions = {
           />
         </FoodIconSelectList>
         <SettingSectionTitle type="field">サブスキル</SettingSectionTitle>
-        <SubSkillSelect v-model="pokemon.subSkillList" />
+        <SubSkillSelect v-model="pokemon.subSkillList" showCandidate />
         <SettingSectionTitle type="field">せいかく</SettingSectionTitle>
         <NatureSelect v-model="pokemon.nature" />
       </div>
