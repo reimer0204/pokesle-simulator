@@ -9,6 +9,7 @@ const props = defineProps({
   disabledColumn: { type: Function, default: null },
   grid: { type: Number, default: null },
   selectedField: { type: String, default: null },
+  sortColor: { type: Boolean, default: true },
 })
 const emits = defineEmits(['clickRow', 'update:setting'])
 
@@ -90,6 +91,7 @@ const sortedDataList = computed(() => {
 
     //
     sortColors.value = []
+    if (props.sortColor) {
     let minmax = {};
     for(let data of result) {
       for(let sort of sortInfo.value) {
@@ -122,6 +124,7 @@ const sortedDataList = computed(() => {
         colors[sort.key] = color;
       }
       sortColors.value.push(colors)
+    }
     }
   }
 
@@ -240,7 +243,7 @@ function onClickRow(event, data) {
         <thead>
           <tr>
             <th v-for="(column, i) in enableColumnList" ref="thList"
-              :class="{'fix-column': i < props.fixColumn, hidden: editMode && hiddenColumn.has(column.key)}"
+              :class="[column.class, { 'fix-column': i < props.fixColumn, hidden: editMode && hiddenColumn.has(column.key) }]"
               :style="{ left: i < props.fixColumn ? columnLeftList[i] : null }"
               @contextmenu.prevent.stop="editMode = !editMode"
             >
@@ -272,7 +275,7 @@ function onClickRow(event, data) {
             disabled: data.$disabled,
           }">
             <td v-for="(column, i) in enableColumnList"
-              :class="{ number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }"
+              :class="[column.class, { number: column.type == Number || column.percent, 'fix-column': i < props.fixColumn }]"
               :style="{
                 left: columnLeftList[i],
                 backgroundColor: sortColors[j]?.[column.key] ?? (props.selectedField && data.$original[props.selectedField] ? '#FDD' : null),

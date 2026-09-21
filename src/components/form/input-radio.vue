@@ -46,6 +46,7 @@ function onClick() {
 
   svg {
     width: 1em;
+    flex: 0 0 auto;
   }
 
   &.disabled {

@@ -370,11 +370,14 @@ async function showDetail(pokemon, p) {
       </div>
     </SettingList>
 
-    <div v-if="selectedTab == 'graph'" class="graph-scroll">
-      <div class="graph">
-        <Scatter v-bind="graphData" />
+    <template v-if="selectedTab == 'graph'">
+      <small class="mobile-graph-scroll-hint">グラフは横にスクロールできます</small>
+      <div class="graph-scroll">
+        <div class="graph">
+          <Scatter v-bind="graphData" />
+        </div>
       </div>
-    </div>
+    </template>
 
     <div v-else class="scroll" style="height: 600px;">
       <SortableTable :dataList="evaluateTablePokemonList" :columnList="columnList" :fixColumn="2">
@@ -422,6 +425,10 @@ async function showDetail(pokemon, p) {
     width: 100%;
     height: 100%;
     min-height: 500px;
+  }
+
+  .mobile-graph-scroll-hint {
+    display: none;
   }
 
   .pokemon-list {
@@ -473,6 +480,26 @@ async function showDetail(pokemon, p) {
 
     &:hover {
       background-color: #DEF;
+    }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .page {
+    .mobile-graph-scroll-hint {
+      display: block;
+      margin-top: 8px;
+      color: var(--color-muted);
+      font-size: 12px;
+    }
+
+    .graph-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .graph {
+      width: 1680px;
     }
   }
 }

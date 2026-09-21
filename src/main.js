@@ -48,6 +48,7 @@ import FaqPage from './pages/faq.vue'
 import HistoryPage from './pages/history.vue'
 import CreditPage from './pages/credit.vue'
 import EvaluateTable from './pages/evaluate-table.vue'
+import TmpEvaluatePage from './pages/tmp-evaluate.vue'
 import PokemonBox from './models/pokemon-box/pokemon-box';
 const router = createRouter({
   history: createWebHashHistory(),
@@ -95,6 +96,7 @@ const router = createRouter({
     { path: '/history', component: HistoryPage },
     { path: '/credit', component: CreditPage },
     { path: '/evaluate-table', component: EvaluateTable },
+    { path: '/tmp-evaluate', component: TmpEvaluatePage },
     // OCRライブラリは大きいため、スクショ追加画面を開いた場合だけ読み込む。
     { path: '/screenshot-import', component: () => import('./pages/screenshot-import.vue') },
   ]

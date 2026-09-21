@@ -1,4 +1,5 @@
 import type { Cooking } from "./data/food_and_cooking";
+import type { SkillCategory } from "./data/skill";
 
 type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー' | 'ずっしりカボチャ' | 'つやつやアボカド'
 export type CookingTypeName = 'カレー' | 'サラダ' | 'デザート';
@@ -57,6 +58,7 @@ interface BerryType {
 
 interface SkillType {
   name: string;
+  category: SkillCategory;
   effect: any[];
   metronome?: boolean;
   copyable?: boolean;
@@ -178,6 +180,19 @@ interface EvaluateResult {
 };
 type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty' | 'foodNumList'
 
+interface EventBonus {
+  target: {
+    types: Record<string, boolean>;
+    specialties: Record<string, boolean>;
+  };
+  berry: number;
+  food: number;
+  skillRate: number;
+  skillLv: number;
+  bag: number;
+  bagRate: number;
+}
+
 /**
  * ポケモンのシミュレーション結果
  * @property bEpH4Spt - きのみエナジー/手伝い(サポート計算用)
@@ -194,7 +209,7 @@ interface SimulatedPokemon extends FoodNames {
     weight: number,
   }[];
   skillLv: number;
-  eventBonus: boolean,
+  eventBonusList: EventBonus[],
   sleepTime: number,
   fixable?: boolean,
   beforeName?: string;
@@ -225,6 +240,7 @@ interface SimulatedPokemon extends FoodNames {
   // 個体から算出できる結果
   berryNum: number;
   berryEnergy: number;
+  berryRate: number;
 
   /** きのみエナジー/手伝い(サポート計算用) */
   bEpH4Spt: number;

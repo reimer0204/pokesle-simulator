@@ -4,6 +4,7 @@ defineOptions({ inheritAttrs: false })
 const props = defineProps({
   modelValue: {},
   percent: { type: Boolean, default: false },
+  showSpinner: { type: Boolean, default: false },
 })
 const emits = defineEmits(['update:modelValue', 'keydown'])
 const input = ref()
@@ -35,6 +36,7 @@ defineExpose({
     ref="input"
     v-bind="$attrs"
     class="form-input input-number"
+    :class="{ 'hide-spinner': !props.showSpinner }"
     type="number"
     v-model="value"
     @keydown="emits('keydown', $event)"
@@ -42,4 +44,14 @@ defineExpose({
 </template>
 
 <style lang="scss" scoped>
+.hide-spinner {
+  appearance: textfield;
+  -moz-appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+}
 </style>

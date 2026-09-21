@@ -113,7 +113,7 @@ self.addEventListener('message', async (event: {
           const [food1, food2, food3] = pokemon.foodNameList.map((x) => eachResult[x] ?? 0);
 
           if (isNaN(eachResult.energyPerDay)) {
-            console.log(eachResult);
+            console.error(eachResult);
             throw '計算エラーが発生しました。'
           }
 

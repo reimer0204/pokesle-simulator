@@ -1,6 +1,7 @@
 <script setup>
 import CookingSettingPopup from '../components/cooking-setting-popup.vue';
 import Berry from '../data/berry';
+import { createEventBonus } from '../data/default-config.ts';
 import { Cooking } from '../data/food_and_cooking';
 import Field from '../data/field.ts';
 import NightCapPikachu from '../data/nightcap_pikachu';
@@ -12,6 +13,7 @@ import ResourceEditPopup from './resource-edit-popup.vue';
 import Skill from '@/data/skill.ts';
 import InputRadio from './form/input-radio.vue';
 import InputNumber from './form/input-number.vue';
+import SettingSectionTitle from './design/setting-section-title.vue';
 
 const props = defineProps({
   fix: { type: Boolean, default: false },
@@ -28,36 +30,30 @@ function showResourceEditPopup() {
   Popup.show(ResourceEditPopup);
 }
 
-const eventBonusAllChecked = computed({
-  get() {
-    return !Object.values(config.simulation.eventBonusType.types).includes(false)
-      && !Object.values(config.simulation.eventBonusType.specialties).includes(false)
-  },
-  set(newValue) {
-    for(const key in config.simulation.eventBonusType.specialties) {
-      config.simulation.eventBonusType.specialties[key] = newValue;
-    }
-    for(const key in config.simulation.eventBonusType.types) {
-      config.simulation.eventBonusType.types[key] = newValue;
-    }
-  },
-})
+function isEventBonusAllChecked(eventBonus) {
+  return !Object.values(eventBonus.target.types).includes(false)
+    && !Object.values(eventBonus.target.specialties).includes(false)
+}
+
+function setEventBonusAllChecked(eventBonus, newValue) {
+  for(const key in eventBonus.target.specialties) {
+    eventBonus.target.specialties[key] = newValue;
+  }
+  for(const key in eventBonus.target.types) {
+    eventBonus.target.types[key] = newValue;
+  }
+}
+
+function addEventBonus() {
+  config.simulation.eventBonusList.push(createEventBonus());
+}
+
+function deleteEventBonus(index) {
+  config.simulation.eventBonusList.splice(index, 1);
+}
 
 function reset() {
-  config.simulation.eventBonusType.specialties = {
-    'きのみ': false,
-    '食材': false,
-    'スキル': false,
-  };
-  for(const key in config.simulation.eventBonusType.types) {
-    config.simulation.eventBonusType.types[key] = false;
-  }
-  config.simulation.eventBonusTypeBerry = 0;
-  config.simulation.eventBonusTypeFood = 0;
-  config.simulation.eventBonusTypeSkillRate = 1;
-  config.simulation.eventBonusTypeSkillLv = 0;
-  config.simulation.eventBonusTypeBag = 0;
-  config.simulation.eventBonusTypeBagRate = 1;
+  config.simulation.eventBonusList = [];
   config.simulation.eventBonus.skill.berryBurst = 1;
   config.simulation.eventBonus.skill.foodGet = 1;
 }
@@ -83,6 +79,19 @@ watch(() => config.simulation.field, () => {
 const berryList = computed(() => {
   return Berry.list.sort((a, b) => a.colorOrder - b.colorOrder);
 });
+const customizedBerryList = computed(() =>
+  Berry.list.filter((berry) => (config.simulation.berryEnergyRate[berry.name] ?? 1) != 1),
+);
+
+function formatBerryEnergyRate(berry) {
+  return `${((config.simulation.berryEnergyRate[berry.name] ?? 1) * 100).toFixed(1)}%`;
+}
+
+function resetBerryEnergyRate() {
+  for (const berry of Berry.list) {
+    config.simulation.berryEnergyRate[berry.name] = 1;
+  }
+}
 
 </script>
 
@@ -242,86 +251,65 @@ const berryList = computed(() => {
       <div class="inline-flex-row-center" style="gap: 0.25em;">
         <span class="inline-flex-row-center">
           イベントボーナス：
-          <span v-if="
-            !Object.values(config.simulation.eventBonusType.types).includes(true)
-            && !Object.values(config.simulation.eventBonusType.specialties).includes(true)"
-          >なし</span>
-          <span v-else-if="
-              !Object.values(config.simulation.eventBonusType.types).includes(false)
-              || !Object.values(config.simulation.eventBonusType.specialties).includes(false)
-            "
-            class="caution"
-          >全員</span>
-          <span v-else class="caution">
-            {{
-              [
-                ...['きのみ', '食材', 'スキル'].filter(x => config.simulation.eventBonusType.specialties[x]),
-                ...Berry.typeList.filter(x => config.simulation.eventBonusType.types[x.type]).map(x => x.type),
-              ].join(',')
-            }}
-          </span>
+          <span v-if="config.simulation.eventBonusList.length == 0">なし</span>
+          <span v-else class="caution">{{ config.simulation.eventBonusList.map(ev => {
+            const target = !Object.values(ev.target.types).includes(false) || !Object.values(ev.target.specialties).includes(false) ? '全員'
+            : [
+              ...['きのみ', '食材', 'スキル'].filter(x => ev.target.specialties[x]),
+              ...Berry.typeList.filter(x => ev.target.types[x.type]).map(x => x.type),
+            ].join(',')
+            const effect = [
+              ev.berry != 0 ? `きのみ+${ev.berry }` : null,
+              ev.food != 0 ? `食材+${ev.food }` : null,
+              ev.skillRate != 1 ? `スキル確率x${ev.skillRate }` : null,
+              ev.skillLv != 0 ? `スキルレベル+${ev.skillLv }` : null,
+              ev.bag != 0 ? `所持数+${ev.bag }` : null,
+              ev.bagRate != 1 ? `所持数x${ev.bagRate }` : null,
+            ].filter(x => x).join(' ')
+            return `${target}(${effect})`
+          }).join(' ') }}</span>
         </span>
-        <span v-if="
-          Object.values(config.simulation.eventBonusType.types).includes(true)
-          || Object.values(config.simulation.eventBonusType.specialties).includes(true)
-        " class="caution">
-          <template v-if="config.simulation.eventBonusTypeBerry != 0"> きのみ+{{ config.simulation.eventBonusTypeBerry }}</template>
-          <template v-if="config.simulation.eventBonusTypeFood != 0"> 食材+{{ config.simulation.eventBonusTypeFood }}</template>
-          <template v-if="config.simulation.eventBonusTypeSkillRate != 1"> スキル確率x{{ config.simulation.eventBonusTypeSkillRate }}</template>
-          <template v-if="config.simulation.eventBonusTypeSkillLv != 0"> スキルレベル+{{ config.simulation.eventBonusTypeSkillLv }}</template>
-          <template v-if="config.simulation.eventBonusTypeBag != 0"> 所持数+{{ config.simulation.eventBonusTypeBag }}</template>
-          <template v-if="config.simulation.eventBonusTypeBagRate != 1"> 所持数x{{ config.simulation.eventBonusTypeBagRate }}</template>
-          <template v-if="config.simulation.eventBonus.skill.berryBurst != 1"> きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}</template>
+        <span v-if="config.simulation.eventBonus.skill.berryBurst != 1" class="caution">
+          きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}
         </span>
       </div>
     </template>
 
-    <SettingTable>
-      <tr>
-        <th>適用タイプ</th>
-        <td>
-          <div>
-            <InputCheckbox v-model="eventBonusAllChecked">全て選択</InputCheckbox>
-          </div>
-          <div class="display-grid gap-1em mt-1em" style="grid-template-columns: repeat(3, 150px);">
-            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['きのみ']">きのみとくい</InputCheckbox>
-            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['食材']">食材とくい</InputCheckbox>
-            <InputCheckbox v-model="config.simulation.eventBonusType.specialties['スキル']">スキルとくい</InputCheckbox>
-            <InputCheckbox
-              v-for="berry in Berry.typeList"
-              v-model="config.simulation.eventBonusType.types[berry.type]"
+    <div v-for="(eventBonus, index) in config.simulation.eventBonusList" :key="index" class="event-bonus-setting">
+      <SettingTable>
+        <tr>
+          <th>対象</th>
+          <td>
+            <div><InputCheckbox :model-value="isEventBonusAllChecked(eventBonus)" @update:model-value="setEventBonusAllChecked(eventBonus, $event)">全て選択</InputCheckbox></div>
+            <div
+              class="event-bonus-target-list display-grid gap-1em mt-1em"
+              style="grid-template-columns: repeat(3, 150px);"
             >
-              <img class="w-20px" :src="berry.img" />
-              {{ berry.type }}({{ berry.name }})
-            </InputCheckbox>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <th>きのみ</th>
-        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBerry"  /> 個追加</td>
-      </tr>
-      <tr>
-        <th>食材</th>
-        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeFood"  /> 個追加</td>
-      </tr>
-      <tr>
-        <th>スキル倍率</th>
-        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillRate" step="0.1"  /> 倍</td>
-      </tr>
-      <tr>
-        <th>スキルレベル</th>
-        <td><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeSkillLv"  /> Lv追加</td>
-      </tr>
-      <tr>
-        <th>所持数</th>
-        <td>
-          <div class="flex-row-start-center gap-1em">
-            <div><InputNumber type="number" class="w-60px" v-model="config.simulation.eventBonusTypeBag"  /> 個追加</div>
-            <div><InputNumber class="w-60px" v-model="config.simulation.eventBonusTypeBagRate" :step="0.1" /> 倍</div>
-          </div>
-        </td>
-      </tr>
+              <InputCheckbox v-model="eventBonus.target.specialties['きのみ']">きのみとくい</InputCheckbox>
+              <InputCheckbox v-model="eventBonus.target.specialties['食材']">食材とくい</InputCheckbox>
+              <InputCheckbox v-model="eventBonus.target.specialties['スキル']">スキルとくい</InputCheckbox>
+              <InputCheckbox v-for="berry in Berry.typeList" :key="berry.type" v-model="eventBonus.target.types[berry.type]">
+                <img class="w-20px" :src="berry.img" />
+                {{ berry.type }}({{ berry.name }})
+              </InputCheckbox>
+            </div>
+          </td>
+        </tr>
+        <tr><th>きのみ</th><td><InputNumber type="number" class="w-60px" v-model="eventBonus.berry" /> 個追加</td></tr>
+        <tr><th>食材</th><td><InputNumber type="number" class="w-60px" v-model="eventBonus.food" /> 個追加</td></tr>
+        <tr><th>スキル倍率</th><td><InputNumber type="number" class="w-60px" v-model="eventBonus.skillRate" step="0.1" /> 倍</td></tr>
+        <tr><th>スキルレベル</th><td><InputNumber type="number" class="w-60px" v-model="eventBonus.skillLv" /> Lv追加</td></tr>
+        <tr>
+          <th>所持数</th>
+          <td><div class="flex-row-start-center gap-1em"><div><InputNumber type="number" class="w-60px" v-model="eventBonus.bag" /> 個追加</div><div><InputNumber class="w-60px" v-model="eventBonus.bagRate" :step="0.1" /> 倍</div></div></td>
+        </tr>
+        <tr><td colspan="2"><FormButton class="important" @click="deleteEventBonus(index)">このボーナスを削除</FormButton></td></tr>
+      </SettingTable>
+    </div>
+
+    <FormButton @click="addEventBonus">イベントボーナスを追加</FormButton>
+
+    <SettingTable>
       <tr>
         <th>スキル</th>
         <td>
@@ -345,6 +333,36 @@ const berryList = computed(() => {
       </tr>
     </SettingTable>
 
+  </SettingButton>
+
+  <SettingButton title="きのみ設定">
+    <template #label>
+      <div class="inline-flex-row-center">
+        きのみ設定
+        <template v-if="customizedBerryList.length">
+          <span>：</span>
+          <span class="caution">
+            {{ customizedBerryList.map((berry) => `${berry.name} ${formatBerryEnergyRate(berry)}`).join('、') }}
+          </span>
+        </template>
+      </div>
+    </template>
+
+    <div style="width: calc(100vw - 100px); max-width: 1000px;">
+      <SettingList>
+        <div v-for="berry in berryList" :key="berry.name">
+          <label class="flex-row-start-center"><img class="w-20px" :src="berry.img" /> {{ berry.name }}</label>
+          <div>
+            <InputNumber
+              class="w-60px"
+              v-model="config.simulation.berryEnergyRate[berry.name]"
+              percent
+            /> %
+          </div>
+        </div>
+      </SettingList>
+      <FormButton class="mt-10px" @click="resetBerryEnergyRate">リセット</FormButton>
+    </div>
   </SettingButton>
 
   <SettingButton title="スキル設定">
@@ -371,18 +389,21 @@ const berryList = computed(() => {
         <template #headerText>個別スキル設定</template>
 
         <SettingTable class="w-100">
-          <SettingList grid>
-            <div v-for="skill in Skill.list">
-              <label>{{ skill.name }}</label>
-              <div>
-                <InputNumber
-                  class="w-60px"
-                  v-model="config.simulation.skillRate[skill.name]"
-                  percent
-                /> %
+          <template v-for="category in Skill.categoryList" :key="category.id">
+            <SettingSectionTitle>{{ category.name }}</SettingSectionTitle>
+            <SettingList grid class="mt-5px mb-10px">
+              <div v-for="skill in category.skillList" :key="skill.name">
+                <label>{{ skill.name }}</label>
+                <div>
+                  <InputNumber
+                    class="w-60px"
+                    v-model="config.simulation.skillRate[skill.name]"
+                    percent
+                  /> %
+                </div>
               </div>
-            </div>
-          </SettingList>
+            </SettingList>
+          </template>
         </SettingTable>
       </ToggleArea>
       
@@ -643,15 +664,20 @@ const berryList = computed(() => {
           </div>
         </td>
       </tr>
-      <tr v-for="skill in Skill.list" :key="skill.name">
-        <th>{{ skill.name }}</th>
-        <td>
-          <div class="flex-row gap-10px">
-            <InputRadio v-model="config.simulation.expectType[skill.name]" :value="0">通常期待値</InputRadio>
-            <InputRadio v-model="config.simulation.expectType[skill.name]" :value="1">下振れ補正</InputRadio>
-          </div>
-        </td>
-      </tr>
+      <template v-for="category in Skill.categoryList" :key="category.id">
+        <tr>
+          <th colspan="2"><SettingSectionTitle>{{ category.name }}</SettingSectionTitle></th>
+        </tr>
+        <tr v-for="skill in category.skillList" :key="skill.name">
+          <th>{{ skill.name }}</th>
+          <td>
+            <div class="flex-row gap-10px">
+              <InputRadio v-model="config.simulation.expectType[skill.name]" :value="0">通常期待値</InputRadio>
+              <InputRadio v-model="config.simulation.expectType[skill.name]" :value="1">下振れ補正</InputRadio>
+            </div>
+          </td>
+        </tr>
+      </template>
     </SettingTable>
   </SettingButton>
 
@@ -743,5 +769,20 @@ const berryList = computed(() => {
 
 .caution {
   color: yellow;
+}
+
+.event-bonus-setting {
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .event-bonus-target-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5em 0.75em;
+  }
 }
 </style>

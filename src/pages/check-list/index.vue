@@ -142,8 +142,8 @@ watch(() => [
             <td>
               <div class="flex-row-start-center gap-5px">
                 <InputSelect
-                  :value="`${item.type}${item.target ? `_${item.target}` : ''}`"
-                  @input="($event) => {
+                  :model-value="`${item.type}${item.target ? `_${item.target}` : ''}`"
+                  @update:model-value="($event) => {
                     const [type, target] = $event.target.value.split('_')
                     item.type = Number(type);
                     item.target = target ?? null;
@@ -315,17 +315,22 @@ watch(() => [
 
               <hr />
 
-              <div class="gap-5px" style="display: grid; grid-template-columns: repeat(2, 265px);">
-                <template v-for="skill in Skill.list">
-                  <template v-if="config.summary.checklist.skill.skillSpecialtyOnly && !skill.skillSpecialtyOnly">
-                    <InputCheckbox disabled>{{ skill.name }}</InputCheckbox>
-                  </template>
-                  <template v-else>
-                    <InputCheckbox v-model="config.summary.checklist.skill.enableMap[skill.name]">
-                      {{ skill.name }}
-                    </InputCheckbox>
-                  </template>
-                </template>
+              <div class="flex-column-start-start gap-10px">
+                <div v-for="category in Skill.categoryList" :key="category.id">
+                  <h3>{{ category.name }}</h3>
+                  <div class="gap-5px" style="display: grid; grid-template-columns: repeat(2, 265px);">
+                    <template v-for="skill in category.skillList" :key="skill.name">
+                      <template v-if="config.summary.checklist.skill.skillSpecialtyOnly && !skill.skillSpecialtyOnly">
+                        <InputCheckbox disabled>{{ skill.name }}</InputCheckbox>
+                      </template>
+                      <template v-else>
+                        <InputCheckbox v-model="config.summary.checklist.skill.enableMap[skill.name]">
+                          {{ skill.name }}
+                        </InputCheckbox>
+                      </template>
+                    </template>
+                  </div>
+                </div>
               </div>
             </td>
             <td colspan="4">

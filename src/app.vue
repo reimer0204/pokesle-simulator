@@ -54,6 +54,7 @@ document.addEventListener("visibilitychange", () => {
           <h2>ボックス</h2>
           <div>
             <router-link to="/">ボックス</router-link>
+            <router-link to="/check-list" :class="{ disabled: requireRefresh.setting }">チェック<br>リスト</router-link>
             <router-link to="/box-summary/pokemon">サマリー</router-link>
           </div>
         </div>
@@ -68,8 +69,8 @@ document.addEventListener("visibilitychange", () => {
           <h2>厳選</h2>
           <div>
             <router-link to="/setting">基準生成<div class="caution" v-if="requireRefresh.setting">!</div></router-link>
-            <router-link to="/check-list" :class="{ disabled: requireRefresh.setting }">チェック<br>リスト</router-link>
             <router-link to="/evaluate-table" :class="{ disabled: requireRefresh.setting }">基準確認</router-link>
+            <router-link to="/tmp-evaluate">簡易診断</router-link>
           </div>
         </div>
         <div>
@@ -200,6 +201,7 @@ document.addEventListener("visibilitychange", () => {
     background: var(--color-surface-subtle);
     z-index: 1;
     min-height: 0;
+    overflow: auto;
   }
 
   .new-version {

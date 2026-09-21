@@ -285,8 +285,6 @@ async function simulation() {
       teamList: bestResult,
       config: customConfig,
     }
-
-    // console.log(performance.now() - startAt);
   })
 
   gtag('event', 'simulation_team');
@@ -453,8 +451,8 @@ async function showEditPopup(pokemon) {
           <label>料理</label>
           <div>
             <div>
-              <InputNumber v-if="targetDay != -1" type="number" v-model="config.teamSimulation.cookingNum" class="w-50px" />
-              <InputNumber v-if="targetDay == -1" type="number" :model-value="21" class="w-50px" disabled />
+              <InputNumber v-if="targetDay != -1" type="number" v-model="config.teamSimulation.cookingNum" class="w-50px" showSpinner />
+              <InputNumber v-if="targetDay == -1" type="number" :model-value="21" class="w-50px" disabled showSpinner />
                 食分
             </div>
             <div class="w-150px">
@@ -561,7 +559,7 @@ async function showEditPopup(pokemon) {
         </div>
       </SettingList>
 
-      <FormButton @click="simulation">シミュレーション実行</FormButton>
+      <FormButton class="execute" @click="simulation">シミュレーション実行</FormButton>
 
       <AsyncWatcherArea class="flex-column-start-stretch w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
         <div class="scroll-area flex-column-start-stretch w-100 gap-20px">

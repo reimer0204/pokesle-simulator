@@ -23,6 +23,31 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/9/21">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>
+              簡易診断追加
+              <ul>
+                <li>本格的に利用しないユーザー向けの他、事前に厳選情報を生成しておくのが難しいミュウやダークライも計算できます</li>
+              </ul>
+            </li>
+            <li>基準生成、簡易診断ともに設定UIを改善</li>
+            <li>
+              きのみ設定を追加
+              <ul>
+                <li>きのみゾーン発動時用の設定です</li>
+              </ul>
+            </li>
+            <li>イベントボーナスを複数設定できるよう改善</li>
+            <li>ポケモン編集ポップアップのUIを変更</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/9/15">
       <ul>
         <li>

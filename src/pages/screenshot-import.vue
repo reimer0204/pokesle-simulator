@@ -207,6 +207,10 @@ onBeforeUnmount(() => {
   <div class="screenshot-import-page">
     <h2>スクショから追加</h2>
 
+    <BaseAlert>
+      β版です。誤検知をする可能性がそれなりにあるので、適宜結果を確認しながら利用してください。
+    </BaseAlert>
+
     <div class="file-input-area">
       <label>
         ポケモン詳細のスクリーンショット

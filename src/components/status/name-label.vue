@@ -20,9 +20,9 @@ const splitName = computed(() => {
 <template>
   <span class="name-label" :class="{ shiny: pokemon.box?.shiny }">
     <template v-if="props.pokemon.beforeName && props.pokemon.beforeName != props.pokemon.base.name">
-      <small>{{ props.pokemon.beforeName }}→</small>{{ splitName.main }}<small v-if="splitName.bracket">{{ splitName.bracket }}</small>
+      <small>{{ props.pokemon.beforeName }}→</small>{{ splitName.main }}<wbr /><small v-if="splitName.bracket">{{ splitName.bracket }}</small>
     </template>
-    <template v-else>{{ splitName.main }}<small v-if="splitName.bracket">{{ splitName.bracket }}</small></template>
+    <template v-else>{{ splitName.main }}<wbr /><small v-if="splitName.bracket">{{ splitName.bracket }}</small></template>
     <template v-if="pokemon.box?.favorite">★</template>
     <template v-if="pokemon.bagOverOperation">(いつ育)</template>
     

@@ -152,7 +152,7 @@ const columnList = computed(() => {
 
   result.push(
     { key: 'index', name: 'No', type: Number, convert: x => x.box.index },
-    { key: 'name', name: '名前', type: String, convert: x => x.box.name },
+    { key: 'name', name: '名前', type: String, class: 'pokemon-name-column', convert: x => x.box.name },
   );
 
   if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
@@ -484,20 +484,20 @@ function toggleFavorite(data: SimulatedPokemon) {
                 <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
               </svg>
               <template v-if="(config.sortableTable.pokemonList2.sort.length == 1 && config.sortableTable.pokemonList2.sort[0].key == 'index') || config.sortableTable.pokemonList2.sort.length == 0">
-                <svg viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
+                <svg class="mobile-hidden-action" viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1)); createPokemonList()">
                   <path d="M0,70 L50,20 L100,70z" fill="#888" />
                 </svg>
-                <svg viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
+                <svg class="mobile-hidden-action" viewBox="0 0 100 100" width="14" @click.stop="PokemonBox.move(data.box.index, config.sortableTable.pokemonList2.sort[0]?.direction ?? 1); createPokemonList()">
                   <path d="M0,30 L50,80 L100,30z" fill="#888" />
                 </svg>
               </template>
-              <svg viewBox="0 0 100 100" width="14" @click.stop="deletePokemon(data.box.index)">
+              <svg class="mobile-hidden-action" viewBox="0 0 100 100" width="14" @click.stop="deletePokemon(data.box.index)">
                 <path
                   d="M10,30 L10,15 L40,15 L40,0 L60,0 L60,15 L90,15 L90,30z M30,100 L20,40 L80,40 L70,100"
                   :fill="data.box.favorite ? '#CCC' : '#888'"
                 />
               </svg>
-              <div title="チームのシミュレーションで固定・除外する設定">
+              <div class="mobile-hidden-action" title="チームのシミュレーションで固定・除外する設定">
                 <!-- Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc. -->
                 <svg v-if="data.box?.fix == null" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#888"/></svg>
                 <svg v-if="data.box?.fix ==    1" viewBox="0 -110 640 640" width="16" @click.stop="toggleFix(data)" @contextmenu.prevent="toggleFix(data, null)"><path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM504 312V248H440c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V136c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H552v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" fill="#6C4"/></svg>
@@ -514,6 +514,14 @@ function toggleFavorite(data: SimulatedPokemon) {
 
           <template #header.edit>
             <help-button style="color: #FFF;" title="この列について" markdown="この列でソートするとPTシミュへの固定/除外でソートできます。"></help-button>
+          </template>
+
+          <template #header.hitCheckList>
+            整理備考
+            <help-button
+              style="color: #FFF;" title="エナジー/日"
+              markdown="✅️がついている項目は「チェックリスト」に該当しているポケモンです。"
+            />
           </template>
 
           <template #header.energyPerDay>
@@ -634,9 +642,12 @@ function toggleFavorite(data: SimulatedPokemon) {
               <template v-if="data.box.favorite">お気に入り</template>
               <template v-if="data.box.shiny && config.pokemonList.cleaning.shinyLock">色違い</template>
               <div v-for="{ type, food, skill } in data.hitCheckList">
-                <template v-if="type == 'pokemon'">厳選度</template>
-                <template v-if="type == 'food'"><img :src="food.img" class="w-20px" /></template>
-                <template v-if="type == 'skill'">{{ skill.name }}</template>
+                <div class="flex-row-start-center">
+                  ✅️
+                  <template v-if="type == 'pokemon'">厳選度</template>
+                  <template v-if="type == 'food'"><img :src="food.img" class="w-20px" /></template>
+                  <template v-if="type == 'skill'">{{ skill.name }}</template>
+                </div>
               </div>
             </div>
           </template>
@@ -645,7 +656,7 @@ function toggleFavorite(data: SimulatedPokemon) {
       </AsyncWatcherArea>
 
       <div class="box-actions flex-row-start-center gap-5px">
-        <FormButton @click="addPokemon">ポケモン新規追加</FormButton>
+        <FormButton class="execute" @click="addPokemon">ポケモン新規追加</FormButton>
         <FormButton @click="$router.push('/screenshot-import')">スクショから追加(β版)</FormButton>
         <!-- <FormButton @click="simulationPrepareTeam">準備シミュ</FormButton> -->
         <FormButton @click="showGoogleSpreadsheetPopup" class="ml-auto">
@@ -682,7 +693,7 @@ function toggleFavorite(data: SimulatedPokemon) {
         </AsyncWatcherArea>
 
         <div class="box-actions flex-row-start-center gap-5px">
-          <FormButton @click="addPokemon">ポケモン新規追加</FormButton>
+          <FormButton class="execute" @click="addPokemon">ポケモン新規追加</FormButton>
           <FormButton @click="$router.push('/screenshot-import')">スクショから追加(β版)</FormButton>
           <div>
             PTシミュは別ページに移りました
@@ -856,6 +867,17 @@ function toggleFavorite(data: SimulatedPokemon) {
 }
 
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  :deep(.pokemon-name-column) {
+    box-sizing: border-box;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+  }
+
+  .page .pokemon-list .mobile-hidden-action {
+    display: none;
+  }
+
   .page .pokemon-list .box-actions {
     width: 100%;
 

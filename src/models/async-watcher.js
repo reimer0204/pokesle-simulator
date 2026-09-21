@@ -1,8 +1,7 @@
-import { reactive } from "vue";
-import ProgressCounter from "./progress-counter";
+import { reactive } from 'vue';
+import ProgressCounter from './progress-counter';
 
 class AsyncWatcher {
-
   constructor() {
     this.executingCount = 0;
     this.progressCounter = new ProgressCounter();
@@ -24,8 +23,8 @@ class AsyncWatcher {
   get wait() {
     if (this.executingCount == 0) return;
     return new Promise((resolve) => {
-      this.resolveList.push(resolve)
-    })
+      this.resolveList.push(resolve);
+    });
   }
 
   async run(promise) {
@@ -38,13 +37,13 @@ class AsyncWatcher {
       }
       const result = await promise;
       return result;
-    } catch(e) {
+    } catch (e) {
       throw e;
     } finally {
       this.executingCount--;
       if (this.executingCount == 0) {
-        this.resolveList.forEach(x => x());
-        this.resolveList = []
+        this.resolveList.forEach((x) => x());
+        this.resolveList = [];
       }
     }
   }
@@ -59,6 +58,4 @@ class AsyncWatcher {
 }
 
 export default reactive(new AsyncWatcher());
-export {
-  AsyncWatcher
-}
+export { AsyncWatcher };

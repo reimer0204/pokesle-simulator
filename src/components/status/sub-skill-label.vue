@@ -15,14 +15,14 @@ const subSkill = computed(() => props.subSkill);
 <template>
   <div class="sub-skill-label"
     :class="[
-      `sub-skill-${subSkill.rarity}`,
+      `sub-skill-${subSkill?.rarity ?? 1}`,
       {
         short: props.short,
         fix: props.fix,
       }
     ]"
   >
-    {{ props.short ? subSkill.short : subSkill.name }}
+    {{ subSkill ? (props.short ? subSkill?.short : subSkill?.name) : '-' }}
     <img v-if="props.silverSeed" src="../../img/sub-skill-seed.png" />
   </div>
 </template>

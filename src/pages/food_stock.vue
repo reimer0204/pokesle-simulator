@@ -130,7 +130,7 @@ async function calculate() {
       </SettingList>
 
       <div class="flex-row-start-center gap-10px">
-        <FormButton :disabled="asyncWatcher.executing" @click="calculate">{{ asyncWatcher.executing ? '計算中…' : '準備食材を計算' }}</FormButton>
+        <FormButton class="execute" :disabled="asyncWatcher.executing" @click="calculate">{{ asyncWatcher.executing ? '計算中…' : '準備食材を計算' }}</FormButton>
       </div>
 
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -169,11 +169,12 @@ async function calculate() {
                   <InputNumber
                     v-if="!config.foodUnlimited"
                     type="number"
+                    hide-spinner
                     class="w-40px"
                     :model-value="config.foodDefaultNum[food.name]"
                     @update:model-value="config.foodDefaultNum[food.name] = $event ?? 0"
                    />
-                  <InputNumber v-else type="number" class="w-40px" :model-value="9999" disabled />
+                  <InputNumber v-else type="number" hide-spinner class="w-40px" :model-value="9999" disabled />
                 </td>
                 <td></td>
               </tr>
@@ -217,12 +218,13 @@ async function calculate() {
                     <InputNumber
                       v-if="!config.foodUnlimited"
                       type="number"
+                      hide-spinner
                       class="compact-food-input"
                       :aria-label="`${food.name}の所持数`"
                       :model-value="config.foodDefaultNum[food.name]"
                       @update:model-value="config.foodDefaultNum[food.name] = $event ?? 0"
                     />
-                    <InputNumber v-else type="number" class="compact-food-input" :aria-label="`${food.name}の所持数`" :model-value="9999" disabled />
+                    <InputNumber v-else type="number" hide-spinner class="compact-food-input" :aria-label="`${food.name}の所持数`" :model-value="9999" disabled />
                   </td>
                   <td class="text-align-right" :class="{ shortage: getFoodDifference(food.name) < 0 }">{{ getFoodDifference(food.name).toLocaleString() }}</td>
                 </tr>
@@ -261,7 +263,6 @@ async function calculate() {
 
 <style lang="scss" scoped>
 .food-stock-page {
-  overflow: auto;
   section h2 { margin: 10px 0 5px; font-size: 1.1rem; }
   img { width: 24px; height: 24px; object-fit: contain; }
   .table-scroll { width: 100%; overflow-x: auto; }

@@ -4,11 +4,14 @@ import DangerAlert from '../components/alert/danger-alert.vue';
 import DesignTable from '../components/design-table.vue';
 import ResultSummaryCard from '../components/result-summary-card.vue';
 import SettingButton from '../components/design/setting-button.vue';
+import SettingSectionTitle from '../components/design/setting-section-title.vue';
 import SettingTable from '../components/design/setting-table.vue';
 import ToggleArea from '../components/design/toggle-area.vue';
 import InputCheckbox from '../components/form/input-checkbox.vue';
 import InputNumber from '../components/form/input-number.vue';
 import InputRadio from '../components/form/input-radio.vue';
+import InputSlider from '../components/form/input-slider.vue';
+import InputTextarea from '../components/form/input-textarea.vue';
 import HelpButton from '../components/help/help-button.vue';
 import CandyIcon from '../components/icon/candy-icon.vue';
 import StarIcon from '../components/icon/star-icon.vue';
@@ -27,6 +30,7 @@ const nativeSelect = ref('standard');
 const demoWatcher = reactive({ executing: true, name: '処理中の表示例', progress: 0.65 });
 const colorPalette = [
   ['Primary', '#66769A', '主要操作・見出し'],
+  ['Execute', '#3D73C9', '画面内の主実行'],
   ['Mint', '#59A98F', '選択・補助アクセント'],
   ['Accent', '#DF8650', '注意・補助アクセント'],
   ['Danger', '#BF6575', '重要操作・エラー・破壊的操作'],
@@ -35,32 +39,65 @@ const colorPalette = [
 ];
 
 const componentCatalog = [
-  ['フォーム', 'form/input-checkbox.vue', 'InputCheckbox', 'カスタムチェックボックス（通常・無効・読み取り専用）'],
+  [
+    'フォーム',
+    'form/input-checkbox.vue',
+    'InputCheckbox',
+    'カスタムチェックボックス（通常・無効・読み取り専用）',
+  ],
   ['フォーム', 'form/input-radio.vue', 'InputRadio', 'カスタムラジオボタン'],
   ['フォーム', 'form/input-number.vue', 'InputNumber', '数値・割合入力'],
+  ['フォーム', 'form/input-slider.vue', 'InputSlider', '範囲を指定して調整するスライダー入力'],
   ['フォーム', 'form/input-text.vue', 'InputText', 'テキスト入力'],
+  ['フォーム', 'form/input-textarea.vue', 'InputTextarea', '複数行テキスト入力'],
   ['フォーム', 'form/input-password.vue', 'InputPassword', 'パスワード入力'],
   ['フォーム', 'form/input-file.vue', 'InputFile', 'ファイル入力'],
   ['フォーム', 'form/input-select.vue', 'InputSelect', '選択リスト'],
-  ['フォーム', 'form/form-button.vue', 'FormButton', '標準・重要・無効状態のボタン'],
+  ['フォーム', 'form/form-button.vue', 'FormButton', '標準・実行・重要・無効状態のボタン'],
   ['通知', 'alert/base-alert.vue', 'BaseAlert', '情報通知'],
   ['通知', 'alert/danger-alert.vue', 'DangerAlert', '注意・再計算通知'],
   ['設定', 'design/setting-button.vue', 'SettingButton', 'ポップアップを開く設定ボタン'],
-  ['設定', 'design/setting-button-popup.vue', 'SettingButtonPopup', '設定ボタン用ポップアップの外枠'],
+  [
+    '設定',
+    'design/setting-button-popup.vue',
+    'SettingButtonPopup',
+    '設定ボタン用ポップアップの外枠',
+  ],
+  [
+    '設定',
+    'design/setting-section-title.vue',
+    'SettingSectionTitle',
+    'カテゴリ・設定項目・入力項目の役割を示す見出し',
+  ],
   ['設定', 'design/setting-table.vue', 'SettingTable', 'ラベルと値の簡易テーブル'],
   ['設定', 'design/toggle-area.vue', 'ToggleArea', '折りたたみ領域'],
   ['一覧', 'design-table.vue', 'DesignTable', '設定・一覧向けテーブル'],
   ['一覧', 'sortable-table.vue', 'SortableTable', 'ソート・固定列・ページ送り対応テーブル'],
   ['一覧', 'tab-list.vue', 'TabList', 'ページ内タブ'],
   ['一覧', 'util/setting-list.vue', 'SettingList', '設定項目の並び'],
-  ['結果表示', 'result-summary-card.vue', 'ResultSummaryCard', '種類ごとの結果と補助値をまとめるサマリーカード'],
-  ['ポップアップ', 'util/popup-base.vue', 'PopupBase', '共通ヘッダー・閉じる操作を持つポップアップ'],
+  [
+    '結果表示',
+    'result-summary-card.vue',
+    'ResultSummaryCard',
+    '種類ごとの結果と補助値をまとめるサマリーカード',
+  ],
+  [
+    'ポップアップ',
+    'util/popup-base.vue',
+    'PopupBase',
+    '共通ヘッダー・閉じる操作を持つポップアップ',
+  ],
   ['ポップアップ', 'table-popup.vue', 'TablePopup', '表を表示するポップアップ'],
   ['ポップアップ', 'pokemon-edit-popup.vue', 'PokemonEditPopup', 'ポケモン編集フロー'],
   ['ポップアップ', 'cooking-setting-popup.vue', 'CookingSettingPopup', '料理設定フロー'],
   ['ポップアップ', 'detail-setting-popup.vue', 'DetailSettingPopup', '詳細設定フロー'],
   ['ポップアップ', 'evaluate-table-detail-popup.vue', 'EvaluateTableDetailPopup', '評価詳細フロー'],
-  ['ポップアップ', 'google-spreadsheet-popup.vue', 'GoogleSpreadsheetPopup', 'スプレッドシート連携フロー'],
+  [
+    'ポップアップ',
+    'google-spreadsheet-popup.vue',
+    'GoogleSpreadsheetPopup',
+    'スプレッドシート連携フロー',
+  ],
   ['ポップアップ', 'pokemon-box-tsv-popup.vue', 'PokemonBoxTsvPopup', 'TSV入出力フロー'],
   ['ポップアップ', 'resource-edit-popup.vue', 'ResourceEditPopup', '資源編集フロー'],
   ['ヘルプ', 'help/help-button.vue', 'HelpButton', 'ヘルプ起動アイコン'],
@@ -101,46 +138,143 @@ const tableColumns = [
         <h1>デザインシステム</h1>
         <p>このアプリのソースコードで使用されているUIを、現状の見た目のまま一覧化しています。</p>
       </div>
-      <a class="link" href="https://github.com/reimer0204/pokesle-simulator/tree/master/src/components" target="_blank">components を見る</a>
+      <a
+        class="link"
+        href="https://github.com/reimer0204/pokesle-simulator/tree/master/src/components"
+        target="_blank"
+        >components を見る</a
+      >
     </div>
 
     <section class="color-section">
       <h2>カラーパレット</h2>
-      <p class="source">実装元: <code>src/style.scss</code> のCSS変数。コンポーネントはこの共通色を使用します。</p>
+      <p class="source">
+        実装元: <code>src/style.scss</code> のCSS変数。コンポーネントはこの共通色を使用します。
+      </p>
       <div class="color-palette">
         <div v-for="[name, color, usage] in colorPalette" :key="name" class="color-token">
           <i :style="{ backgroundColor: color }"></i>
-          <div><b>{{ name }}</b><small>{{ usage }}</small></div>
+          <div>
+            <b>{{ name }}</b
+            ><small>{{ usage }}</small>
+          </div>
         </div>
       </div>
     </section>
 
     <section>
       <h2>基本フォームコントロール</h2>
-      <p class="source">実装元: <code>components/form/</code>。ネイティブ要素を共通コンポーネントで包み、各画面の見た目と挙動を統一します。</p>
+      <p class="source">
+        実装元:
+        <code>components/form/</code
+        >。ネイティブ要素を共通コンポーネントで包み、各画面の見た目と挙動を統一します。
+      </p>
       <div class="showcase-row">
-        <FormButton>標準ボタン</FormButton>
-        <FormButton class="important">重要操作</FormButton>
-        <FormButton disabled>無効</FormButton>
-        <a class="link" href="#">テキストリンク</a>
-        <span class="caution">!</span>
+        <div class="labeled-sample"><code>FormButton</code><FormButton>標準ボタン</FormButton></div>
+        <div class="labeled-sample">
+          <code>FormButton.execute</code><FormButton class="execute">実行</FormButton>
+        </div>
+        <div class="labeled-sample">
+          <code>FormButton.important</code><FormButton class="important">重要操作</FormButton>
+        </div>
+        <div class="labeled-sample">
+          <code>FormButton</code><FormButton disabled>無効</FormButton>
+        </div>
+        <div class="labeled-sample">
+          <code>link</code><a class="link" href="#">テキストリンク</a>
+        </div>
+        <div class="labeled-sample"><code>caution</code><span class="caution">!</span></div>
       </div>
       <div class="showcase-row">
-        <InputText model-value="テキスト入力" aria-label="テキスト入力例" />
-        <InputNumber :model-value="10" aria-label="数値入力例" />
-        <InputSelect v-model="nativeSelect" aria-label="選択例"><option value="standard">選択肢</option><option value="other">別の選択肢</option></InputSelect>
-        <label class="file-input">画像ファイル <InputFile accept="image/*" /></label>
+        <div class="labeled-sample">
+          <code>InputText</code><InputText model-value="テキスト入力" aria-label="テキスト入力例" />
+        </div>
+        <div class="labeled-sample">
+          <code>InputTextarea</code
+          ><InputTextarea
+            model-value="複数行\nテキスト入力"
+            aria-label="複数行テキスト入力例"
+            rows="2"
+          />
+        </div>
+        <div class="labeled-sample">
+          <code>InputNumber</code><InputNumber :model-value="10" aria-label="数値入力例" />
+        </div>
+        <div class="labeled-sample">
+          <code>InputSlider</code
+          ><InputSlider v-model="number" :min="1" :max="100" aria-label="スライダー入力例" />
+        </div>
+        <div class="labeled-sample">
+          <code>InputSelect</code
+          ><InputSelect v-model="nativeSelect" aria-label="選択例"
+            ><option value="standard">選択肢</option>
+            <option value="other">別の選択肢</option></InputSelect
+          >
+        </div>
+        <div class="labeled-sample">
+          <code>InputFile</code
+          ><label class="file-input">画像ファイル <InputFile accept="image/*" /></label>
+        </div>
       </div>
-      <p class="native-note">数値・テキスト・ファイル入力とボタンは共通フォームコンポーネントを使用します。チェック状態の入力はすべて <code>InputCheckbox</code> を使用します。</p>
+      <p class="native-note">
+        数値・テキスト・ファイル入力とボタンは共通フォームコンポーネントを使用します。チェック状態の入力はすべて
+        <code>InputCheckbox</code> を使用します。
+      </p>
       <div class="catalog-scroll">
         <DesignTable class="native-catalog">
-          <thead><tr><th>要素</th><th>見た目・用途</th><th>主な使用箇所</th></tr></thead>
+          <thead>
+            <tr>
+              <th>要素</th>
+              <th>見た目・用途</th>
+              <th>主な使用箇所</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr><td><code>InputNumber</code></td><td>枠線と角丸を持つ数値入力。単位・最小値・最大値・無効状態と組み合わせて使用。</td><td><code>components/common-setting.vue</code>、各設定・シミュレーション画面</td></tr>
-            <tr><td><code>InputText</code></td><td>枠線と角丸を持つテキスト入力。検索語、名前、メモ、連携名に使用。</td><td><code>pages/index.vue</code>、<code>components/pokemon-edit-popup.vue</code>、<code>components/google-spreadsheet-popup.vue</code></td></tr>
-            <tr><td><code>InputSelect</code></td><td>ブラウザ標準の選択リスト。フィールド・料理種別などを選択。</td><td><code>components/common-setting.vue</code>、<code>components/filter/pokemon-filter-editor.vue</code></td></tr>
-            <tr><td><code>InputFile</code></td><td>ブラウザ標準のファイル選択。画像インポートに使用。</td><td><code>pages/simulation.vue</code>、<code>pages/screenshot-import.vue</code></td></tr>
-            <tr><td><code>FormButton</code></td><td>ブルーグレーの標準ボタン、Danger色の重要ボタン、無効状態。</td><td><code>src/style.scss</code>、全ページ・ポップアップ</td></tr>
+            <tr>
+              <td><code>InputNumber</code></td>
+              <td>枠線と角丸を持つ数値入力。単位・最小値・最大値・無効状態と組み合わせて使用。</td>
+              <td><code>components/common-setting.vue</code>、各設定・シミュレーション画面</td>
+            </tr>
+            <tr>
+              <td><code>InputSlider</code></td>
+              <td>スライダーと数値入力の両方で、指定範囲を調整する入力。</td>
+              <td><code>components/pokemon-edit-popup.vue</code></td>
+            </tr>
+            <tr>
+              <td><code>InputText</code></td>
+              <td>枠線と角丸を持つテキスト入力。検索語、名前、メモ、連携名に使用。</td>
+              <td>
+                <code>pages/index.vue</code>、<code>components/pokemon-edit-popup.vue</code>、<code
+                  >components/google-spreadsheet-popup.vue</code
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>InputTextarea</code></td>
+              <td>枠線と角丸を持つ複数行テキスト入力。複数行の入力アシストに使用。</td>
+              <td><code>components/pokemon-edit-popup.vue</code></td>
+            </tr>
+            <tr>
+              <td><code>InputSelect</code></td>
+              <td>ブラウザ標準の選択リスト。フィールド・料理種別などを選択。</td>
+              <td>
+                <code>components/common-setting.vue</code>、<code
+                  >components/filter/pokemon-filter-editor.vue</code
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><code>InputFile</code></td>
+              <td>ブラウザ標準のファイル選択。画像インポートに使用。</td>
+              <td><code>pages/simulation.vue</code>、<code>pages/screenshot-import.vue</code></td>
+            </tr>
+            <tr>
+              <td><code>FormButton</code></td>
+              <td>
+                ブルーグレーの標準ボタン、青色の実行ボタン（<code>execute</code>）、Danger色の重要ボタン、無効状態。
+              </td>
+              <td><code>components/form/form-button.vue</code>、全ページ・ポップアップ</td>
+            </tr>
           </tbody>
         </DesignTable>
       </div>
@@ -148,98 +282,225 @@ const tableColumns = [
 
     <section>
       <h2>フォームコントロール</h2>
-      <p class="source">実装元: <code>components/form/</code>。各コンポーネントを個別に記載しています。</p>
+      <p class="source">
+        実装元: <code>components/form/</code>。各コンポーネントを個別に記載しています。
+      </p>
       <div class="showcase-row controls">
         <div class="component-sample">
           <code>form/input-checkbox.vue · InputCheckbox</code>
-          <div class="showcase-row"><InputCheckbox v-model="checkbox">選択済み</InputCheckbox><InputCheckbox :modelValue="false">未選択</InputCheckbox><InputCheckbox :modelValue="false" disabled>無効</InputCheckbox></div>
+          <div class="showcase-row">
+            <InputCheckbox v-model="checkbox">選択済み</InputCheckbox
+            ><InputCheckbox :modelValue="false">未選択</InputCheckbox
+            ><InputCheckbox :modelValue="false" disabled>無効</InputCheckbox>
+          </div>
         </div>
         <div class="component-sample">
           <code>form/input-radio.vue · InputRadio</code>
-          <div class="showcase-row"><InputRadio v-model="selectedMode" value="normal">通常</InputRadio><InputRadio v-model="selectedMode" value="detail">詳細</InputRadio></div>
+          <div class="showcase-row">
+            <InputRadio v-model="selectedMode" value="normal">通常</InputRadio
+            ><InputRadio v-model="selectedMode" value="detail">詳細</InputRadio>
+          </div>
         </div>
         <div class="component-sample">
           <code>form/input-number.vue · InputNumber</code>
-          <div class="showcase-row"><label class="inline-field">数値 <InputNumber v-model="number" class="w-60px" /></label><label class="inline-field">割合 <InputNumber :model-value="0.125" percent class="w-60px" /></label></div>
+          <div class="showcase-row">
+            <label class="inline-field">数値 <InputNumber v-model="number" class="w-60px" /></label
+            ><label class="inline-field"
+              >割合 <InputNumber :model-value="0.125" percent class="w-60px"
+            /></label>
+          </div>
+        </div>
+        <div class="component-sample">
+          <code>form/input-slider.vue · InputSlider</code>
+          <div class="showcase-row">
+            <InputSlider v-model="number" :min="1" :max="100" aria-label="レベルの例" />
+          </div>
         </div>
       </div>
     </section>
 
     <section>
       <h2>設定・ナビゲーション</h2>
-      <p class="source">実装元: <code>components/design/</code>、<code>components/tab-list.vue</code>、<code>components/util/setting-list.vue</code></p>
+      <p class="source">
+        実装元: <code>components/design/</code>、<code>components/tab-list.vue</code>、<code
+          >components/util/setting-list.vue</code
+        >
+      </p>
       <div class="showcase-row">
-        <SettingButton title="設定サンプル">
-          <template #label>設定を開く</template>
-          <p>設定ボタンから開くポップアップの本文例です。</p>
-        </SettingButton>
-        <SettingButton title="重要な設定" important><template #label>重要な設定</template></SettingButton>
-        <HelpButton title="ヘルプの例" markdown="各画面で補足説明を表示するためのヘルプアイコンです。" />
+        <div class="labeled-sample">
+          <code>SettingButton</code
+          ><SettingButton title="設定サンプル">
+            <template #label>設定を開く</template>
+            <p>設定ボタンから開くポップアップの本文例です。</p>
+          </SettingButton>
+        </div>
+        <div class="labeled-sample">
+          <code>SettingButton.important</code
+          ><SettingButton title="重要な設定" important
+            ><template #label>重要な設定</template></SettingButton
+          >
+        </div>
+        <div class="labeled-sample">
+          <code>HelpButton</code
+          ><HelpButton
+            title="ヘルプの例"
+            markdown="各画面で補足説明を表示するためのヘルプアイコンです。"
+          />
+        </div>
       </div>
-      <TabList class="demo-tabs">
-        <a class="active">選択中のタブ</a>
-        <a>通常タブ</a>
-        <a>長い名称のタブ</a>
-      </TabList>
-      <SettingList class="mt-10px">
-        <div><label>設定項目</label><InputCheckbox v-model="checkbox">有効にする</InputCheckbox></div>
-        <div><label>数値設定</label><InputNumber v-model="number" /></div>
-        <div><label>説明付き項目</label><small>ラベルはグレーの太字で表示されます。</small></div>
-      </SettingList>
+      <div class="setting-section-title-samples">
+        <div class="labeled-sample">
+          <code>SettingSectionTitle.category</code
+          ><SettingSectionTitle>カテゴリ見出し</SettingSectionTitle>
+        </div>
+        <div class="showcase-row">
+          <div class="labeled-sample">
+            <code>SettingSectionTitle.item</code
+            ><SettingSectionTitle type="item">ルール見出し</SettingSectionTitle>
+          </div>
+          <div class="labeled-sample">
+            <code>SettingSectionTitle.field</code
+            ><SettingSectionTitle type="field">項目ラベル</SettingSectionTitle>
+          </div>
+          <span>入力コントロール</span>
+        </div>
+      </div>
+      <div class="labeled-sample">
+        <code>TabList</code
+        ><TabList class="demo-tabs">
+          <a class="active">選択中のタブ</a>
+          <a>通常タブ</a>
+          <a>長い名称のタブ</a>
+        </TabList>
+      </div>
+      <div class="labeled-sample">
+        <code>SettingList</code
+        ><SettingList class="mt-10px">
+          <div>
+            <label>設定項目</label><InputCheckbox v-model="checkbox">有効にする</InputCheckbox>
+          </div>
+          <div><label>数値設定</label><InputNumber v-model="number" /></div>
+          <div><label>説明付き項目</label><small>ラベルはグレーの太字で表示されます。</small></div>
+        </SettingList>
+      </div>
     </section>
 
     <section>
       <h2>折りたたみ・通知</h2>
-      <p class="source">実装元: <code>components/design/toggle-area.vue</code>、<code>components/alert/</code></p>
-      <ToggleArea open>
-        <template #headerText>開いている折りたたみ領域</template>
-        クリックで内容の開閉を切り替えられます。設定画面や詳細情報で利用されています。
-      </ToggleArea>
+      <p class="source">
+        実装元: <code>components/design/toggle-area.vue</code>、<code>components/alert/</code>
+      </p>
+      <div class="labeled-sample">
+        <code>ToggleArea</code
+        ><ToggleArea open>
+          <template #headerText>開いている折りたたみ領域</template>
+          クリックで内容の開閉を切り替えられます。設定画面や詳細情報で利用されています。
+        </ToggleArea>
+      </div>
       <div class="alerts">
-        <BaseAlert>情報・補足の通知</BaseAlert>
-        <DangerAlert>再計算や注意を促す通知</DangerAlert>
+        <div class="labeled-sample">
+          <code>BaseAlert</code><BaseAlert>情報・補足の通知</BaseAlert>
+        </div>
+        <div class="labeled-sample">
+          <code>DangerAlert</code><DangerAlert>再計算や注意を促す通知</DangerAlert>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>テーブル</h2>
-      <p class="source">実装元: <code>components/design-table.vue</code>、<code>components/sortable-table.vue</code></p>
+      <p class="source">
+        実装元: <code>components/design-table.vue</code>、<code>components/sortable-table.vue</code>
+      </p>
       <div class="table-grid">
         <div>
-          <h3>設定用テーブル</h3>
+          <h3><code>DesignTable</code> 設定用テーブル</h3>
           <DesignTable>
-            <thead><tr><th>項目</th><th>値</th></tr></thead>
-            <tbody><tr><td>基準</td><td>標準</td></tr><tr><td>補正</td><td>あり</td></tr></tbody>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>値</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>基準</td>
+                <td>標準</td>
+              </tr>
+              <tr>
+                <td>補正</td>
+                <td>あり</td>
+              </tr>
+            </tbody>
           </DesignTable>
         </div>
         <div class="sortable-example">
-          <h3>ソート可能テーブル</h3>
+          <h3><code>SortableTable</code> ソート可能テーブル</h3>
           <SortableTable :dataList="tableRows" :columnList="tableColumns" scroll />
         </div>
       </div>
-      <SettingTable class="mt-10px">
-        <tbody><tr><th>設定テーブル</th><td>ラベルを左寄せ・淡色で表示する簡易テーブル</td></tr></tbody>
-      </SettingTable>
+      <div class="labeled-sample">
+        <code>SettingTable</code
+        ><SettingTable class="mt-10px">
+          <thead>
+            <tr>
+              <th>ヘッダー1</th>
+              <th>ヘッダー2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>設定テーブル</th>
+              <td>ラベルを左寄せ・淡色で表示する簡易テーブル</td>
+            </tr>
+          </tbody>
+        </SettingTable>
+      </div>
     </section>
 
     <section>
       <h2>ポップアップ・進捗表示</h2>
-      <p class="source">実装元: <code>components/util/popup-base.vue</code>、<code>components/util/async-watcher-area.vue</code></p>
+      <p class="source">
+        実装元: <code>components/util/popup-base.vue</code>、<code
+          >components/util/async-watcher-area.vue</code
+        >
+      </p>
       <div class="overlay-samples">
-        <PopupBase class="popup-sample"><template #headerText>共通ポップアップ</template>ヘッダー、閉じる操作、本文余白を共通化する外枠です。</PopupBase>
-        <AsyncWatcherArea class="progress-sample" :asyncWatcher="demoWatcher"><div>背後のコンテンツ</div></AsyncWatcherArea>
+        <div class="labeled-sample">
+          <code>PopupBase</code
+          ><PopupBase class="popup-sample"
+            ><template #headerText>共通ポップアップ</template
+            >ヘッダー、閉じる操作、本文余白を共通化する外枠です。</PopupBase
+          >
+        </div>
+        <div class="labeled-sample">
+          <code>AsyncWatcherArea</code
+          ><AsyncWatcherArea class="progress-sample" :asyncWatcher="demoWatcher"
+            ><div>背後のコンテンツ</div></AsyncWatcherArea
+          >
+        </div>
       </div>
     </section>
 
     <section>
       <h2>結果サマリー</h2>
-      <p class="source">実装元: <code>components/result-summary-card.vue</code>。種類ごとの結果や補助値を、見出しと行一覧でまとめて表示します。</p>
+      <p class="source">
+        実装元:
+        <code>components/result-summary-card.vue</code
+        >。種類ごとの結果や補助値を、見出しと行一覧でまとめて表示します。
+      </p>
       <div class="result-summary-examples">
-        <ResultSummaryCard title="カレー" summary="合計 420,426">
-          <div class="result-summary-row"><b>いあいぎりすき焼きカレー</b><span>2食</span></div>
-          <div class="result-summary-row"><b>めざめるパワーシチュー</b><span>1食</span></div>
-        </ResultSummaryCard>
-        <ResultSummaryCard title="準備食材量" summary="3種類の相乗平均：378,080" />
+        <div class="labeled-sample">
+          <code>ResultSummaryCard</code
+          ><ResultSummaryCard title="カレー" summary="合計 420,426">
+            <div class="result-summary-row"><b>いあいぎりすき焼きカレー</b><span>2食</span></div>
+            <div class="result-summary-row"><b>めざめるパワーシチュー</b><span>1食</span></div>
+          </ResultSummaryCard>
+        </div>
+        <div class="labeled-sample">
+          <code>ResultSummaryCard</code
+          ><ResultSummaryCard title="準備食材量" summary="3種類の相乗平均：378,080" />
+        </div>
       </div>
     </section>
 
@@ -247,24 +508,64 @@ const tableColumns = [
       <h2>状態表示・アイコン</h2>
       <p class="source">実装元: <code>components/status/</code>、<code>components/icon/</code></p>
       <div class="showcase-row status-samples">
-        <SubSkillLabel :subSkill="SubSkill.list.find(x => x.rarity === 1)!" />
-        <SubSkillLabel :subSkill="SubSkill.list.find(x => x.rarity === 2)!" />
-        <SubSkillLabel :subSkill="SubSkill.list.find(x => x.rarity === 3)!" silverSeed />
-        <SubSkillLabel :subSkill="SubSkill.list[0]" short fix />
-        <span class="shiny-label">色違いポケモン ★</span>
-        <span class="nature-sample">がんばりや <small><b>EXP↑</b><em>げんき↓</em></small></span>
-        <StarIcon class="star" />
-        <CandyIcon class="candy" />
+        <div class="labeled-sample">
+          <code>SubSkillLabel</code
+          ><SubSkillLabel :subSkill="SubSkill.list.find((x) => x.rarity === 1)!" />
+        </div>
+        <div class="labeled-sample">
+          <code>SubSkillLabel</code
+          ><SubSkillLabel :subSkill="SubSkill.list.find((x) => x.rarity === 2)!" />
+        </div>
+        <div class="labeled-sample">
+          <code>SubSkillLabel.silverSeed</code
+          ><SubSkillLabel :subSkill="SubSkill.list.find((x) => x.rarity === 3)!" silverSeed />
+        </div>
+        <div class="labeled-sample">
+          <code>SubSkillLabel.short</code><SubSkillLabel :subSkill="SubSkill.list[0]" short fix />
+        </div>
+        <div class="labeled-sample">
+          <code>NameLabel</code><span class="shiny-label">色違いポケモン ★</span>
+        </div>
+        <div class="labeled-sample">
+          <code>NatureInfo</code
+          ><span class="nature-sample"
+            >がんばりや <small><b>EXP↑</b><em>げんき↓</em></small></span
+          >
+        </div>
+        <div class="labeled-sample"><code>StarIcon</code><StarIcon class="star" /></div>
+        <div class="labeled-sample"><code>CandyIcon</code><CandyIcon class="candy" /></div>
       </div>
     </section>
 
     <section>
       <h2>コンポーネント台帳</h2>
-      <p class="source">対象: <code>src/components/</code> 配下の全40コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。</p>
+      <p class="source">
+        対象:
+        <code>src/components/</code>
+        配下の全41コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。
+      </p>
       <div class="catalog-scroll">
         <DesignTable class="catalog-table">
-          <thead><tr><th>分類</th><th>コンポーネント</th><th>実装元</th><th>役割</th></tr></thead>
-          <tbody><tr v-for="[category, path, name, purpose] in componentCatalog" :key="path"><td>{{ category }}</td><td><b>{{ name }}</b></td><td><code>src/components/{{ path }}</code></td><td>{{ purpose }}</td></tr></tbody>
+          <thead>
+            <tr>
+              <th>分類</th>
+              <th>コンポーネント</th>
+              <th>実装元</th>
+              <th>役割</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="[category, path, name, purpose] in componentCatalog" :key="path">
+              <td>{{ category }}</td>
+              <td>
+                <b>{{ name }}</b>
+              </td>
+              <td>
+                <code>src/components/{{ path }}</code>
+              </td>
+              <td>{{ purpose }}</td>
+            </tr>
+          </tbody>
         </DesignTable>
       </div>
     </section>
@@ -285,53 +586,253 @@ const tableColumns = [
   gap: 15px;
   margin-bottom: 15px;
 
-  h1 { font-size: 22px; margin-bottom: 5px; }
-  p { color: #666; }
+  h1 {
+    font-size: 22px;
+    margin-bottom: 5px;
+  }
+  p {
+    color: #666;
+  }
 }
 
 section {
-  border-top: 1px #DDD solid;
+  border-top: 1px #ddd solid;
   padding: 15px 0;
 
-  h2 { font-size: 18px; margin-bottom: 3px; }
-  h3 { font-size: 14px; margin-bottom: 6px; }
+  h2 {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+  h3 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
 }
 
-.source { color: #777; font-size: 11px; margin-bottom: 10px; }
-.color-section { border-top: 0; padding-top: 0; }
-.color-palette { display: flex; flex-wrap: wrap; gap: 6px; }
-.color-token { display: flex; align-items: center; gap: 6px; min-width: 140px; padding: 5px 7px; border: 1px solid var(--color-line); border-radius: 6px; background: var(--color-surface); }
-.color-token i { width: 20px; height: 20px; border: 1px solid rgb(39 49 79 / 15%); border-radius: 50%; box-shadow: 0 1px 2px rgb(39 49 79 / 15%); }
-.color-token div { display: flex; flex-direction: column; line-height: 1.2; }.color-token small { color: var(--color-muted); font-size: 10px; }
-code { background: #F3F3F3; border-radius: 3px; padding: 1px 3px; }
-.showcase-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 15px; margin: 8px 0; }
-.native-note { color: #666; margin: 10px 0; }.file-input { display: inline-flex; align-items: center; gap: 5px; }
-.native-catalog { min-width: 760px; }.native-catalog td { vertical-align: top; }
-.controls { gap: 10px 20px; }
-.component-sample { padding: 8px; border: 1px #DDD solid; border-radius: 5px; background: #FAFAFA; }
-.inline-field { display: inline-flex; align-items: center; gap: 5px; }
-.caution { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 2px #FFF solid; border-radius: 50%; background: red; color: #FFF; font-weight: bold; }
-.demo-tabs { max-width: 600px; }
-.alerts { display: grid; grid-template-columns: repeat(2, minmax(0, 360px)); gap: 10px; margin-top: 10px; }
-.table-grid { display: grid; grid-template-columns: max-content minmax(300px, 550px); gap: 20px; align-items: start; }
-.overlay-samples { display: flex; flex-wrap: wrap; align-items: start; gap: 15px; }
-.popup-sample { width: 320px; }.progress-sample { width: 320px; height: 110px; border: 1px #DDD solid; padding: 12px; }
-.result-summary-examples { display: grid; grid-template-columns: repeat(2, minmax(260px, 360px)); gap: 10px; }
-.result-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 9px; border-top: 1px solid var(--color-line); }
-.result-summary-row span { white-space: nowrap; }
-.catalog-scroll { max-width: 100%; overflow: auto; }.catalog-table { min-width: 720px; }.catalog-table td { vertical-align: top; }
-.sortable-example { height: 160px; display: flex; flex-direction: column; }
-.sortable-example :deep(.sortable-table) { flex: 1 1 0; min-height: 0; }
-.status-samples { gap: 12px; }
-.shiny-label { color: #E52; font-weight: bold; }
-.nature-sample { display: inline-flex; align-items: center; gap: 2px; }
-.nature-sample small { display: flex; flex-direction: column; font-size: 65%; line-height: 1.1; }
-.nature-sample b { color: red; }.nature-sample em { color: blue; font-style: normal; font-weight: bold; }
-.star { width: 22px; color: #F7B500; }.candy { width: 22px; color: #6C4; }
+.source {
+  color: #777;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.color-section {
+  border-top: 0;
+  padding-top: 0;
+}
+.color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.color-token {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+  padding: 5px 7px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+.color-token i {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgb(39 49 79 / 15%);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgb(39 49 79 / 15%);
+}
+.color-token div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.color-token small {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+code {
+  background: #f3f3f3;
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+.showcase-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 15px;
+  margin: 8px 0;
+}
+.labeled-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.labeled-sample > code {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+.native-note {
+  color: #666;
+  margin: 10px 0;
+}
+.file-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.setting-section-title-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 600px;
+  margin: 10px 0;
+}
+.native-catalog {
+  min-width: 760px;
+}
+.native-catalog td {
+  vertical-align: top;
+}
+.controls {
+  gap: 10px 20px;
+}
+.component-sample {
+  padding: 8px;
+  border: 1px #ddd solid;
+  border-radius: 5px;
+  background: #fafafa;
+}
+.inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.caution {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px #fff solid;
+  border-radius: 50%;
+  background: red;
+  color: #fff;
+  font-weight: bold;
+}
+.demo-tabs {
+  max-width: 600px;
+}
+.alerts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 360px));
+  gap: 10px;
+  margin-top: 10px;
+}
+.table-grid {
+  display: grid;
+  grid-template-columns: max-content minmax(300px, 550px);
+  gap: 20px;
+  align-items: start;
+}
+.overlay-samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 15px;
+}
+.popup-sample {
+  width: 320px;
+}
+.progress-sample {
+  width: 320px;
+  height: 110px;
+  border: 1px #ddd solid;
+  padding: 12px;
+}
+.result-summary-examples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 360px));
+  gap: 10px;
+}
+.result-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border-top: 1px solid var(--color-line);
+}
+.result-summary-row span {
+  white-space: nowrap;
+}
+.catalog-scroll {
+  max-width: 100%;
+  overflow: auto;
+}
+.catalog-table {
+  min-width: 720px;
+}
+.catalog-table td {
+  vertical-align: top;
+}
+.sortable-example {
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+}
+.sortable-example :deep(.sortable-table) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.status-samples {
+  gap: 12px;
+}
+.shiny-label {
+  color: #e52;
+  font-weight: bold;
+}
+.nature-sample {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.nature-sample small {
+  display: flex;
+  flex-direction: column;
+  font-size: 65%;
+  line-height: 1.1;
+}
+.nature-sample b {
+  color: red;
+}
+.nature-sample em {
+  color: blue;
+  font-style: normal;
+  font-weight: bold;
+}
+.star {
+  width: 22px;
+  color: #f7b500;
+}
+.candy {
+  width: 22px;
+  color: #6c4;
+}
 
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
-  .page-header { align-items: start; }.page-header > .link { white-space: nowrap; }
-  .alerts, .table-grid, .result-summary-examples { grid-template-columns: minmax(0, 1fr); }
-  .sortable-example { max-width: 100%; }
+  .page-header {
+    align-items: start;
+  }
+  .page-header > .link {
+    white-space: nowrap;
+  }
+  .alerts,
+  .table-grid,
+  .result-summary-examples {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sortable-example {
+    max-width: 100%;
+  }
 }
 </style>

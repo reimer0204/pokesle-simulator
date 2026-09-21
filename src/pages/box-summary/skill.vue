@@ -173,7 +173,7 @@ let skillColumn = [
 
     <div class="pokemon-list mt-10px">
 
-      <AsyncWatcherArea :asyncWatcher="asyncWatcher">
+      <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
         <div class="scroll-x">
           <SortableTable :dataList="skillList" :columnList="skillColumn">
             <template #max="{ value, data }">
@@ -204,11 +204,22 @@ let skillColumn = [
 
 .page {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
+  min-height: 0;
   padding-bottom: 10px;
 
+  .pokemon-list {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   .scroll-x {
-    overflow-x: scroll;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: auto;
   }
 }
 

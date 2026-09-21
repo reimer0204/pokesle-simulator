@@ -162,8 +162,6 @@ const pokemonList = computed(() => {
 
     let max = null;
     for(let lv of lvList) {
-      // console.log(simulatedPokemonList.value
-      //   .filter(x => x.evaluateResult).length)
 
       let pokemonList = simulatedPokemonList.value
         .filter(x => x.evaluateResult[lv]?.[target.base.name]);

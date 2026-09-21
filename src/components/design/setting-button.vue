@@ -5,6 +5,7 @@ import SettingButtonPopup from './setting-button-popup.vue';
 const props = defineProps({
   title: { type: String },
   important: { type: Boolean },
+  fitViewport: { type: Boolean, default: false },
 })
 defineOptions({
   inheritAttrs: false
@@ -38,7 +39,7 @@ async function showPopup() {
 
     
     <Teleport defer v-if="popup?.uuid" :to="`#${popup?.uuid}`">
-      <div class="popup">
+      <div class="popup" :class="{ 'fit-viewport': props.fitViewport }">
         <slot name="header">
           <div class="header flex-row-start-center gap-15px">
             <slot name="headerText">{{ title }}</slot>
@@ -101,6 +102,28 @@ async function showPopup() {
   
   .body-wrapper {
     padding: 20px;
+  }
+
+  &.fit-viewport {
+    box-sizing: border-box;
+    width: min(850px, calc(100vw - 50px));
+    height: calc(100dvh - 140px);
+    display: flex;
+    flex-direction: column;
+
+    .body-wrapper {
+      box-sizing: border-box;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
+  .popup.fit-viewport {
+    width: calc(100vw - 8px);
+    height: calc(100dvh - 8px);
   }
 }
 </style>

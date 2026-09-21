@@ -8,6 +8,7 @@ import Nature from "../../data/nature";
 import Field, { type ExBuff, type FieldItem } from '../../data/field.ts';
 import Berry from '../../data/berry';
 import SubSkill from '../../data/sub-skill';
+import { getPokemonEvaluateSetting } from '../evaluate-setting';
 import ProbBorder from '../utils/prob-border';
 import type { CookingType, FoodType, NatureType, PokemonBoxType, PokemonType, SimulatedPokemon, SkillType, SubSkillType } from '../../type';
 
@@ -317,7 +318,7 @@ class PokemonSimulator {
     if (fixable) {
       // 厳選設定のスキルレベルまで
       if (this.config.simulation.fixSkillSeed === 1) {
-        let skillLvSetting = this.config.selectEvaluate.specialty[base.specialty].skillLv[base.skill.name];
+        let skillLvSetting = getPokemonEvaluateSetting(this.config.selectEvaluate, base).skillLv;
         if (skillLvSetting.type == 1) {
           skillLv = base.evolveLv;
         }
@@ -339,15 +340,17 @@ class PokemonSimulator {
       lv,
       box.foodList,
       skillLv,
-      this.config.simulation.eventBonusType.types[base.type]
-        || this.config.simulation.eventBonusType.specialties[base.specialty]
-        || (
-          base.specialty == 'オール' && (
-            this.config.simulation.eventBonusType.specialties['きのみ']
-            || this.config.simulation.eventBonusType.specialties['食材']
-            || this.config.simulation.eventBonusType.specialties['スキル']
+      this.config.simulation.eventBonusList.filter(eventBonus =>
+        eventBonus.target.types[base.type]
+          || eventBonus.target.specialties[base.specialty]
+          || (
+            base.specialty == 'オール' && (
+              eventBonus.target.specialties['きのみ']
+              || eventBonus.target.specialties['食材']
+              || eventBonus.target.specialties['スキル']
+            )
           )
-        ),
+      ),
       box.sleepTime,
       useCandy,
       useShard,
@@ -379,7 +382,7 @@ class PokemonSimulator {
     foodNameList: string[],
   ) {
     // スキルレベル計算
-    let skillLvSetting = this.config.selectEvaluate.specialty[basePokemon.specialty].skillLv[basePokemon.skill.name];
+    let skillLvSetting = getPokemonEvaluateSetting(this.config.selectEvaluate, basePokemon).skillLv;
     let skillLv: number = 1;
     if (skillLvSetting.type == 1) {
       skillLv = basePokemon.evolveLv;
@@ -396,7 +399,7 @@ class PokemonSimulator {
       lv,
       foodNameList,
       skillLv,
-      false,
+      [],
       this.config.selectEvaluate.pokemonSleepTime,
     )
   }
@@ -406,7 +409,7 @@ class PokemonSimulator {
     lv: number,
     foodNameList: string[],
     skillLv: number,
-    eventBonus: boolean = false,
+    eventBonusList: EventBonus[] = [],
     sleepTime: number,
     useCandy: number = 0,
     useShard: number = 0,
@@ -427,7 +430,7 @@ class PokemonSimulator {
       base,
       skillLv: skillLv,
       lv: lv,
-      eventBonus,
+      eventBonusList,
       sleepTime,
       useCandy,
       useShard,
@@ -444,9 +447,7 @@ class PokemonSimulator {
       if (food == null) throw `${pokemon.base.name}:不正な食べ物(${name})`
       let num = Math.round(firstFoodEnergy * [1, 2.25, 3.6][index] / food.energy);
       let baseNum = num;
-      if (eventBonus) {
-        num += this.config.simulation.eventBonusTypeFood;
-      }
+      num += eventBonusList.reduce((total, eventBonus) => total + eventBonus.food, 0);
 
       // EXモードの食材+1
       if (
@@ -461,7 +462,7 @@ class PokemonSimulator {
       }
 
       const foodUseRate = this.mode == PokemonSimulatorMode.SELECT
-        ? this.config.selectEvaluate.specialty[base.specialty].foodEnergyRate / 100
+        ? getPokemonEvaluateSetting(this.config.selectEvaluate, base).foodEnergyRate / 100
         : 1
 
       pokemon.foodList.push({
@@ -512,11 +513,17 @@ class PokemonSimulator {
     }
 
     // きのみエナジー/手伝い
+    // 個別きのみ設定は、概算・チームシミュレーションでのみフィールド倍率の後に適用する。
+    const berryEnergyRate =
+      this.mode === PokemonSimulatorMode.ABOUT || this.mode === PokemonSimulatorMode.TEAM
+        ? (this.config.simulation.berryEnergyRate?.[pokemon.base.berry.name] ?? 1)
+        : 1;
     pokemon.berryEnergy = Math.max(
       pokemon.base.berry.energy + pokemon.lv - 1,
       pokemon.base.berry.energy * (1.025 ** (pokemon.lv - 1))
     )
     * berryRate / 100
+    * berryEnergyRate
     * this.#berryEnergyWeight
     pokemon.berryRate = berryRate;
 
@@ -527,9 +534,7 @@ class PokemonSimulator {
     // おてつだいサポート用のきのみエナジー/手伝い(イベントボーナス加算前に計算)
     let berryEnergyPerHelpForSupport = pokemon.berryEnergy * pokemon.berryNum
     
-    if (pokemon.eventBonus) {
-      pokemon.berryNum += this.config.simulation.eventBonusTypeBerry;
-    }
+    pokemon.berryNum += pokemon.eventBonusList.reduce((total, eventBonus) => total + eventBonus.berry, 0);
 
     pokemon.bEpH4Spt = berryEnergyPerHelpForSupport
     pokemon.bEpH = pokemon.berryEnergy * pokemon.berryNum
@@ -571,9 +576,9 @@ class PokemonSimulator {
     if (pokemon.sleepTime >=  500) pokemon.bag += 2;
     if (pokemon.sleepTime >= 1000) pokemon.bag += 3;
     if (pokemon.sleepTime >= 2000) pokemon.bag += 2;
-    if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
-      pokemon.bag += this.config.simulation.eventBonusTypeBag;
-      pokemon.bag *= this.config.simulation.eventBonusTypeBagRate;
+    if (this.mode != PokemonSimulator.MODE_SELECT) {
+      pokemon.bag += pokemon.eventBonusList.reduce((total, eventBonus) => total + eventBonus.bag, 0);
+      pokemon.bag *= pokemon.eventBonusList.reduce((total, eventBonus) => total * eventBonus.bagRate, 1);
     }
     if (this.mode != PokemonSimulator.MODE_SELECT && this.config.simulation.campTicket) {
       pokemon.bag = Math.floor(pokemon.bag * 1.2);
@@ -607,8 +612,8 @@ class PokemonSimulator {
       }
     }
 
-    if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
-      pokemon.fixedSkillLv += this.config.simulation.eventBonusTypeSkillLv;
+    if (this.mode != PokemonSimulator.MODE_SELECT) {
+      pokemon.fixedSkillLv += pokemon.eventBonusList.reduce((total, eventBonus) => total + eventBonus.skillLv, 0);
     }
     if (pokemon.fixedSkillLv < 1) pokemon.fixedSkillLv = 1;
     if (pokemon.fixedSkillLv > pokemon.base.skill.effect.length) pokemon.fixedSkillLv = pokemon.base.skill.effect.length;
@@ -622,8 +627,8 @@ class PokemonSimulator {
       )
       * (nature?.good == 'メインスキル発生確率' ? 1.2 : nature?.weak == 'メインスキル発生確率' ? 0.8 : 1)
 
-    if (this.mode != PokemonSimulator.MODE_SELECT && pokemon.eventBonus) {
-      pokemon.skillRate *= this.config.simulation.eventBonusTypeSkillRate;
+    if (this.mode != PokemonSimulator.MODE_SELECT) {
+      pokemon.skillRate *= pokemon.eventBonusList.reduce((total, eventBonus) => total * eventBonus.skillRate, 1);
     }
     if (
       this.mode != PokemonSimulator.MODE_SELECT
@@ -1312,7 +1317,7 @@ class PokemonSimulator {
             executor[food.name] = Number(executor[food.name] ?? 0) + num;
             foodEnergy += food.energy * (
              (food.bestRate * Cooking.maxRecipeBonus - 1)
-             * this.config.selectEvaluate.specialty[executor.base.specialty].foodGetRate / 100
+             * getPokemonEvaluateSetting(this.config.selectEvaluate, executor.base).foodGetRate / 100
              + 1
             )
           }
@@ -1529,7 +1534,7 @@ class PokemonSimulator {
       pokemon,
       subSkillList,
       nature,
-      this.config.selectEvaluate.specialty[pokemon.base.specialty].berryEnergyRate,
+      getPokemonEvaluateSetting(this.config.selectEvaluate, pokemon.base).berryEnergyRate,
     )
     // timeCounter?.stop('calcParameter')
 

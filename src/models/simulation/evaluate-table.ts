@@ -1,13 +1,13 @@
-import Nature from "../../data/nature";
-import Pokemon from "../../data/pokemon";
-import Skill from "../../data/skill";
-import SubSkill from "../../data/sub-skill";
-import SubSkillCombination from "../../data/sub-skill-combination";
-import EvaluateTableWorker from "./evaluate-simulator?worker";
-import config from "../config.ts";
-import MultiWorker from "../multi-worker";
-import Version from "../version";
-import SubSkillCombinationWorker from "../sub-skill-combination-worker.ts?worker";
+import Nature from '../../data/nature';
+import Pokemon from '../../data/pokemon';
+import Skill from '../../data/skill';
+import SubSkill from '../../data/sub-skill';
+import SubSkillCombination from '../../data/sub-skill-combination';
+import EvaluateTableWorker from './evaluate-simulator?worker';
+import config from '../config.ts';
+import MultiWorker from '../multi-worker';
+import Version from '../version';
+import SubSkillCombinationWorker from '../sub-skill-combination-worker.ts?worker';
 
 const DB_NAME = 'evaluateTable';
 const DB_VERSION = 1;
@@ -20,8 +20,10 @@ const dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
       const db = (event.target as IDBRequest).result as IDBDatabase;
       if (!db.objectStoreNames.contains('evaluate')) {
         const evaluateStore = db.createObjectStore('evaluate', { keyPath: 'keyPath' });
-        evaluateStore.createIndex("pokemonName", "name", { unique: false });
-        evaluateStore.createIndex("pokemonFood", ["name", "lv", "foodCombination"], { unique: false });
+        evaluateStore.createIndex('pokemonName', 'name', { unique: false });
+        evaluateStore.createIndex('pokemonFood', ['name', 'lv', 'foodCombination'], {
+          unique: false,
+        });
       }
     };
 
@@ -36,45 +38,75 @@ const dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
   } catch (error) {
     reject(error);
   }
-})
+});
 
 export default class EvaluateTable {
-
   static VERSION = Version.EVALUATE;
 
+  // 簡易診断で列挙するサブスキル組み合わせ数。組み合わせWorkerの5重ループと対応する。
+  static getSubSkillCombinationWorkWeight() {
+    let weight = 1;
+    for (let i = 0; i < 5; i++) weight *= SubSkill.list.length - i;
+    return weight;
+  }
+
+  // 評価Workerがレベルごとに列挙する、食材・サブスキル・性格の組み合わせ数。
+  static getTemporaryEvaluateWorkWeight(pokemonNum, lv) {
+    const foodCombinationNum = lv < 60 ? 2 : 6;
+    const subSkillNum = lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
+    let subSkillCombinationNum = 1;
+    for (let i = SubSkill.list.length - subSkillNum + 1; i <= SubSkill.list.length; i++) {
+      subSkillCombinationNum *= i;
+    }
+    for (let i = 2; i <= subSkillNum; i++) subSkillCombinationNum /= i;
+    const natureNum = Nature.list.filter((nature) => nature.good != null).length + 1;
+    return pokemonNum * foodCombinationNum * subSkillCombinationNum * natureNum;
+  }
+
+  static getTemporarySimulationWorkWeight(pokemonName) {
+    const pokemonNum = Pokemon.map[pokemonName].afterList.length;
+    const lvList = [30, 50, 60, 70, 80];
+    return (
+      this.getSubSkillCombinationWorkWeight() +
+      lvList.reduce((sum, lv) => sum + this.getTemporaryEvaluateWorkWeight(pokemonNum, lv), 0)
+    );
+  }
+
   static isEnableEvaluateTable(config) {
-    return config.version.evaluateTable == this.VERSION
-      && config.sleepTime == config.version.evaluateTableSleepTime
-      && config.checkFreq == config.version.evaluateTableCheckFreq
+    return (
+      config.version.evaluateTable == this.VERSION &&
+      config.sleepTime == config.version.evaluateTableSleepTime &&
+      config.checkFreq == config.version.evaluateTableCheckFreq
+    );
   }
 
   static async canUseEvaluateTable() {
     try {
-      await dbPromise
+      await dbPromise;
       return true;
-    } catch(e) {
+    } catch (e) {
       return false;
     }
   }
 
   static async load(config, full = false) {
     if (!this.isEnableEvaluateTable(config)) {
-      return null
+      return null;
     }
     try {
-      const db = await dbPromise
+      const db = await dbPromise;
       return await new Promise((resolve, reject) => {
-        const transaction = db.transaction('evaluate')
-        const store = transaction.objectStore('evaluate')
-        const request = store.getAll()
+        const transaction = db.transaction('evaluate');
+        const store = transaction.objectStore('evaluate');
+        const request = store.getAll();
         request.onerror = () => {
-          reject(false)
-        }
+          reject(false);
+        };
         request.onsuccess = (event) => {
-          let result = {}
-          for(const record of request.result) {
-            if (result[record.name] === undefined) result[record.name] = {}
-            if (result[record.name][record.lv] === undefined) result[record.name][record.lv] = {}
+          let result = {};
+          for (const record of request.result) {
+            if (result[record.name] === undefined) result[record.name] = {};
+            if (result[record.name][record.lv] === undefined) result[record.name][record.lv] = {};
             result[record.name][record.lv][record.foodCombination] = {
               energy: record.energy,
               berry: record.berry,
@@ -83,68 +115,82 @@ export default class EvaluateTable {
               food1: record.food1,
               food2: record.food2,
               food3: record.food3,
-            }
+            };
           }
           resolve(result);
-        }
-      })
+        };
+      });
       // return JSON.parse(localStorage.getItem('evaluateTable'))
-    } catch(e) {
-      return null
+    } catch (e) {
+      return null;
     }
   }
 
   static async simulation(newConfig = null, progressCounter) {
     const fixedConfig = JSON.parse(JSON.stringify(newConfig ?? config));
 
-    const multiWorker = new MultiWorker(EvaluateTableWorker, fixedConfig.workerNum)
+    const multiWorker = new MultiWorker(EvaluateTableWorker, fixedConfig.workerNum);
 
-    let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).flatMap(([lv, enable]) => enable ? [Number(lv)] : [])
+    let lvList = Object.entries(fixedConfig.selectEvaluate.levelList).flatMap(([lv, enable]) =>
+      enable ? [Number(lv)] : [],
+    );
 
     // Lvごとに画面表示用の進捗カウンターを用意しておく
-    let [subSkillCombinationProgress, ...subProgressCounterList] = progressCounter.split(10, ...lvList.flatMap(lv => {
-      const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
-      const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
+    let [subSkillCombinationProgress, ...subProgressCounterList] = progressCounter.split(
+      10,
+      ...lvList.flatMap((lv) => {
+        const foodNum = lv < 30 ? 1 : lv < 60 ? 2 : 6;
+        const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
 
-      // 目安なのでサブスキルの数の組み合わせで計算
-      let c = 1;
-      for(let i = SubSkill.list.length - subSkillNum + 1; i <= SubSkill.list.length; i++) c *= i;
-      for(let i = 2; i <= subSkillNum; i++) c /= i;
+        // 目安なのでサブスキルの数の組み合わせで計算
+        let c = 1;
+        for (let i = SubSkill.list.length - subSkillNum + 1; i <= SubSkill.list.length; i++) c *= i;
+        for (let i = 2; i <= subSkillNum; i++) c /= i;
 
-      let patternNum = foodNum * c * Nature.list.length;
-      return [patternNum, patternNum]
-    }));
+        let patternNum = foodNum * c * Nature.list.length;
+        return [patternNum, patternNum];
+      }),
+    );
 
     // サブスキルの組合せを計算する
-    const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1)
+    const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1);
     const [subSkillCombinationList] = await subSkillCombinationWorker.call(
       subSkillCombinationProgress,
       () => ({ config: fixedConfig }),
-    )
+    );
     subSkillCombinationWorker.close();
 
     // 最終進化のポケモンだけチェック
-    let pokemonList = Pokemon.list.filter(pokemon => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name)
+    let pokemonList = Pokemon.list.filter(
+      (pokemon) => pokemon.afterList.length == 1 && pokemon.afterList[0] == pokemon.name,
+    );
 
     // 特定のポケモンは厳選生成の対象外
-    pokemonList = pokemonList.filter(x => !x.kaihou)
+    pokemonList = pokemonList.filter((x) => !x.kaihou);
 
     // スキルが計算しやすいポケモンと、そうでないポケモンの2つに分ける
-    let normalPokemonList = pokemonList.filter(pokemon => !pokemon.skill.team && !pokemon.skill.shard)
-    let supportPokemonList = pokemonList.filter(pokemon => pokemon.skill.team ||  pokemon.skill.shard)
+    let normalPokemonList = pokemonList.filter(
+      (pokemon) => !pokemon.skill.team && !pokemon.skill.shard,
+    );
+    let supportPokemonList = pokemonList.filter(
+      (pokemon) => pokemon.skill.team || pokemon.skill.shard,
+    );
 
     let result = [];
     let progressCounterIndex = 0;
-    for(let lv of lvList) {
-      const foodCombinationList = lv < 30 ? ['0'] : lv < 60 ? [ '00', '01' ] : [ '000', '001', '002', '010', '011', '012' ];
+    for (let lv of lvList) {
+      const foodCombinationList =
+        lv < 30 ? ['0'] : lv < 60 ? ['00', '01'] : ['000', '001', '002', '010', '011', '012'];
       const subSkillNum = lv < 10 ? 0 : lv < 25 ? 1 : lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
-      // 
-      subProgressCounterList[progressCounterIndex].setName(`Lv${lv}の通常ポケモンの厳選情報を作成しています…`)
+      //
+      subProgressCounterList[progressCounterIndex].setName(
+        `Lv${lv}の通常ポケモンの厳選情報を作成しています…`,
+      );
       let normalPokemonResult = await multiWorker.call(
         subProgressCounterList[progressCounterIndex++],
         (i, length) => {
-          let i1 = Math.floor(normalPokemonList.length * i / length);
-          let i2 = Math.floor(normalPokemonList.length * (i + 1) / length);
+          let i1 = Math.floor((normalPokemonList.length * i) / length);
+          let i2 = Math.floor((normalPokemonList.length * (i + 1)) / length);
           return {
             lv,
             config: fixedConfig,
@@ -154,32 +200,62 @@ export default class EvaluateTable {
             // subSkillCombinationList,
             // scoreForHealerEvaluate,
             // scoreForSupportEvaluate,
-          }
-        }
-      )
-      
+          };
+        },
+      );
+
       const normalPokemonEvaluateTable = {};
-      for(const chunk of normalPokemonResult) {
+      for (const chunk of normalPokemonResult) {
         Object.assign(normalPokemonEvaluateTable, chunk.result);
       }
 
-      let scoreForHealerEvaluateList = normalPokemonResult.flatMap(x => x.scoreForHealerEvaluateList);
-      let scoreForSupportEvaluateList = normalPokemonResult.flatMap(x => x.scoreForSupportEvaluateList);
-      scoreForHealerEvaluateList = scoreForHealerEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForHealerEvaluateList.length * fixedConfig.selectEvaluate.supportRankNum))
-      scoreForSupportEvaluateList = scoreForSupportEvaluateList.sort((a, b) => b - a).slice(0, Math.floor(scoreForSupportEvaluateList.length * fixedConfig.selectEvaluate.supportRankNum))
-      let scoreForHealerEvaluate = scoreForHealerEvaluateList.reduce((a, x) => a + x, 0) / scoreForHealerEvaluateList.length;
-      let scoreForSupportEvaluate = scoreForSupportEvaluateList.reduce((a, x) => a + x, 0) / scoreForSupportEvaluateList.length;
+      let scoreForHealerEvaluateList = normalPokemonResult.flatMap(
+        (x) => x.scoreForHealerEvaluateList,
+      );
+      let scoreForSupportEvaluateList = normalPokemonResult.flatMap(
+        (x) => x.scoreForSupportEvaluateList,
+      );
+      scoreForHealerEvaluateList = scoreForHealerEvaluateList
+        .sort((a, b) => b - a)
+        .slice(
+          0,
+          Math.floor(scoreForHealerEvaluateList.length * fixedConfig.selectEvaluate.supportRankNum),
+        );
+      scoreForSupportEvaluateList = scoreForSupportEvaluateList
+        .sort((a, b) => b - a)
+        .slice(
+          0,
+          Math.floor(
+            scoreForSupportEvaluateList.length * fixedConfig.selectEvaluate.supportRankNum,
+          ),
+        );
+      let scoreForHealerEvaluate =
+        scoreForHealerEvaluateList.reduce((a, x) => a + x, 0) / scoreForHealerEvaluateList.length;
+      let scoreForSupportEvaluate =
+        scoreForSupportEvaluateList.reduce((a, x) => a + x, 0) / scoreForSupportEvaluateList.length;
 
-      result.push({ name: 'scoreForHealerEvaluate',  lv, foodCombination: '', energy: scoreForHealerEvaluate });
-      result.push({ name: 'scoreForSupportEvaluate', lv, foodCombination: '', energy: scoreForSupportEvaluate });
+      result.push({
+        name: 'scoreForHealerEvaluate',
+        lv,
+        foodCombination: '',
+        energy: scoreForHealerEvaluate,
+      });
+      result.push({
+        name: 'scoreForSupportEvaluate',
+        lv,
+        foodCombination: '',
+        energy: scoreForSupportEvaluate,
+      });
 
-      subProgressCounterList[progressCounterIndex].setName(`Lv${lv}のサポート系スキルポケモンの厳選情報を作成しています…`)
+      subProgressCounterList[progressCounterIndex].setName(
+        `Lv${lv}のサポート系スキルポケモンの厳選情報を作成しています…`,
+      );
 
       let supportPokemonResult = await multiWorker.call(
         subProgressCounterList[progressCounterIndex++],
         (i, length) => {
-          let i1 = Math.floor(supportPokemonList.length * i / length);
-          let i2 = Math.floor(supportPokemonList.length * (i + 1) / length);
+          let i1 = Math.floor((supportPokemonList.length * i) / length);
+          let i2 = Math.floor((supportPokemonList.length * (i + 1)) / length);
           return {
             lv,
             config: fixedConfig,
@@ -188,32 +264,34 @@ export default class EvaluateTable {
             subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
             scoreForHealerEvaluate,
             scoreForSupportEvaluate,
-          }
-        }
-      )
+          };
+        },
+      );
       const supportPokemonEvaluateTable = {};
-      for(const chunk of supportPokemonResult) {
+      for (const chunk of supportPokemonResult) {
         Object.assign(supportPokemonEvaluateTable, chunk.result);
       }
 
-      const pokemonEvaluateTable = { ...normalPokemonEvaluateTable, ...supportPokemonEvaluateTable };
+      const pokemonEvaluateTable = {
+        ...normalPokemonEvaluateTable,
+        ...supportPokemonEvaluateTable,
+      };
 
-      for(let pokemonName in pokemonEvaluateTable) {
-
-        for(let foodCombination in pokemonEvaluateTable[pokemonName]) {
+      for (let pokemonName in pokemonEvaluateTable) {
+        for (let foodCombination in pokemonEvaluateTable[pokemonName]) {
           let pokemonResult = pokemonEvaluateTable[pokemonName][foodCombination];
           result.push({
-            name: pokemonName, 
+            name: pokemonName,
             lv,
             foodCombination,
-            energy: pokemonResult.energy.map(x => x.score),
-            berry: pokemonResult.berry.map(x => x.score),
-            food: pokemonResult.food.map(x => x.score),
-            skill: pokemonResult.skill.map(x => x.score),
-            food1: pokemonResult.food1.map(x => x.score),
-            food2: pokemonResult.food2.map(x => x.score),
-            food3: pokemonResult.food3.map(x => x.score),
-          })
+            energy: pokemonResult.energy.map((x) => x.score),
+            berry: pokemonResult.berry.map((x) => x.score),
+            food: pokemonResult.food.map((x) => x.score),
+            skill: pokemonResult.skill.map((x) => x.score),
+            food1: pokemonResult.food1.map((x) => x.score),
+            food2: pokemonResult.food2.map((x) => x.score),
+            food3: pokemonResult.food3.map((x) => x.score),
+          });
         }
       }
     }
@@ -223,43 +301,126 @@ export default class EvaluateTable {
     await new Promise(async (resolve, reject) => {
       try {
         const db = await dbPromise;
-        const transaction = db.transaction("evaluate", "readwrite");
-        const store = transaction.objectStore("evaluate");
+        const transaction = db.transaction('evaluate', 'readwrite');
+        const store = transaction.objectStore('evaluate');
 
         await new Promise((resolve, reject) => {
-          const clearRequest = store.clear()
+          const clearRequest = store.clear();
           clearRequest.onsuccess = (event) => {
             resolve(true);
-          }
+          };
           clearRequest.onerror = (event) => {
-            reject(false)
-          }
-        })
+            reject(false);
+          };
+        });
 
-        for(let item of result) {
+        for (let item of result) {
           const add = store.add({
             keyPath: `${item.name}_${item.lv}_${item.foodCombination}`,
-            ...item
+            ...item,
           });
           add.onerror = (event) => {
-            console.error(item)
-            reject(event)
-          }
+            console.error(item);
+            reject(event);
+          };
         }
         transaction.oncomplete = (event) => {
           resolve(true);
-        }
+        };
         transaction.onerror = (event) => {
           reject(true);
-        }
-      } catch(e) {
-        reject(e)
+        };
+      } catch (e) {
+        reject(e);
       }
-    })
+    });
 
-    multiWorker.close()
+    multiWorker.close();
 
     return result;
   }
 
+  // IndexedDBの厳選テーブルを作らず、指定した進化先だけのパーセンタイル表を返す。
+  // サポート系スキルの基準値は全ポケモンの集計を行わず、簡易診断設定で指定した値を使う。
+  static async simulateTemporary(newConfig, pokemonName, progressCounter) {
+    const fixedConfig = JSON.parse(JSON.stringify(newConfig));
+    const evaluateConfig = fixedConfig.tmpEvaluate;
+    fixedConfig.selectEvaluate = evaluateConfig;
+    fixedConfig.selectEvaluate.levelList = {
+      10: false,
+      25: false,
+      30: true,
+      50: true,
+      60: true,
+      70: true,
+      80: true,
+    };
+
+    const basePokemon = Pokemon.map[pokemonName];
+    const pokemonList = basePokemon.afterList
+      .map((name) => Pokemon.map[name])
+      .filter((x) => x != null);
+    const lvList = [30, 50, 60, 70, 80];
+    const [subSkillCombinationProgress, ...subProgressCounterList] = progressCounter.split(
+      this.getSubSkillCombinationWorkWeight(),
+      ...lvList.map((lv) => this.getTemporaryEvaluateWorkWeight(pokemonList.length, lv)),
+    );
+    const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1);
+    const multiWorker = new MultiWorker(EvaluateTableWorker, fixedConfig.workerNum);
+
+    try {
+      subSkillCombinationProgress.setName('サブスキルの組み合わせを準備しています…');
+      const [subSkillCombinationList] = await subSkillCombinationWorker.call(
+        subSkillCombinationProgress,
+        () => ({ config: fixedConfig }),
+      );
+      const table: any = {
+        scoreForHealerEvaluate: {},
+        scoreForSupportEvaluate: {},
+      };
+
+      for (const [index, lv] of lvList.entries()) {
+        const foodCombinationList =
+          lv < 60 ? ['00', '01'] : ['000', '001', '002', '010', '011', '012'];
+        const subSkillNum = lv < 50 ? 2 : lv < 70 ? 3 : lv < 80 ? 4 : 5;
+        // 簡易診断の回復役・サポート役基準は、レベルに応じたきのみ成長とおてつだい速度補正を反映する。
+        const levelScoreRate = 1.025 ** (lv - 1) / (1 - 0.002 * (lv - 1));
+        const scoreForHealerEvaluate = evaluateConfig.scoreForHealerEvaluate * levelScoreRate;
+        const scoreForSupportEvaluate = evaluateConfig.scoreForSupportEvaluate * levelScoreRate;
+        subProgressCounterList[index].setName(`Lv${lv}の簡易診断を計算しています…`);
+        const [temporaryResult] = await multiWorker.call(
+          subProgressCounterList[index],
+          () => ({
+            lv,
+            config: fixedConfig,
+            pokemonList,
+            foodCombinationList,
+            subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
+            scoreForHealerEvaluate,
+            scoreForSupportEvaluate,
+          }),
+          null,
+          1,
+        );
+
+        table.scoreForHealerEvaluate[lv] = { '': { energy: scoreForHealerEvaluate } };
+        table.scoreForSupportEvaluate[lv] = { '': { energy: scoreForSupportEvaluate } };
+        for (const [name, result] of Object.entries(temporaryResult.result)) {
+          table[name] ??= {};
+          table[name][lv] = {};
+          for (const [foodCombination, percentile] of Object.entries(result as any)) {
+            table[name][lv][foodCombination] = Object.fromEntries(
+              Object.entries(percentile as any)
+                .filter(([key]) => ['energy', 'berry', 'food', 'skill'].includes(key))
+                .map(([key, value]) => [key, (value as any[]).map((x) => x.score)]),
+            );
+          }
+        }
+      }
+      return table;
+    } finally {
+      subSkillCombinationWorker.close();
+      multiWorker.close();
+    }
+  }
 }
