@@ -65,10 +65,50 @@ const foodSelectList = computed(() =>
 const result = ref<any>(null);
 const screenshotInput = ref<{ click: () => void } | null>(null);
 const screenshotError = ref<string | null>(null);
+const isScreenshotDragging = ref(false);
 const asyncWatcher = AsyncWatcher.init();
 const worker = new MultiWorker(PokemonListSimulator, 1);
 const imageReader = new PokemonStatusImageReader();
+function isHeaderDragEvent(event: DragEvent) {
+  return event.target instanceof Element && event.target.closest('header') != null;
+}
+
+function onDocumentDragEnter(event: DragEvent) {
+  if (isHeaderDragEvent(event)) return;
+  event.preventDefault();
+  isScreenshotDragging.value = true;
+}
+
+function onDocumentDragOver(event: DragEvent) {
+  if (isHeaderDragEvent(event)) return;
+  event.preventDefault();
+}
+
+function onDocumentDragLeave(event: DragEvent) {
+  if (!event.relatedTarget) isScreenshotDragging.value = false;
+}
+
+function onDocumentDrop(event: DragEvent) {
+  event.preventDefault();
+  if (isHeaderDragEvent(event)) {
+    isScreenshotDragging.value = false;
+    return;
+  }
+  importDroppedScreenshot(event);
+}
+
+onMounted(() => {
+  // 子コンポーネントでイベント処理があっても、main内のどの位置でも取り込めるようキャプチャ段階で受け取る。
+  document.addEventListener('dragenter', onDocumentDragEnter, true);
+  document.addEventListener('dragover', onDocumentDragOver, true);
+  document.addEventListener('dragleave', onDocumentDragLeave, true);
+  document.addEventListener('drop', onDocumentDrop, true);
+});
 onBeforeUnmount(() => {
+  document.removeEventListener('dragenter', onDocumentDragEnter, true);
+  document.removeEventListener('dragover', onDocumentDragOver, true);
+  document.removeEventListener('dragleave', onDocumentDragLeave, true);
+  document.removeEventListener('drop', onDocumentDrop, true);
   worker.close();
   imageReader.terminate();
 });
@@ -81,12 +121,7 @@ watch(
 );
 pokemon.foodList = foodSelectList.value.map((list) => list[0] ?? null);
 
-async function importScreenshot(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = Array.from(input.files ?? []).find((file) => file.type.startsWith('image/'));
-  input.value = '';
-  if (!file) return;
-
+async function importScreenshotFile(file: Blob) {
   screenshotError.value = null;
   try {
     await asyncWatcher.run(async (progressCounter) => {
@@ -113,9 +148,81 @@ async function importScreenshot(event: Event) {
       );
       if (imported.nature && Nature.map[imported.nature]) pokemon.nature = imported.nature;
     });
+    return true;
   } catch (exception) {
     screenshotError.value =
       exception instanceof Error ? exception.message : 'スクリーンショットの解析に失敗しました。';
+    return false;
+  }
+}
+
+async function importAndEvaluateScreenshotFile(file: Blob) {
+  if (await importScreenshotFile(file)) await evaluate();
+}
+
+async function importScreenshot(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = Array.from(input.files ?? []).find((file) => file.type.startsWith('image/'));
+  input.value = '';
+  if (!file) return;
+
+  await importAndEvaluateScreenshotFile(file);
+}
+
+async function importClipboardScreenshot() {
+  if (!navigator.clipboard?.read) {
+    screenshotError.value = 'このブラウザはクリップボードからの画像読み込みに対応していません。';
+    return;
+  }
+
+  try {
+    const clipboardItem = (await navigator.clipboard.read()).find((item) =>
+      item.types.some((type) => type.startsWith('image/')),
+    );
+    const imageType = clipboardItem?.types.find((type) => type.startsWith('image/'));
+    if (!clipboardItem || !imageType) {
+      screenshotError.value = 'クリップボードに画像がありません。';
+      return;
+    }
+    await importAndEvaluateScreenshotFile(await clipboardItem.getType(imageType));
+  } catch {
+    screenshotError.value = 'クリップボードの読み取りが許可されていないか、画像を取得できませんでした。';
+  }
+}
+
+function getDroppedImageUrl(dataTransfer: DataTransfer) {
+  const uriList = dataTransfer.getData('text/uri-list');
+  const url = uriList.split(/\r?\n/).find((line) => line && !line.startsWith('#'));
+  if (url) return url;
+
+  const html = dataTransfer.getData('text/html');
+  if (!html) return null;
+  return new DOMParser().parseFromString(html, 'text/html').querySelector('img')?.src ?? null;
+}
+
+async function importDroppedScreenshot(event: DragEvent) {
+  isScreenshotDragging.value = false;
+  const dataTransfer = event.dataTransfer;
+  if (!dataTransfer) return;
+
+  const file = Array.from(dataTransfer.files).find((item) => item.type.startsWith('image/'));
+  if (file) {
+    await importAndEvaluateScreenshotFile(file);
+    return;
+  }
+
+  const imageUrl = getDroppedImageUrl(dataTransfer);
+  if (!imageUrl) return;
+
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error('ドロップした画像を読み込めませんでした。');
+    const image = await response.blob();
+    if (!image.type.startsWith('image/')) throw new Error('画像ファイルをドロップしてください。');
+    await importAndEvaluateScreenshotFile(image);
+  } catch (exception) {
+    screenshotError.value =
+      exception instanceof Error ? exception.message : 'ドロップした画像を読み込めませんでした。';
   }
 }
 
@@ -210,7 +317,11 @@ const chartOptions = {
 </script>
 
 <template>
-  <AsyncWatcherArea class="page" :asyncWatcher="asyncWatcher">
+  <AsyncWatcherArea
+    class="page"
+    :class="{ 'screenshot-dragging': isScreenshotDragging }"
+    :asyncWatcher="asyncWatcher"
+  >
     <BaseAlert>
       入力したポケモンが、全サブスキル・せいかくの組合せのうちどの程度上位に位置するかを評価します。<br />
       複数の個体の厳選度を比較したい場合は、「基準生成」ページで評価テーブルの生成を行った後、ボックスに対象ポケモンを追加してください。
@@ -224,7 +335,15 @@ const chartOptions = {
       <div class="form">
           
         <div class="pokemon-tab-header">
-          <FormButton @click="screenshotInput?.click()" class="from-screenshot">スクリーンショットから入力</FormButton>
+          <div class="screenshot-button-list">
+            <FormButton @click="screenshotInput?.click()" class="from-screenshot"
+              >スクショのファイルから入力</FormButton
+            >
+            <FormButton @click="importClipboardScreenshot" class="from-screenshot"
+              >コピーしたスクショから入力</FormButton
+            >
+          </div>
+          <small class="screenshot-drop-hint">※画像のドラッグ＆ドロップでも入力できます。</small>
           <InputFile
             ref="screenshotInput"
             class="screenshot-input"
@@ -232,8 +351,6 @@ const chartOptions = {
             @change="importScreenshot"
           />
         </div>
-        <p v-if="screenshotError" class="screenshot-error">{{ screenshotError }}</p>
-        
         <SettingSectionTitle type="field">ポケモン</SettingSectionTitle>
         <div>
           <SettingButton class="pokemon-select-button" @click="selectPokemon">
@@ -253,6 +370,7 @@ const chartOptions = {
         <SettingSectionTitle type="field">せいかく</SettingSectionTitle>
         <NatureSelect v-model="pokemon.nature" />
       </div>
+      <p v-if="screenshotError" class="screenshot-error">{{ screenshotError }}</p>
       <FormButton class="execute" @click="evaluate">評価</FormButton>
 
       <section v-if="result" class="result">
@@ -327,19 +445,30 @@ const chartOptions = {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 1200px;
+  max-width: 760px;
   margin-right: auto;
   position: relative;
+}
+.screenshot-dragging {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: 4px;
 }
 .tab-list a {
   cursor: pointer;
 }
 .pokemon-tab-header {
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
   justify-content: flex-end;
   position: absolute;
   top: 0;
   right: 12px;
+}
+.screenshot-button-list {
+  display: flex;
+  gap: 5px;
 }
 .screenshot-input {
   display: none;
@@ -347,6 +476,10 @@ const chartOptions = {
 .screenshot-error {
   color: var(--color-danger);
   font-weight: bold;
+}
+.screenshot-drop-hint {
+  margin: 0;
+  color: var(--color-muted);
 }
 .form {
   display: grid;

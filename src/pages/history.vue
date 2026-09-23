@@ -13,15 +13,31 @@ config.version.history = Version.HISTORY;
       もし応援していただける方がいらっしゃいましたら、作者の他の活動についてチャンネル登録やフォロー等いただけるとげんきが回復するのでよろしくお願いします🙇‍♂️<br>
       <div class="flex-row flex-wrap gap-1em mt-5px">
         <a href="https://www.youtube.com/@harezora_lueur" target="_blank">YouTube</a>
-        <a href="https://x.com/hrzr_lueur_vrc" target="_blank">X(メイン)</a>
-        <a href="https://x.com/hiyashi_exit" target="_blank">X(サブ1)</a>
-        <a href="https://x.com/reimer0204" target="_blank">X(サブ2)</a>
+        <a href="https://x.com/hrzr_lueur_vrc" target="_blank">X(日常)</a>
+        <a href="https://x.com/hiyashi_exit" target="_blank">X(海外ジャンル絵)</a>
+        <a href="https://x.com/reimer0204" target="_blank">X(その他絵)</a>
         <a href="https://misskey.io/@harezora_lueur" target="_blank">misskey.io(避難用)</a>
-
       </div>
     </div>
 
     <h2 class="mt-1em">更新履歴</h2>
+
+    <HistoryItem date="2026/9/23">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ボックスの「ボックス整理(詳細)」が妙に重い問題を修正</li>
+            <li>
+              簡易診断に、ドラッグ＆ドロップ、コピーしたスクショからの分析を追加
+              <ul>
+                <li>SNSで採用について困っている方がいる時などに活用してください</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
 
     <HistoryItem date="2026/9/21">
       <ul>
@@ -1513,6 +1529,10 @@ config.version.history = Version.HISTORY;
     line-height: 1.4;
     margin: 0.5em 0 0.25em 0;
     border-bottom: 2px #CCC solid;
+  }
+
+  ul, ol {
+    padding-left: 1.5em;
   }
 
   p {

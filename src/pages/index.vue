@@ -72,12 +72,28 @@ const isShowPokemonList = computed(() => {
 
 const cleaningDetailPokemon: Ref<string | null> = ref(null);
 const cleaningDetailSummaryList = computed(() => {
-  return Pokemon.list.filter(x => x.isLast).map(pokemon => {
-    const targetList = simulatedPokemonList.value.filter(x => x.afterList.includes(pokemon.name));
+  const lastPokemonList = Pokemon.list.filter(x => x.isLast);
+  const summaryMap = new Map(
+    lastPokemonList.map(pokemon => [pokemon.name, { num: 0, checklistChecked: false }]),
+  );
+
+  // 最終進化ポケモンごとにボックス全体を走査せず、シミュレーション結果を1回だけ集計する。
+  for (const simulatedPokemon of simulatedPokemonList.value) {
+    for (const pokemonName of simulatedPokemon.afterList) {
+      const summary = summaryMap.get(pokemonName);
+      if (summary == null) continue;
+
+      summary.num++;
+      summary.checklistChecked ||= !!simulatedPokemon.hitCheckList?.length;
+    }
+  }
+
+  return lastPokemonList.map(pokemon => {
+    const summary = summaryMap.get(pokemon.name)!;
     return {
       ...pokemon,
-      checklistChecked: targetList.some(x => x.hitCheckList?.length),
-      num: targetList.length,
+      checklistChecked: summary.checklistChecked,
+      num: summary.num,
     }
   })
 })
@@ -668,9 +684,13 @@ function toggleFavorite(data: SimulatedPokemon) {
     </div>
 
     <template v-if="mode == 'cleaning_detail'">
-      <div class="pokemon-list mt-5px" v-show="cleaningDetailTab == 0">
-        <AsyncWatcherArea :asyncWatcher="asyncWatcher">
+      <div class="pokemon-list mt-5px cleaning-detail-summary" v-show="cleaningDetailTab == 0">
+        <AsyncWatcherArea
+          :asyncWatcher="asyncWatcher"
+        >
           <SortableTable
+            v-if="!asyncWatcher.executing"
+            scroll
             :dataList="cleaningDetailSummaryList"
             :columnList="[
               { key: 'seedNo', name: '種ポケ\n図鑑No', type: Number, convert: x => Pokemon.map[x.seed].no },
@@ -856,6 +876,15 @@ function toggleFavorite(data: SimulatedPokemon) {
     }
     .sortable-table {
       flex: 1 1 0;
+    }
+
+    &.cleaning-detail-summary {
+      min-height: 0;
+
+      .async-watcher-area,
+      .sortable-table {
+        min-height: 0;
+      }
     }
 
     // 下部の操作群は表に押しつぶされないよう固定し、狭い画面では複数行に折り返す。
