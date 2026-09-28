@@ -6,10 +6,10 @@ const props = defineProps({
   title: { type: String },
   important: { type: Boolean },
   fitViewport: { type: Boolean, default: false },
-})
+});
 defineOptions({
-  inheritAttrs: false
-})
+  inheritAttrs: false,
+});
 const emit = defineEmits(['close']);
 
 let popup = ref(null);
@@ -18,26 +18,24 @@ async function showPopup() {
   popup.value = promise.popup;
   await promise;
   popup.value = null;
-  emit('close')
+  emit('close');
 }
-
 </script>
 
 <template>
-
   <FormButton
-    class="setting-button" @click="$attrs.onClick ? $attrs.onClick() : showPopup()"
+    class="setting-button"
+    @click="$attrs.onClick ? $attrs.onClick() : showPopup()"
     :class="{
       important: props.important,
     }"
   >
     <slot name="label"></slot>
 
-    <svg viewBox="0 0 100 100">
+    <svg class="setting-button-arrow" viewBox="0 0 100 100">
       <path d="M10,25L50,65L90,25" fill="none" stroke-width="20" stroke="#FFF" />
     </svg>
 
-    
     <Teleport defer v-if="popup?.uuid" :to="`#${popup?.uuid}`">
       <div class="popup" :class="{ 'fit-viewport': props.fitViewport }">
         <slot name="header">
@@ -45,11 +43,11 @@ async function showPopup() {
             <slot name="headerText">{{ title }}</slot>
 
             <svg viewBox="0 0 100 100" width="20" class="ml-auto" @click="popup.close()">
-              <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888"  />
+              <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888" />
             </svg>
           </div>
         </slot>
-        
+
         <slot name="bodyWrapper">
           <div class="body-wrapper">
             <slot></slot>
@@ -58,7 +56,6 @@ async function showPopup() {
       </div>
     </Teleport>
   </FormButton>
-
 </template>
 
 <style lang="scss" scoped>
@@ -67,14 +64,15 @@ async function showPopup() {
   align-items: center;
 
   background-color: var(--color-primary-strong);
-  color: #FFF;
+  color: #fff;
 
   cursor: pointer;
 
-  svg {
+  .setting-button-arrow {
+    flex: 0 0 1em;
     width: 1em;
     height: 1em;
-    margin-left: 0.5em;
+    margin-left: auto;
   }
 
   &.important {
@@ -89,17 +87,17 @@ async function showPopup() {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 10px 28px rgb(40 49 91 / 20%);
-  
+
   .header {
     padding: 10px 15px;
     font-size: 20px;
     font-weight: bold;
     border-bottom: 1px solid var(--color-line);
-    background: linear-gradient(90deg, var(--color-primary-soft), #FFF);
+    background: linear-gradient(90deg, var(--color-primary-soft), #fff);
     color: var(--color-primary-strong);
     border-radius: 9px 9px 0 0;
   }
-  
+
   .body-wrapper {
     padding: 20px;
   }

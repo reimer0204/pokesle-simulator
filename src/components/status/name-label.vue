@@ -23,7 +23,7 @@ const splitName = computed(() => {
       <small>{{ props.pokemon.beforeName }}→</small>{{ splitName.main }}<wbr /><small v-if="splitName.bracket">{{ splitName.bracket }}</small>
     </template>
     <template v-else>{{ splitName.main }}<wbr /><small v-if="splitName.bracket">{{ splitName.bracket }}</small></template>
-    <template v-if="pokemon.box?.favorite">★</template>
+    <template v-if="pokemon.box?.favorite">⭐️</template>
     <template v-if="pokemon.bagOverOperation">(いつ育)</template>
     
     <div v-if="!props.memoHidden && pokemon.box?.memo?.length" class="memo">{{ pokemon.box.memo }}</div>

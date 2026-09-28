@@ -271,10 +271,15 @@ class PokemonBox {
     }
   }
 
-  static async simulation(boxPokemonList, multiWorker, evaluateTable, config, progressCounter, setConfig = true) {
+  static async simulation(boxPokemonList, multiWorker, evaluateTable, config, progressCounter, setConfig = true, withAssist = true) {
     let clonedConfig = JSON.parse(JSON.stringify(config))
 
-    let [setConfigProgress, stepA, stepB] = progressCounter.split(setConfig ? 1 : 0, 1, 2, 1)
+    let [setConfigProgress, stepA, stepB] = progressCounter.split(
+      setConfig ? 1 : 0,
+      1,
+      withAssist ? 2 : 0,
+      withAssist ? 1 : 0,
+    )
 
     if (setConfig) {
       await multiWorker.call(
@@ -296,6 +301,8 @@ class PokemonBox {
         }
       }
     )).flat(1);
+
+    if (!withAssist) return pokemonList;
 
     return (await multiWorker.call(
       stepB,

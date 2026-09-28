@@ -23,24 +23,20 @@ import SettingButton from './design/setting-button.vue';
 import PokemonSelectPopup from './pokemon-select-popup.vue';
 import NatureInfo from './status/nature-info.vue';
 
-import { Radar } from 'vue-chartjs';
+import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
-  RadialLinearScale,
-  // CategoryScale,
-  // LinearScale,
+  CategoryScale,
+  LinearScale,
   PointElement,
   LineElement,
-  Filler,
-  Title,
   Tooltip,
   Legend,
-  // plugins
 } from 'chart.js';
 import Exp from '@/data/exp.ts';
 import DesignTable from './design-table.vue';
 
-ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
 let evaluateTable;
 const evaluateTablePromise = (async () => {
@@ -49,11 +45,11 @@ const evaluateTablePromise = (async () => {
 
 const requireRefresh = computed(() => {
   let result = {};
-  if(!EvaluateTable.isEnableEvaluateTable(config)) {
+  if (!EvaluateTable.isEnableEvaluateTable(config)) {
     result.setting = true;
   }
   return result;
-})
+});
 
 const props = defineProps({
   index: { type: Number },
@@ -88,6 +84,16 @@ const basePokemon = computed(() => {
 });
 const kaihouPokemon = computed(() => {
   return basePokemon.value?.kaihou;
+});
+
+// 厳選情報のボックス比較では、編集対象と進化先候補を共有する個体だけを使う。
+const boxPokemonListForSelect = computed(() => {
+  if (basePokemon.value == null) return [];
+
+  const afterSet = new Set(basePokemon.value.afterList);
+  return PokemonBox.list.filter((boxPokemon) =>
+    Pokemon.map[boxPokemon.name]?.afterList.some((after) => afterSet.has(after)),
+  );
 });
 
 const assistText = ref('');
@@ -137,24 +143,34 @@ onBeforeUnmount(() => {
 });
 const simulatedPokemonList = ref([]);
 let boxLoading;
+let boxLoadVersion = 0;
 async function loadBoxInfo(setConfig = false) {
   if (requireRefresh.setting) {
     return;
   }
+  const loadVersion = ++boxLoadVersion;
+  const boxPokemonList = boxPokemonListForSelect.value;
   boxLoading = selectAsyncWatcher.run(async (progressCounter) => {
     await evaluateTablePromise;
-    simulatedPokemonList.value = await PokemonBox.simulation(
-      PokemonBox.list,
+    const result = await PokemonBox.simulation(
+      boxPokemonList,
       boxMultiWorker,
       evaluateTable,
       config,
       progressCounter,
       setConfig,
+      false,
     );
+    if (loadVersion === boxLoadVersion) simulatedPokemonList.value = result;
   });
   await boxLoading;
 }
 loadBoxInfo(true);
+
+watch(
+  () => pokemon.name,
+  () => loadBoxInfo(),
+);
 
 const foodSelectList = computed(() => {
   if (basePokemon.value == null) return [[], [], []];
@@ -229,7 +245,9 @@ function convertSubSkill(name, index) {
     .replace(/[\u3041-\u3096]/g, (match) => String.fromCharCode(match.charCodeAt(0) + 0x60));
   let regexp = new RegExp(katakana.split('').join('.*'));
 
-  let match = SubSkill.listForInput.find((x) => regexp.test(x.katakana) || x.name == name.toUpperCase());
+  let match = SubSkill.listForInput.find(
+    (x) => regexp.test(x.katakana) || x.name == name.toUpperCase(),
+  );
 
   if (match) {
     pokemon.subSkillList[index] = match.name;
@@ -315,8 +333,11 @@ let selectLvList = [
 ];
 
 async function calcSelectScore() {
+  const pokemonName = pokemon.name;
   await boxLoading;
   await evaluateTablePromise;
+
+  if (pokemonName !== pokemon.name) return;
 
   if (requireRefresh.setting) {
     selectResult.value = null;
@@ -326,9 +347,12 @@ async function calcSelectScore() {
   try {
     PokemonBox.check(pokemon);
     selectAsyncWatcher.run(async (progressCounter) => {
+      // ボックス整理モードと同じチェックリスト判定を、編集中の個体にも行う。
+      const selectConfig = JSON.parse(JSON.stringify(config));
+      selectConfig.cleaning = true;
       await singleMultiWorker.call(null, () => ({
         type: 'config',
-        config: JSON.parse(JSON.stringify(config)),
+        config: selectConfig,
       }));
 
       const result = (
@@ -378,10 +402,13 @@ async function calcSelectScore() {
   }
 }
 calcSelectScore();
-watch(() => pokemon.name, calcSelectScore);
-watch(() => pokemon.foodList, calcSelectScore, { deep: true });
-watch(() => pokemon.subSkillList, calcSelectScore, { deep: true });
-watch(() => pokemon.nature, calcSelectScore);
+// 入力アシストでは入力のたびに配列を作り直すため、参照の変化ではなく
+// 厳選計算に影響する値そのものが変わった時だけ再計算する。
+watch(
+  () =>
+    JSON.stringify([pokemon.name, ...pokemon.foodList, ...pokemon.subSkillList, pokemon.nature]),
+  calcSelectScore,
+);
 
 const selectResultColumns = computed(() => {
   const result = [
@@ -406,8 +433,15 @@ const selectResultColumns = computed(() => {
     },
   ];
   result.sort((a, b) => a.order - b.order);
+  if (!showSecondarySelectMetrics.value) {
+    return result.filter((x) => x.order <= 2);
+  }
   return result;
 });
+
+const specialtySelectColumn = computed(() =>
+  selectResultColumns.value.find(({ order }) => order === 2),
+);
 
 const saveDisabled = computed(() => {
   return (
@@ -449,65 +483,128 @@ function deletePokemon() {
   }
 }
 
-const raderChart = computed(() => {
-  return {
-    data: {
-      labels: ['総合', 'スキル', '食材', 'きのみ'],
-      datasets: [
-        {
-          label: '本個体',
-          data: [65, 59, 90, 30],
-          fill: true,
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          borderColor: 'rgb(255, 99, 132)',
-          pointBackgroundColor: 'rgb(255, 99, 132)',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgb(255, 99, 132)',
-        },
-        {
-          label: '同種族',
-          data: [28, 48, 40, 19],
-          fill: true,
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          borderColor: 'rgb(54, 162, 235)',
-          pointBackgroundColor: 'rgb(54, 162, 235)',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgb(54, 162, 235)',
-        },
-        {
-          label: '同種族同食材',
-          data: [18, 38, 30, 19],
-          fill: true,
-          backgroundColor: 'rgba(162, 235, 54, 0.2)',
-          borderColor: 'rgb(162, 235, 54)',
-          pointBackgroundColor: 'rgb(162, 235, 54)',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgb(162, 235, 54)',
-        },
-      ],
-    },
-    options: {
-      maintainAspectRatio: true,
-      responsive: true,
-      resizeDelay: 10,
-      elements: {
-        line: {
-          borderWidth: 3,
-        },
-      },
-      scales: {
-        r: {
-          ticks: {
-            stepSize: 20,
+const selectDisplayMode = computed({
+  get: () => config.pokemonEdit.selectDisplayMode,
+  set: (value) => (config.pokemonEdit.selectDisplayMode = value),
+});
+const showSecondarySelectMetrics = computed({
+  get: () => config.pokemonEdit.showSecondarySelectMetrics,
+  set: (value) => (config.pokemonEdit.showSecondarySelectMetrics = value),
+});
+const selectChartLvList = computed(() => [...selectLvList.filter((lv) => lv !== 'max'), 'max']);
+const selectChartColumns = computed(() =>
+  showSecondarySelectMetrics.value
+    ? selectResultColumns.value
+    : selectResultColumns.value.filter(({ order }) => order <= 2),
+);
+const selectChartList = computed(() => {
+  if (selectResult.value == null) return [];
+
+  return selectResult.value.base.afterList.map((after) => ({
+    after,
+    chartList: selectChartColumns.value.map(({ key, name, color }) => ({
+      key,
+      name,
+      color,
+      data: {
+        labels: selectChartLvList.value.map((lv) => (lv === 'max' ? '最大' : `Lv${lv}`)),
+        datasets: [
+          {
+            label: '本個体',
+            data: selectChartLvList.value.map((lv) => {
+              const score = selectResult.value.evaluateResult?.[lv]?.[after]?.[key]?.score;
+              return score == null ? null : score * 100;
+            }),
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 4,
+            pointRadius: 3,
+            tension: 0.2,
           },
+          {
+            label: '同種族1位',
+            data: selectChartLvList.value.map((lv) => {
+              const score = selectResult.value.box?.[lv]?.[after]?.[key]?.same;
+              return score == null ? null : score * 100;
+            }),
+            borderColor: '#555',
+            backgroundColor: '#555',
+            borderDash: [6, 4],
+            borderWidth: 4,
+            pointRadius: 2,
+            tension: 0.2,
+          },
+          {
+            label: '同種族・同食材1位',
+            data: selectChartLvList.value.map((lv) => {
+              const score = selectResult.value.box?.[lv]?.[after]?.[key]?.food;
+              return score == null ? null : score * 100;
+            }),
+            borderColor: '#999',
+            backgroundColor: '#999',
+            borderDash: [2, 3],
+            borderWidth: 4,
+            pointRadius: 2,
+            tension: 0.2,
+          },
+        ],
+      },
+    })),
+  }));
+});
+const selectChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+      },
+    },
+    y: {
+      min: 0,
+      ticks: {
+        callback: (value) => `${value}%`,
+      },
+    },
+  },
+};
+
+function getSelectChartOptions(data) {
+  const maxScore = Math.max(
+    100,
+    ...data.datasets.flatMap((dataset) => dataset.data.filter((score) => score != null)),
+  );
+  const axisMax = Math.ceil(maxScore / 20) * 20;
+  return {
+    ...selectChartOptions,
+    scales: {
+      ...selectChartOptions.scales,
+      y: {
+        ...selectChartOptions.scales.y,
+        max: axisMax,
+        ticks: {
+          ...selectChartOptions.scales.y.ticks,
+          stepSize: 20,
         },
       },
     },
   };
-});
+}
 
 // 表示時に入力アシスト欄にフォーカスをあわせる
 onMounted(() => {
@@ -544,18 +641,32 @@ function onEsc() {
   }
 }
 
+function getMaxSelectScore(key) {
+  const scoreList = Object.values(selectResult.value?.evaluateResult?.max ?? {})
+    .map((result) => result?.[key]?.score)
+    .filter((score) => Number.isFinite(score));
+  return scoreList.length ? Math.max(...scoreList) : null;
+}
+
+function formatSelectScore(score) {
+  return score == null ? '?' : (score * 100).toFixed(1);
+}
+
 function shareX() {
-  let maxRate = null;
-  if (selectResult.value?.evaluateResult?.max) {
-    maxRate = Math.max(...Object.values(selectResult.value.evaluateResult?.max).map((x) => x.rate));
-  }
+  const maxScore = getMaxSelectScore('energy');
+  const specialtyScore = specialtySelectColumn.value
+    ? getMaxSelectScore(specialtySelectColumn.value.key)
+    : null;
 
   let text = [
-    `ポケモンスリープで「${pokemon.name ?? '?'}」を捕まえました！`,
+    `「${pokemon.name ?? '?'}」を捕まえました！`,
     `食材: ${pokemonFoodABC.value}`,
     `サブスキル: ${pokemon.subSkillList.map((x) => SubSkill.map[x]?.short ?? '?').join('/')}`,
     `せいかく: ${pokemon.nature ?? '?'}`,
-    `厳選度: ${maxRate != null ? (maxRate * 100).toFixed(1) : '?'}%`,
+    `総合厳選度: ${formatSelectScore(maxScore)}%`,
+    ...(specialtySelectColumn.value
+      ? [`${specialtySelectColumn.value.name}厳選度: ${formatSelectScore(specialtyScore)}%`]
+      : []),
     `https://reimer0204.github.io/pokesle-simulator/`,
     `#ポケスリ #ポケモンスリープ`,
   ].join('\n');
@@ -621,6 +732,7 @@ const candyInfo = computed(() => {
 <template>
   <PopupBase
     class="edit-pokemon-popup"
+    body-class="edit-pokemon-body"
     @close="$emit('close')"
     @keydown.esc.stop="onEsc"
     @keydown.c.alt="toggleColor"
@@ -740,115 +852,162 @@ const candyInfo = computed(() => {
       </div>
     </SettingList>
 
-    <!-- 良い表示方法を検討中
-    <ToggleArea class="mt-20px" open v-if="raderChart">
-      <template #headerText>厳選情報(レーダーチャート)</template>
-
-      <div class="flex-row gap-10px">
-        <InputRadio v-model="config.pokemonEdit.rader.type" :value="0">レベルごとに表示</InputRadio>
-        <InputRadio v-model="config.pokemonEdit.rader.type" :value="1">分野ごとに表示</InputRadio>
-      </div>
-      <div class="flex-row flex-wrap gap-10px">
-        <div v-for="i in 4" class="flex-column-start-center" :key="i">
-          <div>Lv30</div>
-          <div class="position-relative w-350px h-350px"><Radar v-bind="raderChart" /></div>
-        </div>
-      </div>
-    </ToggleArea>
-    -->
-
-    <ToggleArea class="mt-10px" open v-if="simulatedPokemonList && !requireRefresh.setting && !kaihouPokemon">
-      <template #headerText>厳選情報</template>
+    <ToggleArea
+      class="mt-10px"
+      open
+      v-if="simulatedPokemonList && !requireRefresh.setting && !kaihouPokemon"
+    >
+      <template #headerText>厳選情報（ボックス内比較）</template>
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
-        <div v-if="selectResult" style="overflow-x: auto; white-space: nowrap">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th></th>
-                <th
-                  v-for="{ name, color } in selectResultColumns"
-                  :colspan="selectLvList.length"
-                  :style="{ backgroundColor: color }"
+        <div v-if="selectResult">
+          <div class="select-check-list">
+            <b>チェックリスト</b>
+            <div v-if="selectResult.hitCheckList?.length" class="flex-column-start-start gap-3px">
+              <div
+                v-for="(
+                  { type, pokemon: targetPokemon, food, skill }, index
+                ) in selectResult.hitCheckList"
+                :key="index"
+                class="flex-row-start-center gap-3px"
+              >
+                <span>✅️</span>
+                <template v-if="type == 'pokemon'">厳選度({{ targetPokemon.name }})</template>
+                <template v-else-if="type == 'food'">
+                  <img :src="food.img" :alt="food.name" class="w-20px" />
+                </template>
+                <template v-else-if="type == 'skill'">{{ skill.name }}</template>
+              </div>
+            </div>
+            <span v-else>該当なし</span>
+          </div>
+          <div class="flex-row gap-10px mb-5px">
+            <InputRadio v-model="selectDisplayMode" value="graph">グラフ</InputRadio>
+            <InputRadio v-model="selectDisplayMode" value="table">表</InputRadio>
+            <InputCheckbox v-model="showSecondarySelectMetrics">
+              その他の厳選度も表示する
+            </InputCheckbox>
+          </div>
+
+          <div v-if="selectDisplayMode === 'graph'" class="select-chart-area">
+            <p class="select-chart-note">
+              本個体と、ボックス内の同種族・同種族同食材の最高厳選度を比較します。
+            </p>
+            <section
+              v-for="{ after, chartList } in selectChartList"
+              :key="after"
+              class="select-chart-section"
+            >
+              <h3>進化先：{{ after }}</h3>
+              <div class="select-chart-list">
+                <div
+                  v-for="{ key, name, color, data } in chartList"
+                  :key="key"
+                  class="select-chart"
                 >
-                  {{ name }}
-                </th>
-              </tr>
-              <tr>
-                <th>最終進化</th>
-                <th></th>
-                <template v-for="{ color } in selectResultColumns">
+                  <h4>{{ name }}</h4>
+                  <div class="select-chart-canvas">
+                    <Line :data="data" :options="getSelectChartOptions(data)" />
+                  </div>
+                  <div class="select-chart-legend">
+                    <span><i :style="{ borderColor: color }"></i>本個体</span>
+                    <span><i class="same"></i>同種族1位</span>
+                    <span><i class="food"></i>同種族・同食材1位</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div v-else class="select-table-area">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th></th>
                   <th
-                    v-for="lv in selectLvList"
-                    class="text-align-right"
+                    v-for="{ name, color } in selectResultColumns"
+                    :colspan="selectLvList.length"
                     :style="{ backgroundColor: color }"
                   >
-                    <template v-if="lv == 'max'">最大</template>
-                    <template v-else>Lv{{ lv }}</template>
+                    {{ name }}
                   </th>
-                </template>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="after in selectResult.base.afterList">
+                </tr>
                 <tr>
-                  <th rowspan="3">{{ after }}</th>
-                  <th>本個体</th>
-                  <template v-for="{ key } in selectResultColumns">
-                    <td
+                  <th>最終進化</th>
+                  <th></th>
+                  <template v-for="{ color } in selectResultColumns">
+                    <th
                       v-for="lv in selectLvList"
-                      :class="{
-                        best:
-                          selectResult.evaluateResult?.[lv]?.best[key].score ==
-                          selectResult.evaluateResult?.[lv]?.[after][key].score,
-                      }"
                       class="text-align-right"
+                      :style="{ backgroundColor: color }"
                     >
-                      <template v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after][key].score)"
-                        >-</template
-                      >
-                      <template v-else
-                        >{{
-                          (selectResult.evaluateResult?.[lv]?.[after][key].score * 100).toFixed(1)
-                        }}%</template
-                      >
-                    </td>
+                      <template v-if="lv == 'max'">最大</template>
+                      <template v-else>Lv{{ lv }}</template>
+                    </th>
                   </template>
                 </tr>
-                <tr>
-                  <th>同種族</th>
-                  <template v-for="{ key } in selectResultColumns">
-                    <td v-for="lv in selectLvList" class="text-align-right">
-                      <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.same)"
-                        >-</template
+              </thead>
+              <tbody>
+                <template v-for="after in selectResult.base.afterList">
+                  <tr>
+                    <th rowspan="3">{{ after }}</th>
+                    <th>本個体</th>
+                    <template v-for="{ key } in selectResultColumns">
+                      <td
+                        v-for="lv in selectLvList"
+                        :class="{
+                          best:
+                            selectResult.evaluateResult?.[lv]?.best[key].score ==
+                            selectResult.evaluateResult?.[lv]?.[after][key].score,
+                        }"
+                        class="text-align-right"
                       >
-                      <template v-else
-                        >{{
-                          (selectResult.box?.[lv]?.[after]?.[key]?.same * 100).toFixed(1)
-                        }}%</template
-                      >
-                    </td>
-                  </template>
-                </tr>
-                <tr>
-                  <th>同種族<br />同食材</th>
-                  <template v-for="{ key } in selectResultColumns">
-                    <td v-for="lv in selectLvList" class="text-align-right">
-                      <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.food)"
-                        >-</template
-                      >
-                      <template v-else
-                        >{{
-                          (selectResult.box?.[lv]?.[after]?.[key]?.food * 100).toFixed(1)
-                        }}%</template
-                      >
-                    </td>
-                  </template>
-                </tr>
-              </template>
-            </tbody>
-          </table>
+                        <template
+                          v-if="isNaN(selectResult.evaluateResult?.[lv]?.[after][key].score)"
+                        >
+                          -
+                        </template>
+                        <template v-else>
+                          {{
+                            (selectResult.evaluateResult?.[lv]?.[after][key].score * 100).toFixed(
+                              1,
+                            )
+                          }}%
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                  <tr>
+                    <th>同種族</th>
+                    <template v-for="{ key } in selectResultColumns">
+                      <td v-for="lv in selectLvList" class="text-align-right">
+                        <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.same)"
+                          >-</template
+                        >
+                        <template v-else>
+                          {{ (selectResult.box?.[lv]?.[after]?.[key]?.same * 100).toFixed(1) }}%
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                  <tr>
+                    <th>同種族<br />同食材</th>
+                    <template v-for="{ key } in selectResultColumns">
+                      <td v-for="lv in selectLvList" class="text-align-right">
+                        <template v-if="isNaN(selectResult.box?.[lv]?.[after]?.[key]?.food)"
+                          >-</template
+                        >
+                        <template v-else>
+                          {{ (selectResult.box?.[lv]?.[after]?.[key]?.food * 100).toFixed(1) }}%
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
         </div>
         <div v-else>せいかくまで入力すると表示されます</div>
       </AsyncWatcherArea>
@@ -908,23 +1067,41 @@ const candyInfo = computed(() => {
       </div>
     </ToggleArea>
 
-    <div class="flex-row-start-center gap-10px mt-10px">
-      <FormButton v-if="props.index != null" class="important" @click="deletePokemon"
-        >削除</FormButton
-      >
-      <div class="flex-110"></div>
-      <div class="x" @click="shareX"><img src="../img/x.svg" /></div>
-      <FormButton @click="save(true)" :disabled="saveDisabled" v-if="props.index == null"
-        >保存して続けて登録</FormButton
-      >
-      <FormButton @click="save(false)" :disabled="saveDisabled">保存</FormButton>
-    </div>
+    <template #footer>
+      <div class="edit-pokemon-footer flex-row-start-center gap-10px">
+        <FormButton v-if="props.index != null" class="important" @click="deletePokemon"
+          >削除</FormButton
+        >
+        <div class="flex-110"></div>
+        <div class="x" @click="shareX"><img src="../img/x.svg" /></div>
+        <FormButton @click="save(true)" :disabled="saveDisabled" v-if="props.index == null"
+          >保存して続けて登録</FormButton
+        >
+        <FormButton @click="save(false)" :disabled="saveDisabled">保存</FormButton>
+      </div>
+    </template>
   </PopupBase>
 </template>
 
 <style lang="scss" scoped>
 .edit-pokemon-popup {
   width: 780px;
+  height: min(900px, calc(100dvh - 40px));
+  display: flex;
+  flex-direction: column;
+
+  :deep(.edit-pokemon-body) {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .edit-pokemon-footer {
+    flex: 0 0 auto;
+    padding: 10px 20px;
+    border-top: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+  }
 
   .edit-form {
     display: flex;
@@ -994,29 +1171,118 @@ const candyInfo = computed(() => {
   }
 
   .select-area {
-    table {
-      border-collapse: collapse;
-      width: 100%;
+    .select-check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      border: 1px solid var(--color-line);
+      border-radius: 5px;
+      background: var(--color-surface-subtle);
+    }
 
-      thead {
-        tr {
-          background-color: rgb(66, 85, 158);
-          color: #fff;
+    .select-table-area {
+      overflow-x: auto;
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        white-space: nowrap;
+
+        thead {
+          tr {
+            background-color: rgb(66, 85, 158);
+            color: #fff;
+          }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px #ccc solid;
+          }
+        }
+
+        th,
+        td {
+          padding: 3px 5px;
+
+          &.best {
+            font-weight: bold;
+          }
         }
       }
+    }
 
-      tbody {
-        tr {
-          border-bottom: 1px #ccc solid;
-        }
+    .select-chart-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .select-chart-note {
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 80%;
+    }
+
+    .select-chart-section {
+      border-top: 1px solid var(--color-line);
+      padding-top: 10px;
+
+      h3 {
+        margin: 0 0 5px;
+        font-size: 100%;
+      }
+    }
+
+    .select-chart-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .select-chart {
+      min-width: 0;
+
+      h4 {
+        margin: 0;
+        text-align: center;
+        font-size: 90%;
+      }
+    }
+
+    .select-chart-canvas {
+      height: 190px;
+    }
+
+    .select-chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2px 8px;
+      font-size: 80%;
+
+      span {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
       }
 
-      th,
-      td {
-        padding: 3px 5px;
+      i {
+        display: block;
+        width: 28px;
+        border-top: 4px solid;
+        border-color: var(--color-ink);
 
-        &.best {
-          font-weight: bold;
+        &.same {
+          border-top-style: dashed;
+          border-color: #555;
+        }
+
+        &.food {
+          border-top-style: dotted;
+          border-color: #999;
         }
       }
     }
@@ -1051,7 +1317,8 @@ const candyInfo = computed(() => {
 
       > thead > tr > th:first-child,
       > tbody > tr > th {
-        width: 72px;
+        width: 48px;
+        white-space: normal;
       }
 
       > tbody > tr > td {
@@ -1071,7 +1338,10 @@ const candyInfo = computed(() => {
 
     .select-area {
       max-width: 100%;
-      overflow-x: auto;
+
+      .select-chart-list {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
   }
 }

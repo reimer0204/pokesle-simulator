@@ -4,6 +4,7 @@ import DangerAlert from '../components/alert/danger-alert.vue';
 import DesignTable from '../components/design-table.vue';
 import ResultSummaryCard from '../components/result-summary-card.vue';
 import SettingButton from '../components/design/setting-button.vue';
+import SettingGroup from '../components/design/setting-group.vue';
 import SettingSectionTitle from '../components/design/setting-section-title.vue';
 import SettingTable from '../components/design/setting-table.vue';
 import ToggleArea from '../components/design/toggle-area.vue';
@@ -68,6 +69,12 @@ const componentCatalog = [
     'design/setting-section-title.vue',
     'SettingSectionTitle',
     'カテゴリ・設定項目・入力項目の役割を示す見出し',
+  ],
+  [
+    '設定',
+    'design/setting-group.vue',
+    'SettingGroup',
+    '関連する設定を見出し付きの枠でまとめ、ヘッダー右端に操作を置ける',
   ],
   ['設定', 'design/setting-table.vue', 'SettingTable', 'ラベルと値の簡易テーブル'],
   ['設定', 'design/toggle-area.vue', 'ToggleArea', '折りたたみ領域'],
@@ -383,6 +390,13 @@ const tableColumns = [
           <div><label>説明付き項目</label><small>ラベルはグレーの太字で表示されます。</small></div>
         </SettingList>
       </div>
+      <div class="labeled-sample setting-group-sample">
+        <code>SettingGroup</code
+        ><SettingGroup title="関連する設定">
+          <template #actions><FormButton>操作</FormButton></template>
+          <InputCheckbox v-model="checkbox">有効にする</InputCheckbox>
+        </SettingGroup>
+      </div>
     </section>
 
     <section>
@@ -542,7 +556,7 @@ const tableColumns = [
       <p class="source">
         対象:
         <code>src/components/</code>
-        配下の全41コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。
+        配下の全42コンポーネント。上記の見本で確認できないドメイン依存コンポーネントも含め、役割と実装元を記録しています。
       </p>
       <div class="catalog-scroll">
         <DesignTable class="catalog-table">
@@ -686,6 +700,9 @@ code {
   gap: 8px;
   max-width: 600px;
   margin: 10px 0;
+}
+.setting-group-sample {
+  width: min(100%, 320px);
 }
 .native-catalog {
   min-width: 760px;

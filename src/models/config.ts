@@ -1,10 +1,16 @@
-import { reactive, watch } from "vue";
-import defaultConfig from "../data/default-config";
-import mergeObject from "./utils/merge-object";
-import SubSkill from "@/data/sub-skill";
-import { migrateEvaluateConfig } from "./evaluate-setting";
+import { reactive, watch } from 'vue';
+import defaultConfig from '../data/default-config';
+import mergeObject from './utils/merge-object';
+import SubSkill from '@/data/sub-skill';
+import { migrateEvaluateConfig } from './evaluate-setting';
+import {
+  migrateCheckListPokemonCondition,
+  migratePokemonTargetFriendPoint,
+  needsCheckListPokemonConditionMigration,
+} from './pokemon-target';
 
 const EVALUATE_SETTING_MIGRATION_VERSION = 20260919;
+const CHECK_LIST_POKEMON_TARGET_MIGRATION_VERSION = 20260928;
 
 let config = reactive({
   ...defaultConfig,
@@ -13,14 +19,17 @@ let config = reactive({
   },
   save(newConfig) {
     if (newConfig) {
-      mergeObject(this, newConfig)
+      mergeObject(this, newConfig);
     }
 
     try {
-      localStorage.setItem('config', JSON.stringify({
-        ...this,
-      }));
-    } catch(e) {
+      localStorage.setItem(
+        'config',
+        JSON.stringify({
+          ...this,
+        }),
+      );
+    } catch (e) {
       // ignore
     }
   },
@@ -32,13 +41,21 @@ try {
   if (cookieConfig.selectEvaluate.silverSeedUse != null) {
     cookieConfig.selectEvaluate.silverSeed = Object.fromEntries(
       SubSkill.list
-      .filter(x => x.next != null)
-      .map(x => [x.name, cookieConfig.selectEvaluate.silverSeedUse])
-    )
+        .filter((x) => x.next != null)
+        .map((x) => [x.name, cookieConfig.selectEvaluate.silverSeedUse]),
+    );
   }
   if (savedConfigVersion < EVALUATE_SETTING_MIGRATION_VERSION) {
     migrateEvaluateConfig(cookieConfig.selectEvaluate);
     migrateEvaluateConfig(cookieConfig.tmpEvaluate);
+  }
+  migratePokemonTargetFriendPoint(cookieConfig.selectEvaluate?.ruleList);
+  migratePokemonTargetFriendPoint(cookieConfig.tmpEvaluate?.ruleList);
+  if (
+    savedConfigVersion < CHECK_LIST_POKEMON_TARGET_MIGRATION_VERSION ||
+    needsCheckListPokemonConditionMigration(cookieConfig.summary?.checklist)
+  ) {
+    migrateCheckListPokemonCondition(cookieConfig.summary?.checklist);
   }
   cookieConfig.v = Math.max(savedConfigVersion, defaultConfig.v);
   mergeObject(config, cookieConfig);
@@ -46,12 +63,12 @@ try {
   if (config.simulation.fixSkillSeed === true) {
     config.simulation.fixSkillSeed = 1;
   }
-} catch(e) {
+} catch (e) {
   // NOP
 }
 
 watchEffect(() => {
-  config.save()
-})
+  config.save();
+});
 
 export default config;

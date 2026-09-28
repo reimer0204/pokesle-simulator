@@ -1,9 +1,10 @@
-import SortableTable from "../components/sortable-table.vue";
-import Berry from "./berry.ts";
-import { Food, Cooking } from './food_and_cooking.ts'
-import Pokemon from "./pokemon.ts";
-import Skill from "./skill.ts";
-import SubSkill from "./sub-skill.ts";
+import SortableTable from '../components/sortable-table.vue';
+import Berry from './berry.ts';
+import { Food, Cooking } from './food_and_cooking.ts';
+import Pokemon from './pokemon.ts';
+import Skill from './skill.ts';
+import SubSkill from './sub-skill.ts';
+import { createPokemonTarget } from '@/models/pokemon-target.ts';
 
 export interface EventBonusConfig {
   target: {
@@ -22,12 +23,12 @@ export function createEventBonus(): EventBonusConfig {
   return {
     target: {
       types: {
-        ...Berry.list.reduce((a, x) => (a[x.type] = false, a), {})
+        ...Berry.list.reduce((a, x) => ((a[x.type] = false), a), {}),
       },
       specialties: {
-        'きのみ': false,
-        '食材': false,
-        'スキル': false,
+        きのみ: false,
+        食材: false,
+        スキル: false,
       },
     },
     berry: 0,
@@ -40,12 +41,11 @@ export function createEventBonus(): EventBonusConfig {
 }
 
 const defaultConfig = {
-
-  v: 20260919,
+  v: 20260928,
 
   // 評価全般(げんき係数再計算)
   sleepTime: 8.5, // 睡眠時間
-  checkFreq: 10,  // チェック頻度
+  checkFreq: 10, // チェック頻度
 
   // 初期設定が完了しているか
   initSetting: false,
@@ -58,8 +58,8 @@ const defaultConfig = {
 
   // シミュレーション設定
   healEffectParameter: [0.891, 1.02, 4, 1, -2.304, 1, 0.00156],
-  dayHelpParameter:    [0.0180, -0.429, 1.00, 0.635, 1.57],
-  nightHelpParameter:  [0.0254, -0.980, 1.76, 0.900, 0.97],
+  dayHelpParameter: [0.018, -0.429, 1.0, 0.635, 1.57],
+  nightHelpParameter: [0.0254, -0.98, 1.76, 0.9, 0.97],
   genkiSimulationDiffAverage: null,
   genkiSimulationDiffMax: null,
 
@@ -102,6 +102,11 @@ const defaultConfig = {
       autoExport: true,
       sheet: 'シート1',
     },
+  },
+
+  pokemonEdit: {
+    selectDisplayMode: 'graph',
+    showSecondarySelectMetrics: false,
   },
 
   simulation: {
@@ -169,18 +174,16 @@ const defaultConfig = {
     expectType: {
       border: 80,
       food: 0,
-      ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
-      ...Object.fromEntries(Skill.list
-        .filter(x => 
-          x.name.includes('げんきオール')
-          || x.name.includes('料理パワーアップ')
-        )
-        .map(x => [x.name, 0])
+      ...Object.fromEntries(Skill.list.map((x) => [x.name, 0])),
+      ...Object.fromEntries(
+        Skill.list
+          .filter((x) => x.name.includes('げんきオール') || x.name.includes('料理パワーアップ'))
+          .map((x) => [x.name, 0]),
       ),
     },
 
     skillRate: {
-      ...Object.fromEntries(Skill.list.map(x => [x.name, 1])),
+      ...Object.fromEntries(Skill.list.map((x) => [x.name, 1])),
     },
   },
 
@@ -200,11 +203,11 @@ const defaultConfig = {
       nightHelpRate: 0,
       suiminExp: 0,
       specialtyNum: {
-        'きのみ': 0,
-        '食材': 0,
-        'スキル': 0,
+        きのみ: 0,
+        食材: 0,
+        スキル: 0,
       },
-      typeNum: Berry.list.reduce((a, x) => (a[x.type] = 0, a), {})
+      typeNum: Berry.list.reduce((a, x) => ((a[x.type] = 0), a), {}),
     },
 
     result: {
@@ -218,31 +221,27 @@ const defaultConfig = {
 
   // 厳選関連
   selectEvaluate: {
-    shardEnergyRate: 50,   // エナジー/ゆめのかけら
-    shardEnergy: 10,        // ゆめのかけらをエナジーに換算する
-    shardBonus: 50,         // ゆめのかけらボーナスをエナジー換算する際の価値(%)
+    shardEnergyRate: 50, // エナジー/ゆめのかけら
+    shardEnergy: 10, // ゆめのかけらをエナジーに換算する
+    shardBonus: 50, // ゆめのかけらボーナスをエナジー換算する際の価値(%)
     silverSeed: Object.fromEntries(
-      SubSkill.list
-      .filter(x => x.next != null)
-      .map(x => [x.name, true])
+      SubSkill.list.filter((x) => x.next != null).map((x) => [x.name, true]),
     ),
-    helpBonus: 20,          // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
-    teamHelpBonus: 1,       // チームに自分以外のおてボ持ちが何匹いるか
-    supportBorder: 90,      // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
-    supportRankNum: 20,     // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
-    cookingPowerUpType: 1,  // 料理パワーアップの評価方法(0:理論値, 1:平均)  
-    cookingPowerUpRate: 60,    
-    healer: 90,             // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
+    helpBonus: 20, // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
+    teamHelpBonus: 1, // チームに自分以外のおてボ持ちが何匹いるか
+    supportBorder: 90, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
+    supportRankNum: 20, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
+    cookingPowerUpType: 1, // 料理パワーアップの評価方法(0:理論値, 1:平均)
+    cookingPowerUpRate: 60,
+    healer: 90, // 厳選評価計算時にヒーラーが日中に回復するげんき(げんき回復量の性格評価に影響)
     expectType: {
       border: 70,
       food: 1,
-      ...Object.fromEntries(Skill.list.map(x => [x.name, 0])),
-      ...Object.fromEntries(Skill.list
-        .filter(x => 
-          x.name.includes('げんきオール')
-          || x.name.includes('料理パワーアップ')
-        )
-        .map(x => [x.name, 0])
+      ...Object.fromEntries(Skill.list.map((x) => [x.name, 0])),
+      ...Object.fromEntries(
+        Skill.list
+          .filter((x) => x.name.includes('げんきオール') || x.name.includes('料理パワーアップ'))
+          .map((x) => [x.name, 0]),
       ),
     },
     genkiFullIfSelfHeal: true,
@@ -256,28 +255,28 @@ const defaultConfig = {
       80: false,
     },
     specialty: {
-      'きのみ': {
-        berryEnergyRate: 200,   // 
-        foodEnergyRate: 50,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-        foodGetRate: 30,        // 食材ゲットの評価レート
+      きのみ: {
+        berryEnergyRate: 200, //
+        foodEnergyRate: 50, // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 30, // 食材ゲットの評価レート
         skillLvType: 1,
       },
-      '食材': {
-        berryEnergyRate: 150,   //
-        foodEnergyRate: 80,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-        foodGetRate: 30,        // 食材ゲットの評価レート
+      食材: {
+        berryEnergyRate: 150, //
+        foodEnergyRate: 80, // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 30, // 食材ゲットの評価レート
         skillLvType: 1,
       },
-      'スキル': {
-        berryEnergyRate: 150,   //
-        foodEnergyRate: 50,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-        foodGetRate: 50,        // 食材ゲットの評価レート
+      スキル: {
+        berryEnergyRate: 150, //
+        foodEnergyRate: 50, // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 50, // 食材ゲットの評価レート
         skillLvType: 2,
       },
-      'オール': {
-        berryEnergyRate: 200,   // 
-        foodEnergyRate: 80,     // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
-        foodGetRate: 50,        // 食材ゲットの評価レート
+      オール: {
+        berryEnergyRate: 200, //
+        foodEnergyRate: 80, // 厳選計算の食材評価時、基礎エナジー(0%)～理論値(100%)のどこで評価するか
+        foodGetRate: 50, // 食材ゲットの評価レート
         skillLvType: 2,
       },
     },
@@ -291,12 +290,11 @@ const defaultConfig = {
       expDown: { add: 0, rate: 0.99 },
     },
     skillEnergy: Object.fromEntries(
-      Skill.list.filter(x => x.evaluateEnergy != null).map(skill => {
-        return [
-          skill.name,
-          skill.evaluateEnergy.map(() => null)
-        ]
-      })
+      Skill.list
+        .filter((x) => x.evaluateEnergy != null)
+        .map((skill) => {
+          return [skill.name, skill.evaluateEnergy.map(() => null)];
+        }),
     ),
     pokemonSleepTime: 500,
     energyPerCandy: 200,
@@ -333,8 +331,6 @@ const defaultConfig = {
   // TODO: 元気エミュレーターの仕様上100%スタートじゃないと計算厳しいかも
   genkiBase: 1,
 
-
-
   healerEmulateLoop: 1000,
   workerNum: 4,
 
@@ -346,23 +342,68 @@ const defaultConfig = {
     checklist: {
       pokemonCondition: {
         list: [
-          { type: 1, target: 'きのみ', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
-          { type: 1, target: '食材', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
-          { type: 1, target: 'スキル', aaa: true, aab: true, aac: true, aba: true, abb: true, abc: true, energyBorder: null, specialtyBorder: null },
+          {
+            target: {
+              ...createPokemonTarget(),
+              type: 'condition',
+              all: false,
+              specialties: { きのみ: true, 食材: false, スキル: false, オール: false },
+            },
+            aaa: true,
+            aab: true,
+            aac: true,
+            aba: true,
+            abb: true,
+            abc: true,
+            energyBorder: null,
+            specialtyBorder: null,
+          },
+          {
+            target: {
+              ...createPokemonTarget(),
+              type: 'condition',
+              all: false,
+              specialties: { きのみ: false, 食材: true, スキル: false, オール: false },
+            },
+            aaa: true,
+            aab: true,
+            aac: true,
+            aba: true,
+            abb: true,
+            abc: true,
+            energyBorder: null,
+            specialtyBorder: null,
+          },
+          {
+            target: {
+              ...createPokemonTarget(),
+              type: 'condition',
+              all: false,
+              specialties: { きのみ: false, 食材: false, スキル: true, オール: false },
+            },
+            aaa: true,
+            aab: true,
+            aac: true,
+            aba: true,
+            abb: true,
+            abc: true,
+            energyBorder: null,
+            specialtyBorder: null,
+          },
         ],
         selectLv: 'max',
-        disablePokemonMap: Object.fromEntries(Pokemon.list.map(x => [x.name, false]))
+        disablePokemonMap: Object.fromEntries(Pokemon.list.map((x) => [x.name, false])),
       },
       food: {
-        enableMap: Object.fromEntries(Food.list.map(x => [x.name, true])),
+        enableMap: Object.fromEntries(Food.list.map((x) => [x.name, true])),
         borderType: 0,
         borderLv: null,
         borderRate: 95,
         borderValue: 80,
-        targetValue: 90,
+        targetValue: 85,
       },
       skill: {
-        enableMap: Object.fromEntries(Skill.list.map(x => [x.name, true])),
+        enableMap: Object.fromEntries(Skill.list.map((x) => [x.name, true])),
         borderLv: null,
         borderRate: 95,
         borderValue: 75,
@@ -372,10 +413,10 @@ const defaultConfig = {
       field: {
         shinkago: false,
         bakecchaMatome: true,
-      }
+      },
     },
-  }
-}
+  },
+};
 
 // 簡易診断は通常の厳選テーブルを生成せず、個別ポケモンだけを評価する。
 // 基準生成の設定を初期値として持つが、通常設定とは独立して保存する。
@@ -391,10 +432,10 @@ defaultConfig.tmpEvaluate = {
 defaultConfig.simulation.cookingRecipeLv = Object.keys(Cooking.recipeLvs).length;
 defaultConfig.simulation.potSize = Cooking.potMax;
 
-for(let food of Food.list) {
+for (let food of Food.list) {
   defaultConfig.foodDefaultNum[food.name] = 0;
 }
-for(let cooking of Cooking.list) {
+for (let cooking of Cooking.list) {
   defaultConfig.simulation.enableCooking[cooking.name] = true;
   defaultConfig.simulation.cookingSettings[cooking.name] = {
     lv: 1,
@@ -402,8 +443,8 @@ for(let cooking of Cooking.list) {
 }
 
 // 種ポケをリストアップし所持アメ設定のメンバーにする
-for(const pokemon of Pokemon.list.filter(x => x.evolve.before == null)) {
+for (const pokemon of Pokemon.list.filter((x) => x.evolve.before == null)) {
   defaultConfig.candy.bag[pokemon.candyName] = 0;
 }
 
-export default defaultConfig
+export default defaultConfig;

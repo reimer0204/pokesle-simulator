@@ -6,13 +6,7 @@ const props = defineProps<{
 }>();
 const emits = defineEmits(['update:modelValue']);
 
-const columnList = [
-  'おてスピ',
-  'げんき',
-  '食材確率',
-  'スキル確率',
-  'EXP',
-];
+const columnList = ['おてスピ', 'げんき', '食材確率', 'スキル確率', 'EXP'];
 const rowList = [
   {
     name: 'おてスピ',
@@ -129,7 +123,7 @@ button {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
   table {
     border-spacing: 1px;
   }
@@ -137,10 +131,9 @@ button {
     font-size: 75%;
   }
   button {
-    padding: 3px 0;
-    font-size: 90%;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    padding: 1px 0;
+    font-size: 70%;
+    white-space: nowrap;
   }
 }
 </style>

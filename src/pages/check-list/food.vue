@@ -35,7 +35,10 @@ function openBoxList(data: any) {
     <div class="tab-list">
       <router-link to="/check-list/food">チェックリスト</router-link>
       <template v-for="food in Food.list" :key="food.name">
-        <router-link :to="`/check-list/food/${food.name}`">{{ food.name }}</router-link>
+        <router-link :to="`/check-list/food/${food.name}`" class="flex-row-start-center">
+          <img :src="food.img" class="w-20px" />
+          {{ food.name }}
+        </router-link>
       </template>
     </div>
 

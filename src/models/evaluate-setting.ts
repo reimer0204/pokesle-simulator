@@ -1,6 +1,11 @@
 import Skill from '@/data/skill';
+import {
+  createPokemonTarget,
+  matchesPokemonTarget,
+  pokemonTargetSpecialtyList,
+} from './pokemon-target';
 
-const specialtyList = ['きのみ', '食材', 'スキル', 'オール'];
+const specialtyList = pokemonTargetSpecialtyList;
 
 export function createEvaluateRuleSetting() {
   return {
@@ -14,29 +19,9 @@ export function createEvaluateRuleSetting() {
 
 export function createEvaluateRule() {
   return {
-    target: {
-      type: 'all',
-      all: true,
-      specialties: Object.fromEntries(specialtyList.map(specialty => [specialty, false])),
-      skillNameList: [],
-      pokemonNameList: [],
-    },
+    target: createPokemonTarget(),
     settingList: [createEvaluateRuleSetting()],
   };
-}
-
-function matchesTarget(target: any, pokemon: any) {
-  if (target?.all) return true;
-  if (target == null) return false;
-
-  const selectedSpecialtyList = Object.entries(target.specialties ?? {})
-    .filter(([_, enabled]) => enabled)
-    .map(([specialty]) => specialty);
-  if (selectedSpecialtyList.length && !selectedSpecialtyList.includes(pokemon.specialty)) return false;
-  if (target.skillNameList?.length && !target.skillNameList.includes(pokemon.skill.name)) return false;
-  if (target.pokemonNameList?.length && !target.pokemonNameList.includes(pokemon.name)) return false;
-
-  return selectedSpecialtyList.length > 0 || target.skillNameList?.length > 0 || target.pokemonNameList?.length > 0;
 }
 
 export function getPokemonEvaluateSetting(evaluateConfig: any, pokemon: any) {
@@ -46,7 +31,9 @@ export function getPokemonEvaluateSetting(evaluateConfig: any, pokemon: any) {
     foodEnergyRate: specialtyConfig.foodEnergyRate,
     foodGetRate: specialtyConfig.foodGetRate,
     skillLv: {
-      type: specialtyConfig.skillLvType ?? (pokemon.specialty === 'きのみ' || pokemon.specialty === '食材' ? 1 : 2),
+      type:
+        specialtyConfig.skillLvType ??
+        (pokemon.specialty === 'きのみ' || pokemon.specialty === '食材' ? 1 : 2),
       lv: 1,
     },
   };
@@ -56,7 +43,7 @@ export function getPokemonEvaluateSetting(evaluateConfig: any, pokemon: any) {
   }
 
   for (const rule of evaluateConfig.ruleList ?? []) {
-    if (!matchesTarget(rule.target, pokemon)) continue;
+    if (!matchesPokemonTarget(rule.target, pokemon)) continue;
     for (const setting of rule.settingList ?? []) {
       if (setting.type === 'berryEnergyRate') result.berryEnergyRate = setting.value;
       if (setting.type === 'foodEnergyRate') result.foodEnergyRate = setting.value;
@@ -70,7 +57,14 @@ export function getPokemonEvaluateSetting(evaluateConfig: any, pokemon: any) {
   return result;
 }
 
-function addSkillLvRule(ruleList: any[], ruleMap: Map<string, any>, targetKey: string, target: any, skillName: string, skillLvSetting: any) {
+function addSkillLvRule(
+  ruleList: any[],
+  ruleMap: Map<string, any>,
+  targetKey: string,
+  target: any,
+  skillName: string,
+  skillLvSetting: any,
+) {
   let rule = ruleMap.get(targetKey);
   if (rule == null) {
     rule = { target, settingList: [] };
@@ -104,7 +98,11 @@ export function migrateEvaluateConfig(evaluateConfig: any) {
 
     for (const rule of evaluateConfig.ruleList) {
       if (rule.target.type == null || (rule.target.type === 'all' && !rule.target.all)) {
-        rule.target.type = rule.target.all ? 'all' : rule.target.pokemonNameList?.length ? 'pokemon' : 'condition';
+        rule.target.type = rule.target.all
+          ? 'all'
+          : rule.target.pokemonNameList?.length
+            ? 'pokemon'
+            : 'condition';
       }
       if (!Array.isArray(rule.settingList)) {
         rule.settingList = rule.setting == null ? [] : [rule.setting];
@@ -112,17 +110,21 @@ export function migrateEvaluateConfig(evaluateConfig: any) {
       }
 
       if (rule.target.type === 'all') {
-        const maxSkillLvSettingList = rule.settingList.filter(setting => setting.type === 'skillLv' && setting.skillLvType === 2);
+        const maxSkillLvSettingList = rule.settingList.filter(
+          (setting) => setting.type === 'skillLv' && setting.skillLvType === 2,
+        );
         for (const setting of maxSkillLvSettingList) {
           if (!evaluateConfig.maxSkillLvSkillNameList.includes(setting.skillName)) {
             evaluateConfig.maxSkillLvSkillNameList.push(setting.skillName);
           }
         }
-        rule.settingList = rule.settingList.filter(setting => !maxSkillLvSettingList.includes(setting));
+        rule.settingList = rule.settingList.filter(
+          (setting) => !maxSkillLvSettingList.includes(setting),
+        );
       }
       if (!rule.settingList.length) continue;
 
-      const isSkillLvOnly = rule.settingList.every(setting => setting.type === 'skillLv');
+      const isSkillLvOnly = rule.settingList.every((setting) => setting.type === 'skillLv');
       const targetKey = JSON.stringify({
         type: rule.target.type,
         specialties: rule.target.specialties,
@@ -149,27 +151,54 @@ export function migrateEvaluateConfig(evaluateConfig: any) {
   evaluateConfig.maxSkillLvSkillNameList ??= [];
 
   for (const skill of Skill.list) {
-    const oldSettingList = specialtyList.map(specialty => oldSpecialtyConfig[specialty]?.skillLv?.[skill.name]);
-    if (oldSettingList.some(setting => setting == null)) continue;
+    const oldSettingList = specialtyList.map(
+      (specialty) => oldSpecialtyConfig[specialty]?.skillLv?.[skill.name],
+    );
+    if (oldSettingList.some((setting) => setting == null)) continue;
 
-    const isAllMax = oldSettingList.every(setting => setting.type === 2);
-    const isAllSameSpecifiedLevel = oldSettingList.every(setting => setting.type === 3 && setting.lv === oldSettingList[0].lv);
+    const isAllMax = oldSettingList.every((setting) => setting.type === 2);
+    const isAllSameSpecifiedLevel = oldSettingList.every(
+      (setting) => setting.type === 3 && setting.lv === oldSettingList[0].lv,
+    );
     if (isAllMax) {
       evaluateConfig.maxSkillLvSkillNameList.push(skill.name);
       continue;
     }
     if (isAllSameSpecifiedLevel) {
-      addSkillLvRule(ruleList, ruleMap, 'all', createEvaluateRule().target, skill.name, oldSettingList[0]);
+      addSkillLvRule(
+        ruleList,
+        ruleMap,
+        'all',
+        createEvaluateRule().target,
+        skill.name,
+        oldSettingList[0],
+      );
       continue;
     }
 
     for (const specialty of ['きのみ', '食材']) {
       const oldSetting = oldSpecialtyConfig[specialty].skillLv?.[skill.name];
-      if (oldSetting != null && oldSetting.type !== 1) addSkillLvRule(ruleList, ruleMap, specialty, createSpecialtyTarget(specialty), skill.name, oldSetting);
+      if (oldSetting != null && oldSetting.type !== 1)
+        addSkillLvRule(
+          ruleList,
+          ruleMap,
+          specialty,
+          createSpecialtyTarget(specialty),
+          skill.name,
+          oldSetting,
+        );
     }
     for (const specialty of ['スキル', 'オール']) {
       const oldSetting = oldSpecialtyConfig[specialty].skillLv?.[skill.name];
-      if (oldSetting != null && oldSetting.type !== 2) addSkillLvRule(ruleList, ruleMap, specialty, createSpecialtyTarget(specialty), skill.name, oldSetting);
+      if (oldSetting != null && oldSetting.type !== 2)
+        addSkillLvRule(
+          ruleList,
+          ruleMap,
+          specialty,
+          createSpecialtyTarget(specialty),
+          skill.name,
+          oldSetting,
+        );
     }
   }
 

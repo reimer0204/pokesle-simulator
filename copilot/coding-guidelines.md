@@ -37,6 +37,7 @@
 - 新しいUIを独自実装する前に、`DesignTable`、`SortableTable`、`SettingList`、`TabList`、`InputText`、`InputNumber`、`InputPassword`、`InputFile`、`InputSelect`、`InputRadio`、`InputCheckbox`、`FormButton`、`ToggleArea` など既存部品を再利用します。
 - クリックでポップアップを開いて選択値を決めるUIは、右側に矢印を表示する `SettingButton` をトリガーとして使用します。選択ポップアップを `Popup.show(...)` で開く場合も、`SettingButton` の `@click` から起動します。
 - 設定画面内のカテゴリ、個別ルール、入力項目の見出しには、役割に応じて `SettingSectionTitle` の `category`、`item`、`field` を使用します。
+- 関連する複数の設定を見出し付きの枠で区切る場合は、`SettingGroup` を使用します。グループ単位の操作は、`actions` スロットでヘッダー右端に配置します。
 - 画面内で中心となる実行操作には、`FormButton` の `execute` クラスを使い、青色で通常のブルーグレーの操作から区別します。削除などの重要・破壊的な操作には従来どおり `important` を使います。
 - 画面と共通表示コンポーネントでは、ネイティブな `input`、`select`、`button` を直接配置せず、`components/form/` の対応コンポーネントを使います。ネイティブ要素はフォームコンポーネントの実装内部に限定します。
 - `InputText`、`InputNumber`、`InputSelect` の編集値は原則として `v-model` で渡します。空欄時の `null` や `0` への変換など個別の正規化が必要な場合は、`model-value` と `@update:model-value` を対にして扱います。

@@ -30,7 +30,6 @@ const pageLinkList = computed(() => {
 })
 
 const sortInfo = ref(props.setting?.sort ?? []);
-const sortColors = ref([])
 const editMode = ref(false);
 const hiddenColumn = reactive(new Set(props.setting?.hiddenColumn ?? []));
 
@@ -46,19 +45,35 @@ const columnMap = computed(() => {
   return result;
 })
 
+const katakanaVowelMap = new Map([
+  ...'アァカガサザタダナハバパマヤャラワヮヵ'.split('').map(x => [x, 'ア']),
+  ...'イィキギシジチヂニヒビピミリヰ'.split('').map(x => [x, 'イ']),
+  ...'ウゥクグスズツヅヌフブプムユュルヴ'.split('').map(x => [x, 'ウ']),
+  ...'エェケゲセゼテデネヘベペメレヱヶ'.split('').map(x => [x, 'エ']),
+  ...'オォコゴソゾトドノホボポモヨョロヲヲ'.split('').map(x => [x, 'オ']),
+])
+
+function convertKatakanaForSort(text) {
+  let result = '';
+  for (const character of String(text).normalize('NFD')) {
+    if (character === '゙' || character === '゚') continue;
+
+    if (character === 'ー') {
+      result += katakanaVowelMap.get(result.at(-1)) ?? character;
+    } else {
+      result += character;
+    }
+  }
+  return result;
+}
+
 const convertedDataList = computed(() => {
   return props.dataList.map(data => {
-    let newData = { $original: data, $clone: { ...data }, $sortKey: { ...data } };
+    let newData = { $original: data, $clone: { ...data }, $sortKey: {} };
 
     for(let column of props.columnList) {
       if (column.convert) {
         newData.$clone[column.key] = column.convert(newData.$clone);
-      }
-
-      if (column.type === String) {
-        newData.$sortKey[column.key] = newData.$clone[column.key] ?? ''
-      } else {
-        newData.$sortKey[column.key] = newData.$clone[column.key] || 0
       }
     }
 
@@ -70,69 +85,77 @@ const convertedDataList = computed(() => {
   })
 })
 
+function getSortKey(data, column) {
+  let value = data.$clone[column.key];
+  return column.type === String ? convertKatakanaForSort(value ?? '') : value || 0;
+}
+
 // ソートしたデータ
+const allSortedDataList = computed(() => {
+  if (!sortInfo.value?.length) return convertedDataList.value;
+
+  for(let data of convertedDataList.value) {
+    for(let sort of sortInfo.value) {
+      let column = columnMap.value[sort.key];
+      if (column) data.$sortKey[sort.key] = getSortKey(data, column);
+    }
+  }
+
+  return convertedDataList.value.toSorted((a, b) => {
+    for(let sort of sortInfo.value) {
+      if ((a.$sortKey[sort.key]) > (b.$sortKey[sort.key])) return sort.direction;
+      if ((a.$sortKey[sort.key]) < (b.$sortKey[sort.key])) return -sort.direction;
+    }
+    return 0;
+  });
+})
+
 const sortedDataList = computed(() => {
-  let result;
+  if (!props.pager) return allSortedDataList.value;
+  return allSortedDataList.value.slice(props.pager * page.value, props.pager * (page.value + 1))
+})
 
-  if (!sortInfo.value?.length) {
-    sortColors.value = [];
-    result = convertedDataList.value;
-
-  } else {
-
-    // ソート
-    result = convertedDataList.value.toSorted((a, b) => {
-      for(let sort of sortInfo.value) {
-        if ((a.$sortKey[sort.key]) > (b.$sortKey[sort.key])) return sort.direction;
-        if ((a.$sortKey[sort.key]) < (b.$sortKey[sort.key])) return -sort.direction;
+const sortMinmax = computed(() => {
+  let minmax = {};
+  for(let data of allSortedDataList.value) {
+    for(let sort of sortInfo.value) {
+      if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key]?.percent) {
+        minmax[sort.key] ??= { min: data.$sortKey[sort.key], max: data.$sortKey[sort.key] };
+        minmax[sort.key].min = Math.min(minmax[sort.key].min, data.$sortKey[sort.key] ?? 0)
+        minmax[sort.key].max = Math.max(minmax[sort.key].max, data.$sortKey[sort.key] ?? 0)
       }
-      return 0;
-    });
-
-    //
-    sortColors.value = []
-    if (props.sortColor) {
-    let minmax = {};
-    for(let data of result) {
-      for(let sort of sortInfo.value) {
-        if(columnMap.value[sort.key]?.type == Number || columnMap.value[sort.key]?.percent) {
-          minmax[sort.key] ??= { min: data.$sortKey[sort.key], max: data.$sortKey[sort.key] };
-          minmax[sort.key].min = Math.min(minmax[sort.key].min, data.$sortKey[sort.key] ?? 0)
-          minmax[sort.key].max = Math.max(minmax[sort.key].max, data.$sortKey[sort.key] ?? 0)
-        }
-      }
-    }
-
-    let sringColorMap = new Map();
-    for(let data of result) {
-      let colors = {};
-      for(let sort of sortInfo.value) {
-        if (columnMap.value[sort.key] == null) continue;
-        let color;
-        if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
-          let rate = (data.$clone[sort.key] - minmax[sort.key].min) / (minmax[sort.key].max - minmax[sort.key].min)
-          color = `hsl(${rate * 120}deg 90% 95%)`
-        } else {
-          let text = String(data.$clone[sort.key] ?? '');
-          color = sringColorMap.get(text)
-          if (color == null) {
-            let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
-            color = `hsl(${code}deg 90% 95%)`
-            sringColorMap.set(text, color)
-          }
-        }
-        colors[sort.key] = color;
-      }
-      sortColors.value.push(colors)
-    }
     }
   }
+  return minmax;
+})
 
-  if (props.pager) {
-    result = result.slice(props.pager * page.value, props.pager * (page.value + 1))
-  }
+const sortColors = computed(() => {
+  if (!sortInfo.value?.length || !props.sortColor) return [];
 
-  return result;
+  let sringColorMap = new Map();
+  return sortedDataList.value.map(data => {
+    let colors = {};
+    for(let sort of sortInfo.value) {
+      if (columnMap.value[sort.key] == null) continue;
+      let color;
+      if(columnMap.value[sort.key].type == Number || columnMap.value[sort.key].percent) {
+        let rate =
+          (data.$clone[sort.key] - sortMinmax.value[sort.key].min) /
+          (sortMinmax.value[sort.key].max - sortMinmax.value[sort.key].min)
+        color = `hsl(${rate * 120}deg 90% 95%)`
+      } else {
+        let text = String(data.$clone[sort.key] ?? '');
+        color = sringColorMap.get(text)
+        if (color == null) {
+          let code = text.split('').reduce((a, x) => a ^ x.charCodeAt(0), 0);
+          color = `hsl(${code}deg 90% 95%)`
+          sringColorMap.set(text, color)
+        }
+      }
+      colors[sort.key] = color;
+    }
+    return colors;
+  })
 })
 
 const sortInfoMap = computed(() => {
@@ -179,6 +202,9 @@ function clearSort(key) {
 
 const columnLeftList = ref([]);
 const thList = ref([])
+let columnResizeObserver;
+let observedHeaderSet = new Set();
+
 function getColumnLeft() {
   try {
     let newColumnLeftList = [];
@@ -197,8 +223,23 @@ function getColumnLeft() {
   }
 }
 
-onMounted(getColumnLeft)
-onUpdated(getColumnLeft)
+function updateColumnObserver() {
+  if (!columnResizeObserver) return;
+
+  let headerSet = new Set(thList.value);
+  for(let header of observedHeaderSet) {
+    if (!headerSet.has(header)) columnResizeObserver.unobserve(header);
+  }
+  for(let header of headerSet) {
+    if (!observedHeaderSet.has(header)) columnResizeObserver.observe(header);
+  }
+  observedHeaderSet = headerSet;
+}
+
+function updateColumnLayout() {
+  updateColumnObserver();
+  getColumnLeft();
+}
 
 const enableColumnList = computed(() => {
   let columnList = props.columnList;
@@ -212,6 +253,19 @@ const enableColumnList = computed(() => {
   return columnList;
 })
 const enableColumnListLength = computed(() => enableColumnList.value.length)
+
+watch(enableColumnList, () => {
+  nextTick(updateColumnLayout)
+}, { flush: 'post' })
+
+onMounted(() => {
+  columnResizeObserver = new ResizeObserver(getColumnLeft);
+  nextTick(updateColumnLayout)
+})
+
+onBeforeUnmount(() => {
+  columnResizeObserver?.disconnect();
+})
 
 function toggleHiddenColumn(key) {
   if(hiddenColumn.has(key)) {

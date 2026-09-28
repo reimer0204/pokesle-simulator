@@ -5,6 +5,7 @@ import Exp from '@/data/exp.ts';
 import { Cooking } from '@/data/food_and_cooking.ts';
 import SubSkill from '@/data/sub-skill.ts';
 import { createEvaluateRule, createEvaluateRuleSetting } from '@/models/evaluate-setting';
+import PokemonTargetSetting from '@/components/pokemon-target-setting.vue';
 
 const props = withDefaults(
   defineProps<{ settingConfig: any; evaluateConfig: any; isTmpEvaluate?: boolean }>(),
@@ -17,7 +18,6 @@ const skillListWithEnergySetting = computed(() =>
   Skill.list.filter((skill) => skill.evaluateEnergy != null),
 );
 const pokemonList = computed(() => Pokemon.nameSortList);
-const lastPokemonList = computed(() => pokemonList.value.filter((pokemon) => pokemon.isLast));
 
 function addEvaluateRule() {
   props.evaluateConfig.ruleList.push(createEvaluateRule());
@@ -33,52 +33,6 @@ function addEvaluateRuleSetting(rule: any) {
 
 function removeEvaluateRuleSetting(rule: any, index: number) {
   rule.settingList.splice(index, 1);
-}
-
-function getRuleTargetType(rule: any) {
-  if (rule.target.type != null) return rule.target.type;
-  if (rule.target.all) return 'all';
-  if (rule.target.pokemonNameList.length) return 'pokemon';
-  return 'condition';
-}
-
-function setRuleTargetType(rule: any, type: string) {
-  rule.target.type = type;
-  rule.target.all = type === 'all';
-  if (type !== 'condition') {
-    for (const specialty of specialtyList) rule.target.specialties[specialty] = false;
-    rule.target.skillNameList = [];
-  }
-  if (type !== 'pokemon') rule.target.pokemonNameList = [];
-}
-
-function getRuleTargetLabel(rule: any) {
-  const type = getRuleTargetType(rule);
-  if (type === 'all') return '全員';
-  if (type === 'pokemon') return `ポケモン：${rule.target.pokemonNameList.join('・')}`;
-
-  const targetList = [
-    ...specialtyList
-      .filter((specialty) => rule.target.specialties[specialty])
-      .map((specialty) => `${specialty}とくい`),
-    ...rule.target.skillNameList,
-  ];
-  return targetList.length ? targetList.join('・') : '条件で指定（未選択）';
-}
-
-function getConditionPokemonList(rule: any) {
-  const selectedSpecialtyList = specialtyList.filter(
-    (specialty) => rule.target.specialties[specialty],
-  );
-  if (!selectedSpecialtyList.length && !rule.target.skillNameList.length) return [];
-
-  return lastPokemonList.value.filter((pokemon) => {
-    if (selectedSpecialtyList.length && !selectedSpecialtyList.includes(pokemon.specialty))
-      return false;
-    if (rule.target.skillNameList.length && !rule.target.skillNameList.includes(pokemon.skill.name))
-      return false;
-    return true;
-  });
 }
 
 function getRuleSettingValue(setting: any) {
@@ -152,7 +106,7 @@ const maxEnergyPerExp = computed(() => {
             匹
           </div>
           <small>
-            自分以外の4匹におてつだいボーナスが何匹いるか指定します。<br>
+            自分以外の4匹におてつだいボーナスが何匹いるか指定します。<br />
             3匹にすると、おてボ＋おてスピMが最も高く評価されます。
           </small>
         </div>
@@ -256,12 +210,14 @@ const maxEnergyPerExp = computed(() => {
               エナジー / 25経験値
             </div>
             <small
-              >アメを獲得するスキルのエナジー計算に利用されます。<br>
+              >アメを獲得するスキルのエナジー計算に利用されます。<br />
               参考値:{{ (maxEnergyPerExp.score * 25).toFixed(0) }} エナジー / 日 / アメ
 
-              <HelpButton title="経験値のエナジー換算" :markdown="`
+              <HelpButton
+                title="経験値のエナジー換算"
+                :markdown="`
                 # 参考情報
-                Lv30以降で1レベル上がることで増加する1日のきのみエナジーの理論値/経験値の最大値は ${(maxEnergyPerExp.score).toFixed(2)} です。
+                Lv30以降で1レベル上がることで増加する1日のきのみエナジーの理論値/経験値の最大値は ${maxEnergyPerExp.score.toFixed(2)} です。
                 ※Lvが低いうちはきのみエナジーの計算式が異なるので30以降で計算
 
                 上記値になるケース
@@ -276,10 +232,10 @@ const maxEnergyPerExp = computed(() => {
 
                 理論値で計算しているのでその点については高めに出ている一方、サブスキルの解放は考慮していない値のため、概ねこの値を設定しておけばそれっぽい数値になるかと思います。
                 育てたポケモンを平均何日運用するかで調整してください。
-              `" />
-            </small>
-          </div></SettingList
-        >
+              `"
+              />
+            </small></div
+        ></SettingList>
       </div>
     </ToggleArea>
 
@@ -299,7 +255,9 @@ const maxEnergyPerExp = computed(() => {
           <small>
             ゆめのかけら1個を得る<br />のに必要なエナジー
 
-            <HelpButton title="エナジー/ゆめのかけらの設定値について" markdown="
+            <HelpButton
+              title="エナジー/ゆめのかけらの設定値について"
+              markdown="
               # 結論
               EXフィールド＆リサーチランクカンストを見据えるなら 50
               そうでないなら 120
@@ -312,7 +270,8 @@ const maxEnergyPerExp = computed(() => {
               リサーチランクがカンストしていると、およそ半分ほどのリサーチEXPもゆめのかけらになるので、80エナジー/ゆめのかけら となります。
 
               更にEXフィールドだと、ゆめのかけら・リサーチEXPは8割ほど多く手に入るため、50エナジー/ゆめのかけら となります。
-            " />
+            "
+            />
           </small>
         </div>
         <div>
@@ -328,7 +287,9 @@ const maxEnergyPerExp = computed(() => {
           <small>
             1個あたり何エナジー<br />として換算するか
 
-            <HelpButton title="ゆめのかけらゲット評価値の設定について" markdown="
+            <HelpButton
+              title="ゆめのかけらゲット評価値の設定について"
+              markdown="
               # 結論
               ゆめのかけらゲットを編成したい日に応じて、エナジー/ゆめのかけら 設定値に対し、以下を掛け算した値
               月曜～：1/4
@@ -344,7 +305,8 @@ const maxEnergyPerExp = computed(() => {
 
               ゆめのかけらゲットが真価を発揮するのはエナジーを稼いでも評価回数が少ない週の後半になります。
               日曜からなら1日だけなので、エナジー/ゆめのかけら 設定と同じ 50 を設定するのが良いでしょう。
-            " />
+            "
+            />
           </small>
         </div>
         <div>
@@ -407,7 +369,9 @@ const maxEnergyPerExp = computed(() => {
             >なべ拡張の1個分を何エナジーとして評価するか。現在の平均は
             {{ Cooking.cookingPowerUpEnergyAverage.toFixed(1) }} エナジーです。
 
-            <HelpButton title="料理パワーアップの評価方法" :markdown="`
+            <HelpButton
+              title="料理パワーアップの評価方法"
+              :markdown="`
               # 考え方
               いいキャンプチケットを使用しない場合は、料理パワーアップを発動することでより良い料理が作れるようになります。
               10個分拡大して10000エナジー高い料理が作れる場合、1個分の拡大あたり1000エナジーの価値があると考えられます。
@@ -421,7 +385,8 @@ const maxEnergyPerExp = computed(() => {
               平均：${Cooking.cookingPowerUpEnergyAverage.toFixed(1)}エナジー
               
               また、食材が十分用意された状態では料理パワーアップの価値は上記の通り計算できますが、これから食材も集める場合は料理パワーアップだけでは意味がないので、食材担当と併用する運用が基本の場合は100%ではなく50%などの値にする必要があります。
-            `" />
+            `"
+            />
           </small>
         </div>
         <div>
@@ -453,7 +418,10 @@ const maxEnergyPerExp = computed(() => {
     <ToggleArea open>
       <template #headerText>
         下振れ計算設定
-        <HelpButton class="ml-5px" title="下振れ考慮について" markdown="
+        <HelpButton
+          class="ml-5px"
+          title="下振れ考慮について"
+          markdown="
           # 下振れ考慮について
           1%で当たるものを100回試行した時の期待値は1%×100で1回ですが、1回以上当たる確率は63.4%程度しかありません。
           つまり、下振れして1回も当たらない確率が36.6%あるということです。
@@ -469,7 +437,8 @@ const maxEnergyPerExp = computed(() => {
           とくい分野の厳選度はより実態に即したものに近づきます。
           総合スコアの厳選度は通常の期待値より食材・スキルが少なく見積もられることになるので、相対的にきのみの数Sなどが高く評価されることになります。
           食材とくいは収束しにくいABCだと食材の価値が若干低く見積もられ、相対的にきのみとスキルに関連するサブスキルが高く評価されることになります。
-        " />
+        "
+        />
       </template>
       下振れすると困る要素にチェックをつけておくと、その点において下振れしにくいポケモンがより高い評価になります。
       <SettingList class="mt-5px">
@@ -538,7 +507,9 @@ const maxEnergyPerExp = computed(() => {
                 %
               </td>
               <td>
-                <small>100%:好みと合わせない前提<br />200%:好みと合わせる前提<br />240%:EXやイベントボーナスを想定</small>
+                <small
+                  >100%:好みと合わせない前提<br />200%:好みと合わせる前提<br />240%:EXやイベントボーナスを想定</small
+                >
               </td>
             </tr>
             <tr>
@@ -624,89 +595,7 @@ const maxEnergyPerExp = computed(() => {
           <div class="evaluate-rule-body">
             <div class="rule-target">
               <SettingSectionTitle type="field">対象</SettingSectionTitle>
-              <SettingButton title="対象を設定" class="rule-target-button" fit-viewport>
-                <template #label>{{ getRuleTargetLabel(rule) }}</template>
-                <div class="rule-target-popup">
-                  <div class="rule-target-type">
-                    <InputRadio
-                      :model-value="getRuleTargetType(rule)"
-                      value="all"
-                      @update:model-value="setRuleTargetType(rule, $event)"
-                      >全員</InputRadio
-                    >
-                    <InputRadio
-                      :model-value="getRuleTargetType(rule)"
-                      value="condition"
-                      @update:model-value="setRuleTargetType(rule, $event)"
-                      >条件で指定</InputRadio
-                    >
-                    <InputRadio
-                      :model-value="getRuleTargetType(rule)"
-                      value="pokemon"
-                      @update:model-value="setRuleTargetType(rule, $event)"
-                      >ポケモンで指定</InputRadio
-                    >
-                  </div>
-                  <template v-if="getRuleTargetType(rule) === 'condition'">
-                    <div class="condition-target-list">
-                      <div>
-                        <h3>とくい</h3>
-                        <InputCheckbox
-                          v-for="specialty in specialtyList"
-                          v-model="rule.target.specialties[specialty]"
-                          >{{ specialty }}とくい</InputCheckbox
-                        >
-                      </div>
-                      <strong class="condition-and">かつ</strong>
-                      <div>
-                        <h3>スキル</h3>
-                        <template v-for="category in Skill.categoryList" :key="category.id">
-                          <h4>{{ category.name }}</h4>
-                          <InputCheckbox
-                            v-for="skill in category.skillList"
-                            :key="skill.name"
-                            :model-value="rule.target.skillNameList.includes(skill.name)"
-                            @update:model-value="
-                              $event
-                                ? rule.target.skillNameList.push(skill.name)
-                                : rule.target.skillNameList.splice(
-                                    rule.target.skillNameList.indexOf(skill.name),
-                                    1,
-                                  )
-                            "
-                            >{{ skill.name }}</InputCheckbox
-                          >
-                        </template>
-                      </div>
-                    </div>
-                    <div class="matched-pokemon-list">
-                      <strong>対象ポケモン</strong
-                      ><span v-for="pokemon in getConditionPokemonList(rule)">{{
-                        pokemon.name
-                      }}</span
-                      ><span v-if="!getConditionPokemonList(rule).length">該当なし</span>
-                    </div>
-                  </template>
-                  <div
-                    v-else-if="getRuleTargetType(rule) === 'pokemon'"
-                    class="pokemon-target-list"
-                  >
-                    <InputCheckbox
-                      v-for="pokemon in lastPokemonList"
-                      :model-value="rule.target.pokemonNameList.includes(pokemon.name)"
-                      @update:model-value="
-                        $event
-                          ? rule.target.pokemonNameList.push(pokemon.name)
-                          : rule.target.pokemonNameList.splice(
-                              rule.target.pokemonNameList.indexOf(pokemon.name),
-                              1,
-                            )
-                      "
-                      >{{ pokemon.name }}</InputCheckbox
-                    >
-                  </div>
-                </div>
-              </SettingButton>
+              <PokemonTargetSetting :target="rule.target" />
             </div>
             <div class="rule-settings">
               <SettingList v-for="(setting, settingIndex) in rule.settingList">
@@ -767,14 +656,18 @@ const maxEnergyPerExp = computed(() => {
     <ToggleArea open>
       <template #headerText>
         スキルエナジー設定
-        <HelpButton class="ml-5px" title="デフォルト値の理由" markdown="
+        <HelpButton
+          class="ml-5px"
+          title="デフォルト値の理由"
+          markdown="
           スキルコピーやほっぺすりすりの対象はエナジーチャージM相当で評価しています。
           エナジーチャージMより強いスキルも一部ありますが、げんきオールや料理チャンスは積めば積むほど効果量が薄くなり、でんせつポケモンのスキルは1匹しか入れられないので、これらを基準にすると過剰に評価してしまいます。
           そのため、固定値で4匹固められる可能性のあるエナジーチャージMを基準にしています。
 
           ## ほっぺすりすりのデフォルト値
           エナジーチャージM持ちの中でもスキル確率の高いウソッキー(9%)に合わせ、補正が諸々かかった15%前提で計算しています。
-        " />
+        "
+        />
       </template>
       <SettingList>
         <div v-for="skill in skillListWithEnergySetting">
@@ -872,75 +765,6 @@ const maxEnergyPerExp = computed(() => {
   gap: 5px;
   min-width: 0;
 }
-.rule-target-button {
-  max-width: 100%;
-}
-.rule-target-popup {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-.rule-target-type {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-line);
-}
-.condition-target-list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 15px;
-  align-items: stretch;
-  margin-top: 15px;
-}
-.condition-target-list > div {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-  overflow: auto;
-}
-.condition-target-list h3 {
-  margin: 0 0 5px;
-  font-size: 1em;
-  color: var(--color-primary-strong);
-}
-.condition-and {
-  display: flex;
-  align-items: center;
-  color: var(--color-primary-strong);
-}
-.matched-pokemon-list {
-  box-sizing: border-box;
-  display: flex;
-  flex: 0 0 20vh;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 5px 10px;
-  height: 20vh;
-  margin-top: 15px;
-  padding-top: 10px;
-  overflow: auto;
-  border-top: 1px solid var(--color-line);
-}
-.matched-pokemon-list strong {
-  width: 100%;
-  color: var(--color-primary-strong);
-}
-.pokemon-target-list {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 5px 10px;
-  margin-top: 15px;
-  overflow: auto;
-}
 .rule-settings {
   display: flex;
   flex-direction: column;
@@ -984,19 +808,6 @@ const maxEnergyPerExp = computed(() => {
     position: sticky;
     left: 0;
     z-index: 1;
-  }
-  .rule-target-popup {
-    width: 100%;
-  }
-  .condition-target-list {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .condition-and {
-    justify-content: center;
-  }
-  .pokemon-target-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

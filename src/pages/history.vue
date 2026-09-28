@@ -22,6 +22,24 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/9/28">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ポケモン編集画面の厳選情報の表示を改善</li>
+            <li>チェックリストの設定をより柔軟にできるよう改善</li>
+          </ul>
+        </li>
+        <li>
+          不具合修正
+          <ul>
+            <li>ポケモン編集画面でXに共有する際に厳選度が正しく表示されない不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/9/23">
       <ul>
         <li>

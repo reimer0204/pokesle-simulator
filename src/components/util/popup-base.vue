@@ -1,9 +1,8 @@
 <script setup>
 const props = defineProps({
-  bodyClass: { type: String }
-})
-const $emit = defineEmits(['close'])
-
+  bodyClass: { type: String },
+});
+const $emit = defineEmits(['close']);
 </script>
 
 <template>
@@ -13,7 +12,7 @@ const $emit = defineEmits(['close'])
         <slot name="headerText"></slot>
 
         <svg viewBox="0 0 100 100" width="20" class="ml-auto" @click="$emit('close')">
-          <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888"  />
+          <path d="M5,5L95,95 M95,5L5,95" stroke-width="20" stroke="#888" />
         </svg>
       </div>
     </slot>
@@ -23,11 +22,12 @@ const $emit = defineEmits(['close'])
         <slot></slot>
       </div>
     </slot>
+
+    <slot name="footer"></slot>
   </div>
 </template>
 
 <style lang="scss" scoped>
-
 .popup-base {
   max-width: 90%;
   background-color: var(--color-surface);
@@ -41,7 +41,7 @@ const $emit = defineEmits(['close'])
     font-size: 24px;
     font-weight: bold;
     border-bottom: 1px solid var(--color-line);
-    background: linear-gradient(90deg, var(--color-primary-soft), #FFF);
+    background: linear-gradient(90deg, var(--color-primary-soft), #fff);
     color: var(--color-primary-strong);
     border-radius: 11px 11px 0 0;
   }
@@ -52,7 +52,6 @@ const $emit = defineEmits(['close'])
     flex-direction: column;
   }
 }
-
 </style>
 
 <style lang="scss" scoped>
@@ -70,7 +69,7 @@ const $emit = defineEmits(['close'])
       z-index: 5;
       padding: 6px 8px;
       font-size: 16px;
-      background-color: #FFF;
+      background-color: #fff;
       border-radius: 4px 4px 0 0;
     }
 

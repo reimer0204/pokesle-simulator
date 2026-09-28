@@ -19,39 +19,49 @@ import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';
 import { CheckList } from '@/models/check-list.ts';
 
-let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
+let lvList = Object.entries(config.selectEvaluate.levelList)
+  .filter(([lv, enable]) => enable)
+  .map(([lv]) => Number(lv));
 
-if (config.summary.checklist.food.borderLv == null || !lvList.includes(config.summary.checklist.food.borderLv)) {
-  config.summary.checklist.food.borderLv = lvList.filter(x => x >= 60)[0] ?? lvList.at(-1);
+if (
+  config.summary.checklist.food.borderLv == null ||
+  !lvList.includes(config.summary.checklist.food.borderLv)
+) {
+  config.summary.checklist.food.borderLv = lvList.filter((x) => x >= 60)[0] ?? lvList.at(-1);
 }
-if (config.summary.checklist.skill.borderLv == null || !lvList.includes(config.summary.checklist.skill.borderLv)) {
-  config.summary.checklist.skill.borderLv = lvList.filter(x => x >= 60)[0] ?? lvList.at(-1);
+if (
+  config.summary.checklist.skill.borderLv == null ||
+  !lvList.includes(config.summary.checklist.skill.borderLv)
+) {
+  config.summary.checklist.skill.borderLv = lvList.filter((x) => x >= 60)[0] ?? lvList.at(-1);
 }
 
 const saishuuShinkaPokemonList = computed(() => {
-  return Pokemon.list.filter(x => x.isLast).sort((a, b) => a.name < b.name ? -1 : 1)
-})
+  return Pokemon.list.filter((x) => x.isLast).sort((a, b) => (a.name < b.name ? -1 : 1));
+});
 
 const filteredSaishuuShinkaPokemonList = computed(() => {
-  return saishuuShinkaPokemonList.value.filter(pokemon => !config.summary.checklist.pokemonCondition.disablePokemonMap[pokemon.name])
-})
+  return saishuuShinkaPokemonList.value.filter(
+    (pokemon) => !config.summary.checklist.pokemonCondition.disablePokemonMap[pokemon.name],
+  );
+});
 
 let evaluateTable = EvaluateTable.load(config);
 let promisedEvaluateTable = ref({});
-evaluateTable.then(table => {
+evaluateTable.then((table) => {
   promisedEvaluateTable.value = table ?? {};
-})
-let multiWorker = new MultiWorker(PokemonListSimulator)
+});
+let multiWorker = new MultiWorker(PokemonListSimulator);
 onBeforeUnmount(() => {
   multiWorker.close();
-})
+});
 
 const checkList = computed(() => {
   return promisedEvaluateTable.value ? new CheckList(config, promisedEvaluateTable.value) : null;
-})
+});
 
 let simulatingCount = 0;
-const simulatedPokemonList = ref<SimulatedPokemon[]>([])
+const simulatedPokemonList = ref<SimulatedPokemon[]>([]);
 const asyncWatcher = AsyncWatcher.init();
 let simulatingPromise: Promise<SimulatedPokemon[]>;
 async function createPokemonList(setConfig = false) {
@@ -60,14 +70,15 @@ async function createPokemonList(setConfig = false) {
   simulatingCount++;
   try {
     await simulatingPromise;
-  } finally {}
+  } finally {
+  }
 
   try {
     simulatingPromise = asyncWatcher.run(async (progressCounter) => {
       simulatedPokemonList.value = await PokemonBox.simulation(
         PokemonBox.list,
-        multiWorker, 
-        await evaluateTable, 
+        multiWorker,
+        await evaluateTable,
         {
           ...config,
           simulation: {
@@ -76,36 +87,46 @@ async function createPokemonList(setConfig = false) {
             fix: false,
           },
         },
-        progressCounter, true
-      )
-      for(let simulatedPokemon of simulatedPokemonList.value) {
-        simulatedPokemon.foodCombination = simulatedPokemon.box!.foodList.map(x => String.fromCharCode(simulatedPokemon.base.foodList.findIndex(f => f.name == x) + 65)).join('');
+        progressCounter,
+        true,
+      );
+      for (let simulatedPokemon of simulatedPokemonList.value) {
+        simulatedPokemon.foodCombination = simulatedPokemon
+          .box!.foodList.map((x) =>
+            String.fromCharCode(simulatedPokemon.base.foodList.findIndex((f) => f.name == x) + 65),
+          )
+          .join('');
       }
-    })
+    });
   } finally {
     simulatingCount--;
   }
 }
 createPokemonList();
-watch(() => [
-  config.simulation.selectType,
-  config.simulation.selectBorder,
-], () => {
-  createPokemonList(true);
-})
+watch(
+  () => [config.simulation.selectType, config.simulation.selectBorder],
+  () => {
+    createPokemonList(true);
+  },
+);
 
 const pokemonCheckList = computed(() => {
-  return checkList.value?.pokemonCheckList(config, simulatedPokemonList.value, null, foodCheckList.value, skillCheckList.value);
-})
+  return checkList.value?.pokemonCheckList(
+    config,
+    simulatedPokemonList.value,
+    null,
+    foodCheckList.value,
+    skillCheckList.value,
+  );
+});
 
 const foodCheckList = computed(() => {
   return checkList.value?.foodCheckList(config, simulatedPokemonList.value);
-})
+});
 
 const skillCheckList = computed(() => {
   return checkList.value?.skillCheckList(config, simulatedPokemonList.value);
-})
-
+});
 </script>
 
 <template>
@@ -128,12 +149,10 @@ const skillCheckList = computed(() => {
         :skillCheckList="skillCheckList"
       />
     </AsyncWatcherArea>
-
   </div>
 </template>
 
 <style lang="scss" scoped>
-
 .page {
   display: flex;
   flex-direction: column;
@@ -142,8 +161,15 @@ const skillCheckList = computed(() => {
   min-height: 0;
 
   > .async-watcher-area {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
     overflow: hidden;
+
+    > :deep(.page) {
+      flex: 1 1 0;
+      min-height: 0;
+    }
   }
 
   .scroll-x {
@@ -164,7 +190,7 @@ const skillCheckList = computed(() => {
 .tab-list {
   display: flex;
   flex: 0 0 auto;
-  border-bottom: 3px #CCC solid;
+  border-bottom: 3px #ccc solid;
 
   & > a {
     padding: 5px 15px;
@@ -173,11 +199,10 @@ const skillCheckList = computed(() => {
 
     &.router-link-exact-active {
       font-weight: bold;
-      border-bottom: 3px #08C solid;
+      border-bottom: 3px #08c solid;
       margin-bottom: -3px;
-      color: #08C;
+      color: #08c;
     }
   }
 }
-
 </style>
