@@ -166,6 +166,11 @@ interface EvaluateResultInfo {
   rate: number, ratio: number, score: number, value: number,
   pureMint?: EvaluateResultInfo
 }
+interface EvaluateDiagnosticResult {
+  berryEnergy: number,
+  foodNumMap: Partial<FoodNames>,
+  skillActivationNum: number,
+}
 interface EvaluateResult {
   [type: number | string]: {
     [key: string]: {
@@ -175,6 +180,7 @@ interface EvaluateResult {
       skill: EvaluateResultInfo,
       specialty: EvaluateResultInfo,
       foodNumList: number[],
+      diagnostic?: EvaluateDiagnosticResult,
     }
   }
 };
@@ -323,6 +329,7 @@ export type {
   PokemonBoxType,
   SimulatedPokemon,
   EvaluateResultInfo,
+  EvaluateDiagnosticResult,
   EvaluateResult,
   EvaluateResultKey,
 }

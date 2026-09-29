@@ -28,6 +28,7 @@ import PokemonEditPopup from '@/components/pokemon-edit-popup.vue';
 import PokemonSelectPopup from '@/components/pokemon-select-popup.vue';
 import BaseAlert from '@/components/alert/base-alert.vue';
 import SettingButton from '@/components/design/setting-button.vue';
+import { Food } from '@/data/food_and_cooking';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
@@ -309,6 +310,31 @@ function formatEvaluateRate(evolutionName: string, lv: number, key: string) {
   return `${((result.value?.evaluateResult?.[lv]?.[evolutionName]?.[key]?.rate ?? 0) * 100).toFixed(1)}%`;
 }
 
+const foodNameList = computed(() =>
+  Array.from(new Set(pokemon.foodList.filter((food): food is string => food != null))),
+);
+
+function getDiagnosticValue(
+  evolutionName: string,
+  lv: number,
+  key: 'berryEnergy' | 'skillActivationNum',
+) {
+  return result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic?.[key];
+}
+
+function getFoodDiagnosticValue(evolutionName: string, lv: number, foodName: string) {
+  return result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic?.foodNumMap?.[foodName];
+}
+
+function formatDiagnosticValue(value: number | undefined, digits: number) {
+  return value == null ? '－' : value.toFixed(digits);
+}
+
+const selectDisplayMode = computed({
+  get: () => config.pokemonEdit.selectDisplayMode,
+  set: (value) => (config.pokemonEdit.selectDisplayMode = value),
+});
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -374,18 +400,44 @@ const chartOptions = {
       <FormButton class="execute" @click="evaluate">評価</FormButton>
 
       <section v-if="result" class="result">
-        <div class="evolution-chart-list">
+        <div class="flex-row gap-10px mb-5px">
+          厳選度表示：
+          <InputRadio v-model="selectDisplayMode" value="graph">グラフ</InputRadio>
+          <InputRadio v-model="selectDisplayMode" value="table">表</InputRadio>
+        </div>
+        <div class="evolution-chart-list mt-10px">
           <section
             v-for="evolutionName in evolutionNameList"
             :key="evolutionName"
             class="evolution-chart"
           >
             <h3>{{ evolutionName }}</h3>
-            <div class="chart">
+            <div v-if="selectDisplayMode === 'graph'" class="chart">
               <Line :data="createChartData(evolutionName)" :options="chartOptions" />
             </div>
+            <template v-else>
+              <div class="evaluate-rate-table-scroll">
+                <DesignTable class="evaluate-rate-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th v-for="lv in lvList" :key="lv">Lv{{ lv }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="{ key, label } in chartSeries" :key="key">
+                      <td>{{ label }}</td>
+                      <td v-for="lv in lvList" :key="lv">
+                        {{ formatEvaluateRate(evolutionName, lv, key) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </DesignTable>
+              </div>
+            </template>
+            
             <div class="evaluate-rate-table-scroll">
-              <DesignTable class="evaluate-rate-table">
+              <DesignTable class="evaluate-rate-table diagnostic-table">
                 <thead>
                   <tr>
                     <th></th>
@@ -393,10 +445,37 @@ const chartOptions = {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="{ key, label } in chartSeries" :key="key">
-                    <td>{{ label }}</td>
+                  <tr>
+                    <td>きのみエナジー</td>
                     <td v-for="lv in lvList" :key="lv">
-                      {{ formatEvaluateRate(evolutionName, lv, key) }}
+                      {{
+                        formatDiagnosticValue(
+                          getDiagnosticValue(evolutionName, lv, 'berryEnergy'),
+                          1,
+                        )
+                      }}
+                    </td>
+                  </tr>
+                  <tr v-for="foodName in foodNameList" :key="foodName">
+                    <td><div class="flex-row-start-center"><img :src="Food.map[foodName].img" class="w-20px">{{ foodName }}</div></td>
+                    <td v-for="lv in lvList" :key="lv">
+                      {{
+                        formatDiagnosticValue(
+                          getFoodDiagnosticValue(evolutionName, lv, foodName),
+                          1,
+                        )
+                      }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>スキル発動回数</td>
+                    <td v-for="lv in lvList" :key="lv">
+                      {{
+                        formatDiagnosticValue(
+                          getDiagnosticValue(evolutionName, lv, 'skillActivationNum'),
+                          2,
+                        )
+                      }}
                     </td>
                   </tr>
                 </tbody>
@@ -527,6 +606,10 @@ const chartOptions = {
   td:not(:first-child) {
     text-align: right;
   }
+}
+.diagnostic-table-title {
+  margin: 12px 0 0;
+  font-size: 14px;
 }
 @media (max-width: 600px) {
   .page {

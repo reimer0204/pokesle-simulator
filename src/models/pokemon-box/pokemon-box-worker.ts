@@ -232,6 +232,13 @@ addEventListener('message', async (event) => {
                 evaluateResult[lv][after].foodNumList = afterPokemon.foodList.map(
                   (f) => simulatedPokemon[f.name],
                 );
+                evaluateResult[lv][after].diagnostic = {
+                  berryEnergy: selectEvaluate.bEpD,
+                  foodNumMap: Object.fromEntries(
+                    selectEvaluate.foodList.map((food) => [food.name, selectEvaluate[food.name]]),
+                  ),
+                  skillActivationNum: selectEvaluate.skillPerDay,
+                };
 
                 if (evaluateType == null) {
                   if (afterPokemon.specialty == 'きのみ')

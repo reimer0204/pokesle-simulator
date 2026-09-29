@@ -22,6 +22,23 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/9/29">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>
+              ボックス整理(詳細)に「種ポケで絞り込み」を追加
+              <ul>
+                <li>ブイズで絞り込みたい時などに利用してください</li>
+              </ul>
+            </li>
+            <li>簡易診断に厳選度だけでなく各種数量も表示するよう改善</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/9/28">
       <ul>
         <li>
