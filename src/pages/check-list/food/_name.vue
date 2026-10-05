@@ -42,6 +42,9 @@ const props = defineProps({
 })
 
 const route = useRoute()
+const graph = ref<any>(null);
+const pan = ref<{ pointerId: number, startX: number, min: number, range: number } | null>(null);
+let fixedYScale: { min: number, max: number, step: number } | null = null;
 
 const border = computed(() => {
   return props.foodCheckList.dataList.find(x => x.food.name == route.params.name)?.border
@@ -50,6 +53,86 @@ const border = computed(() => {
 const best = computed(() => {
   return props.foodCheckList.dataList.find(x => x.food.name == route.params.name)?.score
 })
+
+function lockVerticalScale(chart) {
+  if (fixedYScale == null) {
+    const yScale = chart.scales.y;
+    fixedYScale = {
+      min: yScale.min,
+      max: yScale.max,
+      step: Math.abs(yScale.ticks[1]?.value - yScale.ticks[0]?.value),
+    };
+  }
+
+  chart.options.scales.y.min = fixedYScale.min;
+  chart.options.scales.y.max = fixedYScale.max;
+  if (fixedYScale.step > 0) {
+    chart.options.scales.y.ticks ??= {};
+    chart.options.scales.y.ticks.stepSize = fixedYScale.step;
+  }
+}
+
+function zoomGraph(event: WheelEvent) {
+  const chart = graph.value?.chart;
+  if (chart == null) return;
+
+  lockVerticalScale(chart);
+  const xScale = chart.scales.x;
+  const range = xScale.max - xScale.min;
+  const nextRange = Math.min(100, Math.max(1, range * (event.deltaY < 0 ? 0.8 : 1.25)));
+  const pointerX = event.clientX - chart.canvas.getBoundingClientRect().left;
+  const position = Math.min(1, Math.max(0, (pointerX - xScale.left) / xScale.width));
+  let min = xScale.getValueForPixel(xScale.left + xScale.width * position) - nextRange * position;
+  min = Math.min(100 - nextRange, Math.max(0, min));
+
+  chart.options.scales.x.min = min;
+  chart.options.scales.x.max = min + nextRange;
+  chart.update('none');
+}
+
+function startPan(event: PointerEvent) {
+  if (event.pointerType != 'mouse' || event.button != 0) return;
+
+  const chart = graph.value?.chart;
+  if (chart == null) return;
+
+  event.preventDefault();
+  lockVerticalScale(chart);
+  const xScale = chart.scales.x;
+  pan.value = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    min: xScale.min,
+    range: xScale.max - xScale.min,
+  };
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+}
+
+function panGraph(event: PointerEvent) {
+  if (pan.value?.pointerId != event.pointerId) return;
+
+  const chart = graph.value?.chart;
+  if (chart == null) return;
+
+  event.preventDefault();
+  const xScale = chart.scales.x;
+  const shift = (pan.value.startX - event.clientX) / xScale.width * pan.value.range;
+  const min = Math.min(100 - pan.value.range, Math.max(0, pan.value.min + shift));
+
+  chart.options.scales.x.min = min;
+  chart.options.scales.x.max = min + pan.value.range;
+  chart.update('none');
+}
+
+function endPan(event: PointerEvent) {
+  if (pan.value?.pointerId != event.pointerId) return;
+
+  pan.value = null;
+  const target = event.currentTarget as HTMLElement;
+  if (target.hasPointerCapture(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId);
+  }
+}
 
 const graphData = computed(() => {
   let datasets = [];
@@ -150,10 +233,19 @@ const graphData = computed(() => {
 <template>
   <div class="page">
     <BaseAlert>
-      全食材構成×全サブスキル×全せいかくの組み合わせの食材取得数のグラフです。赤線は設定した厳選基準のスコア、青線はあなたのボックスにいる最良のポケモンのスコアです。どのポケモンを捕まえるかの目安にしてください。
+      全食材構成×全サブスキル×全せいかくの組み合わせの食材取得数のグラフです。赤線は設定した厳選基準のスコア、青線はあなたのボックスにいる最良のポケモンのスコアです。グラフ上でマウスホイールを回すと横軸を拡大・縮小でき、ドラッグで横方向へ移動できます。
     </BaseAlert>
-    <div class="flex-110">
-      <Line v-bind="graphData" />
+    <div
+      class="flex-110 graph-container"
+      :class="{ panning: pan != null }"
+      @wheel.prevent="zoomGraph"
+      @pointerdown="startPan"
+      @pointermove="panGraph"
+      @pointerup="endPan"
+      @pointercancel="endPan"
+      @lostpointercapture="endPan"
+    >
+      <Line ref="graph" v-bind="graphData" />
     </div>
   </div>
 </template>
@@ -167,6 +259,16 @@ const graphData = computed(() => {
   max-height: 100%;
   flex: 1 1 0;
   overflow: hidden;
+}
+
+.graph-container {
+  cursor: grab;
+  touch-action: pan-y;
+
+  &.panning {
+    cursor: grabbing;
+    user-select: none;
+  }
 }
 
 </style>

@@ -323,6 +323,7 @@ const defaultConfig = {
     minFoodNum: 0,
     maxFoodNum: 999,
     surplusFoodNum: 0,
+    excludeMaxRecipeLv: false,
   },
 
   // 起床時元気評価
@@ -336,6 +337,14 @@ const defaultConfig = {
 
   sortableTable: {
     pokemonList2: { sort: [], hiddenColumn: [] },
+    food: {
+      columnVisibility: {
+        require: true,
+        rate: true,
+        cookingEnergy: true,
+        energy: true,
+      },
+    },
   },
 
   summary: {

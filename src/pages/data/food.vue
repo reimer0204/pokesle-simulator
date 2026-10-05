@@ -4,6 +4,9 @@ import Popup from '../../models/popup/popup.ts';
 import CookingSettingPopup from '../../components/cooking-setting-popup.vue';
 import config from '../../models/config.ts';
 
+const cookingTypeList = ['カレー', 'サラダ', 'デザート'];
+const cookingColumnVisibility = config.sortableTable.food.columnVisibility;
+
 const disabledCookingNum = computed(() => {
   return Cooking.getDisabledCookingNum(config);
 })
@@ -17,28 +20,41 @@ const foodList = computed(() => Food.list.map(food => {
     ...food,
   };
 
-  const cookingTypeList = ['カレー', 'サラダ', 'デザート'];
   for(const cookingType of cookingTypeList) {
     const filteredCookingList = enableCookingList.value.filter(x => x.type == cookingType && x.foodList.some(x => x.name == food.name))
 
     result[`require_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.foodList.find(f => f.name == food.name)?.num ?? 0), 0),
     result[`bestTypeRate_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.rate), 1)
-    result[`maxAddEnergy_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.maxAddEnergy), 0)
+    result[`maxCookingEnergy_${cookingType}`] = Math.max(...filteredCookingList.map(x => x.energy), 0)
     result[`maxEnergy_${cookingType}`] = food.energy * result[`bestTypeRate_${cookingType}`] * (result[`bestTypeRate_${cookingType}`] > 1 ? Cooking.maxRecipeBonus : 1)
   }
 
-  result[`maxAddEnergyAverage`] = (result[`maxAddEnergy_カレー`] + result[`maxAddEnergy_サラダ`] + result[`maxAddEnergy_デザート`]) / 3;
-  result[`maxAddEnergyGeometricMean`] = Math.cbrt(result[`maxAddEnergy_カレー`] * result[`maxAddEnergy_サラダ`] * result[`maxAddEnergy_デザート`]);
+  result[`maxCookingEnergyAverage`] = (result[`maxCookingEnergy_カレー`] + result[`maxCookingEnergy_サラダ`] + result[`maxCookingEnergy_デザート`]) / 3;
+  result[`maxCookingEnergyGeometricMean`] = Math.cbrt(result[`maxCookingEnergy_カレー`] * result[`maxCookingEnergy_サラダ`] * result[`maxCookingEnergy_デザート`]);
 
   return result;
 }))
+
+const columnList = computed(() => [
+  { key: 'name', name: '名前' },
+  { key: 'energy', name: '基礎\nエナジー', type: Number },
+  ...cookingTypeList.flatMap(type => [
+    cookingColumnVisibility.require && { key: `require_${type}`, name: `${type}\n必要最大数`, type: Number },
+    cookingColumnVisibility.rate && { key: `bestTypeRate_${type}`, name: `${type}\n最大補正`, percent: true, fixed: 0 },
+    cookingColumnVisibility.cookingEnergy && { key: `maxCookingEnergy_${type}`, name: `${type}\n最大料理エナジー`, type: Number, fixed: 0 },
+    cookingColumnVisibility.energy && { key: `maxEnergy_${type}`, name: `${type}\n最大単品エナジー\n(レシピLv込)`, type: Number, fixed: 0 },
+  ].filter(column => column)),
+  { key: 'maxCookingEnergyAverage', name: '平均\n最大料理エナジー', type: Number, fixed: 0 },
+  { key: 'maxCookingEnergyGeometricMean', name: '相乗平均\n最大料理エナジー', type: Number, fixed: 0 },
+  { key: 'maxEnergy', name: '総合\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0, convert: (x) => Math.max(x.maxEnergy_カレー, x.maxEnergy_サラダ, x.maxEnergy_デザート) },
+]);
 
 </script>
 
 <template>
   <div class="page">
     <BaseAlert>
-      「最大補正」や「最大追加料理エナジー」でソートすることで、隙間を埋める食材の判断に使うことができます。<br>
+      「最大補正」や「最大料理エナジー」でソートすることで、隙間を埋める食材の判断に使うことができます。<br>
       どちらもほぼ同じ意味ですが、めいそうスイートサラダのように補正は高いがエナジーが低い料理をどう扱うかによって使い分けてください。
     </BaseAlert>
     
@@ -69,28 +85,18 @@ const foodList = computed(() => Food.list.map(food => {
       </SettingButton>
     </div>
 
-    <SortableTable class="mt-10px" :dataList="foodList" :columnList="[
-      { key: 'name', name: '名前' },
-      { key: 'energy', name: '基礎\nエナジー', type: Number },
-      { key: 'require_カレー', name: 'カレー\n必要最大数', type: Number },
-      { key: 'bestTypeRate_カレー', name: 'カレー\n最大補正', percent: true, fixed: 0 },
-      { key: 'maxAddEnergy_カレー', name: 'カレー\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxEnergy_カレー', name: 'カレー\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'require_サラダ', name: 'サラダ\n必要最大数', type: Number },
-      { key: 'bestTypeRate_サラダ', name: 'サラダ\n最大補正', percent: true, fixed: 0 },
-      { key: 'maxAddEnergy_サラダ', name: 'サラダ\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxEnergy_サラダ', name: 'サラダ\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'require_デザート', name: 'デザート\n必要最大数', type: Number },
-      { key: 'bestTypeRate_デザート', name: 'デザート\n最大補正', percent: true, fixed: 0 },
-      { key: 'maxAddEnergy_デザート', name: 'デザート\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxEnergy_デザート', name: 'デザート\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxAddEnergyAverage', name: '平均\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxAddEnergyGeometricMean', name: '相乗平均\n最大追加料理エナジー\n(レシピLv込)', type: Number, fixed: 0 },
-      { key: 'maxEnergy', name: '総合\n最大単品エナジー\n(レシピLv込)', type: Number, fixed: 0, convert: (x) => Math.max(x.maxEnergy_カレー, x.maxEnergy_サラダ, x.maxEnergy_デザート) },
-    ]">
-      <template #foodList="{ data }">
-        <div>
-          <div v-for="{name, num} in data.foodList">{{ name }}×{{ num }}</div>
+    <div class="mt-10px flex-row-start-center flex-wrap gap-10px">
+      <InputCheckbox v-model="cookingColumnVisibility.require">必要最大数</InputCheckbox>
+      <InputCheckbox v-model="cookingColumnVisibility.rate">最大補正</InputCheckbox>
+      <InputCheckbox v-model="cookingColumnVisibility.cookingEnergy">最大料理エナジー</InputCheckbox>
+      <InputCheckbox v-model="cookingColumnVisibility.energy">最大単品エナジー</InputCheckbox>
+    </div>
+
+    <SortableTable class="mt-10px food-table" :dataList="foodList" :columnList="columnList" :fixColumn="1" scroll>
+      <template #name="{ data }">
+        <div class="flex-row-start-center gap-5px">
+          <img :src="data.img" :alt="data.name" class="w-20px h-20px" />
+          <span>{{ data.name }}</span>
         </div>
       </template>
     </SortableTable>
@@ -104,6 +110,11 @@ const foodList = computed(() => Food.list.map(food => {
   flex-direction: column;
 
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+
+  .food-table {
+    flex: 1 1 0;
+    min-height: 0;
+  }
 }
 </style>

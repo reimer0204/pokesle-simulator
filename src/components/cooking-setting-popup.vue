@@ -3,13 +3,23 @@ import { Cooking } from '../data/food_and_cooking';
 import config from '../models/config.ts';
 import PopupBase from './util/popup-base.vue';
 
+const props = defineProps({
+  ignoreCookingMode: Boolean,
+});
+
 const checkAll = computed({
   get() { return Cooking.list.every(x => config.simulation.enableCooking[x.name]) },
   set(newValue) { Cooking.list.forEach(x => config.simulation.enableCooking[x.name] = newValue) },
 })
 
 const calcCookingList = computed(() => {
-  return Cooking.evaluateLvList(config)
+  return Cooking.evaluateLvList({
+    ...config,
+    simulation: {
+      ...config.simulation,
+      mode: props.ignoreCookingMode ? 0 : config.simulation.mode,
+    },
+  }).toSorted((a, b) => a.type.localeCompare(b.type) || b.energy - a.energy)
 })
 
 const columnList = computed(() => {

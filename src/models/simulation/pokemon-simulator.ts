@@ -1326,7 +1326,10 @@ class PokemonSimulator {
         } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
           if (this.#foodEnergyWeight > 0) {
             // 1食材あたりの個数
-            let oneFoodNumPerSkill = foodGet / foodGetList.length * this.config.teamSimulation.foodGetEvaluateRate;
+            let oneFoodNumPerSkill = foodGet
+              * this.config.simulation.eventBonus.skill.foodGet
+              / foodGetList.length
+              * this.config.teamSimulation.foodGetEvaluateRate;
             let num = executor.skillPerDay * oneFoodNumPerSkill * weight;
             let foodEnergy = 0;
             for(let food of foodGetList) {
@@ -1346,7 +1349,10 @@ class PokemonSimulator {
         } else if (this.mode == PokemonSimulator.MODE_TEAM) {
           if (!this.config.simulation.sundayPrepare) {
             // 1食材あたりの個数
-            let oneFoodNumPerSkill = foodGet / foodGetList.length * this.config.teamSimulation.foodGetEvaluateRate;
+            let oneFoodNumPerSkill = foodGet
+              * this.config.simulation.eventBonus.skill.foodGet
+              / foodGetList.length
+              * this.config.teamSimulation.foodGetEvaluateRate;
             if (type == 1) {
               let num = executor.skillPerDay * oneFoodNumPerSkill * weight;
               for(let food of foodGetList) {

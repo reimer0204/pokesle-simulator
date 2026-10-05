@@ -34,8 +34,18 @@ const threeTypeGeometricMean = computed(() => result.value == null ? 0 : Math.po
   cookingTypes.reduce((product, type) => product * result.value!.plans[type].energy, 1),
   1 / cookingTypes.length,
 ));
-const cookingList = computed(() => Cooking.getEnableCookingList(config));
-const disabledCookingNum = computed(() => Cooking.getDisabledCookingNum(config));
+const cookingList = computed(() => Cooking.getEnableCookingList({
+  ...config,
+  simulation: {
+    ...config.simulation,
+    // 食材準備はチーム編成用の料理育成モードに影響されない。
+    mode: 0,
+  },
+}).filter(cooking =>
+  !config.foodStock.excludeMaxRecipeLv
+  || config.simulation.cookingSettings[cooking.name].lv < Cooking.maxRecipeLv,
+));
+const disabledCookingNum = computed(() => Cooking.list.length - cookingList.value.length);
 const surplusFoodNum = computed(() => Math.max(Math.floor(Number(config.foodStock.surplusFoodNum) || 0), 0));
 const surplusCookingList = computed(() => Object.fromEntries(cookingTypes.map(type => [
   type,
@@ -101,8 +111,8 @@ async function calculate() {
 <template>
   <div class="page food-stock-page">
     <AsyncWatcherArea class="flex-column-start-stretch gap-10px" :asyncWatcher="asyncWatcher">
-      <div class="flex-row-start-start flex-wrap gap-5px">
-        <SettingButton @click="Popup.show(CookingSettingPopup)" :important="disabledCookingNum > 0">
+      <div class="flex-row-start-center flex-wrap gap-5px">
+        <SettingButton @click="Popup.show(CookingSettingPopup, { ignoreCookingMode: true })" :important="disabledCookingNum > 0">
           <template #label>
             <div class="inline-flex-row-center">
               料理設定
@@ -110,6 +120,7 @@ async function calculate() {
             </div>
           </template>
         </SettingButton>
+        <InputCheckbox v-model="config.foodStock.excludeMaxRecipeLv">カンスト除外</InputCheckbox>
       </div>
 
       <SettingList class="align-self-stretch">

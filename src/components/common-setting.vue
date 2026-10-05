@@ -58,6 +58,12 @@ function reset() {
   config.simulation.eventBonus.skill.foodGet = 1;
 }
 
+function resetSkillRate() {
+  for(const skill of Skill.list) {
+    config.simulation.skillRate[skill.name] = 1;
+  }
+}
+
 const workerNum = ref(config.workerNum);
 function saveWorkerNum() {
   config.workerNum = workerNum.value;
@@ -272,6 +278,9 @@ function resetBerryEnergyRate() {
         <span v-if="config.simulation.eventBonus.skill.berryBurst != 1" class="caution">
           きのみバーストx{{ config.simulation.eventBonus.skill.berryBurst }}
         </span>
+        <span v-if="config.simulation.eventBonus.skill.foodGet != 1" class="caution">
+          食材系スキルx{{ config.simulation.eventBonus.skill.foodGet }}
+        </span>
       </div>
     </template>
 
@@ -320,6 +329,12 @@ function resetBerryEnergyRate() {
                 <label>きのみバースト(みかづきのいのり含む)</label>
                 <div class="flex-row-start-center gap-4px">
                   <InputNumber class="w-60px" v-model="config.simulation.eventBonus.skill.berryBurst" :step="0.1" /> 倍
+                </div>
+              </div>
+              <div>
+                <label>食材系スキル</label>
+                <div class="flex-row-start-center gap-4px">
+                  <InputNumber class="w-60px" v-model="config.simulation.eventBonus.skill.foodGet" :step="0.1" /> 倍
                 </div>
               </div>
             </SettingList>
@@ -387,6 +402,8 @@ function resetBerryEnergyRate() {
     <div style="width: calc(100vw - 100px); max-width: 1000px;">
       <ToggleArea open>
         <template #headerText>個別スキル設定</template>
+
+        <FormButton class="mb-10px" @click="resetSkillRate">全て100%にリセット</FormButton>
 
         <SettingTable class="w-100">
           <template v-for="category in Skill.categoryList" :key="category.id">
