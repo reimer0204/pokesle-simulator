@@ -16,6 +16,7 @@ import PokemonListSimulator from '../models/pokemon-box/pokemon-box-worker?worke
 import TeamSimulator from '../models/simulation/team-simulator?worker';
 import PokemonFilterEditor from '../components/filter/pokemon-filter-editor.vue';
 import Berry from '@/data/berry.ts';
+import Field from '@/data/field.ts';
 import InputCheckbox from '@/components/form/input-checkbox.vue';
 
 const props = defineProps({
@@ -99,6 +100,32 @@ const requireText = computed(() => {
 const simulationResult = ref({
   teamList: [],
 })
+
+function getHelpSpeedFormula(pokemon, simulationConfig) {
+  const subSkillSpeedBonus =
+    (pokemon.subSkillNameList.includes('おてつだいスピードS') ? 0.07 : 0)
+    + (pokemon.subSkillNameList.includes('おてつだいスピードM') ? 0.14 : 0);
+  const helpBonus = Math.max(0, pokemon.speedBonus - subSkillSpeedBonus);
+  const field = Field.map[simulationConfig.field] ?? Field.list[0];
+  const berryName = pokemon.base?.berry?.name;
+  let exSpeedRate = 1;
+
+  if (field.ex && berryName) {
+    if (simulationConfig.berryList[0] == berryName) {
+      exSpeedRate = field.exBuff?.match?.speed ?? 1;
+    } else if (!simulationConfig.berryList.includes(berryName)) {
+      exSpeedRate = field.exBuff?.notMatch?.speed ?? 1;
+    }
+  }
+
+  const resultSpeedRate = (1 - pokemon.speedBonus) * exSpeedRate;
+  return {
+    subSkillSpeedBonus: Math.round(subSkillSpeedBonus * 100),
+    helpBonus: Math.round(helpBonus * 100),
+    exSpeedRate: Math.round(exSpeedRate * 100),
+    resultSpeedRate: Math.round(resultSpeedRate * 100),
+  };
+}
 
 const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
 const teamMultiWorker = new MultiWorker(TeamSimulator, config.workerNum)
@@ -575,8 +602,8 @@ async function showEditPopup(pokemon) {
               <div class="result-table-scroll">
               <DesignTable>
                 <colgroup>
-                  <col class="result-header-column">
-                  <col class="result-header-column">
+                  <col class="result-first-header-column">
+                  <col class="result-second-header-column">
                   <col v-for="pokemon in result.pokemonList" class="result-pokemon-column">
                   <col>
                 </colgroup>
@@ -646,10 +673,34 @@ async function showEditPopup(pokemon) {
                     <td></td>
                   </tr>
                   <tr v-if="config.teamSimulation.result.detail">
-                    <th>おてスピ短縮</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.speedBonus">
-                        {{ Math.round(pokemon.speedBonus * 100).toLocaleString() }}%
+                    <th>おてスピ</th>
+                    <td v-for="pokemon in result.pokemonList" class="text-align-right white-space-nowrap">
+                      <template v-if="pokemon.base.name != 'ナイトキャップピカチュウ'">
+                        <template v-for="formula in [getHelpSpeedFormula(pokemon, simulationResult.config.simulation)]">
+                          <span class="fs-10px">
+                            (100%
+                            <template v-if="formula.subSkillSpeedBonus">
+                              - <ruby>{{ formula.subSkillSpeedBonus }}%<rt>サブスキル</rt></ruby>
+                            </template>
+                            <template v-if="formula.helpBonus">
+                              - <ruby>{{ formula.helpBonus }}%<rt>おてボ</rt></ruby>
+                            </template>
+                            )
+                            <template v-if="formula.exSpeedRate != 100">
+                              <br>×
+                              <ruby>
+                                <span
+                                  :class="{
+                                    'help-speed-ex-lower': formula.exSpeedRate < 100,
+                                    'help-speed-ex-higher': formula.exSpeedRate > 100,
+                                  }"
+                                >{{ formula.exSpeedRate }}%</span>
+                                <rt>EX</rt>
+                              </ruby>
+                            </template>
+                          </span>
+                          <br>= {{ formula.resultSpeedRate }}%
+                        </template>
                       </template>
                     </td>
                     <td></td>
@@ -892,14 +943,19 @@ async function showEditPopup(pokemon) {
     }
 
     table {
-      --result-header-column-width: 80px;
+      --result-first-header-column-width: 60px;
+      --result-second-header-column-width: 90px;
       width: max-content;
       min-width: 100%;
       border-collapse: separate;
       border-spacing: 0;
 
-      .result-header-column {
-        width: var(--result-header-column-width);
+      .result-first-header-column {
+        width: var(--result-first-header-column-width);
+      }
+
+      .result-second-header-column {
+        width: var(--result-second-header-column-width);
       }
 
       .result-pokemon-column {
@@ -912,28 +968,28 @@ async function showEditPopup(pokemon) {
         position: sticky;
         left: 0;
         z-index: 2;
-        width: var(--result-header-column-width);
-        min-width: var(--result-header-column-width);
-        max-width: var(--result-header-column-width);
+        width: var(--result-first-header-column-width);
+        min-width: var(--result-first-header-column-width);
+        max-width: var(--result-first-header-column-width);
       }
 
       tbody th[colspan="2"] {
         position: sticky;
         left: 0;
         z-index: 2;
-        width: calc(var(--result-header-column-width) * 2);
-        min-width: calc(var(--result-header-column-width) * 2);
-        max-width: calc(var(--result-header-column-width) * 2);
+        width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
+        min-width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
+        max-width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
       }
 
       thead th:nth-child(2),
       tbody th:not(.vertical):not([rowspan]):not([colspan]) {
         position: sticky;
-        left: var(--result-header-column-width);
+        left: var(--result-first-header-column-width);
         z-index: 2;
-        width: var(--result-header-column-width);
-        min-width: var(--result-header-column-width);
-        max-width: var(--result-header-column-width);
+        width: var(--result-second-header-column-width);
+        min-width: var(--result-second-header-column-width);
+        max-width: var(--result-second-header-column-width);
         white-space: normal;
         overflow-wrap: anywhere;
       }
@@ -989,6 +1045,14 @@ async function showEditPopup(pokemon) {
       .sub-skill-list {
         display: flex;
       }
+
+      .help-speed-ex-lower {
+        color: red;
+      }
+
+      .help-speed-ex-higher {
+        color: blue;
+      }
     }
   }
 }
@@ -1012,13 +1076,6 @@ async function showEditPopup(pokemon) {
         overflow-y: visible;
       }
 
-      .result-header-column {
-        width: 50px;
-      }
-
-      table {
-        --result-header-column-width: 50px;
-      }
     }
   }
 }

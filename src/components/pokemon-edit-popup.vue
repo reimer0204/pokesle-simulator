@@ -145,6 +145,10 @@ const simulatedPokemonList = ref([]);
 let boxLoading;
 let boxLoadVersion = 0;
 async function loadBoxInfo(setConfig = false) {
+  if (!canCalcSelectScore()) {
+    return;
+  }
+
   if (requireRefresh.setting) {
     return;
   }
@@ -165,12 +169,6 @@ async function loadBoxInfo(setConfig = false) {
   });
   await boxLoading;
 }
-loadBoxInfo(true);
-
-watch(
-  () => pokemon.name,
-  () => loadBoxInfo(),
-);
 
 const foodSelectList = computed(() => {
   if (basePokemon.value == null) return [[], [], []];
@@ -332,7 +330,21 @@ let selectLvList = [
     .sort((a, b) => a - b),
 ];
 
+function canCalcSelectScore() {
+  try {
+    PokemonBox.check(pokemon);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function calcSelectScore() {
+  if (!canCalcSelectScore()) {
+    selectResult.value = null;
+    return;
+  }
+
   const pokemonName = pokemon.name;
   await boxLoading;
   await evaluateTablePromise;
@@ -345,7 +357,6 @@ async function calcSelectScore() {
   }
 
   try {
-    PokemonBox.check(pokemon);
     selectAsyncWatcher.run(async (progressCounter) => {
       // ボックス整理モードと同じチェックリスト判定を、編集中の個体にも行う。
       const selectConfig = JSON.parse(JSON.stringify(config));
@@ -401,13 +412,24 @@ async function calcSelectScore() {
     // ignore
   }
 }
-calcSelectScore();
+
+function refreshSelectInfo() {
+  if (!canCalcSelectScore()) {
+    selectResult.value = null;
+    return;
+  }
+
+  loadBoxInfo(true);
+  calcSelectScore();
+}
+
+refreshSelectInfo();
 // 入力アシストでは入力のたびに配列を作り直すため、参照の変化ではなく
 // 厳選計算に影響する値そのものが変わった時だけ再計算する。
 watch(
   () =>
     JSON.stringify([pokemon.name, ...pokemon.foodList, ...pokemon.subSkillList, pokemon.nature]),
-  calcSelectScore,
+  refreshSelectInfo,
 );
 
 const selectResultColumns = computed(() => {
@@ -448,6 +470,7 @@ const saveDisabled = computed(() => {
     basePokemon.value == null ||
     !pokemon.lv ||
     (pokemon.foodList.some((x) => !x) && !kaihouPokemon.value) ||
+    (pokemon.foodList[0] == null && kaihouPokemon.value) ||
     (pokemon.subSkillList.some((x) => !x) && !kaihouPokemon.value) ||
     !pokemon.nature
   );
@@ -742,8 +765,8 @@ const candyInfo = computed(() => {
 
     <BaseAlert class="assist-alert">
       入力アシスト欄に、名前・Lv・食材・サブスキル・せいかくを1行ずつ入力することでも入力できます。<br />
-      ローマ字でも反応します。必須項目がそろった状態でEnterを押すと、保存して続けて登録します。Shift+Enter:
-      改行、ESC: 全てクリア<br />
+      ローマ字でも反応します。必須項目がそろった状態でEnterを押すと、保存して続けて登録します。<br />
+      Shift+Enter:改行、ESC:全てクリア、Alt+C:色違い<br />
     </BaseAlert>
 
     <div class="edit-form mt-10px">
@@ -788,6 +811,7 @@ const candyInfo = computed(() => {
                     v-for="(foodList, index) in foodSelectList"
                     v-model="pokemon.foodList[index]"
                     :food-list="foodList"
+                    :allow-unselect="kaihouPokemon"
                   />
                 </FoodIconSelectList>
               </td>

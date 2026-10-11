@@ -415,7 +415,7 @@ class PokemonSimulator {
     useShard: number = 0,
     berryMatch: boolean = false
   ): SimulatedPokemon {
-    const firstFoodEnergy = Food.map[foodNameList[0]].energy * ((base.specialty == '食材' || base.specialty == 'オール') ? 2 : 1)
+    const firstFoodEnergy = (Food.map[foodNameList[0]]?.energy ?? 0) * ((base.specialty == '食材' || base.specialty == 'オール') ? 2 : 1)
 
     const pokemon: SimulatedPokemon = {
       ...this.#simulatedDefaultPokemon,

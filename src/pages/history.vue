@@ -22,6 +22,18 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/10/11">
+      <ul>
+        <li>
+          不具合修正
+          <ul>
+            <li>ポケモン編集画面で不要なタイミングで厳選情報の計算が走る問題を修正</li>
+            <li>ミュウやダークライの食材を未選択の状態で保存でき、その後ボックス一覧が表示されなくなってしまう不具合の修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/10/5">
       <ul>
         <li>

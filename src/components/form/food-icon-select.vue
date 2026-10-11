@@ -4,8 +4,13 @@ import { Food } from '@/data/food_and_cooking';
 const props = defineProps<{
   modelValue: string | null,
   foodList: string[],
+  allowUnselect?: boolean,
 }>();
 const emits = defineEmits(['update:modelValue']);
+
+function selectFood(food: string) {
+  emits('update:modelValue', props.allowUnselect && props.modelValue === food ? null : food);
+}
 </script>
 
 <template>
@@ -18,7 +23,7 @@ const emits = defineEmits(['update:modelValue']);
       role="radio"
       :aria-checked="props.modelValue === food"
       :title="food"
-      @click="emits('update:modelValue', food)"
+      @click="selectFood(food)"
     >
       <img :src="Food.map[food].img" :alt="food">
     </div>
