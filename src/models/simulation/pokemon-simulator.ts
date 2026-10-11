@@ -6,10 +6,10 @@ import Skill from "../../data/skill";
 import { Food, Cooking } from "../../data/food_and_cooking";
 import Nature from "../../data/nature";
 import Field, { type ExBuff, type FieldItem } from '../../data/field.ts';
-import Berry from '../../data/berry';
 import SubSkill from '../../data/sub-skill';
 import { getPokemonEvaluateSetting } from '../evaluate-setting';
 import ProbBorder from '../utils/prob-border';
+import { skillHandlerMap } from './skills/skill-handler-map';
 import type { CookingType, FoodType, NatureType, PokemonBoxType, PokemonType, SimulatedPokemon, SkillType, SubSkillType } from '../../type';
 
 const GENKI_EFFECT = [0, 0.45, 0.52, 0.62, 0.71, 1.00];
@@ -58,6 +58,8 @@ class PokemonSimulator {
   #addHeal?: { effect: number; time: number; }[];
   #foodCommonRate: number;
   #simulatedDefaultPokemon: SimulatedPokemon;
+  #skillContext: any = {};
+  #getBestCookingForSkill = (potSize: number) => this.#getBestCooking(potSize);
 
   constructor(config: any, mode: number) {
     if (!mode) throw 'モードが指定されていません'
@@ -938,372 +940,32 @@ class PokemonSimulator {
         weight *= this.config.simulation.skillRate[skill.name]
       }
 
-      switch(skill.name) {
-        case 'エナジーチャージS':
-        case 'エナジーチャージS(ランダム)':
-        case 'エナジーチャージM':
-          energyPerSkill = effect;
-          break;
-
-        case 'たくわえる(エナジーチャージS)':
-          // スキルコピーやゆびをふるの場合はたくわえない
-          if (copy || executor.base.skill.name === 'ゆびをふる') {
-            energyPerSkill = effect.base;
-          } else {
-            energyPerSkill = effect.expect;
-          }
-          break;
-            
-        case 'ナイトメア(エナジーチャージM)':
-          energyPerSkill = effect.energy;
-          break;
-
-        case 'ばけのかわ(きのみバースト)':
-        case 'きのみバースト': {
-          if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            energyPerSkill = executor.berryEnergy
-              * effect.self
-              * this.config.simulation.eventBonus.skill.berryBurst
-
-            // 他メンバーのエナジーはあとで計算
-            executor.burstBonus = effect.other
-              * weight
-              * this.config.simulation.eventBonus.skill.berryBurst;
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            energyPerSkill = 0
-            for(let subPokemon of pokemonList!) {
-              energyPerSkill += executor.berryEnergy
-                * (executor == subPokemon ? effect.self : effect.other)
-                * this.config.simulation.eventBonus.skill.berryBurst;
-            }
-
-          } else if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = 
-              executor.berryEnergy * effect.self
-              + Math.max(Berry.map['ヤチェ'].energy + executor.lv - 1, Berry.map['ヤチェ'].energy * (1.025 ** (executor.lv - 1))) * effect.other * 4;
-          }
-
-          if (
-            skill.name == 'ばけのかわ(きのみバースト)'
-            && !copy
-            && executor.base.skill.name !== 'ゆびをふる'
-          ) {
-            let success = 1 - ((1 - skill.success!) ** executor.skillPerDay);
-            energyPerSkill *= (success * (executor.skillPerDay + 2) + (1 - success) * executor.skillPerDay) / executor.skillPerDay;
-          }
-
-          break;
-        }
-        
-        case 'りゅうせいぐん(きのみバースト)': {
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            const { self, other } = effect.team[helpBoostCount! - 1]
-            energyPerSkill = 
-              executor.berryEnergy * (self + effect.bonus)
-              + Math.max(Berry.map['ヤチェ'].energy + executor.lv - 1, Berry.map['ヤチェ'].energy * (1.025 ** (executor.lv - 1))) * other * 4;
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            const { self, other } = effect.team.at(-1)
-            energyPerSkill = executor.berryEnergy
-              * (self + effect.bonus)
-              * this.config.simulation.eventBonus.skill.berryBurst;
-
-            // 他メンバーのエナジーはあとで計算
-            executor.burstBonus = other
-              * this.config.simulation.eventBonus.skill.berryBurst;
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            const { self, other } = effect.team[helpBoostCount! - 1]
-            energyPerSkill = 0
-            const withLatias = pokemonList!.some(x => x.base.name == 'ラティアス');
-            for(let subPokemon of pokemonList!) {
-              energyPerSkill += executor.berryEnergy * (executor == subPokemon ? (withLatias ? self : self + effect.bonus) : other);
-            }
-            energyPerSkill *= this.config.simulation.eventBonus.skill.berryBurst;
-          }
-
-          break;
-        }
-        
-        case 'みかづきのいのり(げんきオールS)': {
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            const { self, other } = effect.team[helpBoostCount! - 1]
-            energyPerSkill = 
-              executor.berryEnergy * self
-              + Math.max(Berry.map['マゴ'].energy + executor.lv - 1, Berry.map['マゴ'].energy * (1.025 ** (executor.lv - 1))) * other * 4;
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            const { self, other } = effect.team.at(-1)
-            energyPerSkill = executor.berryEnergy
-              * self
-              * this.config.simulation.eventBonus.skill.berryBurst;
-
-            // 他メンバーのエナジーはあとで計算
-            executor.burstBonus = other
-              * this.config.simulation.eventBonus.skill.berryBurst;
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            const { self, other } = effect.team[helpBoostCount! - 1]
-            energyPerSkill = 0
-            for(let subPokemon of pokemonList!) {
-              energyPerSkill += executor.berryEnergy * (executor == subPokemon ? self : other);
-            }
-            energyPerSkill *= this.config.simulation.eventBonus.skill.berryBurst;
-          }
-
-          break;
-        }
-        
-        case 'いやしのはどう(げんきエールS)': {
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = scoreForSupportEvaluate! * effect.help2 * 2;
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            // チームが分かっている時はここで獲得エナジーと食材の期待値計算
-            let helpCount = effect.help1;
-            for(let subPokemon of pokemonList!) {
-              if (subPokemon.base.name == 'ラティオス') {
-                helpCount = effect.help2;
-                break;
-              }
-            }
-            helpCount = helpCount * 2 / 5;
-
-            energyPerSkill = 0;
-            for(let subPokemon of pokemonList!) {
-              energyPerSkill += subPokemon.bEpH * helpCount * (1 - subPokemon.foodRate);
-              for(let food of subPokemon.foodList) {
-                executor[food.name] = (executor[food.name] ?? 0) + food.num / subPokemon.foodList.length * helpCount * subPokemon.foodRate * executor.skillPerDay * weight;
-              }
-            }
-          }
-
-          break;
-        }
-
-        case 'おてつだいサポートS':
-        case 'おてつだいブースト':
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = scoreForSupportEvaluate! * (skill.name == 'おてつだいブースト' ? effect.max * 5 : effect);
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            // あとで概算値計算
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            // チームが分かっている時はここで獲得エナジーと食材の期待値計算
-            let helpCount;
-            if (skill.name == 'おてつだいサポートS') {
-              helpCount = effect / 5;
-            }
-            if (skill.name == 'おてつだいブースト') {
-              helpCount = effect.fix;
-              helpCount += effect.team[helpBoostCount! - 1]
-            }
-
-            energyPerSkill = 0;
-            for(let subPokemon of pokemonList!) {
-              energyPerSkill += subPokemon.bEpH4Spt * helpCount * (1 - subPokemon.foodRate);
-              for(let food of subPokemon.foodList) {
-                executor[food.name] = (executor[food.name] ?? 0) + food.baseNum / subPokemon.foodList.length * helpCount * subPokemon.foodRate * executor.skillPerDay * weight;
-              }
-            }
-            
-          }
-          break;
-
-        case '食材ゲットS':
-          foodGet = effect;
-          foodGetList = Food.list;
-          break;
-
-        case 'プレゼント(食材ゲットS)':
-          foodGet = effect;
-          foodGetList = Food.list;
-          
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill += this.config.selectEvaluate.energyPerCandy * 4;
-          }
-          break;
-
-        case 'ビルドアップ(料理アシストS)':
-          foodGet = effect.main;
-          foodGetList = Food.list;
-
-          cookingChance = effect.sub;
-          break;
-
-        case 'プラス(食材ゲットS)':
-          foodGet = effect.main;
-          foodGetList = Food.list;
-
-          // 獲得数の計算に使う食材
-          const energyFood = Food.map[executor.foodList[0].name];
-          
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            // 厳選モードならその食材をフル活用する想定で計算
-            energyPerSkill = energyFood.energy
-              * energyFood.bestRate
-              * Cooking.maxRecipeBonus
-              * (Math.round(effect.sub / energyFood.energy) + 6);
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            if (this.#foodEnergyWeight > 0) {
-              // 概算モードなら食材数と概算エナジーを計算
-              let num = (Math.round(effect.sub / energyFood.energy) + 6)
-                * executor.skillPerDay
-                * weight;
-              executor[energyFood.name] = Number(executor[energyFood.name] ?? 0) + num;                   // 1日あたりの食材数
-              energyPerSkill = this.foodEnergyMap[energyFood.name].max
-                * (Math.round(effect.sub / energyFood.energy) + 6)
-                * this.#foodEnergyWeight; // 1回あたりのエナジー
-            }
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            // チームモードの時は条件を満たしているかチェック
-            if (
-              pokemonList!
-              .filter(x => 
-                x.base.skill.name == 'プラス(食材ゲットS)'
-                || x.base.skill.name == 'マイナス(料理パワーアップS)'
-              ).length >= 2
-            ) {
-              // 実際に獲得する食材
-              // スキルコピーの場合は獲得数はコピー先、獲得するのは発動者のものを参照
-              const getFood = Food.map[copy ? copy.foodList[0].name : executor.foodList[0].name];
-
-              let num = (Math.round(effect.sub / energyFood.energy) + 6)
-                * executor.skillPerDay
-                * weight;
-              executor[getFood.name] = Number(executor[getFood.name] ?? 0) + num;
-            }
-          }
-
-          break;
-
-        case '食材セレクトS':
-        case 'かいりきバサミ(食材セレクトS)':
-        case 'きょううん(食材セレクトS)':
-          if (skill.name == 'きょううん(食材セレクトS)') {
-            executor.shard += effect.shard * executor.skillPerDay * weight;
-          }
-
-          foodGet = effect.food;
-
-          // スキルコピーの場合、
-          foodGetList = copy
-            ? copy.base.foodList.map(x => Food.map[x.name])
-            : (skill.foodList ?? executor.base.foodList.map(x => Food.map[x.name]));
-          break;
-
-        case 'ゆめのかけらゲットS':
-        case 'ゆめのかけらゲットS(ランダム)':
-          executor.shard += effect * executor.skillPerDay * weight;
-          break;
-
-        case 'はどうだん(ゆめのかけらゲットS)':
-          executor.shard += effect.shard * executor.skillPerDay * weight;
-          energyPerSkill = effect.energy;
-          break;
-
-        case '料理パワーアップS':
-          cookingPowerUpEffect = effect;
-          break;
-
-        case 'マイナス(料理パワーアップS)':
-          cookingPowerUpEffect = effect.main;
-          break;
-
-        case '料理チャンスS':
-          cookingChance = effect;
-          break;
-
-        case 'へんしん(スキルコピー)':
-        case 'ものまね(スキルコピー)':
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            // スキルコピーがスキルコピーをコピーした場合はエナジーチャージS相当(公式)
-            energyPerSkill = Skill.map['エナジーチャージS'].effect[skillLv]
-          }
-          break;
-
-        case 'ほっぺすりすり(げんきエールS)':
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
-
-          } else if (this.mode == PokemonSimulator.MODE_ABOUT) {
-            energyPerSkill = this.config.selectEvaluate.skillEnergy[skill.name][skillLv] ?? skill.evaluateEnergy![skillLv];
-
-          } else if (this.mode == PokemonSimulator.MODE_TEAM) {
-            // スキルコピーと同様の仕組みで計算
-          }
-
-        case 'サイコブレイク(きのみゾーン)':
-          if (this.mode == PokemonSimulator.MODE_SELECT) {
-            // このタイプのきのみが最も稼げるポケモン上位5匹を抽出、1日あたりのきのみの数を合計
-            // その時のLvのきのみ、好みボーナス、月曜に起用する場合火曜～日曜の21回評価される分を7日で割る
-            energyPerSkill = 
-              executor.base.berry.energy
-              * 2
-              * (1.025 ** (executor.lv - 1))
-              * Pokemon.list.filter(x => x.berry.name == executor.base.berry.name)
-                .map(x => 
-                  (x.specialty == 'きのみ' || x.specialty == 'オール' ? 3 : 2)
-                  * 86400 / (x.help * 0.65 * (1 - (executor.lv - 1) * 0.002)) / 0.45
-                )
-                .sort((a, b) => b - a)
-                .slice(0, 5)
-                .reduce((sum, num) => sum + num, 0)
-              * 21 / 7
-              * effect.zone / 100
-              + effect.energy;
-
-          } else {
-            // 今日の曜日から、翌日以降の効果量を計算
-
-            const dayRate = 
-              this.config.teamSimulation.day >= 0 ? (6 - this.config.teamSimulation.day) / 2
-              : 1.5;
-            
-            // ボックス内のポケモンのうち、同じきのみを好むポケモンの上位5匹を抽出、1日あたりのきのみの数を合計
-            const boxTop5 = boxPokemonList
-              .filter(x => Pokemon.map[x.name]?.berry.name == executor.base.berry.name)
-              .map(x => 
-                (Pokemon.map[x.name]?.specialty == 'きのみ' || Pokemon.map[x.name]?.specialty == 'オール' ? 3 : 2)
-                * 86400 / (Pokemon.map[x.name].help * 0.65 * (1 - (x.lv - 1) * 0.002)) / 0.45
-              )
-              .sort((a, b) => b - a)
-              .slice(0, 5)
-              .reduce((sum, num) => sum + num, 0)
-
-            energyPerSkill = 
-              executor.base.berry.energy
-              * executor.berryRate / 100
-              * (1.025 ** (executor.lv - 1))
-              * boxTop5
-              * dayRate
-              * effect.zone / 100
-              + effect.energy;
-          }
-
-        case 'げんきオールS':
-        case 'きのみジュース(げんきオールS)':
-        case 'げんきエールS':
-        case 'げんきチャージS':
-        case 'つきのひかり(げんきチャージS)':
-          // 別の場所で計算
-          break;
-        
-        default:
-          throw `未実装のスキル: ${skill.name}`
+      const handler = skillHandlerMap.get(skill.name);
+      if (handler) {
+        ({ energyPerSkill, foodGet, foodGetList, cookingPowerUpEffect, cookingChance } = handler.evaluate(Object.assign(this.#skillContext, {
+          config: this.config,
+          mode: this.mode,
+          skill,
+          effect,
+          skillLv,
+          weight,
+          copy,
+          executor,
+          pokemonList,
+          boxPokemonList,
+          helpBoostCount,
+          scoreForSupportEvaluate,
+          foodEnergyMap: this.foodEnergyMap,
+          foodEnergyWeight: this.#foodEnergyWeight,
+          cookingPowerUpEnergy: this.#cookingPowerUpEnergy,
+          defaultBestCooking: this.#defaultBestCooking,
+          getBestCooking: this.#getBestCookingForSkill,
+        })));
+      } else {
+        throw `未実装のスキル: ${skill.name}`;
       }
+
+
       
       // 食材ゲットの処理
       if (foodGet && foodGetList != null) {
