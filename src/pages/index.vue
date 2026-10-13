@@ -8,6 +8,7 @@ import NatureInfo from '../components/status/nature-info.vue';
 import AsyncWatcherArea from '../components/util/async-watcher-area.vue';
 import Exp from '../data/exp.ts';
 import { Food, Cooking } from '../data/food_and_cooking';
+import Nature from '../data/nature.ts';
 import Pokemon from '../data/pokemon';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.ts';
@@ -49,13 +50,22 @@ async function createPokemonList(setConfig = false) {
 
   try {
     simulatingPromise = asyncWatcher.run(async (progressCounter) => {
+      const cleaning = mode.value == 'cleaning_detail';
+      const pokemonList = PokemonBox.list.flatMap((box) => [
+        box,
+        ...(cleaning &&
+        config.pokemonList.cleaning.mintCalculation > 0 &&
+        Nature.map[box.nature]?.good != null
+          ? [{ ...box, nature: 'まじめ', useMint: true }]
+          : []),
+      ]);
       simulatedPokemonList.value = await PokemonBox.simulation(
-        PokemonBox.list,
+        pokemonList,
         multiWorker,
         await evaluateTable,
         {
           ...config,
-          cleaning: mode.value == 'cleaning' || mode.value == 'cleaning_detail',
+          cleaning,
           pureMint: mode.value == 'pureMint',
         },
         progressCounter,
@@ -76,80 +86,185 @@ const cleaningDetailPokemon: Ref<string | null> = ref(null);
 const cleaningDetailSeed: Ref<string | null> = ref(null);
 const cleaningDetailSummaryList = computed(() => {
   const lastPokemonList = Pokemon.list.filter((x) => x.isLast);
+  const sortedLastPokemonList = lastPokemonList.toSorted((a, b) => {
+    return Pokemon.map[a.seed].no - Pokemon.map[b.seed].no || a.no - b.no;
+  });
+  const allSummary = {
+    seed: '',
+    no: null,
+    name: '全員',
+    berry: { name: '' },
+    typeName: '',
+    specialty: '',
+    num: 0,
+    checklistHitNum: 0,
+    cleaningCandidateNum: 0,
+    mintCandidateBoxIndexSet: new Set<number>(),
+  };
   const summaryMap = new Map(
-    lastPokemonList.map((pokemon) => [pokemon.name, { num: 0, checklistChecked: false }]),
+    lastPokemonList.map((pokemon) => [
+      pokemon.name,
+      {
+        num: 0,
+        checklistHitNum: 0,
+        cleaningCandidateNum: 0,
+        mintCandidateBoxIndexSet: new Set<number>(),
+      },
+    ]),
   );
+  const originalChecklistHitMap = new Map<number, boolean>();
+
+  for (const simulatedPokemon of simulatedPokemonList.value) {
+    if (simulatedPokemon.box?.useMint) continue;
+
+    const boxIndex = simulatedPokemon.box?.index;
+    if (boxIndex != null) {
+      originalChecklistHitMap.set(
+        boxIndex,
+        originalChecklistHitMap.get(boxIndex) || !!simulatedPokemon.hitCheckList?.length,
+      );
+    }
+  }
 
   // 最終進化ポケモンごとにボックス全体を走査せず、シミュレーション結果を1回だけ集計する。
   for (const simulatedPokemon of simulatedPokemonList.value) {
+    const boxIndex = simulatedPokemon.box?.index;
+
+    if (simulatedPokemon.box?.useMint) {
+      if (
+        boxIndex != null &&
+        !originalChecklistHitMap.get(boxIndex) &&
+        simulatedPokemon.hitCheckList?.length
+      ) {
+        allSummary.mintCandidateBoxIndexSet.add(boxIndex);
+      }
+    } else {
+      allSummary.num++;
+      allSummary.checklistHitNum += Number(!!simulatedPokemon.hitCheckList?.length);
+      if (
+        !simulatedPokemon.hitCheckList?.length &&
+        !(config.pokemonList.cleaning.shinyLock && simulatedPokemon.box?.shiny)
+      ) {
+        allSummary.cleaningCandidateNum++;
+      }
+    }
+
     for (const pokemonName of simulatedPokemon.afterList) {
       const summary = summaryMap.get(pokemonName);
       if (summary == null) continue;
 
-      summary.num++;
-      summary.checklistChecked ||= !!simulatedPokemon.hitCheckList?.length;
+      if (simulatedPokemon.box?.useMint) {
+        if (
+          boxIndex != null &&
+          !originalChecklistHitMap.get(boxIndex) &&
+          simulatedPokemon.hitCheckList?.length
+        ) {
+          summary.mintCandidateBoxIndexSet.add(boxIndex);
+        }
+      } else {
+        summary.num++;
+        summary.checklistHitNum += Number(!!simulatedPokemon.hitCheckList?.length);
+        if (
+          !simulatedPokemon.hitCheckList?.length &&
+          !(config.pokemonList.cleaning.shinyLock && simulatedPokemon.box?.shiny)
+        ) {
+          summary.cleaningCandidateNum++;
+        }
+      }
     }
   }
 
-  return lastPokemonList.map((pokemon) => {
-    const summary = summaryMap.get(pokemon.name)!;
-    return {
-      ...pokemon,
-      checklistChecked: summary.checklistChecked,
-      num: summary.num,
-    };
-  });
+  return [
+    {
+      ...allSummary,
+      cleaningCandidateNum:
+        allSummary.cleaningCandidateNum - allSummary.mintCandidateBoxIndexSet.size,
+      mintCandidateNum: allSummary.mintCandidateBoxIndexSet.size,
+    },
+    ...sortedLastPokemonList.map((pokemon) => {
+      const summary = summaryMap.get(pokemon.name)!;
+      return {
+        ...pokemon,
+        num: summary.num,
+        checklistHitNum: summary.checklistHitNum,
+        cleaningCandidateNum: summary.cleaningCandidateNum - summary.mintCandidateBoxIndexSet.size,
+        mintCandidateNum: summary.mintCandidateBoxIndexSet.size,
+      };
+    }),
+  ];
 });
 
 const filteredPokemonList = computed(() => {
+  const filterMintPokemonList = (pokemonList: SimulatedPokemon[]) => {
+    return config.pokemonList.cleaning.mintCalculation == 1
+      ? pokemonList.filter((x) => !x.box?.useMint || !!x.hitCheckList?.length)
+      : pokemonList;
+  };
+
   if (mode.value === 'cleaning_detail') {
     if (cleaningDetailSeed.value != null) {
-      return simulatedPokemonList.value.filter((x) => x.base.seed === cleaningDetailSeed.value);
+      return filterMintPokemonList(
+        simulatedPokemonList.value.filter((x) => x.base.seed === cleaningDetailSeed.value),
+      );
     }
 
     if (cleaningDetailPokemon.value != null) {
-      return simulatedPokemonList.value.filter((x) => {
-        return x.afterList.includes(cleaningDetailPokemon.value!);
-      });
+      return filterMintPokemonList(
+        simulatedPokemonList.value.filter((x) => {
+          return x.afterList.includes(cleaningDetailPokemon.value!);
+        }),
+      );
     } else {
-      return simulatedPokemonList.value;
+      return filterMintPokemonList(simulatedPokemonList.value);
     }
   }
 
-  if (!keyword?.value.length) return simulatedPokemonList.value;
-  return simulatedPokemonList.value.filter((x) => {
-    let result = true;
-    let keywords = keyword.value.split(/'[\s　]'/g);
-    for (const keyword of keywords) {
-      let or = false;
-      if (x.box?.name?.includes(keyword)) or = true;
-      if (x.box?.memo?.includes(keyword)) or = true;
-      if (x.base.type?.includes(keyword)) or = true;
-      if (x.base.berry?.name.includes(keyword)) or = true;
-      if (x.base.afterList?.join(' ')?.includes(keyword)) or = true;
-      if (x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
-      if (
-        x.box?.foodList
-          .map((f1) => String.fromCharCode(x.base?.foodList.findIndex((f2) => f2?.name == f1) + 65))
-          ?.join('')
-          ?.includes(keyword)
-      )
-        or = true;
-      if (x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
-      if (
-        x.box?.subSkillList
-          ?.map((x) => SubSkill.map[x]?.short)
-          ?.join(' ')
-          ?.includes(keyword)
-      )
-        or = true;
-      if (x.box?.nature?.includes(keyword)) or = true;
-      if (x.base.skill.name.includes(keyword)) or = true;
+  if (!keyword?.value.length) return filterMintPokemonList(simulatedPokemonList.value);
+  return filterMintPokemonList(
+    simulatedPokemonList.value.filter((x) => {
+      let result = true;
+      let keywords = keyword.value.split(/'[\s　]'/g);
+      for (const keyword of keywords) {
+        let or = false;
+        if (x.box?.name?.includes(keyword)) or = true;
+        if (x.box?.memo?.includes(keyword)) or = true;
+        if (x.base.type?.includes(keyword)) or = true;
+        if (x.base.berry?.name.includes(keyword)) or = true;
+        if (x.base.afterList?.join(' ')?.includes(keyword)) or = true;
+        if (x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
+        if (
+          x.box?.foodList
+            .map((f1) =>
+              String.fromCharCode(x.base?.foodList.findIndex((f2) => f2?.name == f1) + 65),
+            )
+            ?.join('')
+            ?.includes(keyword)
+        )
+          or = true;
+        if (x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
+        if (
+          x.box?.subSkillList
+            ?.map((x) => SubSkill.map[x]?.short)
+            ?.join(' ')
+            ?.includes(keyword)
+        )
+          or = true;
+        if (x.box?.nature?.includes(keyword)) or = true;
+        if (x.base.skill.name.includes(keyword)) or = true;
 
-      result &&= or;
-    }
-    return result;
-  });
+        result &&= or;
+      }
+      return result;
+    }),
+  );
+});
+
+const isPokemonListFiltered = computed(() => {
+  if (mode.value == 'cleaning_detail') {
+    return cleaningDetailSeed.value != null || cleaningDetailPokemon.value != null;
+  }
+
+  return false;
 });
 
 // 必要アメ数の計算
@@ -182,6 +297,10 @@ watch(mode, () => {
 });
 
 watch(config.simulation, () => createPokemonList(true), { immediate: true });
+watch(
+  () => config.pokemonList.cleaning.mintCalculation,
+  () => createPokemonList(true),
+);
 watch(config.candy, processSimulatedPokemonList);
 
 const columnList = computed(() => {
@@ -194,7 +313,7 @@ const columnList = computed(() => {
     },
   ];
 
-  if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
+  if (mode.value == 'cleaning_detail') {
     result.push({
       key: 'pokemonSeedNo',
       name: '種ポケ\n図鑑No',
@@ -215,7 +334,7 @@ const columnList = computed(() => {
     },
   );
 
-  if (mode.value == 'cleaning' || mode.value == 'cleaning_detail') {
+  if (mode.value == 'cleaning_detail') {
     result.push({
       key: 'hitCheckList',
       name: '整理備考',
@@ -365,6 +484,7 @@ const columnList = computed(() => {
 });
 
 async function showEditPopup(pokemon) {
+  if (pokemon.box.useMint) return;
   await asyncWatcher.wait;
   if (await Popup.show(EditPokemonPopup, { index: pokemon.box.index })) {
     createPokemonList();
@@ -403,6 +523,7 @@ function deletePokemon(index) {
 }
 
 async function toggleFix(data, newValue) {
+  if (data.box.useMint) return;
   let pokemon = PokemonBox.list[data.box.index];
   if (newValue !== undefined) pokemon.fix = newValue;
   else if (pokemon.fix == null) pokemon.fix = 1;
@@ -421,7 +542,7 @@ function updateGrowthInfo(data) {
 }
 
 const selectedPokemonList = computed(() =>
-  simulatedPokemonList.value.filter((x) => x.selected && !x.box?.favorite),
+  simulatedPokemonList.value.filter((x) => x.selected && !x.box?.favorite && !x.box?.useMint),
 );
 function deleteSelectedPokemon() {
   if (selectedPokemonList.value.length) {
@@ -433,6 +554,7 @@ function deleteSelectedPokemon() {
 }
 
 function toggleFavorite(data: SimulatedPokemon) {
+  if (data.box?.useMint) return;
   let pokemon = PokemonBox.list[data.box!.index];
   pokemon.favorite = data.box!.favorite = !data.box!.favorite;
   PokemonBox.post(pokemon, data.box!.index);
@@ -575,13 +697,10 @@ function toggleFavorite(data: SimulatedPokemon) {
     <SettingList class="align-self-stretch mt-5px">
       <div>
         <label>表示モード</label>
-        <div>
-          <InputSelect v-model.number="mode">
-            <option value="normal">通常</option>
-            <option value="cleaning">ボックス整理(簡易)</option>
-            <option value="cleaning_detail">ボックス整理(詳細)</option>
-            <option value="pureMint">まっしろミント</option>
-          </InputSelect>
+        <div class="flex-row-start-center flex-wrap gap-10px">
+          <InputRadio v-model="mode" value="normal">通常</InputRadio>
+          <InputRadio v-model="mode" value="cleaning_detail">ボックス整理</InputRadio>
+          <InputRadio v-model="mode" value="pureMint">まっしろミント</InputRadio>
         </div>
       </div>
 
@@ -599,7 +718,7 @@ function toggleFavorite(data: SimulatedPokemon) {
 
       <div>
         <label>ボックス整理</label>
-        <div class="flex-row-start-center gap-10px">
+        <div class="flex-row-start-center flex-wrap gap-10px">
           <FormButton
             class="important"
             @click="deleteSelectedPokemon"
@@ -607,16 +726,27 @@ function toggleFavorite(data: SimulatedPokemon) {
             >選択したポケモン({{ selectedPokemonList.length }}匹)を削除</FormButton
           >
           <InputCheckbox
-            v-if="mode == 'cleaning' || mode == 'cleaning_detail'"
+            v-if="mode == 'cleaning_detail'"
             v-model="config.pokemonList.cleaning.shinyLock"
             >色違いも整理備考に表示する</InputCheckbox
           >
+          <div v-if="mode == 'cleaning_detail'" class="flex-row-start-center flex-wrap gap-10px">
+            <InputRadio v-model="config.pokemonList.cleaning.mintCalculation" :value="0"
+              >ミント計算なし</InputRadio
+            >
+            <InputRadio v-model="config.pokemonList.cleaning.mintCalculation" :value="1"
+              >良個体のみミント計算</InputRadio
+            >
+            <InputRadio v-model="config.pokemonList.cleaning.mintCalculation" :value="2"
+              >全員ミント計算</InputRadio
+            >
+          </div>
         </div>
       </div>
     </SettingList>
 
     <div v-if="mode == 'cleaning_detail'">
-      <TabList>
+      <TabList class="mt-5px">
         <div :class="{ active: cleaningDetailTab == 0 }" @click="cleaningDetailTab = 0">
           サマリー情報
         </div>
@@ -642,20 +772,25 @@ function toggleFavorite(data: SimulatedPokemon) {
           :grid="4"
           @clickRow="
             (data) => {
-              data.selected = !data.box?.favorite && !data.selected;
+              data.selected = !data.box?.favorite && !data.box?.useMint && !data.selected;
             }
           "
           selectedField="selected"
         >
           <template #edit="{ data }">
-            <div class="flex-row-start-center gap-3px">
+            <div v-if="!data.box?.useMint" class="flex-row-start-center gap-3px">
               <InputCheckbox
                 v-model="data.selected"
                 class="mr-5px"
                 readonly
-                :disabled="data.box?.favorite"
+                :disabled="data.box?.favorite || data.box?.useMint"
               ></InputCheckbox>
-              <svg viewBox="0 0 100 100" width="16" @click.stop="showEditPopup(data)">
+              <svg
+                v-if="!data.box?.useMint"
+                viewBox="0 0 100 100"
+                width="16"
+                @click.stop="showEditPopup(data)"
+              >
                 <path
                   d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z"
                   fill="#888"
@@ -663,9 +798,10 @@ function toggleFavorite(data: SimulatedPokemon) {
               </svg>
               <template
                 v-if="
-                  (config.sortableTable.pokemonList2.sort.length == 1 &&
+                  !isPokemonListFiltered &&
+                  ((config.sortableTable.pokemonList2.sort.length == 1 &&
                     config.sortableTable.pokemonList2.sort[0].key == 'index') ||
-                  config.sortableTable.pokemonList2.sort.length == 0
+                    config.sortableTable.pokemonList2.sort.length == 0)
                 "
               >
                 <svg
@@ -751,7 +887,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                 </svg>
               </div>
               <StarIcon
-                v-if="mode == 'cleaning' || mode == 'cleaning_detail'"
+                v-if="mode == 'cleaning_detail' && !data.box?.useMint"
                 @click.stop="toggleFavorite(data)"
                 class="fs-14px"
                 :style="{ color: data.box?.favorite ? '#FFD700' : '#888' }"
@@ -845,7 +981,8 @@ function toggleFavorite(data: SimulatedPokemon) {
           </template>
 
           <template #natureName="{ data }">
-            <NatureInfo :nature="data.nature" />
+            <template v-if="data.box?.useMint">🌿</template>
+            <NatureInfo v-else :nature="data.nature" />
           </template>
 
           <template #evaluate="{ data, column }">
@@ -963,16 +1100,20 @@ function toggleFavorite(data: SimulatedPokemon) {
                 key: 'seedNo',
                 name: '種ポケ\n図鑑No',
                 type: Number,
-                convert: (x) => Pokemon.map[x.seed].no,
+                convert: (x) => Pokemon.map[x.seed]?.no,
               },
               { key: 'seed', name: '種ポケ' },
               { key: 'no', name: '図鑑No', type: Number },
               { key: 'name', name: '名前' },
-              { key: 'berryName', name: 'きのみ', convert: (x) => x.berry.name },
-              { key: 'typeName', name: 'タイプ', convert: (x) => x.berry.type },
+              { key: 'berryName', name: 'きのみ', convert: (x) => x.berry?.name },
+              { key: 'typeName', name: 'タイプ', convert: (x) => x.berry?.type },
               { key: 'specialty', name: 'とくい' },
               { key: 'num', name: 'ボックス内\n候補数', type: Number },
-              { key: 'checklistChecked', name: 'チェックリスト\n該当', type: Boolean },
+              { key: 'checklistHitNum', name: 'チェックリスト\n該当数', type: Number },
+              { key: 'cleaningCandidateNum', name: '整理候補', type: Number },
+              ...(config.pokemonList.cleaning.mintCalculation > 0
+                ? [{ key: 'mintCandidateNum', name: 'ミント候補', type: Number }]
+                : []),
               { key: 'dummy', name: '', convert: () => 0 },
             ]"
             :grid="4"
@@ -982,12 +1123,13 @@ function toggleFavorite(data: SimulatedPokemon) {
                 <FormButton
                   @click="
                     cleaningDetailSeed = null;
-                    cleaningDetailPokemon = data.name;
+                    cleaningDetailPokemon = data.name == '全員' ? null : data.name;
                     cleaningDetailTab = 1;
                   "
                   >確認</FormButton
                 >
                 <FormButton
+                  :disabled="(Pokemon.map[data.seed]?.afterList.length ?? 0) <= 1"
                   @click="
                     cleaningDetailPokemon = null;
                     cleaningDetailSeed = data.seed;

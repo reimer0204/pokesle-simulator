@@ -1,14 +1,33 @@
-import type { Cooking } from "./data/food_and_cooking";
-import type { SkillCategory } from "./data/skill";
+import type { Cooking } from './data/food_and_cooking';
+import type { SkillCategory } from './data/skill';
 
-type FoodName = 'ふといながねぎ' | 'あじわいキノコ' | 'とくせんエッグ' | 'ほっこりポテト' | 'とくせんリンゴ' | 'げきからハーブ' | 'マメミート' | 'モーモーミルク' | 'あまいミツ' | 'ピュアなオイル' | 'あったかジンジャー' | 'あんみんトマト' | 'リラックスカカオ' | 'おいしいシッポ' | 'ワカクサ大豆' | 'ワカクサコーン' | 'めざましコーヒー' | 'ずっしりカボチャ' | 'つやつやアボカド'
+type FoodName =
+  | 'ふといながねぎ'
+  | 'あじわいキノコ'
+  | 'とくせんエッグ'
+  | 'ほっこりポテト'
+  | 'とくせんリンゴ'
+  | 'げきからハーブ'
+  | 'マメミート'
+  | 'モーモーミルク'
+  | 'あまいミツ'
+  | 'ピュアなオイル'
+  | 'あったかジンジャー'
+  | 'あんみんトマト'
+  | 'リラックスカカオ'
+  | 'おいしいシッポ'
+  | 'ワカクサ大豆'
+  | 'ワカクサコーン'
+  | 'めざましコーヒー'
+  | 'ずっしりカボチャ'
+  | 'つやつやアボカド';
 export type CookingTypeName = 'カレー' | 'サラダ' | 'デザート';
 
 interface CookingType {
   name: string;
   type: CookingTypeName;
   energy: number;
-	foodList: { name: FoodName, num: number }[];
+  foodList: { name: FoodName; num: number }[];
   rawEnergy?: number;
   lv?: number;
   lv1?: number;
@@ -28,10 +47,10 @@ interface CookingType {
 
 interface NatureType {
   name: string;
-  good?: string,
-  weak?: string,
-  goodShort?: string,
-  weakShort?: string,
+  good?: string;
+  weak?: string;
+  goodShort?: string;
+  weakShort?: string;
 }
 
 interface FoodType {
@@ -49,9 +68,9 @@ interface FoodType {
 
 interface BerryType {
   name: string;
-  energy: number,
-  type: string,
-  typeColor: string,
+  energy: number;
+  type: string;
+  typeColor: string;
   img: any;
   colorOrder: number;
 }
@@ -71,6 +90,9 @@ interface SkillType {
   foodList?: FoodType[];
   skillSpecialtyOnly?: boolean;
   selfHeal?: boolean;
+  isMetronomeSkill?: boolean;
+  plusMinusPair?: boolean;
+  specification?: import('./models/simulation/skills/skill-specification-types').SkillSpecificationFactory;
 }
 
 interface SubSkillType {
@@ -89,15 +111,16 @@ interface PokemonBoxType {
   skillLv?: number;
   foodList: [FoodName, FoodName, FoodName];
   subSkillList: [string, string, string, string, string];
-  nature: string,
-  shiny?: boolean,
-  fix?: number,
-  sleepTime?: number,
-  training?: number,
-  nextExp?: number,
-  memo?: string,
-  favorite?: boolean,
-  index: number,
+  nature: string;
+  shiny?: boolean;
+  fix?: number;
+  sleepTime?: number;
+  training?: number;
+  nextExp?: number;
+  memo?: string;
+  favorite?: boolean;
+  useMint?: boolean;
+  index: number;
 }
 
 interface PokemonType {
@@ -114,12 +137,12 @@ interface PokemonType {
   bag: number;
   help: number;
   exp: number;
-  legend: boolean,
-  kaihou: boolean,
+  legend: boolean;
+  kaihou: boolean;
   foodList: {
     name: FoodName;
     numList: (number | null)[];
-  }[],
+  }[];
   foodRate: number;
   skillRate: number;
   afterList: string[];
@@ -128,63 +151,66 @@ interface PokemonType {
   candyName: string;
   requireSleep: { [key: string]: boolean };
   evolveCandyMap: { [key: string]: number };
-  fieldList: { name: string, type: string }[];
+  fieldList: { name: string; type: string }[];
 
   evolve: {
     before?: string | null;
     lv?: number | null;
     candy: number | null;
-    itemList: string[],
-    sleep?: number | null,
-  },
+    itemList: string[];
+    sleep?: number | null;
+  };
 
-  foodNumListMap: { [key: string]: (number | null)[] },
+  foodNumListMap: { [key: string]: (number | null)[] };
 
-  'ふといながねぎ': number,
-  'あじわいキノコ': number,
-  'とくせんエッグ': number,
-  'ほっこりポテト': number,
-  'とくせんリンゴ': number,
-  'げきからハーブ': number,
-  'マメミート': number,
-  'モーモーミルク': number,
-  'あまいミツ': number,
-  'ピュアなオイル': number,
-  'あったかジンジャー': number,
-  'あんみんトマト': number,
-  'リラックスカカオ': number,
-  'おいしいシッポ': number,
-  'ワカクサ大豆': number,
-  'ワカクサコーン': number,
-  'めざましコーヒー': number,
+  ふといながねぎ: number;
+  あじわいキノコ: number;
+  とくせんエッグ: number;
+  ほっこりポテト: number;
+  とくせんリンゴ: number;
+  げきからハーブ: number;
+  マメミート: number;
+  モーモーミルク: number;
+  あまいミツ: number;
+  ピュアなオイル: number;
+  あったかジンジャー: number;
+  あんみんトマト: number;
+  リラックスカカオ: number;
+  おいしいシッポ: number;
+  ワカクサ大豆: number;
+  ワカクサコーン: number;
+  めざましコーヒー: number;
 }
 
 type FoodNames = { [key in FoodName]: number };
 
 interface EvaluateResultInfo {
-  name?: string,
-  rate: number, ratio: number, score: number, value: number,
-  pureMint?: EvaluateResultInfo
+  name?: string;
+  rate: number;
+  ratio: number;
+  score: number;
+  value: number;
+  pureMint?: EvaluateResultInfo;
 }
 interface EvaluateDiagnosticResult {
-  berryEnergy: number,
-  foodNumMap: Partial<FoodNames>,
-  skillActivationNum: number,
+  berryEnergy: number;
+  foodNumMap: Partial<FoodNames>;
+  skillActivationNum: number;
 }
 interface EvaluateResult {
   [type: number | string]: {
     [key: string]: {
-      energy: EvaluateResultInfo,
-      berry: EvaluateResultInfo,
-      food: EvaluateResultInfo,
-      skill: EvaluateResultInfo,
-      specialty: EvaluateResultInfo,
-      foodNumList: number[],
-      diagnostic?: EvaluateDiagnosticResult,
-    }
-  }
-};
-type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty' | 'foodNumList'
+      energy: EvaluateResultInfo;
+      berry: EvaluateResultInfo;
+      food: EvaluateResultInfo;
+      skill: EvaluateResultInfo;
+      specialty: EvaluateResultInfo;
+      foodNumList: number[];
+      diagnostic?: EvaluateDiagnosticResult;
+    };
+  };
+}
+type EvaluateResultKey = 'energy' | 'berry' | 'food' | 'skill' | 'specialty' | 'foodNumList';
 
 interface EventBonus {
   target: {
@@ -209,34 +235,34 @@ interface SimulatedPokemon extends FoodNames {
   lv: number;
   foodList: SimulatedFood[];
   foodProbList?: {
-    name: string,
-    num: number,
-    energy: number,
-    weight: number,
+    name: string;
+    num: number;
+    energy: number;
+    weight: number;
   }[];
   skillLv: number;
-  eventBonusList: EventBonus[],
-  sleepTime: number,
-  fixable?: boolean,
+  eventBonusList: EventBonus[];
+  sleepTime: number;
+  fixable?: boolean;
   beforeName?: string;
   afterList: string[];
 
   useShard: number;
   useCandy: number;
-  
+
   subSkillList?: SubSkillType[];
   subSkillNameList: string[];
   nextSubSkillList?: boolean[];
   nature: NatureType;
   skillWeightList: {
-    skill: SkillType,
-    weight: number,
-    skillLv?: number,
-    copy?: SimulatedPokemon,
+    skill: SkillType;
+    weight: number;
+    skillLv?: number;
+    copy?: SimulatedPokemon;
   }[];
-  selfHealList: { effect: number, time: number, night?: boolean }[],
-  otherHealList: { effect: number, time: number, night?: boolean }[],
-  
+  selfHealList: { effect: number; time: number; night?: boolean }[];
+  otherHealList: { effect: number; time: number; night?: boolean }[];
+
   cookingPowerUpEffect: number;
   cookingChanceEffect: number;
   supportEnergyPerDay: number;
@@ -274,7 +300,7 @@ interface SimulatedPokemon extends FoodNames {
   // otherDayHealEffect?: number;
   selfHeal: number;
   otherHeal: number;
-  
+
   // 回復量によって決まる
   morningHealEffect: number;
   dayHealEffect: number;
@@ -313,7 +339,7 @@ interface SimulatedPokemon extends FoodNames {
 interface SimulatedFood {
   name: FoodName;
   num: number;
-  baseNum: number,
+  baseNum: number;
   energy: number;
 }
 
@@ -332,7 +358,7 @@ export type {
   EvaluateDiagnosticResult,
   EvaluateResult,
   EvaluateResultKey,
-}
+};
 
 /*
 interface EvaluateResultInfo {

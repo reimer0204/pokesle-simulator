@@ -22,7 +22,7 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
-    <HistoryItem date="2026/10/11">
+    <HistoryItem date="2026/10/13">
       <ul>
         <li>
           不具合修正

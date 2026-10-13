@@ -77,6 +77,7 @@ const defaultConfig = {
     pageUnit: 50,
     cleaning: {
       shinyLock: true,
+      mintCalculation: 0,
     },
   },
 

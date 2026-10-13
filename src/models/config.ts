@@ -45,6 +45,13 @@ try {
         .map((x) => [x.name, cookieConfig.selectEvaluate.silverSeedUse]),
     );
   }
+  if (cookieConfig.pokemonList?.cleaning?.mintCalculation == null) {
+    cookieConfig.pokemonList ??= {};
+    cookieConfig.pokemonList.cleaning ??= {};
+    cookieConfig.pokemonList.cleaning.mintCalculation = cookieConfig.pokemonList.cleaning.useMint
+      ? 2
+      : 0;
+  }
   if (savedConfigVersion < EVALUATE_SETTING_MIGRATION_VERSION) {
     migrateEvaluateConfig(cookieConfig.selectEvaluate);
     migrateEvaluateConfig(cookieConfig.tmpEvaluate);

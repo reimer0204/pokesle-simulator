@@ -6,6 +6,7 @@ export interface SkillEvaluationContext {
   skillLv: number;
   weight: number;
   copy: any;
+  fromMetronome: boolean;
   executor: any;
   pokemonList?: any[];
   boxPokemonList: any[];
