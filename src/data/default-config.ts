@@ -215,6 +215,7 @@ const defaultConfig = {
       detail: false,
       food: false,
     },
+    showFoodBagPhoneCapture: false,
   },
 
   foodDefaultNum: {},

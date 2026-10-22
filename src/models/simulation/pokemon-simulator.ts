@@ -100,7 +100,9 @@ class PokemonSimulator {
     } else {
       this.cookingList = Cooking.evaluateLvList(config);
       this.cookingList = this.cookingList.filter(
-        (c) => c.type == this.config.simulation.cookingType && (c.enable || c.foodNum == 0),
+        (c) =>
+          (!this.config.simulation.cookingType || c.type == this.config.simulation.cookingType) &&
+          (c.enable || c.foodNum == 0),
       );
     }
 

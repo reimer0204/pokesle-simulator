@@ -21,7 +21,7 @@ import InputCheckbox from '@/components/form/input-checkbox.vue';
 
 const props = defineProps({
   defaultTargetDay: { type: Number },
-})
+});
 
 let evaluateTableLoaded = ref(false);
 let evaluateTable;
@@ -34,14 +34,22 @@ const asyncWatcher = AsyncWatcher.init();
 const $emit = defineEmits(['close']);
 
 // シミュレーション設定
-const targetDay = ref(props.defaultTargetDay ?? (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()))
+const targetDay = ref(
+  props.defaultTargetDay ??
+    (new Date().getHours() < 12 ? (new Date().getDay() + 6) % 7 : new Date().getDay()),
+);
 const targetHour = ref(24);
 const initialCookingChange = ref(0);
 const initialCookingPowerUp = ref(0);
 const beforeEnergy = ref(0);
 const foodBagImageInput = ref<HTMLInputElement | null>(null);
 const foodBagReading = ref(false);
+const foodBagCaptureRunning = ref(false);
 const foodBagReadStatus = ref('');
+const foodBagBusy = computed(() => foodBagReading.value || foodBagCaptureRunning.value);
+let foodBagCaptureId = 0;
+
+const adbScreenshotProtocolUrl = 'pokesle-adb-screenshot://capture';
 
 const loadedPokemonBoxList = ref(PokemonBox.list);
 
@@ -49,47 +57,117 @@ function selectFoodBagImage() {
   foodBagImageInput.value?.click();
 }
 
-async function readFoodBagImage(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const image = Array.from(input.files ?? []).find(file => file.type.startsWith('image/'));
-  // 同じ画像を選び直した場合にもchangeが発火するよう、処理開始後に選択内容をクリアする。
-  input.value = '';
-  if (!image) return;
-
+async function readFoodBagImageSource(image: Blob) {
   foodBagReading.value = true;
   foodBagReadStatus.value = '食材バッグのスクショを読み取っています';
-  let reader: InstanceType<(typeof import('@/models/ocr/food-bag-image-reader'))['default']> | null = null;
+  let reader: InstanceType<
+    (typeof import('@/models/ocr/food-bag-image-reader'))['default']
+  > | null = null;
   try {
     // OCRライブラリをシミュレーション画面の初期表示へ含めないため、スクリーンショット選択時だけ読み込む。
     const { default: FoodBagImageReader } = await import('@/models/ocr/food-bag-image-reader');
     reader = new FoodBagImageReader();
     const result = await reader.read(image);
-    const foodNumMap = new Map(result.foodList.map(food => [food.name, food.num]));
-    for(const food of Food.list) config.foodDefaultNum[food.name] = foodNumMap.get(food.name) ?? 0;
+    const foodNumMap = new Map(result.foodList.map((food) => [food.name, food.num]));
+    for (const food of Food.list) config.foodDefaultNum[food.name] = foodNumMap.get(food.name) ?? 0;
     // OCR結果を確認・編集できる入力欄へ反映するため、無制限表示を解除する。
     config.foodUnlimited = false;
     foodBagReadStatus.value = `${result.foodList.length}種類の食材を読み取りました`;
   } catch (exception) {
     console.error(exception);
-    foodBagReadStatus.value = exception instanceof Error ? exception.message : '食材バッグのスクショを読み取れませんでした。';
+    foodBagReadStatus.value =
+      exception instanceof Error
+        ? exception.message
+        : '食材バッグのスクショを読み取れませんでした。';
   } finally {
     await reader?.terminate();
     foodBagReading.value = false;
   }
 }
 
-const filterResult = computed(() => PokemonFilter.filter(toRaw(loadedPokemonBoxList.value), config.simulation.filter));
+async function readFoodBagImage(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const image = Array.from(input.files ?? []).find((file) => file.type.startsWith('image/'));
+  // 同じ画像を選び直した場合にもchangeが発火するよう、処理開始後に選択内容をクリアする。
+  input.value = '';
+  if (!image) return;
+
+  await readFoodBagImageSource(image);
+}
+
+async function getClipboardImage() {
+  const clipboardItem = (await navigator.clipboard.read()).find((item) =>
+    item.types.some((type) => type.startsWith('image/')),
+  );
+  const imageType = clipboardItem?.types.find((type) => type.startsWith('image/'));
+  return clipboardItem && imageType ? await clipboardItem.getType(imageType) : null;
+}
+
+async function captureFoodBagFromPhone() {
+  if (!navigator.clipboard?.read || !navigator.clipboard?.writeText) {
+    foodBagReadStatus.value = 'このブラウザはスマートフォンからの画像取得に対応していません。';
+    return;
+  }
+
+  try {
+    // 古い画像を読み取らないよう、ADBツールが画像を書き込むまでクリップボードを識別用テキストにする。
+    await navigator.clipboard.writeText(`pokesle-adb-screenshot:${Date.now()}`);
+  } catch {
+    foodBagReadStatus.value = 'クリップボードへの書き込みが許可されていません。';
+    return;
+  }
+
+  const captureId = ++foodBagCaptureId;
+  foodBagCaptureRunning.value = true;
+  foodBagReadStatus.value = 'スマートフォンのスクショを取得しています（10秒）';
+  window.location.href = adbScreenshotProtocolUrl;
+
+  let clipboardError = false;
+  try {
+    for (let count = 1; count <= 10; count++) {
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      if (captureId != foodBagCaptureId) return;
+
+      try {
+        const image = await getClipboardImage();
+        if (image) {
+          await readFoodBagImageSource(image);
+          return;
+        }
+      } catch {
+        clipboardError = true;
+      }
+
+      foodBagReadStatus.value = `スマートフォンのスクショを待っています（${10 - count}秒）`;
+    }
+    foodBagReadStatus.value = clipboardError
+      ? 'クリップボードの読み取りが許可されていないか、10秒以内に画像を取得できませんでした。'
+      : '10秒以内にスマートフォンのスクショを取得できませんでした。';
+  } finally {
+    if (captureId == foodBagCaptureId) foodBagCaptureRunning.value = false;
+  }
+}
+
+const filterResult = computed(() =>
+  PokemonFilter.filter(toRaw(loadedPokemonBoxList.value), config.simulation.filter),
+);
 
 const requireText = computed(() => {
   let result = [];
-  if (config.teamSimulation.require.dayHelpRate > 0) result.push(`日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`)
-  if (config.teamSimulation.require.nightHelpRate > 0) result.push(`夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`)
-  if (config.teamSimulation.require.suiminExp > 0) result.push(`睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`)
-  if (config.teamSimulation.require.specialtyNum['きのみ'] > 0) result.push(`きのみとくい${config.teamSimulation.require.specialtyNum['きのみ']}匹以上`)
-  if (config.teamSimulation.require.specialtyNum['食材'] > 0) result.push(`食材とくい${config.teamSimulation.require.specialtyNum['食材']}匹以上`)
-  if (config.teamSimulation.require.specialtyNum['スキル'] > 0) result.push(`スキルとくい${config.teamSimulation.require.specialtyNum['スキル']}匹以上`)
-  for(const berry of Berry.typeList) {
-    if (config.teamSimulation.require.typeNum[berry.type] > 0) result.push(`${berry.type}1匹以上`)
+  if (config.teamSimulation.require.dayHelpRate > 0)
+    result.push(`日中手伝い効率${config.teamSimulation.require.dayHelpRate}%以上`);
+  if (config.teamSimulation.require.nightHelpRate > 0)
+    result.push(`夜間手伝い効率${config.teamSimulation.require.nightHelpRate}%以上`);
+  if (config.teamSimulation.require.suiminExp > 0)
+    result.push(`睡眠EXPボーナス${config.teamSimulation.require.suiminExp}匹以上`);
+  if (config.teamSimulation.require.specialtyNum['きのみ'] > 0)
+    result.push(`きのみとくい${config.teamSimulation.require.specialtyNum['きのみ']}匹以上`);
+  if (config.teamSimulation.require.specialtyNum['食材'] > 0)
+    result.push(`食材とくい${config.teamSimulation.require.specialtyNum['食材']}匹以上`);
+  if (config.teamSimulation.require.specialtyNum['スキル'] > 0)
+    result.push(`スキルとくい${config.teamSimulation.require.specialtyNum['スキル']}匹以上`);
+  for (const berry of Berry.typeList) {
+    if (config.teamSimulation.require.typeNum[berry.type] > 0) result.push(`${berry.type}1匹以上`);
   }
 
   if (result.length == 0) return 'なし';
@@ -99,12 +177,12 @@ const requireText = computed(() => {
 // シミュレーション実施関連
 const simulationResult = ref({
   teamList: [],
-})
+});
 
 function getHelpSpeedFormula(pokemon, simulationConfig) {
   const subSkillSpeedBonus =
-    (pokemon.subSkillNameList.includes('おてつだいスピードS') ? 0.07 : 0)
-    + (pokemon.subSkillNameList.includes('おてつだいスピードM') ? 0.14 : 0);
+    (pokemon.subSkillNameList.includes('おてつだいスピードS') ? 0.07 : 0) +
+    (pokemon.subSkillNameList.includes('おてつだいスピードM') ? 0.14 : 0);
   const helpBonus = Math.max(0, pokemon.speedBonus - subSkillSpeedBonus);
   const field = Field.map[simulationConfig.field] ?? Field.list[0];
   const berryName = pokemon.base?.berry?.name;
@@ -127,37 +205,42 @@ function getHelpSpeedFormula(pokemon, simulationConfig) {
   };
 }
 
-const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum)
-const teamMultiWorker = new MultiWorker(TeamSimulator, config.workerNum)
+const pokemonMultiWorker = new MultiWorker(PokemonListSimulator, config.workerNum);
+const teamMultiWorker = new MultiWorker(TeamSimulator, config.workerNum);
 onBeforeUnmount(() => {
+  foodBagCaptureId++;
   pokemonMultiWorker.close();
   teamMultiWorker.close();
-})
+});
 
 async function pokemonAboutScoreSimulation(customConfig, progressCounter) {
   await evaluateTablePromise;
-  
+
   return await PokemonBox.simulation(
-    filterResult.value.pokemonList, pokemonMultiWorker, evaluateTable, 
+    filterResult.value.pokemonList,
+    pokemonMultiWorker,
+    evaluateTable,
     customConfig,
-    progressCounter
-  )
+    progressCounter,
+  );
 }
 
 async function simulation() {
   asyncWatcher.run(async (progressCounter) => {
     let [stepA, stepC] = progressCounter.split(1, 8);
 
-    let customConfig = JSON.parse(JSON.stringify({
-      ...config,
-      teamSimulation: {
-        ...config.teamSimulation,
-        beforeEnergy: beforeEnergy.value,
-      },
-    }));
+    let customConfig = JSON.parse(
+      JSON.stringify({
+        ...config,
+        teamSimulation: {
+          ...config.teamSimulation,
+          beforeEnergy: beforeEnergy.value,
+        },
+      }),
+    );
 
     if (config.foodUnlimited) {
-      customConfig.foodDefaultNum = Object.fromEntries(Food.list.map(food => [food.name, 9999]));
+      customConfig.foodDefaultNum = Object.fromEntries(Food.list.map((food) => [food.name, 9999]));
     }
 
     if (config.simulation.mode == 2) {
@@ -167,101 +250,123 @@ async function simulation() {
     }
 
     if (targetDay.value != -1) {
-      customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / (7 - targetDay.value);
+      customConfig.simulation.shardToEnergy =
+        customConfig.selectEvaluate.shardEnergyRate / (7 - targetDay.value);
       customConfig.teamSimulation.day = targetDay.value;
-      customConfig.teamSimulation.timeLength = targetHour.value != 24 ? targetHour.value / 24 : null;
+      customConfig.teamSimulation.timeLength =
+        targetHour.value != 24 ? targetHour.value / 24 : null;
     }
-    customConfig.teamSimulation.initialCookingChange = initialCookingChange.value / 100
-    customConfig.teamSimulation.initialCookingPowerUp = initialCookingPowerUp.value
+    customConfig.teamSimulation.initialCookingChange = initialCookingChange.value / 100;
+    customConfig.teamSimulation.initialCookingPowerUp = initialCookingPowerUp.value;
 
-    let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA)
+    let pokemonList = await pokemonAboutScoreSimulation(customConfig, stepA);
 
     // 固定のポケモンと推論対象を選ぶ
-    const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter(x => x.box?.fix == 1)));
-    let filteredTargetPokemonList = pokemonList.filter(x => x.box?.fix == null);
+    const fixedPokemonList = JSON.parse(JSON.stringify(pokemonList.filter((x) => x.box?.fix == 1)));
+    let filteredTargetPokemonList = pokemonList.filter((x) => x.box?.fix == null);
 
-    const pickup = 5 - new Set(fixedPokemonList.map(x => x.box!.index)).size;
+    const pickup = 5 - new Set(fixedPokemonList.map((x) => x.box!.index)).size;
 
     // スコアの高い上位のみをピックアップ
     let sortedPokemonList;
     let targetPokemonList = [];
-    
+
     if (config.simulation.mode != 2) {
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.bEpD - a.bEpD)
-      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry))
-      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry)
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.bEpD - a.bEpD);
+      targetPokemonList.push(
+        ...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankBerry),
+      );
+      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankBerry);
 
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
-      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood))
-      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood)
-
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD);
+      targetPokemonList.push(
+        ...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood),
+      );
+      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood);
     } else {
-      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD)
-      targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry))
-      filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry)
+      sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.fEpD - a.fEpD);
+      targetPokemonList.push(
+        ...sortedPokemonList.slice(
+          0,
+          customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry,
+        ),
+      );
+      filteredTargetPokemonList = sortedPokemonList.slice(
+        customConfig.teamSimulation.maxRankFood + customConfig.teamSimulation.maxRankBerry,
+      );
     }
 
-    sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.score - a.score)
-    targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankAll))
-    filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankAll)
+    sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.score - a.score);
+    targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankAll));
+    filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankAll);
 
-    sortedPokemonList = filteredTargetPokemonList.toSorted((a, b) => b.energyPerDay - a.energyPerDay)
-    targetPokemonList.push(...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankNotSupport))
-    filteredTargetPokemonList = sortedPokemonList.slice(customConfig.teamSimulation.maxRankNotSupport)
+    sortedPokemonList = filteredTargetPokemonList.toSorted(
+      (a, b) => b.energyPerDay - a.energyPerDay,
+    );
+    targetPokemonList.push(
+      ...sortedPokemonList.slice(0, customConfig.teamSimulation.maxRankNotSupport),
+    );
+    filteredTargetPokemonList = sortedPokemonList.slice(
+      customConfig.teamSimulation.maxRankNotSupport,
+    );
 
-    let targetNum = targetPokemonList.length
+    let targetNum = targetPokemonList.length;
 
     // げんき計算のキャッシュを効かせるため、ヒーラー、自身回復、その他の順にソート
-    let healerTargetPokemonList = []
-    let selfHealerTargetPokemonList = []
-    let nonHealerTargetPokemonList = []
-    for(let pokemon of targetPokemonList) {
+    let healerTargetPokemonList = [];
+    let selfHealerTargetPokemonList = [];
+    let nonHealerTargetPokemonList = [];
+    for (let pokemon of targetPokemonList) {
       if (pokemon.otherHeal) {
-        healerTargetPokemonList.push(pokemon)
+        healerTargetPokemonList.push(pokemon);
       } else if (pokemon.selfHeal) {
-        selfHealerTargetPokemonList.push(pokemon)
+        selfHealerTargetPokemonList.push(pokemon);
       } else {
-        nonHealerTargetPokemonList.push(pokemon)
+        nonHealerTargetPokemonList.push(pokemon);
       }
     }
-    targetPokemonList = [...healerTargetPokemonList, ...selfHealerTargetPokemonList, ...nonHealerTargetPokemonList]
+    targetPokemonList = [
+      ...healerTargetPokemonList,
+      ...selfHealerTargetPokemonList,
+      ...nonHealerTargetPokemonList,
+    ];
 
     // タイプ指定があるのに対象ポケモンがターゲットに居なければ追加
-    for(let berry of Berry.list) {
-      if(
-        customConfig.teamSimulation.require.typeNum[berry.type]
-        && !targetPokemonList.some(x => x.base.type == berry.type)
+    for (let berry of Berry.list) {
+      if (
+        customConfig.teamSimulation.require.typeNum[berry.type] &&
+        !targetPokemonList.some((x) => x.base.type == berry.type)
       ) {
-        const top = filteredTargetPokemonList.find(x => x.base.type == berry.type);
+        const top = filteredTargetPokemonList.find((x) => x.base.type == berry.type);
         if (!top) {
           simulationResult.value = {
             targetDay: customConfig.teamSimulation.day,
             teamList: [],
             config: customConfig,
-          }
+          };
           return;
         }
-        targetPokemonList.push(top)
+        targetPokemonList.push(top);
       }
     }
 
     targetPokemonList = JSON.parse(JSON.stringify(targetPokemonList));
 
     // 組み合わせをワーカースレッドごとに分割
-    let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map(x => ({
+    let combinationWorkerParameterList = new Array(customConfig.workerNum).fill(0).map((x) => ({
       sum: 0,
       topList: [],
     }));
-    for(let i = 0; i <= targetNum - pickup; i++) {
+    for (let i = 0; i <= targetNum - pickup; i++) {
       let combinationSize = 1;
-      for(let j = 1; j <= pickup - 1; j++) {
+      for (let j = 1; j <= pickup - 1; j++) {
         combinationSize *= targetNum - i - j;
         combinationSize /= j;
       }
 
       let min = null;
-      for(let combinationWorkerParameter of combinationWorkerParameterList) {
-        if(min == null || combinationWorkerParameter.sum < min.sum) {
+      for (let combinationWorkerParameter of combinationWorkerParameterList) {
+        if (min == null || combinationWorkerParameter.sum < min.sum) {
           min = combinationWorkerParameter;
         }
       }
@@ -286,49 +391,54 @@ async function simulation() {
           targetPokemonList,
           boxPokemonList: JSON.parse(JSON.stringify(loadedPokemonBoxList.value)),
           config: customConfig,
-        }
+        };
       },
       (i, body, workerList) => {
         if (body.bestResult !== undefined) {
           workerResultList[i] = body.bestResult;
 
-          bestResult = workerResultList.flat(1).sort((a, b) => b.score - a.score).slice(0, customConfig.teamSimulation.resultNum);
+          bestResult = workerResultList
+            .flat(1)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, customConfig.teamSimulation.resultNum);
           if (bestResult[0]) {
-            for(let worker of workerList) {
+            for (let worker of workerList) {
               worker.postMessage({
                 type: 'border',
-                border: bestResult[0].score
-              })
+                border: bestResult[0].score,
+              });
             }
           }
         }
 
         return body.progress;
-      }
+      },
     );
 
     simulationResult.value = {
       targetDay: customConfig.teamSimulation.day,
       teamList: bestResult,
       config: customConfig,
-    }
-  })
+    };
+  });
 
   gtag('event', 'simulation_team');
 }
 
 async function showEditPopup(pokemon) {
-  await evaluateTablePromise
-  await Popup.show(EditPokemonPopup, { index: pokemon.box.index, evaluateTable, simulatedPokemonList: null })
+  await evaluateTablePromise;
+  await Popup.show(EditPokemonPopup, {
+    index: pokemon.box.index,
+    evaluateTable,
+    simulatedPokemonList: null,
+  });
 
   loadedPokemonBoxList.value = PokemonBox.list;
 }
-
 </script>
 
 <template>
   <div class="page">
-
     <div class="flex-row-start-start flex-wrap gap-5px">
       <CommonSetting />
     </div>
@@ -336,9 +446,7 @@ async function showEditPopup(pokemon) {
     <div class="flex-row-start-start flex-wrap gap-5px mt-5px">
       <SettingButton title="シミュレーション設定">
         <template #label>
-          <div class="inline-flex-row-center">
-            シミュレーション設定
-          </div>
+          <div class="inline-flex-row-center">シミュレーション設定</div>
         </template>
 
         <SettingTable>
@@ -346,33 +454,65 @@ async function showEditPopup(pokemon) {
             <th rowspan="5">対象ポケモン</th>
             <th>きのみスコア</th>
             <td>
-              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankBerry" class="w-50px" /> 匹</div>
+              <div>
+                上位
+                <InputNumber
+                  type="number"
+                  v-model="config.teamSimulation.maxRankBerry"
+                  class="w-50px"
+                />
+                匹
+              </div>
             </td>
           </tr>
           <tr>
             <th>食材スコア</th>
             <td>
-              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankFood" class="w-50px" /> 匹</div>
+              <div>
+                上位
+                <InputNumber
+                  type="number"
+                  v-model="config.teamSimulation.maxRankFood"
+                  class="w-50px"
+                />
+                匹
+              </div>
             </td>
           </tr>
           <tr>
             <th>総合スコア</th>
             <td>
-              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankAll" class="w-50px" /> 匹</div>
+              <div>
+                上位
+                <InputNumber
+                  type="number"
+                  v-model="config.teamSimulation.maxRankAll"
+                  class="w-50px"
+                />
+                匹
+              </div>
             </td>
           </tr>
           <tr>
             <th>サポート抜きスコア</th>
             <td>
-              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.maxRankNotSupport" class="w-50px" /> 匹</div>
+              <div>
+                上位
+                <InputNumber
+                  type="number"
+                  v-model="config.teamSimulation.maxRankNotSupport"
+                  class="w-50px"
+                />
+                匹
+              </div>
             </td>
           </tr>
           <tr>
             <td colspan="2">
               <div class="w-250px">
                 <small>
-                  上記設定は重複しては選ばれず、例えばきのみスコアで選ばれたポケモンは後の3つにはヒットしません。<br>
-                  必ず上記設定の合計の数が対象になります。<br>
+                  上記設定は重複しては選ばれず、例えばきのみスコアで選ばれたポケモンは後の3つにはヒットしません。<br />
+                  必ず上記設定の合計の数が対象になります。<br />
                   ヒーラーなどは総合スコアが高く出ますが、ヒーラーばかりを対象にしても良い結果にならないので総合スコアの件数は少なめにした方が良い結果になりやすいです。
                 </small>
               </div>
@@ -381,7 +521,15 @@ async function showEditPopup(pokemon) {
           <tr>
             <th colspan="2">結果表示</th>
             <td>
-              <div>上位 <InputNumber type="number" v-model="config.teamSimulation.resultNum" class="w-50px" /> 件</div>
+              <div>
+                上位
+                <InputNumber
+                  type="number"
+                  v-model="config.teamSimulation.resultNum"
+                  class="w-50px"
+                />
+                件
+              </div>
             </td>
           </tr>
         </SettingTable>
@@ -408,34 +556,130 @@ async function showEditPopup(pokemon) {
         </template>
 
         <SettingTable>
-          <tr><th>日中手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.dayHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
-          <tr><th>夜間手伝い効率</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.nightHelpRate" max="222" /> %以上(最大222%)</div></td></tr>
-          <tr><th>睡眠EXPボーナス</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.suiminExp" /> 匹以上</div></td></tr>
-          <tr><th>きのみとくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['きのみ']" /> 匹以上</div></td></tr>
-          <tr><th>食材とくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['食材']" /> 匹以上</div></td></tr>
-          <tr><th>スキルとくい</th><td><div><InputNumber type="number" class="w-80px" v-model="config.teamSimulation.require.specialtyNum['スキル']" /> 匹以上</div></td></tr>
+          <tr>
+            <th>日中手伝い効率</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.dayHelpRate"
+                  max="222"
+                />
+                %以上(最大222%)
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>夜間手伝い効率</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.nightHelpRate"
+                  max="222"
+                />
+                %以上(最大222%)
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>睡眠EXPボーナス</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.suiminExp"
+                />
+                匹以上
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>きのみとくい</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.specialtyNum['きのみ']"
+                />
+                匹以上
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>食材とくい</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.specialtyNum['食材']"
+                />
+                匹以上
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>スキルとくい</th>
+            <td>
+              <div>
+                <InputNumber
+                  type="number"
+                  class="w-80px"
+                  v-model="config.teamSimulation.require.specialtyNum['スキル']"
+                />
+                匹以上
+              </div>
+            </td>
+          </tr>
           <tr v-for="berry in Berry.typeList">
             <th :style="{ color: berry.typeColor }">{{ berry.type }}</th>
             <td>
               <InputCheckbox
                 :modelValue="config.teamSimulation.require.typeNum[berry.type] == 1"
-                @update:modelValue="config.teamSimulation.require.typeNum[berry.type] = $event ? 1 : 0"
-              >1匹以上編成する</InputCheckbox>
+                @update:modelValue="
+                  config.teamSimulation.require.typeNum[berry.type] = $event ? 1 : 0
+                "
+                >1匹以上編成する</InputCheckbox
+              >
             </td>
           </tr>
         </SettingTable>
       </SettingButton>
-      
+
       <SettingButton title="表示設定">
         <template #label>
-          <div class="inline-flex-row-center">
-            表示設定
-          </div>
+          <div class="inline-flex-row-center">その他設定</div>
         </template>
 
         <SettingTable>
-          <tr><th>エナジー内訳</th><td><InputCheckbox v-model="config.teamSimulation.result.detail">エナジー内訳</InputCheckbox></td></tr>
-          <tr><th>食材情報</th><td><InputCheckbox v-model="config.teamSimulation.result.food">食材情報</InputCheckbox></td></tr>
+          <tr>
+            <th>エナジー内訳</th>
+            <td>
+              <InputCheckbox v-model="config.teamSimulation.result.detail"
+                >エナジー内訳</InputCheckbox
+              >
+            </td>
+          </tr>
+          <tr>
+            <th>食材情報</th>
+            <td>
+              <InputCheckbox v-model="config.teamSimulation.result.food">食材情報</InputCheckbox>
+            </td>
+          </tr>
+          <tr>
+            <th>スマホ読取</th>
+            <td>
+              <InputCheckbox v-model="config.teamSimulation.showFoodBagPhoneCapture"
+                >食材数をスマホから読み取るボタンを表示</InputCheckbox
+              >
+              <small>Android端末限定でかつ<a href="android-screenshot-to-clipboard.zip" target="_blank">専用exe</a>の導入、およびChrome/Edgeが必要です</small>
+            </td>
+          </tr>
         </SettingTable>
       </SettingButton>
     </div>
@@ -467,9 +711,20 @@ async function showEditPopup(pokemon) {
           <label>時間</label>
           <div>
             <div>
-              <InputNumber v-if="targetDay != -1" type="number" v-model="targetHour" class="w-40px" />
-              <InputNumber v-if="targetDay == -1" type="number" :model-value="168" class="w-40px" disabled />
-                時間
+              <InputNumber
+                v-if="targetDay != -1"
+                type="number"
+                v-model="targetHour"
+                class="w-40px"
+              />
+              <InputNumber
+                v-if="targetDay == -1"
+                type="number"
+                :model-value="168"
+                class="w-40px"
+                disabled
+              />
+              時間
             </div>
           </div>
         </div>
@@ -478,14 +733,25 @@ async function showEditPopup(pokemon) {
           <label>料理</label>
           <div>
             <div>
-              <InputNumber v-if="targetDay != -1" type="number" v-model="config.teamSimulation.cookingNum" class="w-50px" showSpinner />
-              <InputNumber v-if="targetDay == -1" type="number" :model-value="21" class="w-50px" disabled showSpinner />
-                食分
+              <InputNumber
+                v-if="targetDay != -1"
+                type="number"
+                v-model="config.teamSimulation.cookingNum"
+                class="w-50px"
+                showSpinner
+              />
+              <InputNumber
+                v-if="targetDay == -1"
+                type="number"
+                :model-value="21"
+                class="w-50px"
+                disabled
+                showSpinner
+              />
+              食分
             </div>
             <div class="w-150px">
-              <small>
-                翌朝の料理分も集めておきたい場合は4にしてください
-              </small>
+              <small> 翌朝の料理分も集めておきたい場合は4にしてください </small>
             </div>
           </div>
         </div>
@@ -514,16 +780,20 @@ async function showEditPopup(pokemon) {
           <div>
             <div>
               <div class="flex-row-start-start gap-10px">
-                <InputRadio v-model="config.simulation.remainFoodMode" :value="0">隙間に詰める</InputRadio>
+                <InputRadio v-model="config.simulation.remainFoodMode" :value="0"
+                  >隙間に詰める</InputRadio
+                >
                 <div class="flex-column-start-start gap-5px">
-                  <InputRadio v-model="config.simulation.remainFoodMode" :value="1">以下割合で換算</InputRadio>
+                  <InputRadio v-model="config.simulation.remainFoodMode" :value="1"
+                    >以下割合で換算</InputRadio
+                  >
                   <div class="ml-16px">
                     <InputNumber
                       v-model="config.simulation.remainFoodRate"
                       type="number"
                       percent
                       class="w-50px"
-                     />
+                    />
                     %
                   </div>
                 </div>
@@ -537,11 +807,14 @@ async function showEditPopup(pokemon) {
           <div>
             <div class="flex-row gap-10px">
               <InputRadio v-model="config.simulation.mode" :value="0">通常</InputRadio>
-              <InputRadio v-model="config.simulation.mode" :value="1">料理育成(カンスト除外のみ)</InputRadio>
-              <InputRadio v-model="config.simulation.mode" :value="2">料理育成(料理以外無視)</InputRadio>
+              <InputRadio v-model="config.simulation.mode" :value="1"
+                >料理育成(カンスト除外のみ)</InputRadio
+              >
+              <InputRadio v-model="config.simulation.mode" :value="2"
+                >料理育成(料理以外無視)</InputRadio
+              >
             </div>
-            <small>
-            </small>
+            <small> </small>
           </div>
         </div>
       </SettingList>
@@ -561,26 +834,42 @@ async function showEditPopup(pokemon) {
                     class="w-40px"
                     :model-value="config.foodDefaultNum[food.name]"
                     @update:model-value="config.foodDefaultNum[food.name] = $event ?? 0"
-                   />
-                  <InputNumber
-                    v-else 
-                    type="number"
-                    class="w-40px"
-                    :model-value="9999"
-                    disabled
-                   />
+                  />
+                  <InputNumber v-else type="number" class="w-40px" :model-value="9999" disabled />
                 </div>
               </div>
               <div>
                 <InputCheckbox v-model="config.foodUnlimited">食材無制限</InputCheckbox>
               </div>
               <div class="flex-row-end-center">
-                <InputFile ref="foodBagImageInput" class="food-bag-image-input" type="file" accept="image/*" @change="readFoodBagImage" />
-                <FormButton type="button" :disabled="foodBagReading" @click="selectFoodBagImage">
+                <InputFile
+                  ref="foodBagImageInput"
+                  class="food-bag-image-input"
+                  type="file"
+                  accept="image/*"
+                  @change="readFoodBagImage"
+                />
+                <FormButton
+                  v-if="!config.teamSimulation.showFoodBagPhoneCapture"
+                  type="button" :disabled="foodBagBusy" @click="selectFoodBagImage"
+                >
                   {{ foodBagReading ? '食材バッグを読取中…' : '食材バッグのスクショから読取' }}
                 </FormButton>
+                <FormButton
+                  v-if="config.teamSimulation.showFoodBagPhoneCapture"
+                  type="button"
+                  :disabled="foodBagBusy"
+                  @click="captureFoodBagFromPhone"
+                >
+                  {{ foodBagCaptureRunning ? 'スマホ画面を取得中…' : 'スマホ画面から読取' }}
+                </FormButton>
               </div>
-              <small v-if="foodBagReadStatus" style="grid-column: span 3;" class="text-align-right">{{ foodBagReadStatus }}</small>
+              <small
+                v-if="foodBagReadStatus"
+                style="grid-column: span 3"
+                class="text-align-right"
+                >{{ foodBagReadStatus }}</small
+              >
             </div>
           </div>
         </div>
@@ -588,124 +877,169 @@ async function showEditPopup(pokemon) {
 
       <FormButton class="execute" @click="simulation">シミュレーション実行</FormButton>
 
-      <AsyncWatcherArea class="flex-column-start-stretch w-100 gap-20px simulation-result" :asyncWatcher="asyncWatcher">
+      <AsyncWatcherArea
+        class="flex-column-start-stretch w-100 gap-20px simulation-result"
+        :asyncWatcher="asyncWatcher"
+      >
         <div class="scroll-area flex-column-start-stretch w-100 gap-20px">
           <template v-for="(result, i) in simulationResult.teamList">
             <ToggleArea :open="i == 0" class="w-100">
               <template #headerText>
-                {{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{ Math.round(result.energy).toLocaleString() }})
-                <HelpButton class="ml-5px" title="スコア" markdown="
+                {{ i + 1 }}: {{ Math.round(result.score).toLocaleString() }} (最終エナジー:{{
+                  Math.round(result.energy).toLocaleString()
+                }})
+                <HelpButton
+                  class="ml-5px"
+                  title="スコア"
+                  markdown="
                   スコアは「エナジー✕(100% + 追加ゆめのかけら ÷ エナジーによるゆめのかけら ✕ ゆめのかけら評価倍率)」です。
-                " />
+                "
+                />
               </template>
 
               <div class="result-table-scroll">
-              <DesignTable>
-                <colgroup>
-                  <col class="result-first-header-column">
-                  <col class="result-second-header-column">
-                  <col v-for="pokemon in result.pokemonList" class="result-pokemon-column">
-                  <col>
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th></th>
-                    <th v-for="i in result.pokemonList.length">{{ i }}</th>
-                    <th>合計</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th class="vertical" :rowspan="
-                      (config.teamSimulation.result.detail ? 13 : 10)
-                      + (simulationResult.config.simulation.fix && simulationResult.config.simulation.fixResourceMode != 0 ? 2 : 0)
-                    ">編成</th>
-                    <th class="white-space-nowrap">名前</th>
-                    <td v-for="pokemon in result.pokemonList">
-                      <div class="flex-row-start-center gap-5px">
-                        <NameLabel :pokemon="pokemon" />
-                        <template v-if="pokemon.box?.fix == 1">(固定)</template>
-                        <svg v-if="pokemon.box?.index" viewBox="0 0 100 100" width="16" @click="showEditPopup(pokemon)" class="flex-00">
-                          <path d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z" fill="#888" />
-                        </svg>
-                      </div>
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <th>Lv</th>
-                    <td v-for="pokemon in result.pokemonList"><LvLabel :pokemon="pokemon" /></td>
-                    <td></td>
-                  </tr>
-                  
-                  <template v-if="simulationResult.config.simulation.fix && simulationResult.config.simulation.fixResourceMode != 0">
+                <DesignTable>
+                  <colgroup>
+                    <col class="result-first-header-column" />
+                    <col class="result-second-header-column" />
+                    <col v-for="pokemon in result.pokemonList" class="result-pokemon-column" />
+                    <col />
+                  </colgroup>
+                  <thead>
                     <tr>
-                      <th>使用アメ</th>
-                      <td v-for="pokemon in result.pokemonList" class="text-align-right">{{ pokemon.useCandy?.toLocaleString() }}</td>
+                      <th></th>
+                      <th></th>
+                      <th v-for="i in result.pokemonList.length">{{ i }}</th>
+                      <th>合計</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th
+                        class="vertical"
+                        :rowspan="
+                          (config.teamSimulation.result.detail ? 13 : 10) +
+                          (simulationResult.config.simulation.fix &&
+                          simulationResult.config.simulation.fixResourceMode != 0
+                            ? 2
+                            : 0)
+                        "
+                      >
+                        編成
+                      </th>
+                      <th class="white-space-nowrap">名前</th>
+                      <td v-for="pokemon in result.pokemonList">
+                        <div class="flex-row-start-center gap-5px">
+                          <NameLabel :pokemon="pokemon" />
+                          <template v-if="pokemon.box?.fix == 1">(固定)</template>
+                          <svg
+                            v-if="pokemon.box?.index"
+                            viewBox="0 0 100 100"
+                            width="16"
+                            @click="showEditPopup(pokemon)"
+                            class="flex-00"
+                          >
+                            <path
+                              d="M0,100 L0,80 L60,20 L80,40 L20,100z M65,15 L80,0 L100,20 L85,35z"
+                              fill="#888"
+                            />
+                          </svg>
+                        </div>
+                      </td>
                       <td></td>
                     </tr>
                     <tr>
-                      <th>使用ゆめのかけら</th>
-                      <td v-for="pokemon in result.pokemonList" class="text-align-right">{{ pokemon.useShard?.toLocaleString() }}</td>
+                      <th>Lv</th>
+                      <td v-for="pokemon in result.pokemonList"><LvLabel :pokemon="pokemon" /></td>
                       <td></td>
                     </tr>
-                  </template>
 
-                  <tr>
-                    <th>食材</th>
-                    <td v-for="pokemon in result.pokemonList">
-                      <FoodList :pokemon="pokemon" />
-                    </td>
-                    <td></td>
-                  </tr>
+                    <template
+                      v-if="
+                        simulationResult.config.simulation.fix &&
+                        simulationResult.config.simulation.fixResourceMode != 0
+                      "
+                    >
+                      <tr>
+                        <th>使用アメ</th>
+                        <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                          {{ pokemon.useCandy?.toLocaleString() }}
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr>
+                        <th>使用ゆめのかけら</th>
+                        <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                          {{ pokemon.useShard?.toLocaleString() }}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </template>
 
-                  <tr>
-                    <th>サブスキル</th>
-                    <td v-for="pokemon in result.pokemonList">
-                      <SubSkillLabelList class="sub-skill-list" :pokemon="pokemon" />
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <th>せいかく</th>
-                    <td v-for="pokemon in result.pokemonList"><NatureInfo v-if="pokemon" :nature="pokemon.nature" /></td>
-                    <td></td>
-                  </tr>
-                  <tr v-if="config.teamSimulation.result.detail">
-                    <th>おてスピ</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right white-space-nowrap">
-                      <template v-if="pokemon.base.name != 'ナイトキャップピカチュウ'">
-                        <template v-for="formula in [getHelpSpeedFormula(pokemon, simulationResult.config.simulation)]">
-                          <span class="fs-10px">
-                            (100%
-                            <template v-if="formula.subSkillSpeedBonus">
-                              - <ruby>{{ formula.subSkillSpeedBonus }}%<rt>サブスキル</rt></ruby>
-                            </template>
-                            <template v-if="formula.helpBonus">
-                              - <ruby>{{ formula.helpBonus }}%<rt>おてボ</rt></ruby>
-                            </template>
-                            )
-                            <template v-if="formula.exSpeedRate != 100">
-                              <br>×
-                              <ruby>
-                                <span
-                                  :class="{
-                                    'help-speed-ex-lower': formula.exSpeedRate < 100,
-                                    'help-speed-ex-higher': formula.exSpeedRate > 100,
-                                  }"
-                                >{{ formula.exSpeedRate }}%</span>
-                                <rt>EX</rt>
-                              </ruby>
-                            </template>
-                          </span>
-                          <br>= {{ formula.resultSpeedRate }}%
+                    <tr>
+                      <th>食材</th>
+                      <td v-for="pokemon in result.pokemonList">
+                        <FoodList :pokemon="pokemon" />
+                      </td>
+                      <td></td>
+                    </tr>
+
+                    <tr>
+                      <th>サブスキル</th>
+                      <td v-for="pokemon in result.pokemonList">
+                        <SubSkillLabelList class="sub-skill-list" :pokemon="pokemon" />
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <th>せいかく</th>
+                      <td v-for="pokemon in result.pokemonList">
+                        <NatureInfo v-if="pokemon" :nature="pokemon.nature" />
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr v-if="config.teamSimulation.result.detail">
+                      <th>おてスピ</th>
+                      <td
+                        v-for="pokemon in result.pokemonList"
+                        class="text-align-right white-space-nowrap"
+                      >
+                        <template v-if="pokemon.base.name != 'ナイトキャップピカチュウ'">
+                          <template
+                            v-for="formula in [
+                              getHelpSpeedFormula(pokemon, simulationResult.config.simulation),
+                            ]"
+                          >
+                            <span class="fs-10px">
+                              (100%
+                              <template v-if="formula.subSkillSpeedBonus">
+                                - <ruby>{{ formula.subSkillSpeedBonus }}%<rt>サブスキル</rt></ruby>
+                              </template>
+                              <template v-if="formula.helpBonus">
+                                - <ruby>{{ formula.helpBonus }}%<rt>おてボ</rt></ruby>
+                              </template>
+                              )
+                              <template v-if="formula.exSpeedRate != 100">
+                                <br />×
+                                <ruby>
+                                  <span
+                                    :class="{
+                                      'help-speed-ex-lower': formula.exSpeedRate < 100,
+                                      'help-speed-ex-higher': formula.exSpeedRate > 100,
+                                    }"
+                                    >{{ formula.exSpeedRate }}%</span
+                                  >
+                                  <rt>EX</rt>
+                                </ruby>
+                              </template>
+                            </span>
+                            <br />= {{ formula.resultSpeedRate }}%
+                          </template>
                         </template>
-                      </template>
-                    </td>
-                    <td></td>
-                  </tr>
-                  <!-- <tr v-if="config.teamSimulation.result.detail">
+                      </td>
+                      <td></td>
+                    </tr>
+                    <!-- <tr v-if="config.teamSimulation.result.detail">
                     <th>げんき回復</th>
                     <td v-for="pokemon in result.pokemonList" class="text-align-right">
                       <template v-if="pokemon">
@@ -714,153 +1048,201 @@ async function showEditPopup(pokemon) {
                     </td>
                     <td></td>
                   </tr> -->
-                  <tr v-if="config.teamSimulation.result.detail">
-                    <th>日中手伝い倍率</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.dayHelpRate">
-                        {{ Math.round(pokemon.dayHelpRate * 100).toLocaleString() }}%
-                      </template>
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr v-if="config.teamSimulation.result.detail">
-                    <th>夜間手伝い倍率</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.nightHelpRate">
-                        {{ Math.round(pokemon.nightHelpRate * 100).toLocaleString() }}%
-                      </template>
-                    </td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <th>きのみ</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      {{ Math.round(pokemon.bEpD).toLocaleString() }}
-                    </td>
-                    <td class="text-align-right">
-                      {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.bEpD, 0)).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>スキル</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.base.skill?.name">{{ pokemon.base.skill?.name }}(Lv{{ pokemon.fixedSkillLv }})</template>
-                    </td>
-                    <td class="text-align-right">
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>スキル回数</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.skillPerDay">
-                        {{ pokemon.skillPerDay.toFixed(1) }}
-                      </template>
-                    </td>
-                    <td class="text-align-right">
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>スキルエナジー</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.skillEnergyPerDay">
-                        {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
-                      </template>
-                    </td>
-                    <td class="text-align-right">
-                      {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.skillEnergyPerDay, 0)).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>ゆめのかけら</th>
-                    <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                      <template v-if="pokemon.shardBonus">{{ Math.round(pokemon.shardBonus).toLocaleString() }}</template>
-                    </td>
-                    <td class="text-align-right">
-                      {{ Math.round(result.pokemonList.reduce((a, pokemon) => a + pokemon.shard, 0)).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th colspan="2">料理</th>
-                    <td :colspan="result.pokemonList.length">
-                      <template v-if="!config.teamSimulation.result.detail">
-                        {{
-                          Object.entries(result.cookingList.reduce((a, x) => (a[x.cooking.name] = (a[x.cooking.name] ?? 0) + 1, a), {}))
-                          .sort(([aName, aNum], [bName, bNum]) => bNum - aNum)
-                          .map(([name, num]) => `${name}x${num}`)
-                          .join(' / ')
-                        }}
-                      </template>
-                      <template v-else>
-                        <div v-for="cooking in result.cookingList">
-                          {{ cooking.cooking.name }}
-                          鍋{{ cooking.potSize }}
-                          (
-                            {{ Math.round(cooking.cooking.energy).toLocaleString() }}
-                            × {{ Math.round(cooking.cooking.recipeLvBonus * 100) }}%(Lv)
-                            × {{ Math.round(cooking.successPower * 100) }}%(大成功)
-                            <template v-if="cooking.addEnergy > 0">＋ {{ Math.round(cooking.addEnergy).toLocaleString() }}(追加)</template>
-                          ) × {{ Math.round(config.simulation.cookingWeight * 100) }}%(設定)
-                          ＝ {{ Math.round(cooking.energy).toLocaleString() }}エナジー</div>
-                      </template>
-                    </td>
-                    <td class="text-align-right">
-                      {{ Math.round(result.cookingList.reduce((a, x) => a + x.energy, 0)).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th colspan="2">残り食材</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">
-                      {{ result.remainFoodEnergy?.toFixed(1) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th rowspan="2">エナジー</th>
-                    <th>エナジー</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">
-                      {{ Math.round(result.rawEnergy).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>FB込み</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">
-                      {{ Math.round(result.rawEnergy * (1 + config.simulation.fieldBonus / 100)).toLocaleString() }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th rowspan="3">ゆめのかけら</th>
-                    <th>エナジー</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">{{ Math.round(result.energyShard).toLocaleString() }}</td>
-                  </tr>
-                  <tr>
-                    <th>ボーナス</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">{{ Math.round(result.bonusShard).toLocaleString() }}</td>
-                  </tr>
-                  <tr>
-                    <th>スキル</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">{{ Math.round(result.skillShard).toLocaleString() }}</td>
-                  </tr>
-                  <tr>
-                    <th colspan="2">スコア</th>
-                    <td :colspan="result.pokemonList.length + 1" class="text-align-right">{{ Math.round(result.score).toLocaleString() }}</td>
-                  </tr>
-
-                  <template v-if="config.teamSimulation.result.food">
-                    <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
-                      <th class="vertical" :rowspan="Food.list.length" v-if="i == 0">食材</th>
-                      <th><img :src="food.img"></th>
+                    <tr v-if="config.teamSimulation.result.detail">
+                      <th>日中手伝い倍率</th>
                       <td v-for="pokemon in result.pokemonList" class="text-align-right">
-                        <template v-if="pokemon[food.name] ?? 0">{{ (pokemon[food.name] ?? 0).toFixed(1) }}</template>
+                        <template v-if="pokemon.dayHelpRate">
+                          {{ Math.round(pokemon.dayHelpRate * 100).toLocaleString() }}%
+                        </template>
                       </td>
-                      <td class="white-space-nowrap">
-                        {{ result.defaultFoodNum?.[food.name].toFixed(1) }}
-                        <span v-if="result.addFoodNum?.[food.name]" class="plus"> + {{ result.addFoodNum?.[food.name].toFixed(1) }}</span>
-                        <span v-if="result.useFoodNum?.[food.name]" class="minus"> - {{ result.useFoodNum?.[food.name].toFixed(1) }}</span>
-                        = {{ result.foodNum?.[food.name].toFixed(1) }}
+                      <td></td>
+                    </tr>
+                    <tr v-if="config.teamSimulation.result.detail">
+                      <th>夜間手伝い倍率</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        <template v-if="pokemon.nightHelpRate">
+                          {{ Math.round(pokemon.nightHelpRate * 100).toLocaleString() }}%
+                        </template>
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <th>きのみ</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        {{ Math.round(pokemon.bEpD).toLocaleString() }}
+                      </td>
+                      <td class="text-align-right">
+                        {{
+                          Math.round(
+                            result.pokemonList.reduce((a, pokemon) => a + pokemon.bEpD, 0),
+                          ).toLocaleString()
+                        }}
                       </td>
                     </tr>
-                  </template>
-                </tbody>
-              </DesignTable>
+                    <tr>
+                      <th>スキル</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        <template v-if="pokemon.base.skill?.name"
+                          >{{ pokemon.base.skill?.name }}(Lv{{ pokemon.fixedSkillLv }})</template
+                        >
+                      </td>
+                      <td class="text-align-right"></td>
+                    </tr>
+                    <tr>
+                      <th>スキル回数</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        <template v-if="pokemon.skillPerDay">
+                          {{ pokemon.skillPerDay.toFixed(1) }}
+                        </template>
+                      </td>
+                      <td class="text-align-right"></td>
+                    </tr>
+                    <tr>
+                      <th>スキルエナジー</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        <template v-if="pokemon.skillEnergyPerDay">
+                          {{ Math.round(pokemon.skillEnergyPerDay).toLocaleString() }}
+                        </template>
+                      </td>
+                      <td class="text-align-right">
+                        {{
+                          Math.round(
+                            result.pokemonList.reduce(
+                              (a, pokemon) => a + pokemon.skillEnergyPerDay,
+                              0,
+                            ),
+                          ).toLocaleString()
+                        }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>ゆめのかけら</th>
+                      <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                        <template v-if="pokemon.shardBonus">{{
+                          Math.round(pokemon.shardBonus).toLocaleString()
+                        }}</template>
+                      </td>
+                      <td class="text-align-right">
+                        {{
+                          Math.round(
+                            result.pokemonList.reduce((a, pokemon) => a + pokemon.shard, 0),
+                          ).toLocaleString()
+                        }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th colspan="2">料理</th>
+                      <td :colspan="result.pokemonList.length">
+                        <template v-if="!config.teamSimulation.result.detail">
+                          {{
+                            Object.entries(
+                              result.cookingList.reduce(
+                                (a, x) => ((a[x.cooking.name] = (a[x.cooking.name] ?? 0) + 1), a),
+                                {},
+                              ),
+                            )
+                              .sort(([aName, aNum], [bName, bNum]) => bNum - aNum)
+                              .map(([name, num]) => `${name}x${num}`)
+                              .join(' / ')
+                          }}
+                        </template>
+                        <template v-else>
+                          <div v-for="cooking in result.cookingList">
+                            {{ cooking.cooking.name }}
+                            鍋{{ cooking.potSize }}
+                            (
+                            {{ Math.round(cooking.cooking.energy).toLocaleString() }}
+                            × {{ Math.round(cooking.cooking.recipeLvBonus * 100) }}%(Lv) ×
+                            {{ Math.round(cooking.successPower * 100) }}%(大成功)
+                            <template v-if="cooking.addEnergy > 0"
+                              >＋
+                              {{ Math.round(cooking.addEnergy).toLocaleString() }}(追加)</template
+                            >
+                            ) × {{ Math.round(config.simulation.cookingWeight * 100) }}%(設定) ＝
+                            {{ Math.round(cooking.energy).toLocaleString() }}エナジー
+                          </div>
+                        </template>
+                      </td>
+                      <td class="text-align-right">
+                        {{
+                          Math.round(
+                            result.cookingList.reduce((a, x) => a + x.energy, 0),
+                          ).toLocaleString()
+                        }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th colspan="2">残り食材</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ result.remainFoodEnergy?.toFixed(1) }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2">エナジー</th>
+                      <th>エナジー</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.rawEnergy).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>FB込み</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{
+                          Math.round(
+                            result.rawEnergy * (1 + config.simulation.fieldBonus / 100),
+                          ).toLocaleString()
+                        }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th rowspan="3">ゆめのかけら</th>
+                      <th>エナジー</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.energyShard).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>ボーナス</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.bonusShard).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>スキル</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.skillShard).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th colspan="2">スコア</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.score).toLocaleString() }}
+                      </td>
+                    </tr>
+
+                    <template v-if="config.teamSimulation.result.food">
+                      <tr v-for="(food, i) in Food.list" v-if="config.teamSimulation.result.food">
+                        <th class="vertical" :rowspan="Food.list.length" v-if="i == 0">食材</th>
+                        <th><img :src="food.img" /></th>
+                        <td v-for="pokemon in result.pokemonList" class="text-align-right">
+                          <template v-if="pokemon[food.name] ?? 0">{{
+                            (pokemon[food.name] ?? 0).toFixed(1)
+                          }}</template>
+                        </td>
+                        <td class="white-space-nowrap">
+                          {{ result.defaultFoodNum?.[food.name].toFixed(1) }}
+                          <span v-if="result.addFoodNum?.[food.name]" class="plus">
+                            + {{ result.addFoodNum?.[food.name].toFixed(1) }}</span
+                          >
+                          <span v-if="result.useFoodNum?.[food.name]" class="minus">
+                            - {{ result.useFoodNum?.[food.name].toFixed(1) }}</span
+                          >
+                          = {{ result.foodNum?.[food.name].toFixed(1) }}
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </DesignTable>
               </div>
             </ToggleArea>
           </template>
@@ -870,12 +1252,10 @@ async function showEditPopup(pokemon) {
         </div>
       </AsyncWatcherArea>
     </div>
-
   </div>
 </template>
 
 <style lang="scss" scoped>
-
 .page {
   display: flex;
   flex-direction: column;
@@ -921,7 +1301,7 @@ async function showEditPopup(pokemon) {
 
   .simulation-result {
     flex: 1 1 100px;
-    border: 1px #CCC solid;
+    border: 1px #ccc solid;
     border-radius: 5px;
     padding: 5px;
     overflow: hidden;
@@ -973,13 +1353,19 @@ async function showEditPopup(pokemon) {
         max-width: var(--result-first-header-column-width);
       }
 
-      tbody th[colspan="2"] {
+      tbody th[colspan='2'] {
         position: sticky;
         left: 0;
         z-index: 2;
-        width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
-        min-width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
-        max-width: calc(var(--result-first-header-column-width) + var(--result-second-header-column-width));
+        width: calc(
+          var(--result-first-header-column-width) + var(--result-second-header-column-width)
+        );
+        min-width: calc(
+          var(--result-first-header-column-width) + var(--result-second-header-column-width)
+        );
+        max-width: calc(
+          var(--result-first-header-column-width) + var(--result-second-header-column-width)
+        );
       }
 
       thead th:nth-child(2),
@@ -1012,7 +1398,7 @@ async function showEditPopup(pokemon) {
       thead tr:first-child > :first-child,
       tbody th.vertical,
       tbody th[rowspan],
-      tbody th[colspan="2"] {
+      tbody th[colspan='2'] {
         border-left-width: 1px;
       }
 
@@ -1025,7 +1411,7 @@ async function showEditPopup(pokemon) {
         width: 24px;
         line-height: 1;
         vertical-align: middle;
-        background-color: #FFF;
+        background-color: #fff;
         border-radius: 5px;
         margin: 0 auto;
       }
@@ -1075,9 +1461,7 @@ async function showEditPopup(pokemon) {
         overflow-x: auto;
         overflow-y: visible;
       }
-
     }
   }
 }
-
 </style>

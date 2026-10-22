@@ -201,27 +201,18 @@ const filteredPokemonList = computed(() => {
       : pokemonList;
   };
 
+  let pokemonList = simulatedPokemonList.value;
   if (mode.value === 'cleaning_detail') {
     if (cleaningDetailSeed.value != null) {
-      return filterMintPokemonList(
-        simulatedPokemonList.value.filter((x) => x.base.seed === cleaningDetailSeed.value),
-      );
-    }
-
-    if (cleaningDetailPokemon.value != null) {
-      return filterMintPokemonList(
-        simulatedPokemonList.value.filter((x) => {
-          return x.afterList.includes(cleaningDetailPokemon.value!);
-        }),
-      );
-    } else {
-      return filterMintPokemonList(simulatedPokemonList.value);
+      pokemonList = pokemonList.filter((x) => x.base.seed === cleaningDetailSeed.value);
+    } else if (cleaningDetailPokemon.value != null) {
+      pokemonList = pokemonList.filter((x) => x.afterList.includes(cleaningDetailPokemon.value!));
     }
   }
 
-  if (!keyword?.value.length) return filterMintPokemonList(simulatedPokemonList.value);
+  if (!keyword?.value.length) return filterMintPokemonList(pokemonList);
   return filterMintPokemonList(
-    simulatedPokemonList.value.filter((x) => {
+    pokemonList.filter((x) => {
       let result = true;
       let keywords = keyword.value.split(/'[\s　]'/g);
       for (const keyword of keywords) {

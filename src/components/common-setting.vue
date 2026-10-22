@@ -123,7 +123,7 @@ function resetBerryEnergyRate() {
         </template>
 
         <span>
-          {{ config.simulation.cookingType }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
+          {{ config.simulation.cookingType || 'すべて' }}<span v-if="config.simulation.cookingWeight != 1" class="caution">(x{{ config.simulation.cookingWeight }})</span>
         </span>
 
         <span v-if="config.simulation.campTicket" class="caution">キャンチケ</span>
@@ -212,9 +212,10 @@ function resetBerryEnergyRate() {
         </tr>
         
         <tr>
-          <th>種類</th>
+          <th>料理の種類</th>
           <td>
             <InputSelect v-model="config.simulation.cookingType">
+              <option value="">すべて</option>
               <option value="カレー">カレー・シチュー</option>
               <option value="サラダ">サラダ</option>
               <option value="デザート">デザート・ドリンク</option>

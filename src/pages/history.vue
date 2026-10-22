@@ -22,6 +22,29 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/10/22">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ゲンガーの食材確率調整を反映</li>
+            <li>
+              料理の種類設定に「すべて」を追加
+              <ul>
+                <li>イベント予告でカビゴンからのリクエストが普段と異なる記載があったため、何があってもいいように追加</li>
+              </ul>
+            </li>
+            <li>
+              Android＆Windows環境のみ、PCからボタンを押すことで手持ちの食材数を読み取る機能を追加
+              <ul>
+                <li>設定が面倒ですが、やりたい方はチーム編成画面の「その他設定」に機能のON/OFFと専用exeのリンクがあるので、そこから設定してください。</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/10/13">
       <ul>
         <li>
