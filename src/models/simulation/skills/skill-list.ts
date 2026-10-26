@@ -15,6 +15,7 @@ import { skillDefinitions as buildUpSkillDefinitions } from './build-up-skill';
 import { skillDefinitions as cheekRubSkillDefinitions } from './hoppe-surisuri-skill';
 import { skillDefinitions as cookingChanceSkillDefinitions } from './ryouri-chance-skill';
 import { skillDefinitions as cookingPowerUpSkillDefinitions } from './ryouri-power-up-skill';
+import { skillDefinitions as magicalFlameSkillDefinitions } from './magical-flame-skill';
 import { skillDefinitions as copySkillDefinitions } from './copy-skill';
 import { skillDefinitions as energyChargeSkillDefinitions } from './energy-charge-skill';
 import { skillDefinitions as foodGetSkillDefinitions } from './shokuzai-get-skill';
@@ -40,6 +41,7 @@ export const skillList = [
   ...cheekRubSkillDefinitions,
   ...cookingChanceSkillDefinitions,
   ...cookingPowerUpSkillDefinitions,
+  ...magicalFlameSkillDefinitions,
   ...copySkillDefinitions,
   ...energyChargeSkillDefinitions,
   ...foodGetSkillDefinitions,

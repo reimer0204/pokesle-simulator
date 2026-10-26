@@ -73,12 +73,14 @@ async function readFoodBagImageSource(image: Blob) {
     // OCR結果を確認・編集できる入力欄へ反映するため、無制限表示を解除する。
     config.foodUnlimited = false;
     foodBagReadStatus.value = `${result.foodList.length}種類の食材を読み取りました`;
+    return result.foodList.length;
   } catch (exception) {
     console.error(exception);
     foodBagReadStatus.value =
       exception instanceof Error
         ? exception.message
         : '食材バッグのスクショを読み取れませんでした。';
+    return 0;
   } finally {
     await reader?.terminate();
     foodBagReading.value = false;
@@ -131,7 +133,11 @@ async function captureFoodBagFromPhone() {
       try {
         const image = await getClipboardImage();
         if (image) {
-          await readFoodBagImageSource(image);
+          const foodNum = await readFoodBagImageSource(image);
+          if (foodNum > 0 && captureId == foodBagCaptureId) {
+            foodBagReadStatus.value = `${foodNum}種類の食材を読み取り、シミュレーションを開始します`;
+            simulation();
+          }
           return;
         }
       } catch {

@@ -9,6 +9,7 @@ import BuildUpSkill from './build-up-skill';
 import CheekRubSkill from './hoppe-surisuri-skill';
 import CookingChanceSkill from './ryouri-chance-skill';
 import CookingPowerUpSkill from './ryouri-power-up-skill';
+import MagicalFlameSkill from './magical-flame-skill';
 import { MimicCopySkill, TransformCopySkill } from './copy-skill';
 import FoodGetSkill from './shokuzai-get-skill';
 import {
@@ -67,6 +68,7 @@ const auraSphereSkill = new AuraSphereSkill();
 const cookingPowerUpSkill = new CookingPowerUpSkill();
 const minusSkill = new MinusSkill();
 const cookingChanceSkill = new CookingChanceSkill();
+const magicalFlameSkill = new MagicalFlameSkill();
 const transformCopySkill = new TransformCopySkill();
 const mimicCopySkill = new MimicCopySkill();
 const cheekRubSkill = new CheekRubSkill();
@@ -98,6 +100,7 @@ export const skillHandlerMap = new Map<string, SkillHandler>([
   ['料理パワーアップS', cookingPowerUpSkill],
   ['マイナス(料理パワーアップS)', minusSkill],
   ['料理チャンスS', cookingChanceSkill],
+  ['マジカルフレイム(料理アドバンスS)', magicalFlameSkill],
   ['へんしん(スキルコピー)', transformCopySkill],
   ['ものまね(スキルコピー)', mimicCopySkill],
   ['ほっぺすりすり(げんきエールS)', cheekRubSkill],
