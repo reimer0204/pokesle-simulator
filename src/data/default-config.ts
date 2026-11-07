@@ -134,6 +134,7 @@ const defaultConfig = {
         berryBurst: 1,
         foodGet: 1,
       },
+      food: null as string | null,
     },
     potSize: Cooking.potMax,
     bagOverOperation: true,
@@ -230,7 +231,8 @@ const defaultConfig = {
       SubSkill.list.filter((x) => x.next != null).map((x) => [x.name, true]),
     ),
     helpBonus: 20, // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
-    teamHelpBonus: 1, // チームに自分以外のおてボ持ちが何匹いるか
+    teamHelpBonus: 1, // 本人がおてボ持ちの時、チームに自分以外のおてボ持ちが何匹いるか
+    teamHelpBonusWithoutSelf: 1, // 本人がおてボを持たない時、チームにおてボ持ちが何匹いるか
     supportBorder: 90, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     supportRankNum: 20, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     cookingPowerUpType: 1, // 料理パワーアップの評価方法(0:理論値, 1:平均)

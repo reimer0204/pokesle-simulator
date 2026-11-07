@@ -139,7 +139,11 @@ class PokemonSimulator {
       for (const cookingFood of cooking.foodList) {
         this.foodEnergyMap[cookingFood.name].max = Math.max(
           this.foodEnergyMap[cookingFood.name].max,
-          Food.map[cookingFood.name].energy * cooking.rate * cooking.recipeLvBonus * foodCommonRate,
+          Food.map[cookingFood.name].energy *
+            cooking.rate *
+            cooking.recipeLvBonus *
+            (cooking.eventFoodRate ?? 1) *
+            foodCommonRate,
         );
       }
     }
@@ -597,9 +601,18 @@ class PokemonSimulator {
     // 食材数/手伝い
     pokemon.foodNum = pokemon.foodList.reduce((a, x) => a + x.num, 0) / pokemon.foodList.length;
 
+    const eventFood =
+      this.mode != PokemonSimulatorMode.SELECT &&
+      (pokemon.base.specialty == '食材' || pokemon.base.specialty == 'オール')
+        ? this.config.simulation.eventBonus?.food
+        : null;
+    const eventFoodEnergy = eventFood ? (Food.map[eventFood]?.energy ?? 0) : 0;
+    if (eventFood) pokemon.foodNum += 1;
+
     // 食材エナジー/手伝い
     pokemon.fEpH =
-      (pokemon.foodList.reduce((a, x) => a + x.energy * x.num, 0) / pokemon.foodList.length) *
+      (pokemon.foodList.reduce((a, x) => a + x.energy * x.num, 0) / pokemon.foodList.length +
+        eventFoodEnergy) *
       this.#foodEnergyWeight;
 
     // おてつだいサポート用の食材エナジー/手伝い(イベントボーナス抜きで計算)
@@ -1009,6 +1022,13 @@ class PokemonSimulator {
       for (let food of pokemon.foodList) {
         pokemon[food.name] += (Number(food.num) / pokemon.foodList.length) * foodGetChance;
       }
+      if (
+        (pokemon.base.specialty == '食材' || pokemon.base.specialty == 'オール') &&
+        this.mode != PokemonSimulatorMode.SELECT
+      ) {
+        const eventFood = this.config.simulation.eventBonus?.food;
+        if (eventFood) pokemon[eventFood] += foodGetChance;
+      }
     } else {
       // 食材エナジー/日
       pokemon.fEpD = 0;
@@ -1023,6 +1043,26 @@ class PokemonSimulator {
         pokemon.fEpD += num * foodProb.energy;
         pokemon.foodNumPerDay += num;
         pokemon[foodProb.name] += num;
+      }
+      if (
+        (pokemon.base.specialty == '食材' || pokemon.base.specialty == 'オール') &&
+        this.mode != PokemonSimulatorMode.SELECT
+      ) {
+        const eventFood = this.config.simulation.eventBonus?.food;
+        if (eventFood) {
+          const foodGetNum = pokemon.foodProbList!.reduce(
+            (total, foodProb) =>
+              total +
+              (foodProb.num
+                ? this.#probBorder.get(pokemon.foodRate * foodProb.weight, pokemon.normalHelpNum)
+                : 0),
+            0,
+          );
+          const eventFoodEnergy = Food.map[eventFood]?.energy ?? 0;
+          pokemon.fEpD += foodGetNum * eventFoodEnergy * this.#foodEnergyWeight;
+          pokemon.foodNumPerDay += foodGetNum;
+          pokemon[eventFood] += foodGetNum;
+        }
       }
     }
 
@@ -1338,11 +1378,16 @@ class PokemonSimulator {
     );
     // timeCounter?.stop('calcParameter')
 
+    // calcParameter後でないとsubSkillNameListの計算が完了していない
+    const hasHelpBonus = pokemon.subSkillNameList.includes('おてつだいボーナス');
+    const teamHelpBonus = hasHelpBonus
+      ? this.config.selectEvaluate.teamHelpBonus
+      : this.config.selectEvaluate.teamHelpBonusWithoutSelf;
+
     // timeCounter?.start('calcStatus')
     this.calcStatus(
       pokemon,
-      this.config.selectEvaluate.teamHelpBonus +
-        (pokemon.subSkillNameList.includes('おてつだいボーナス') ? 1 : 0),
+      teamHelpBonus + (hasHelpBonus ? 1 : 0),
       pokemon.subSkillNameList.includes('げんき回復ボーナス') ? 1 : 0,
     );
     // timeCounter?.stop('calcStatus')
@@ -1373,12 +1418,11 @@ class PokemonSimulator {
     );
 
     // おてボの残り評価はシンプルに倍率にする
-    if (pokemon.subSkillNameList.includes('おてつだいボーナス')) {
+    if (hasHelpBonus) {
       // おてスピ補正なしの自分のスコアを計算
       pokemon.energyPerDay *=
         (1 - pokemon.speedBonus) *
-          (1 / (1 - this.config.selectEvaluate.teamHelpBonus * 0.05 - 0.05) -
-            1 / (1 - this.config.selectEvaluate.teamHelpBonus * 0.05)) *
+          (1 / (1 - teamHelpBonus * 0.05 - 0.05) - 1 / (1 - teamHelpBonus * 0.05)) *
           4 +
         1;
     }

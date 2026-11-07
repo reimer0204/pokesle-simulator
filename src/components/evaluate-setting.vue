@@ -93,21 +93,37 @@ const maxEnergyPerExp = computed(() => {
           <div><InputNumber type="number" step="1" v-model="settingConfig.checkFreq" /> 回</div>
         </div>
         <div>
-          <label>おてつだいボーナス評価</label>
-          <div>
-            <InputNumber
-              type="number"
-              class="w-80px"
-              v-model="evaluateConfig.teamHelpBonus"
-              step="1"
-              min="0"
-              max="4"
-            />
-            匹
+          <label>おてつだいボーナス設定</label>
+          <div class="help-bonus-setting">
+            <div>
+              <label>本人がおてボ持ちの時</label>
+              <InputNumber
+                type="number"
+                class="w-80px"
+                v-model="evaluateConfig.teamHelpBonus"
+                step="1"
+                min="0"
+                max="4"
+              />
+              匹
+            </div>
+            <div>
+              <label>そうでない時</label>
+              <InputNumber
+                type="number"
+                class="w-80px"
+                v-model="evaluateConfig.teamHelpBonusWithoutSelf"
+                step="1"
+                min="0"
+                max="4"
+              />
+              匹
+            </div>
           </div>
           <small>
-            自分以外の4匹におてつだいボーナスが何匹いるか指定します。<br />
-            3匹にすると、おてボ＋おてスピMが最も高く評価されます。
+            自分以外のチーム内のおてつだいボーナス持ちの匹数を指定します。<br />
+            3匹にすると、おてボ＋おてスピMが最も高く評価されます。<br>
+            おてつだいボーナスを重視して厳選している場合は、「そうでない時」の設定値を低くすると差をつけられます。
           </small>
         </div>
         <div>
@@ -731,6 +747,22 @@ const maxEnergyPerExp = computed(() => {
 .experience-setting-list {
   display: flex;
   align-items: flex-start;
+}
+
+.help-bonus-setting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  label {
+    margin-bottom: 0;
+  }
 }
 .evaluate-rule-list {
   display: flex;

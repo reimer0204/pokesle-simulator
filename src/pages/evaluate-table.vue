@@ -15,49 +15,41 @@ import SubSkillCombinationWorker from '@/models/sub-skill-combination-worker?wor
 import TabList from '@/components/tab-list.vue';
 import Berry from '@/data/berry';
 import { Scatter } from 'vue-chartjs';
-import {
-  Chart as ChartJS,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  ScatterController,
-} from 'chart.js';
+import { Chart as ChartJS, LinearScale, PointElement, Tooltip, ScatterController } from 'chart.js';
 
-ChartJS.register(
-  LinearScale,
-  PointElement,
-  Tooltip,
-  ScatterController,
-);
+ChartJS.register(LinearScale, PointElement, Tooltip, ScatterController);
 
-let lvList = Object.entries(config.selectEvaluate.levelList).filter(([lv, enable]) => enable).map(([lv]) => Number(lv))
-let lv = ref(lvList.at(-1))
+let lvList = Object.entries(config.selectEvaluate.levelList)
+  .filter(([lv, enable]) => enable)
+  .map(([lv]) => Number(lv));
+let lv = ref(lvList.at(-1));
 let step = ref(5);
 let selectedTab = ref('graph');
 let graphPercentile = ref(100);
+let graphAxis = ref('type');
 
 let evaluateTable = ref(null);
 let evaluateTablePromise = (async () => {
   evaluateTable.value = await EvaluateTable.load(config);
-})()
+})();
 let evaluateTablePokemonList = computed(() => {
-  if (evaluateTable.value == null) return []
+  if (evaluateTable.value == null) return [];
 
   let result = [];
-  for(let pokemonName in evaluateTable.value) {
+  for (let pokemonName in evaluateTable.value) {
     let lvInfo = evaluateTable.value[pokemonName][lv.value];
     let pokemon = Pokemon.map[pokemonName];
 
-    for(let food in lvInfo) {
+    for (let food in lvInfo) {
       if (food == '') continue;
       let percentile = lvInfo[food].energy;
 
       result.push({
         name: pokemonName,
         foodIndexList: food,
-        foodList: food.split('').map(c => pokemon.foodList[Number(c)].name),
-        ...percentile
-      })
+        foodList: food.split('').map((c) => pokemon.foodList[Number(c)].name),
+        ...percentile,
+      });
     }
   }
   return result;
@@ -67,24 +59,23 @@ let columnList = computed(() => {
   return [
     { key: 'name', name: '名前', type: String },
     { key: 'type', name: 'タイプ', type: String, convert: (x) => Pokemon.map[x.name].type },
-    { key: 'specialty', name: 'とくい', type: String, convert: (x) => Pokemon.map[x.name].specialty },
+    {
+      key: 'specialty',
+      name: 'とくい',
+      type: String,
+      convert: (x) => Pokemon.map[x.name].specialty,
+    },
     { key: 'skill', name: 'スキル', type: String, convert: (x) => Pokemon.map[x.name].skill.name },
     { key: 'foodList', name: '食材', type: null },
     ...new Array(100 / step.value + 1).fill(0).map((_, i) => {
       let p = i * step.value;
-      return { key: `${p}`, name: `${p}%`, template: 'percentile', p, type: Number, fixed: 0 }
-    })
-  ]
-})
+      return { key: `${p}`, name: `${p}%`, template: 'percentile', p, type: Number, fixed: 0 };
+    }),
+  ];
+});
 
-const specialtyList = ['きのみ', '食材', 'スキル'];
-const graphCategoryList = Berry.typeList.flatMap(berry =>
-  specialtyList.map(specialty => ({
-    type: berry.type,
-    specialty,
-    label: `${berry.type}・${specialty}`,
-  }))
-);
+const specialtyList = ['きのみ', '食材', 'スキル', 'オール'];
+const typeOrderMap = new Map(Berry.typeList.map((berry, index) => [berry.type, index]));
 
 const normalizedGraphPercentile = computed(() => {
   const value = Math.round(Number(graphPercentile.value));
@@ -94,7 +85,7 @@ const normalizedGraphPercentile = computed(() => {
 const graphPointList = computed(() => {
   // 食材構成が複数あるポケモンは、指定厳選度で最も高い値を代表値とする。
   const pokemonMap = new Map();
-  for(const row of evaluateTablePokemonList.value) {
+  for (const row of evaluateTablePokemonList.value) {
     const value = row[normalizedGraphPercentile.value];
     const current = pokemonMap.get(row.name);
     if (value != null && (current == null || value > current.value)) {
@@ -102,38 +93,34 @@ const graphPointList = computed(() => {
     }
   }
 
-  const categoryMap = new Map(graphCategoryList.map((category, index) => [category.label, index]));
-  const groupedPointList = new Map();
-  for(const point of pokemonMap.values()) {
-    const pokemon = Pokemon.map[point.name];
-    if (!specialtyList.includes(pokemon.specialty)) continue;
-
-    const categoryIndex = categoryMap.get(`${pokemon.type}・${pokemon.specialty}`);
-    if (categoryIndex == null) continue;
-    if (!groupedPointList.has(categoryIndex)) groupedPointList.set(categoryIndex, []);
-    groupedPointList.get(categoryIndex).push({ ...point, pokemon, categoryIndex });
-  }
-
-  const result = [];
-  for(const pointList of groupedPointList.values()) {
-    pointList.sort((a, b) => a.value - b.value || a.name.localeCompare(b.name));
-    pointList.forEach((point, index) => {
-      // 同じカテゴリの点が完全に重ならないよう、列の中だけで少し左右にずらす。
-      const offset = pointList.length <= 1 ? 0 : (index / (pointList.length - 1) - 0.5) * 0.64;
-      result.push({
-        x: point.categoryIndex + offset,
-        y: point.value,
-        name: point.name,
-        categoryIndex: point.categoryIndex,
-        backgroundColor: point.pokemon.berry.typeColor,
-      });
-    });
-  }
-  return result;
+  return [...pokemonMap.values()]
+    .map((point) => ({ ...point, pokemon: Pokemon.map[point.name] }))
+    .filter((point) => specialtyList.includes(point.pokemon.specialty))
+    .sort((a, b) => {
+      if (graphAxis.value === 'type') {
+        const typeOrder =
+          (typeOrderMap.get(a.pokemon.type) ?? Number.MAX_SAFE_INTEGER) -
+          (typeOrderMap.get(b.pokemon.type) ?? Number.MAX_SAFE_INTEGER);
+        if (typeOrder) return typeOrder;
+      } else if (graphAxis.value === 'specialty') {
+        const specialtyOrder =
+          specialtyList.indexOf(a.pokemon.specialty) - specialtyList.indexOf(b.pokemon.specialty);
+        if (specialtyOrder) return specialtyOrder;
+      }
+      return a.value - b.value || a.name.localeCompare(b.name);
+    })
+    .map((point, index) => ({
+      x: index,
+      y: point.value,
+      name: point.name,
+      type: point.pokemon.type,
+      specialty: point.pokemon.specialty,
+      backgroundColor: point.pokemon.berry.typeColor,
+    }));
 });
 
 const graphMedian = computed(() => {
-  const valueList = graphPointList.value.map(point => point.y).sort((a, b) => a - b);
+  const valueList = graphPointList.value.map((point) => point.y).sort((a, b) => a - b);
   if (valueList.length == 0) return null;
 
   const middle = Math.floor(valueList.length / 2);
@@ -164,15 +151,18 @@ const medianLinePlugin = {
     const { event } = args;
     const { chartArea, scales } = chart;
     const medianY = scales.y.getPixelForValue(graphMedian.value);
-    const hovered = event.x >= chartArea.left
-      && event.x <= chartArea.right
-      && event.y >= chartArea.top
-      && event.y <= chartArea.bottom
-      && Math.abs(event.y - medianY) <= 5;
+    const hovered =
+      event.x >= chartArea.left &&
+      event.x <= chartArea.right &&
+      event.y >= chartArea.top &&
+      event.y <= chartArea.bottom &&
+      Math.abs(event.y - medianY) <= 5;
 
-    if (chart.$medianLineHovered != hovered
-      || chart.$medianLineTooltipX != event.x
-      || chart.$medianLineTooltipY != medianY) {
+    if (
+      chart.$medianLineHovered != hovered ||
+      chart.$medianLineTooltipX != event.x ||
+      chart.$medianLineTooltipY != medianY
+    ) {
       chart.$medianLineHovered = hovered;
       chart.$medianLineTooltipX = event.x;
       chart.$medianLineTooltipY = medianY;
@@ -206,20 +196,69 @@ const pokemonNamePlugin = {
   afterDatasetsDraw(chart) {
     const { ctx, chartArea } = chart;
     const meta = chart.getDatasetMeta(0);
+    const occupiedRectList = [];
+    const labelHeight = 13;
+    const labelPadding = 2;
+    const offsetList = [6, 19, 32, 45, 58, 71, 84, 97];
+
+    function getLabelRect(x, y, width, align, baseline) {
+      const left = align === 'left' ? x : align === 'right' ? x - width : x - width / 2;
+      const top = baseline === 'top' ? y : y - labelHeight;
+      return {
+        left: left - labelPadding,
+        right: left + width + labelPadding,
+        top: top - labelPadding,
+        bottom: top + labelHeight + labelPadding,
+      };
+    }
+
+    function isOverlapping(rect, other) {
+      return (
+        rect.left < other.right &&
+        rect.right > other.left &&
+        rect.top < other.bottom &&
+        rect.bottom > other.top
+      );
+    }
+
     ctx.save();
     ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.lineWidth = 3;
     ctx.fillStyle = '#333';
     meta.data.forEach((element, index) => {
       const point = chart.data.datasets[0].data[index];
-      if (element.x < chartArea.left || element.x > chartArea.right || element.y < chartArea.top || element.y > chartArea.bottom) return;
-      const y = element.y - 5 - (index % 2) * 11;
-      ctx.strokeText(point.name, element.x, y);
-      ctx.fillText(point.name, element.x, y);
+      if (
+        element.x < chartArea.left ||
+        element.x > chartArea.right ||
+        element.y < chartArea.top ||
+        element.y > chartArea.bottom
+      )
+        return;
+      const width = ctx.measureText(point.name).width;
+      const candidateList = offsetList.flatMap((offset) => [
+        { x: element.x, y: element.y - offset, align: 'center', baseline: 'bottom' },
+        { x: element.x, y: element.y + offset, align: 'center', baseline: 'top' },
+      ]);
+      const candidate =
+        candidateList.find((position) => {
+          const rect = getLabelRect(position.x, position.y, width, position.align, position.baseline);
+          return (
+            rect.left >= chartArea.left &&
+            rect.right <= chartArea.right &&
+            rect.top >= 0 &&
+            rect.bottom <= chart.height &&
+            !occupiedRectList.some((occupiedRect) => isOverlapping(rect, occupiedRect))
+          );
+        }) ?? candidateList[0];
+      const rect = getLabelRect(candidate.x, candidate.y, width, candidate.align, candidate.baseline);
+
+      ctx.textAlign = candidate.align;
+      ctx.textBaseline = candidate.baseline;
+      ctx.strokeText(point.name, candidate.x, candidate.y);
+      ctx.fillText(point.name, candidate.x, candidate.y);
+      occupiedRectList.push(rect);
     });
     ctx.restore();
   },
@@ -227,15 +266,17 @@ const pokemonNamePlugin = {
 
 const graphData = computed(() => ({
   data: {
-    datasets: [{
-      label: `${normalizedGraphPercentile.value}%の値`,
-      data: graphPointList.value,
-      pointBackgroundColor: graphPointList.value.map(point => point.backgroundColor),
-      pointBorderColor: '#555',
-      pointBorderWidth: 1,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-    }],
+    datasets: [
+      {
+        label: `${normalizedGraphPercentile.value}%の値`,
+        data: graphPointList.value,
+        pointBackgroundColor: graphPointList.value.map((point) => point.backgroundColor),
+        pointBorderColor: '#555',
+        pointBorderWidth: 1,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+    ],
   },
   options: {
     animation: false,
@@ -246,17 +287,33 @@ const graphData = computed(() => ({
       x: {
         type: 'linear',
         min: -0.5,
-        max: graphCategoryList.length - 0.5,
+        max: Math.max(graphPointList.value.length - 0.5, 0.5),
         ticks: {
           stepSize: 1,
           maxRotation: 0,
           callback(value) {
-            const category = graphCategoryList[value];
-            return category ? [category.type, category.specialty] : '';
+            const index = Number(value);
+            const point = graphPointList.value[index];
+            const previous = graphPointList.value[index - 1];
+            if (point == null) return '';
+            if (graphAxis.value === 'type') return point.type !== previous?.type ? point.type : '';
+            if (graphAxis.value === 'specialty')
+              return point.specialty !== previous?.specialty ? point.specialty : '';
+            return '';
           },
         },
         grid: {
-          color: context => Number.isInteger(context.tick.value) ? '#DDD' : 'transparent',
+          color: (context) => {
+            const index = Number(context.tick.value);
+            const point = graphPointList.value[index];
+            const previous = graphPointList.value[index - 1];
+            if (!Number.isInteger(index) || point == null) return 'transparent';
+            if (graphAxis.value === 'type')
+              return point.type !== previous?.type ? '#DDD' : 'transparent';
+            if (graphAxis.value === 'specialty')
+              return point.specialty !== previous?.specialty ? '#DDD' : 'transparent';
+            return 'transparent';
+          },
         },
       },
       y: {
@@ -271,8 +328,9 @@ const graphData = computed(() => ({
       legend: { display: false },
       tooltip: {
         callbacks: {
-          title: items => items[0]?.raw?.name ?? '',
-          label: item => `${graphCategoryList[item.raw.categoryIndex]?.label}: ${Math.round(item.raw.y).toLocaleString()}`,
+          title: (items) => items[0]?.raw?.name ?? '',
+          label: (item) =>
+            `${item.raw.type}・${item.raw.specialty}: ${Math.round(item.raw.y).toLocaleString()}`,
         },
       },
     },
@@ -282,35 +340,37 @@ const graphData = computed(() => ({
 
 // サブスキルの組合せを計算する
 const subSkillCombinationListPromise = (async () => {
-  const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1)
-  const [subSkillCombinationList] = await subSkillCombinationWorker.call(
-    null,
-    () => ({ config: JSON.parse(JSON.stringify(config)) }),
-  )
+  const subSkillCombinationWorker = new MultiWorker(SubSkillCombinationWorker, 1);
+  const [subSkillCombinationList] = await subSkillCombinationWorker.call(null, () => ({
+    config: JSON.parse(JSON.stringify(config)),
+  }));
   subSkillCombinationWorker.close();
 
   return subSkillCombinationList;
-})()
+})();
 
 async function showDetail(pokemon, p) {
-
   asyncWatcher.run(async (progressCounter) => {
-    await evaluateTablePromise
+    await evaluateTablePromise;
     const subSkillCombinationList = await subSkillCombinationListPromise;
 
     const subSkillNum =
-      lv.value < 10 ? 0 :
-      lv.value < 25 ? 1 :
-      lv.value < 50 ? 2 :
-      lv.value < 70 ? 3 :
-      lv.value < 80 ? 4 : 5;
+      lv.value < 10
+        ? 0
+        : lv.value < 25
+          ? 1
+          : lv.value < 50
+            ? 2
+            : lv.value < 70
+              ? 3
+              : lv.value < 80
+                ? 4
+                : 5;
 
+    const multiWorker = new MultiWorker(EvaluateTableWorker, 1);
 
-    const multiWorker = new MultiWorker(EvaluateTableWorker, 1)
-
-    let result = (await multiWorker.call(
-      progressCounter,
-      () => {
+    let result = (
+      await multiWorker.call(progressCounter, () => {
         return {
           lv: lv.value,
           config: JSON.parse(JSON.stringify(config)),
@@ -319,28 +379,29 @@ async function showDetail(pokemon, p) {
           subSkillCombinationList: subSkillCombinationList[subSkillNum] ?? [[1]],
           scoreForHealerEvaluate: evaluateTable.value.scoreForHealerEvaluate[lv.value][''].energy,
           scoreForSupportEvaluate: evaluateTable.value.scoreForSupportEvaluate[lv.value][''].energy,
-        }
-      }
-    ))[0].result[pokemon.name][pokemon.foodIndexList].energy[p]
+        };
+      })
+    )[0].result[pokemon.name][pokemon.foodIndexList].energy[p];
 
-    multiWorker.close()
+    multiWorker.close();
 
     Popup.show(SelectTableDetailPopup, {
       name: pokemon.name,
       lv: lv.value,
-      foodIndexList: pokemon.foodList.map(f => Math.max(Pokemon.map[pokemon.name].foodList.findIndex(f2 => f2.name == f)), 0),
+      foodIndexList: pokemon.foodList.map(
+        (f) => Math.max(Pokemon.map[pokemon.name].foodList.findIndex((f2) => f2.name == f)),
+        0,
+      ),
       subSkillList: result.subSkillList,
       nature: Nature.map[result.nature],
       percentile: false,
-    })
-  })
+    });
+  });
 }
-
 </script>
 
 <template>
   <div class="page">
-
     <TabList>
       <div :class="{ active: selectedTab == 'graph' }" @click="selectedTab = 'graph'">グラフ</div>
       <div :class="{ active: selectedTab == 'table' }" @click="selectedTab = 'table'">一覧表</div>
@@ -365,8 +426,28 @@ async function showDetail(pokemon, p) {
       </div>
 
       <div v-else>
+        <label>横軸</label>
+        <div>
+          <InputSelect v-model="graphAxis">
+            <option value="type">タイプ別</option>
+            <option value="specialty">とくい別</option>
+            <option value="all">全体</option>
+          </InputSelect>
+        </div>
+      </div>
+      <div v-if="selectedTab == 'graph'">
         <label>表示する厳選度</label>
-        <div><InputNumber class="w-50px" type="number" min="0" max="100" step="1" v-model.number="graphPercentile" /> %</div>
+        <div>
+          <InputNumber
+            class="w-50px"
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            v-model.number="graphPercentile"
+          />
+          %
+        </div>
       </div>
     </SettingList>
 
@@ -379,9 +460,8 @@ async function showDetail(pokemon, p) {
       </div>
     </template>
 
-    <div v-else class="scroll" style="height: 600px;">
+    <div v-else class="scroll" style="height: 600px">
       <SortableTable :dataList="evaluateTablePokemonList" :columnList="columnList" :fixColumn="2">
-
         <template #foodList="{ data }">
           <div class="flex-row-center-center gap-2px">
             <div v-for="(food, i) of data.foodList" class="food">
@@ -392,17 +472,16 @@ async function showDetail(pokemon, p) {
         </template>
 
         <template #percentile="{ data, column }">
-          <div class="text-align-right percentile" @click="showDetail(data, column.p)">{{ Math.round(data[column.p]).toLocaleString() }}</div>
+          <div class="text-align-right percentile" @click="showDetail(data, column.p)">
+            {{ Math.round(data[column.p]).toLocaleString() }}
+          </div>
         </template>
-
       </SortableTable>
     </div>
-
   </div>
 </template>
 
 <style lang="scss" scoped>
-
 .page {
   display: flex;
   flex-direction: column;
@@ -448,7 +527,7 @@ async function showDetail(pokemon, p) {
       opacity: 0.5;
     }
     &:not(.disabled) {
-      background-color: #FFF;
+      background-color: #fff;
       border-radius: 3px;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
@@ -465,21 +544,21 @@ async function showDetail(pokemon, p) {
       font-size: 80%;
 
       text-shadow:
-        0px 0px 3px #FFF,
-        0px 0px 3px #FFF,
-        0px 0px 3px #FFF,
-        0px 0px 3px #FFF,
-        0px 0px 3px #FFF;
+        0px 0px 3px #fff,
+        0px 0px 3px #fff,
+        0px 0px 3px #fff,
+        0px 0px 3px #fff,
+        0px 0px 3px #fff;
     }
   }
 
   .percentile {
-    color: #04C;
-    border-bottom: 1px #04C solid;
+    color: #04c;
+    border-bottom: 1px #04c solid;
     cursor: pointer;
 
     &:hover {
-      background-color: #DEF;
+      background-color: #def;
     }
   }
 }
@@ -510,5 +589,4 @@ button {
   font: inherit;
   cursor: pointer;
 }
-
 </style>

@@ -36,6 +36,7 @@ interface CookingType {
   lv4?: number;
   rate: number;
   recipeLvBonus: number;
+  eventFoodRate?: number;
   fixEnergy: number;
   fixAddEnergy: number;
   enable?: boolean;
