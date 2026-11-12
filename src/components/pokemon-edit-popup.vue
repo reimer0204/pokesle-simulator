@@ -287,7 +287,9 @@ function inferAssist() {
   const statusLineList = remainingLineList.filter(
     (line) => !shinyLineRegExp.test(line) && !favoriteLineRegExp.test(line),
   );
-  const lvLineList = statusLineList.filter((line) => /^\d+$/.test(line));
+  const lvLineList = statusLineList.filter(
+    (line) => /^\d+$/.test(line) && Number(line) >= 1 && Number(line) <= 100,
+  );
   if (lvLineList.length) {
     pokemon.lv = Number(lvLineList[0]);
   }
@@ -301,13 +303,21 @@ function inferAssist() {
   const nonLvLineList = statusLineList.filter(
     (line) => !/^\d+$/.test(line) && !skillLvLineRegExp.test(line),
   );
-  const foodLineList = nonLvLineList.filter((line) => /^[a-h]{3}$/i.test(line));
+  const foodLineRegExp = /^(?:[a-h]{3}|[1-9]{3})$/i;
+  const foodLineList = statusLineList.filter((line) => {
+    if (!foodLineRegExp.test(line)) return false;
+    if (!/^\d{3}$/.test(line)) return true;
+    return line.split('').every((digit, index) => {
+      const food = basePokemon.value?.foodList[Number(digit) - 1];
+      return food?.name && food.numList[index];
+    });
+  });
   pokemon.foodList = [null, null, null];
   if (foodLineList.length) {
     convertFoodABC(foodLineList[0]);
   }
 
-  const otherLineList = nonLvLineList.filter((line) => !/^[a-h]{3}$/i.test(line));
+  const otherLineList = nonLvLineList.filter((line) => !foodLineRegExp.test(line));
   const subSkillLineList = otherLineList.slice(0, 5);
   pokemon.subSkillList = [null, null, null, null, null];
   subSkillLineList.forEach((line, index) => convertSubSkill(line, index));

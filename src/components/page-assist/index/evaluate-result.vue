@@ -3,6 +3,7 @@ import { SimulatedPokemon } from '../../../type.ts';
 import config from '@/models/config.ts';
 import Popup from '@/models/popup/popup.ts';
 import EvaluateTableDetailPopup from '@/components/evaluate-table-detail-popup.vue';
+import Pokemon from '@/data/pokemon.ts';
 import { computed } from 'vue';
 import { EvaluateResult, EvaluateResultKey } from '../../../type';
 
@@ -75,7 +76,7 @@ const numWidth = computed(() => type.value == 'energy' && score.value == 'value'
         'flex-column-start-end': !config.pokemonList.selectDetail,
       }"
     >
-      <div>{{ after }}</div>
+      <div><NameLabel :pokemon="{ base: Pokemon.map[after] }" memoHidden /></div>
       <div class="text-align-right" :style="{ width: `${numWidth}px` }">
         <template v-if="result == null">-</template>
         <div v-else-if="props.lv != 'max'" class="link" @click="showSelectDetail(props.pokemon, after, props.lv as number)">{{ result }}</div>

@@ -1037,7 +1037,8 @@ function toggleFavorite(data: SimulatedPokemon) {
 
           <template #afterList="{ data, column }">
             <div style="width: 12em; font-size: 80%">
-              {{ data.afterList.length > 1 ? data.afterList[0] + '等' : data.afterList[0] }}
+              <NameLabel :pokemon="{ base: Pokemon.map[data.afterList[0]] }" memoHidden />
+              <template v-if="data.afterList.length > 1">等</template>
             </div>
           </template>
 

@@ -22,6 +22,18 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/11/12">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ボックス画面の一部ポケモン名表示を短縮名に変更</li>
+            <li>入力アシストで食材情報をする際、ABCだけでなく123形式でも入力できるよう改善</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/11/7">
       <ul>
         <li>
