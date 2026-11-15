@@ -288,6 +288,14 @@ const tableColumns = [
     </section>
 
     <section>
+      <h2>補足テキスト</h2>
+      <p class="source">
+        <code>supplement-note</code> は、表やグラフの見方を補足する控えめなテキストです。
+      </p>
+      <p class="supplement-note">補足の説明は、主要な情報より控えめに表示します。</p>
+    </section>
+
+    <section>
       <h2>フォームコントロール</h2>
       <p class="source">
         実装元: <code>components/form/</code>。各コンポーネントを個別に記載しています。

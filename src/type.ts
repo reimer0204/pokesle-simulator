@@ -197,6 +197,7 @@ interface EvaluateDiagnosticResult {
   berryEnergy: number;
   foodNumMap: Partial<FoodNames>;
   skillActivationNum: number;
+  pureMint?: EvaluateDiagnosticResult;
 }
 interface EvaluateResult {
   [type: number | string]: {

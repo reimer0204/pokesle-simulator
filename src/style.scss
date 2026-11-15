@@ -88,6 +88,13 @@ input[type='file'] {
   }
 }
 
+.supplement-note {
+  margin-top: 5px;
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 // スマートフォンでは、表やタブは必要に応じて内部スクロールさせつつ、
 // 固有のスクロール領域を持たないページもmainで縦スクロールできるようにする。
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {

@@ -164,7 +164,9 @@ addEventListener('message', async (event) => {
                 let selectEvaluate = evaluateSimulator.selectEvaluate(
                   simulatedPokemon,
                   subSkillList.map((x) => SubSkill.map[x]),
-                  evaluateType == 'pureMint' ? Nature.map['まじめ'] : Nature.map[box.nature],
+                  evaluateType == 'pureMint'
+                    ? Nature.map[config.pureMintNature ?? 'まじめ']
+                    : Nature.map[box.nature],
                   evaluateTable.scoreForHealerEvaluate[lv][''].energy,
                   evaluateTable.scoreForSupportEvaluate[lv][''].energy,
                 );
@@ -232,13 +234,19 @@ addEventListener('message', async (event) => {
                 evaluateResult[lv][after].foodNumList = afterPokemon.foodList.map(
                   (f) => simulatedPokemon[f.name],
                 );
-                evaluateResult[lv][after].diagnostic = {
+                const diagnostic = {
                   berryEnergy: selectEvaluate.bEpD,
                   foodNumMap: Object.fromEntries(
                     selectEvaluate.foodList.map((food) => [food.name, selectEvaluate[food.name]]),
                   ),
                   skillActivationNum: selectEvaluate.skillPerDay,
                 };
+                if (evaluateType == null) {
+                  evaluateResult[lv][after].diagnostic = diagnostic;
+                }
+                if (evaluateType == 'pureMint') {
+                  evaluateResult[lv][after].diagnostic!.pureMint = diagnostic;
+                }
 
                 if (evaluateType == null) {
                   if (afterPokemon.specialty == 'きのみ')

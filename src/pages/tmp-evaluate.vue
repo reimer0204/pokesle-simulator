@@ -28,7 +28,7 @@ import PokemonEditPopup from '@/components/pokemon-edit-popup.vue';
 import PokemonSelectPopup from '@/components/pokemon-select-popup.vue';
 import BaseAlert from '@/components/alert/base-alert.vue';
 import SettingButton from '@/components/design/setting-button.vue';
-import { Food } from '@/data/food_and_cooking';
+import { Cooking, Food } from '@/data/food_and_cooking';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
@@ -187,7 +187,8 @@ async function importClipboardScreenshot() {
     }
     await importAndEvaluateScreenshotFile(await clipboardItem.getType(imageType));
   } catch {
-    screenshotError.value = 'クリップボードの読み取りが許可されていないか、画像を取得できませんでした。';
+    screenshotError.value =
+      'クリップボードの読み取りが許可されていないか、画像を取得できませんでした。';
   }
 }
 
@@ -227,7 +228,7 @@ async function importDroppedScreenshot(event: DragEvent) {
   }
 }
 
-async function evaluate() {
+async function evaluate(withMint = false) {
   result.value = null;
   await asyncWatcher.run(async (progressCounter) => {
     // 簡易診断表は食材・サブスキル・性格の全組み合わせを列挙するため、
@@ -251,7 +252,8 @@ async function evaluate() {
     evaluateConfig.sleepTime = evaluateConfig.tmpEvaluate.sleepTime;
     evaluateConfig.checkFreq = evaluateConfig.tmpEvaluate.checkFreq;
     evaluateConfig.workerNum = evaluateConfig.tmpEvaluate.workerNum;
-    evaluateConfig.pureMint = false;
+    evaluateConfig.pureMint = withMint;
+    evaluateConfig.pureMintNature = 'がんばりや';
     const [workerSetupProgress, pokemonSimulationProgress] = pokemonProgress.split(1, 4);
     workerSetupProgress.setName('評価の準備をしています…');
     await worker.call(workerSetupProgress, () => ({ type: 'config', config: evaluateConfig }));
@@ -262,6 +264,7 @@ async function evaluate() {
       evaluateTable: table,
     }));
     result.value = simulatedPokemon;
+    mintChartDisplay.value = 'both';
   });
 }
 
@@ -280,34 +283,67 @@ const chartSeries = [
   { key: 'food', label: '食材厳選度', color: '#df8650', specialty: '食材' },
   { key: 'skill', label: 'スキル厳選度', color: '#3d73c9', specialty: 'スキル' },
 ];
+const mintChartDisplay = ref<'both' | 'before' | 'after'>('both');
 const evolutionNameList = computed(() =>
   Object.keys(result.value?.evaluateResult?.[lvList[0]] ?? {}).filter((name) => name !== 'best'),
+);
+const hasMintResult = computed(
+  () =>
+    result.value?.evaluateResult?.[lvList[0]]?.[evolutionNameList.value[0]]?.energy?.pureMint !=
+    null,
 );
 
 function createChartData(evolutionName: string) {
   const specialty = Pokemon.map[evolutionName]?.specialty;
   return {
     labels: lvList.map((lv) => `Lv${lv}`),
-    datasets: chartSeries.map(({ key, label, color, specialty: seriesSpecialty }) => ({
-      label,
-      data: lvList.map((lv) =>
-        Number(
-          ((result.value?.evaluateResult?.[lv]?.[evolutionName]?.[key]?.rate ?? 0) * 100).toFixed(
-            1,
-          ),
+    datasets: chartSeries.flatMap(({ key, label, color, specialty: seriesSpecialty }) => {
+      const createDataset = (isMint: boolean) => ({
+        label: isMint ? `${label}（ミント後）` : label,
+        data: lvList.map((lv) =>
+          Number((getEvaluateRate(evolutionName, lv, key, isMint) * 100).toFixed(1)),
         ),
-      ),
-      // 進化先のとくい以外は補助情報として薄く表示する。
-      borderColor: seriesSpecialty != null && seriesSpecialty !== specialty ? `${color}66` : color,
-      backgroundColor:
-        seriesSpecialty != null && seriesSpecialty !== specialty ? `${color}66` : color,
-      tension: 0.2,
-    })),
+        // 進化先のとくい以外は補助情報として薄く表示する。
+        borderColor:
+          seriesSpecialty != null && seriesSpecialty !== specialty ? `${color}66` : color,
+        backgroundColor:
+          seriesSpecialty != null && seriesSpecialty !== specialty ? `${color}66` : color,
+        borderDash: isMint ? [6, 3] : undefined,
+        tension: 0.2,
+      });
+      return [
+        ...(mintChartDisplay.value !== 'after' ? [createDataset(false)] : []),
+        ...(hasMintResult.value && mintChartDisplay.value !== 'before'
+          ? [createDataset(true)]
+          : []),
+      ];
+    }),
   };
 }
 
-function formatEvaluateRate(evolutionName: string, lv: number, key: string) {
-  return `${((result.value?.evaluateResult?.[lv]?.[evolutionName]?.[key]?.rate ?? 0) * 100).toFixed(1)}%`;
+function getEvaluateRate(evolutionName: string, lv: number, key: string, isMint = false) {
+  const evaluate = result.value?.evaluateResult?.[lv]?.[evolutionName]?.[key];
+  return isMint ? (evaluate?.pureMint?.rate ?? 0) : (evaluate?.rate ?? 0);
+}
+
+function formatEvaluateRate(evolutionName: string, lv: number, key: string, isMint = false) {
+  return `${(getEvaluateRate(evolutionName, lv, key, isMint) * 100).toFixed(1)}%`;
+}
+
+function formatDifference(
+  before: number | undefined,
+  after: number | undefined,
+  digits: number,
+  suffix = '',
+) {
+  if (before == null || after == null) return '';
+  const difference = after - before;
+  return `${difference > 0 ? '+' : ''}${difference.toFixed(digits)}${suffix}`;
+}
+
+function differenceClass(before: number | undefined, after: number | undefined) {
+  if (before == null || after == null || after === before) return '';
+  return after > before ? 'positive-difference' : 'negative-difference';
 }
 
 const foodNameList = computed(() =>
@@ -318,16 +354,34 @@ function getDiagnosticValue(
   evolutionName: string,
   lv: number,
   key: 'berryEnergy' | 'skillActivationNum',
+  isMint = false,
 ) {
-  return result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic?.[key];
+  const diagnostic = result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic;
+  return isMint ? diagnostic?.pureMint?.[key] : diagnostic?.[key];
 }
 
-function getFoodDiagnosticValue(evolutionName: string, lv: number, foodName: string) {
-  return result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic?.foodNumMap?.[foodName];
+function getFoodDiagnosticValue(
+  evolutionName: string,
+  lv: number,
+  foodName: string,
+  isMint = false,
+) {
+  const diagnostic = result.value?.evaluateResult?.[lv]?.[evolutionName]?.diagnostic;
+  return isMint ? diagnostic?.pureMint?.foodNumMap?.[foodName] : diagnostic?.foodNumMap?.[foodName];
 }
 
 function formatDiagnosticValue(value: number | undefined, digits: number) {
   return value == null ? '－' : value.toFixed(digits);
+}
+
+function formatFoodRequirementRate(value: number | undefined, foodName: string) {
+  if (value == null) return '';
+  const requiredNum = Math.max(
+    ...Cooking.list.map(
+      (cooking) => cooking.foodList.find((food) => food.name === foodName)?.num ?? 0,
+    ),
+  );
+  return requiredNum ? `${((value / requiredNum) * 100).toFixed(0)}%` : '';
 }
 
 const selectDisplayMode = computed({
@@ -359,7 +413,6 @@ const chartOptions = {
 
     <template v-if="activeTab === 'pokemon'">
       <div class="form">
-          
         <div class="pokemon-tab-header">
           <div class="screenshot-button-list">
             <FormButton @click="screenshotInput?.click()" class="from-screenshot"
@@ -397,13 +450,22 @@ const chartOptions = {
         <NatureSelect v-model="pokemon.nature" />
       </div>
       <p v-if="screenshotError" class="screenshot-error">{{ screenshotError }}</p>
-      <FormButton class="execute" @click="evaluate">評価</FormButton>
+      <div class="evaluate-button-list">
+        <FormButton class="execute flex-110" @click="evaluate()">通常評価</FormButton>
+        <FormButton class="execute flex-110" @click="evaluate(true)">ミント評価</FormButton>
+      </div>
 
       <section v-if="result" class="result">
         <div class="flex-row gap-10px mb-5px">
           厳選度表示：
           <InputRadio v-model="selectDisplayMode" value="graph">グラフ</InputRadio>
           <InputRadio v-model="selectDisplayMode" value="table">表</InputRadio>
+        </div>
+        <div v-if="selectDisplayMode === 'graph' && hasMintResult" class="flex-row gap-10px mb-5px">
+          ミント表示：
+          <InputRadio v-model="mintChartDisplay" value="both">両方</InputRadio>
+          <InputRadio v-model="mintChartDisplay" value="before">ミント前</InputRadio>
+          <InputRadio v-model="mintChartDisplay" value="after">ミント後</InputRadio>
         </div>
         <div class="evolution-chart-list mt-10px">
           <section
@@ -412,6 +474,7 @@ const chartOptions = {
             class="evolution-chart"
           >
             <h3>{{ evolutionName }}</h3>
+            <h4>厳選度</h4>
             <div v-if="selectDisplayMode === 'graph'" class="chart">
               <Line :data="createChartData(evolutionName)" :options="chartOptions" />
             </div>
@@ -425,17 +488,46 @@ const chartOptions = {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="{ key, label } in chartSeries" :key="key">
-                      <td>{{ label }}</td>
-                      <td v-for="lv in lvList" :key="lv">
-                        {{ formatEvaluateRate(evolutionName, lv, key) }}
-                      </td>
-                    </tr>
+                    <template v-for="{ key, label } in chartSeries" :key="key">
+                      <tr>
+                        <td>{{ label }}</td>
+                        <td v-for="lv in lvList" :key="lv">
+                          {{ formatEvaluateRate(evolutionName, lv, key) }}
+                        </td>
+                      </tr>
+                      <tr v-if="hasMintResult" class="mint-result-row">
+                        <td>ミント後</td>
+                        <td v-for="lv in lvList" :key="lv">
+                          <div>{{ formatEvaluateRate(evolutionName, lv, key, true) }}</div>
+                          <small
+                            :class="
+                              differenceClass(
+                                getEvaluateRate(evolutionName, lv, key),
+                                getEvaluateRate(evolutionName, lv, key, true),
+                              )
+                            "
+                          >
+                            {{
+                              formatDifference(
+                                getEvaluateRate(evolutionName, lv, key) * 100,
+                                getEvaluateRate(evolutionName, lv, key, true) * 100,
+                                1,
+                                '%',
+                              )
+                            }}
+                          </small>
+                        </td>
+                      </tr>
+                    </template>
                   </tbody>
                 </DesignTable>
               </div>
             </template>
-            
+            <p class="supplement-note">
+              厳選度は、全サブスキル・全せいかくの組合せのうち、どの程度優れているかを示す値です。100%が理論値です。
+            </p>
+
+            <h4>実際の値</h4>
             <div class="evaluate-rate-table-scroll">
               <DesignTable class="evaluate-rate-table diagnostic-table">
                 <thead>
@@ -456,17 +548,97 @@ const chartOptions = {
                       }}
                     </td>
                   </tr>
-                  <tr v-for="foodName in foodNameList" :key="foodName">
-                    <td><div class="flex-row-start-center"><img :src="Food.map[foodName].img" class="w-20px">{{ foodName }}</div></td>
+                  <tr v-if="hasMintResult" class="mint-result-row">
+                    <td>ミント後</td>
                     <td v-for="lv in lvList" :key="lv">
-                      {{
-                        formatDiagnosticValue(
-                          getFoodDiagnosticValue(evolutionName, lv, foodName),
-                          1,
-                        )
-                      }}
+                      <div>
+                        {{
+                          formatDiagnosticValue(
+                            getDiagnosticValue(evolutionName, lv, 'berryEnergy', true),
+                            1,
+                          )
+                        }}
+                      </div>
+                      <small
+                        :class="
+                          differenceClass(
+                            getDiagnosticValue(evolutionName, lv, 'berryEnergy'),
+                            getDiagnosticValue(evolutionName, lv, 'berryEnergy', true),
+                          )
+                        "
+                      >
+                        {{
+                          formatDifference(
+                            getDiagnosticValue(evolutionName, lv, 'berryEnergy'),
+                            getDiagnosticValue(evolutionName, lv, 'berryEnergy', true),
+                            1,
+                          )
+                        }}
+                      </small>
                     </td>
                   </tr>
+                  <template v-for="foodName in foodNameList" :key="foodName">
+                    <tr>
+                      <td>
+                        <div class="flex-row-start-center">
+                          <img :src="Food.map[foodName].img" class="w-20px" />{{ foodName }}
+                        </div>
+                      </td>
+                      <td v-for="lv in lvList" :key="lv">
+                        {{
+                          formatDiagnosticValue(
+                            getFoodDiagnosticValue(evolutionName, lv, foodName),
+                            1,
+                          )
+                        }}
+                        <small class="food-requirement-rate">
+                          {{
+                            formatFoodRequirementRate(
+                              getFoodDiagnosticValue(evolutionName, lv, foodName),
+                              foodName,
+                            )
+                          }}
+                        </small>
+                      </td>
+                    </tr>
+                    <tr v-if="hasMintResult" class="mint-result-row">
+                      <td>ミント後</td>
+                      <td v-for="lv in lvList" :key="lv">
+                        <div>
+                          {{
+                            formatDiagnosticValue(
+                              getFoodDiagnosticValue(evolutionName, lv, foodName, true),
+                              1,
+                            )
+                          }}
+                        </div>
+                        <small class="food-requirement-rate">
+                          {{
+                            formatFoodRequirementRate(
+                              getFoodDiagnosticValue(evolutionName, lv, foodName, true),
+                              foodName,
+                            )
+                          }}
+                        </small>
+                        <small
+                          :class="
+                            differenceClass(
+                              getFoodDiagnosticValue(evolutionName, lv, foodName),
+                              getFoodDiagnosticValue(evolutionName, lv, foodName, true),
+                            )
+                          "
+                        >
+                          {{
+                            formatDifference(
+                              getFoodDiagnosticValue(evolutionName, lv, foodName),
+                              getFoodDiagnosticValue(evolutionName, lv, foodName, true),
+                              1,
+                            )
+                          }}
+                        </small>
+                      </td>
+                    </tr>
+                  </template>
                   <tr>
                     <td>スキル発動回数</td>
                     <td v-for="lv in lvList" :key="lv">
@@ -478,12 +650,46 @@ const chartOptions = {
                       }}
                     </td>
                   </tr>
+                  <tr v-if="hasMintResult" class="mint-result-row">
+                    <td>ミント後</td>
+                    <td v-for="lv in lvList" :key="lv">
+                      <div>
+                        {{
+                          formatDiagnosticValue(
+                            getDiagnosticValue(evolutionName, lv, 'skillActivationNum', true),
+                            2,
+                          )
+                        }}
+                      </div>
+                      <small
+                        :class="
+                          differenceClass(
+                            getDiagnosticValue(evolutionName, lv, 'skillActivationNum'),
+                            getDiagnosticValue(evolutionName, lv, 'skillActivationNum', true),
+                          )
+                        "
+                      >
+                        {{
+                          formatDifference(
+                            getDiagnosticValue(evolutionName, lv, 'skillActivationNum'),
+                            getDiagnosticValue(evolutionName, lv, 'skillActivationNum', true),
+                            2,
+                          )
+                        }}
+                      </small>
+                    </td>
+                  </tr>
                 </tbody>
               </DesignTable>
             </div>
+            <p class="supplement-note">
+              食材の下に表示されている数値は、現環境の必要最大数に対する割合です。300%＝3食分です。
+            </p>
           </section>
         </div>
-        <FormButton class="execute box-add-button mt-5px" @click="addToPokemonBox">ボックスに追加</FormButton>
+        <FormButton class="execute box-add-button mt-5px" @click="addToPokemonBox"
+          >ボックスに追加</FormButton
+        >
       </section>
     </template>
     <EvaluateSetting
@@ -575,6 +781,10 @@ const chartOptions = {
 .result {
   min-height: 360px;
 }
+.evaluate-button-list {
+  display: flex;
+  gap: 5px;
+}
 .evolution-chart-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -586,6 +796,11 @@ const chartOptions = {
 .evolution-chart h3 {
   margin-bottom: 4px;
   font-size: 16px;
+}
+.evolution-chart h4 {
+  margin: 10px 0 4px;
+  color: var(--color-muted);
+  font-size: 14px;
 }
 .chart {
   height: 280px;
@@ -606,6 +821,31 @@ const chartOptions = {
   td:not(:first-child) {
     text-align: right;
   }
+}
+.mint-result-row {
+  background: var(--color-mint-soft);
+
+  small {
+    display: block;
+    font-size: 0.8em;
+    line-height: 1.1;
+  }
+}
+.mint-result-row td:first-child {
+  font-size: 0.8em;
+  text-align: right;
+}
+.food-requirement-rate {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8em;
+  line-height: 1.1;
+}
+.positive-difference {
+  color: var(--color-danger);
+}
+.negative-difference {
+  color: var(--color-execute);
 }
 .diagnostic-table-title {
   margin: 12px 0 0;

@@ -22,6 +22,17 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/11/15">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>簡易診断にミント比較機能を追加</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/11/12">
       <ul>
         <li>
