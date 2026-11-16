@@ -17,6 +17,7 @@ import greengrasscornImg from '../img/food/greengrasscorn.png';
 import coffeeImg from '../img/food/coffee.png';
 import pumpkinImg from '../img/food/pumpkin.png';
 import avocadoImg from '../img/food/avocado.png';
+import nutsImg from '../img/food/nuts.png';
 import type { FoodName, CookingTypeName, CookingType, FoodType } from '../type';
 
 class Food {
@@ -40,6 +41,7 @@ class Food {
     { name: 'めざましコーヒー', energy: 153, img: coffeeImg },
     { name: 'ずっしりカボチャ', energy: 250, img: pumpkinImg },
     { name: 'つやつやアボカド', energy: 162, img: avocadoImg },
+    { name: 'ひとくちナッツ', energy: 112, img: nutsImg },
   ];
   static map = Food.list.reduce(
     (a, x) => ((a[x.name] = x), a),
@@ -291,6 +293,16 @@ class Cooking {
         { name: 'げきからハーブ', num: 22 },
         { name: 'マメミート', num: 20 },
       ],
+    },
+    {
+      type: 'カレー',
+      name: 'タネばくだんナンカレー',
+      energy: 7950,
+      foodList: [
+        { name: 'ひとくちナッツ', num: 15 },
+        { name: 'ずっしりカボチャ', num: 12 },
+        { name: 'ワカクサコーン', num: 12 },
+      ]
     },
     { type: 'サラダ', name: 'ごちゃまぜサラダ', energy: 0, foodList: [] },
     {
@@ -544,6 +556,17 @@ class Cooking {
         { name: 'ワカクサコーン', num: 18 },
         { name: 'あじわいキノコ', num: 27 },
       ],
+    },
+    {
+      type: 'サラダ',
+      name: 'くさむすびサラダラップ',
+      energy: 26350,
+      foodList: [
+        {name: 'ひとくちナッツ', num: 30},
+        {name: 'つやつやアボカド', num: 22},
+        {name: 'あったかジンジャー', num: 36},
+        {name: 'あんみんトマト', num: 33},
+      ]
     },
     { type: 'デザート', name: 'ごちゃまぜジュース', energy: 0, foodList: [] },
     {
@@ -806,6 +829,17 @@ class Cooking {
         { name: 'リラックスカカオ', num: 21 },
       ],
     },
+    {
+      type: 'デザート',
+      name: 'おいしいシッポロールケーキ',
+      energy: 19846,
+      foodList: [
+        { name: 'ひとくちナッツ', num: 26 },
+        { name: 'おいしいシッポ', num: 10 },
+        { name: 'ワカクサ大豆', num: 22 },
+        { name: 'とくせんエッグ', num: 33 },
+      ],
+    },
   ].map(
     (x) =>
       ({
@@ -894,7 +928,7 @@ class Cooking {
     70: { bonus: 3.58, totalExp: 13355125 },
   };
   static maxRecipeLv: number;
-  static potMax = 81;
+  static potMax = 87;
   static maxRecipeBonus: number;
 
   // 週に料理チャンスでn%上がる時、どのくらい期待値があるか
@@ -1030,7 +1064,7 @@ class Cooking {
       cooking.recipeLvBonus = Cooking.recipeLvs[cooking.lv]?.bonus ?? 0;
       cooking.eventFoodRate =
         config.simulation?.eventBonus?.food &&
-        cooking.foodList.some(({ name }) => name == config.simulation.eventBonus.food)
+          cooking.foodList.some(({ name }) => name == config.simulation.eventBonus.food)
           ? 1.5
           : 1;
       cooking.fixEnergy = cooking.energy * cooking.recipeLvBonus * cooking.eventFoodRate;
