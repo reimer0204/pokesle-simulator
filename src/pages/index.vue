@@ -211,42 +211,49 @@ const filteredPokemonList = computed(() => {
   }
 
   if (!keyword?.value.length) return filterMintPokemonList(pokemonList);
+  // ORで分けた各グループ内をANDで評価し、ANDを優先する。
+  const keywordGroups = keyword.value
+    .split(/\|| OR /g)
+    .map((keyword) => keyword.trim().split(/\s+AND\s+|\s+/g).filter(Boolean))
+    .filter((keywords) => keywords.length > 0);
+  if (!keywordGroups.length) return filterMintPokemonList(pokemonList);
   return filterMintPokemonList(
-    pokemonList.filter((x) => {
-      let result = true;
-      let keywords = keyword.value.split(/'[\s　]'/g);
-      for (const keyword of keywords) {
-        let or = false;
-        if (x.box?.name?.includes(keyword)) or = true;
-        if (x.box?.memo?.includes(keyword)) or = true;
-        if (x.base.type?.includes(keyword)) or = true;
-        if (x.base.berry?.name.includes(keyword)) or = true;
-        if (x.base.afterList?.join(' ')?.includes(keyword)) or = true;
-        if (x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
-        if (
-          x.box?.foodList
-            .map((f1) =>
-              String.fromCharCode(x.base?.foodList.findIndex((f2) => f2?.name == f1) + 65),
-            )
-            ?.join('')
-            ?.includes(keyword)
-        )
-          or = true;
-        if (x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
-        if (
-          x.box?.subSkillList
-            ?.map((x) => SubSkill.map[x]?.short)
-            ?.join(' ')
-            ?.includes(keyword)
-        )
-          or = true;
-        if (x.box?.nature?.includes(keyword)) or = true;
-        if (x.base.skill.name.includes(keyword)) or = true;
+    pokemonList.filter((x) =>
+      keywordGroups.some((keywords) => {
+        let result = true;
+        for (const keyword of keywords) {
+          let or = false;
+          if (x.box?.name?.includes(keyword)) or = true;
+          if (x.box?.memo?.includes(keyword)) or = true;
+          if (x.base.type?.includes(keyword)) or = true;
+          if (x.base.berry?.name.includes(keyword)) or = true;
+          if (x.base.afterList?.join(' ')?.includes(keyword)) or = true;
+          if (x.box?.foodList?.join(' ')?.includes(keyword)) or = true;
+          if (
+            x.box?.foodList
+              .map((f1) =>
+                String.fromCharCode(x.base?.foodList.findIndex((f2) => f2?.name == f1) + 65),
+              )
+              ?.join('')
+              ?.includes(keyword)
+          )
+            or = true;
+          if (x.box?.subSkillList?.join(' ')?.includes(keyword)) or = true;
+          if (
+            x.box?.subSkillList
+              ?.map((x) => SubSkill.map[x]?.short)
+              ?.join(' ')
+              ?.includes(keyword)
+          )
+            or = true;
+          if (x.box?.nature?.includes(keyword)) or = true;
+          if (x.base.skill.name.includes(keyword)) or = true;
 
-        result &&= or;
-      }
-      return result;
-    }),
+          result &&= or;
+        }
+        return result;
+      }),
+    ),
   );
 });
 

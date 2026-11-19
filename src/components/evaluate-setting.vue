@@ -99,7 +99,7 @@ const maxEnergyPerExp = computed(() => {
               <label>本人がおてボ持ちの時</label>
               <InputNumber
                 type="number"
-                class="w-80px"
+                class="w-40px"
                 v-model="evaluateConfig.teamHelpBonus"
                 step="1"
                 min="0"
@@ -111,13 +111,25 @@ const maxEnergyPerExp = computed(() => {
               <label>そうでない時</label>
               <InputNumber
                 type="number"
-                class="w-80px"
+                class="w-40px"
                 v-model="evaluateConfig.teamHelpBonusWithoutSelf"
                 step="1"
                 min="0"
                 max="4"
               />
               匹
+            </div>
+            <div>
+              <label>おてボ以外の短縮幅</label>
+              <InputNumber
+                type="number"
+                class="w-40px"
+                v-model="evaluateConfig.teamHelpBonusBase"
+                step="1"
+                min="0"
+                max="21"
+              />
+              %
             </div>
           </div>
           <small>

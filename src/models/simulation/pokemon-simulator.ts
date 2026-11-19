@@ -1419,12 +1419,15 @@ class PokemonSimulator {
 
     // おてボの残り評価はシンプルに倍率にする
     if (hasHelpBonus) {
-      // おてスピ補正なしの自分のスコアを計算
-      pokemon.energyPerDay *=
-        (1 - pokemon.speedBonus) *
-          (1 / (1 - teamHelpBonus * 0.05 - 0.05) - 1 / (1 - teamHelpBonus * 0.05)) *
-          4 +
-        1;
+      pokemon.energyPerDay +=
+        pokemon.energyPerDay
+        * (1 - pokemon.speedBonus)  // おてスピ補正を除外
+        * (
+          1 / (1 - Math.min((teamHelpBonus + 1) * 0.05 + this.config.selectEvaluate.teamHelpBonusBase / 100, 0.35))
+          - 1 / (1 - this.config.selectEvaluate.teamHelpBonusBase / 100)
+        )  // おてボ補正による増分
+        / (teamHelpBonus + 1) // おてボ編成数で割って1匹あたりの数値にする
+        * 4 // 自分以外の4匹;
     }
 
     // timeCounter?.stop('calcHelp')

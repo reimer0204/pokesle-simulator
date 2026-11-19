@@ -232,6 +232,7 @@ const defaultConfig = {
     ),
     helpBonus: 20, // おてつだいボーナスがどれだけ手伝い速度を短縮するか(余剰分はエナジーの倍率で計算)
     teamHelpBonus: 1, // 本人がおてボ持ちの時、チームに自分以外のおてボ持ちが何匹いるか
+    teamHelpBonusBase: 14, // おてボ以外のおてつだいスピード短縮幅
     teamHelpBonusWithoutSelf: 1, // 本人がおてボを持たない時、チームにおてボ持ちが何匹いるか
     supportBorder: 90, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか
     supportRankNum: 20, // おてサポ、げんきオール等の評価に使う、他ポケモンがどのくらい厳選されているか

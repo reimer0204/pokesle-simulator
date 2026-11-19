@@ -128,6 +128,26 @@ const skillWeightList = computed(() => {
   })
 });
 
+const otetsudaiBonus = computed(() => {
+  if (!evaluateResult.value) return 0;
+  if (!evaluateResult.value.subSkillNameList.includes('おてつだいボーナス')) return 0;
+  return (evaluateResult.value.bEpD + evaluateResult.value.fEpD + evaluateResult.value.skillEnergyPerDay)
+    * (1 - evaluateResult.value.speedBonus)
+    * (
+      1 / (1 - Math.min((config.selectEvaluate.teamHelpBonus + 1) * 0.05 + config.selectEvaluate.teamHelpBonusBase / 100, 0.35))
+      - 1 / (1 - config.selectEvaluate.teamHelpBonusBase / 100)
+    ) / (config.selectEvaluate.teamHelpBonus + 1)
+    * 4;
+})
+
+const shoukei = computed(() => {
+  if (!evaluateResult.value) return 0;
+  return evaluateResult.value.bEpD
+    + evaluateResult.value.fEpD
+    + evaluateResult.value.skillEnergyPerDay
+    + otetsudaiBonus.value;
+})
+
 const graphList = computed(() => {
   let result = [
     { key: 'energy', name: '総合スコア', open: true }
@@ -643,25 +663,34 @@ const specialtyEvaluateGraph = computed(() => {
             </td>
             <td>{{ evaluateResult.skillEnergyPerDay.toFixed(1) }}</td>
           </tr>
+          <tr v-if="evaluateResult.subSkillNameList.includes('おてつだいボーナス')">
+            <th colspan="2">おてつだいボーナス</th>
+            <td>
+              ({{ evaluateResult.bEpD.toFixed(1) }} + {{ evaluateResult.fEpD.toFixed(1) }} + {{ evaluateResult.skillEnergyPerDay.toFixed(1) }}) ※きのみ、食材、スキルの合計<br>
+              × {{ (1 - evaluateResult.speedBonus) * 100 }}% ※おてつだいスピード補正を除いて素の速度のスコアにする<br>
+              × (<br>
+              　100% ÷ (100% - min({{ (config.selectEvaluate.teamHelpBonus + 1) * 5 }}% + {{ config.selectEvaluate.teamHelpBonusBase }}%, 35%)) ※おてボ{{ config.selectEvaluate.teamHelpBonus + 1 }}匹編成時の効率アップ率<br>
+              　- 100% ÷ (100% - {{ config.selectEvaluate.teamHelpBonusBase }}%) ※おてボなしの値を引いて増分だけにする<br>
+              )<br>
+              ÷ {{ config.selectEvaluate.teamHelpBonus + 1 }}匹 ※おてボ編成数で割って1匹あたりの効果量にする<br>
+              × 4 ※自分以外の4匹分
+            </td>
+            <td>{{ otetsudaiBonus.toFixed(1) }}</td>
+          </tr>
           <tr>
             <th colspan="2">小計</th>
             <td>
               {{ evaluateResult.bEpD.toFixed(1) }}
               + {{ evaluateResult.fEpD.toFixed(1) }}
-              + {{ evaluateResult.skillEnergyPerDay.toFixed(1) }}<br>
+              + {{ evaluateResult.skillEnergyPerDay.toFixed(1) }}
+              <template v-if="otetsudaiBonus > 0">+ {{ otetsudaiBonus.toFixed(1) }}</template><br>
             </td>
-            <td>{{ (evaluateResult.bEpD + evaluateResult.fEpD + evaluateResult.skillEnergyPerDay).toFixed(0) }}</td>
+            <td>{{ shoukei.toFixed(1) }}</td>
           </tr>
           <tr>
             <th colspan="2">総計</th>
             <td>
-              {{ (evaluateResult.bEpD + evaluateResult.fEpD + evaluateResult.skillEnergyPerDay).toFixed(0) }}<br>
-              <!-- <template v-if="result.subSkillNameList.includes('おてつだいボーナス')">÷ (100% - {{ 25 - config.selectEvaluate.helpBonus }}%) ※おてつだいボーナスによる最終補正<br></template> -->
-              <template v-if="evaluateResult.subSkillNameList.includes('おてつだいボーナス')">× {{
-                (((1 - evaluateResult.speedBonus) * (
-                  1 / (1 - config.selectEvaluate.teamHelpBonus * 0.05 - 0.05)
-                  - 1 / (1 - config.selectEvaluate.teamHelpBonus * 0.05)
-                ) * 4 + 1) * 100).toFixed(1) }}% ※おてつだいボーナスによる最終補正<br></template>
+              {{ shoukei.toFixed(1) }}<br>
               <template v-if="evaluateResult.subSkillNameList.includes('ゆめのかけらボーナス')">× (100% + 6% × {{ config.selectEvaluate.shardBonus }}%) ※ゆめのかけらボーナス<br></template>
               <template v-if="evaluateResult.subSkillNameList.includes('リサーチEXPボーナス')">× (100% + 9% × {{ config.selectEvaluate.shardBonus }}% ÷ 2) ※リサーチEXPボーナス<br></template>
               <template v-if="evaluateResult.shard">+ {{ evaluateResult.shard.toFixed(1) }} × {{ config.selectEvaluate.shardEnergy }} × {{ config.selectEvaluate.shardBonus }}% ※ゆめのかけらゲット<br></template>
