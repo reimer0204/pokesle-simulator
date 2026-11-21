@@ -362,6 +362,14 @@ const activeTab = ref('pokemon');
       <div v-else class="checklist-settings-scroll">
         <SettingGroup title="その他" class="skill-target-group">
           <div class="flex-column gap-5px">
+            <InputCheckbox v-model="config.summary.checklist.showMint"
+              >ミント使用後も一覧に表示する</InputCheckbox
+            >
+            <InputCheckbox
+              v-model="config.summary.checklist.field.excludeMint"
+              :disabled="!config.summary.checklist.showMint"
+              >ミント使用後がチェックリストに該当した場合、フィールド別からも除外</InputCheckbox
+            >
             <InputCheckbox v-model="config.summary.checklist.field.bakecchaMatome"
               >バケッチャ・パンプジンをまとめて表示</InputCheckbox
             >

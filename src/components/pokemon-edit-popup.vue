@@ -35,6 +35,7 @@ import {
 } from 'chart.js';
 import Exp from '@/data/exp.ts';
 import DesignTable from './design-table.vue';
+import AndroidPokemonImportPopup from './android-pokemon-import-popup.vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
@@ -78,10 +79,19 @@ let pokemon = reactive({
   fix: null,
 });
 const insertTo = ref(null);
+const androidReadStatus = ref('');
+async function readAndroidPokemon() {
+  const result = await Popup.show(AndroidPokemonImportPopup);
+  if (result) {
+    androidReadStatus.value = `登録 ${result.registered}匹 ／ 対象外 ${result.skipped}匹`;
+    if (result.registered) $emit('input', true);
+  }
+}
 
 const basePokemon = computed(() => {
   return Pokemon.map[pokemon.name];
 });
+const canEvaluateMint = computed(() => !!Nature.map[pokemon.nature]?.good);
 const kaihouPokemon = computed(() => {
   return basePokemon.value?.kaihou;
 });
@@ -333,6 +343,12 @@ async function selectPokemon() {
 
 // 厳選情報
 let selectResult = ref(null);
+const selectCheckListColumns = computed(() => [
+  { title: 'チェックリスト', hitList: selectResult.value?.hitCheckList },
+  ...(canEvaluateMint.value
+    ? [{ title: 'チェックリスト（ミント後）', hitList: selectResult.value?.mintHitCheckList }]
+    : []),
+]);
 let selectLvList = [
   'max',
   ...Object.entries(config.selectEvaluate.levelList)
@@ -371,20 +387,30 @@ async function calcSelectScore() {
       // ボックス整理モードと同じチェックリスト判定を、編集中の個体にも行う。
       const selectConfig = JSON.parse(JSON.stringify(config));
       selectConfig.cleaning = true;
+      selectConfig.pureMint = canEvaluateMint.value;
+      selectConfig.pureMintNature = 'がんばりや';
       await singleMultiWorker.call(null, () => ({
         type: 'config',
         config: selectConfig,
       }));
 
-      const result = (
+      const [result, mintResult] = (
         await singleMultiWorker.call(progressCounter, () => {
           return {
             type: 'basic',
-            pokemonList: [JSON.parse(JSON.stringify(pokemon))],
+            // チェックリストは食材量・スキル回数も参照するため、ミント後の個体で判定する。
+            pokemonList: [
+              JSON.parse(JSON.stringify(pokemon)),
+              ...(selectConfig.pureMint
+                ? [{ ...JSON.parse(JSON.stringify(pokemon)), nature: selectConfig.pureMintNature }]
+                : []),
+            ],
             evaluateTable,
           };
         })
-      ).flat(1)[0];
+      ).flat(1);
+
+      if (result) result.mintHitCheckList = mintResult?.hitCheckList ?? [];
 
       if (simulatedPokemonList.value && result) {
         result.box = {};
@@ -554,6 +580,24 @@ const selectChartList = computed(() => {
             pointRadius: 3,
             tension: 0.2,
           },
+          ...(canEvaluateMint.value
+            ? [
+                {
+                  label: 'ミント後',
+                  data: selectChartLvList.value.map((lv) => {
+                    const score =
+                      selectResult.value.evaluateResult?.[lv]?.[after]?.[key]?.pureMint?.score;
+                    return score == null ? null : score * 100;
+                  }),
+                  borderColor: color,
+                  backgroundColor: color,
+                  borderDash: [6, 3],
+                  borderWidth: 4,
+                  pointRadius: 3,
+                  tension: 0.2,
+                },
+              ]
+            : []),
           {
             label: '同種族1位',
             data: selectChartLvList.value.map((lv) => {
@@ -895,25 +939,29 @@ const candyInfo = computed(() => {
 
       <AsyncWatcherArea :asyncWatcher="selectAsyncWatcher" class="select-area">
         <div v-if="selectResult">
-          <div class="select-check-list">
-            <b>チェックリスト</b>
-            <div v-if="selectResult.hitCheckList?.length" class="flex-column-start-start gap-3px">
-              <div
-                v-for="(
-                  { type, pokemon: targetPokemon, food, skill }, index
-                ) in selectResult.hitCheckList"
-                :key="index"
-                class="flex-row-start-center gap-3px"
-              >
-                <span>✅️</span>
-                <template v-if="type == 'pokemon'">厳選度({{ targetPokemon.name }})</template>
-                <template v-else-if="type == 'food'">
-                  <img :src="food.img" :alt="food.name" class="w-20px" />
-                </template>
-                <template v-else-if="type == 'skill'">{{ skill.name }}</template>
+          <div class="select-check-list-area flex-row gap-10px">
+            <div
+              v-for="{ title, hitList } in selectCheckListColumns"
+              :key="title"
+              class="select-check-list flex-110"
+            >
+              <b>{{ title }}</b>
+              <div v-if="hitList?.length" class="flex-column-start-start gap-3px">
+                <div
+                  v-for="({ type, pokemon: targetPokemon, food, skill }, index) in hitList"
+                  :key="index"
+                  class="flex-row-start-center gap-3px"
+                >
+                  <span>✅️</span>
+                  <template v-if="type == 'pokemon'">厳選度({{ targetPokemon.name }})</template>
+                  <template v-else-if="type == 'food'">
+                    <img :src="food.img" :alt="food.name" class="w-20px" />
+                  </template>
+                  <template v-else-if="type == 'skill'">{{ skill.name }}</template>
+                </div>
               </div>
+              <span v-else>該当なし</span>
             </div>
-            <span v-else>該当なし</span>
           </div>
           <div class="flex-row gap-10px mb-5px">
             <InputRadio v-model="selectDisplayMode" value="graph">グラフ</InputRadio>
@@ -945,6 +993,9 @@ const candyInfo = computed(() => {
                   </div>
                   <div class="select-chart-legend">
                     <span><i :style="{ borderColor: color }"></i>本個体</span>
+                    <span v-if="canEvaluateMint">
+                      <i class="mint" :style="{ borderColor: color }"></i>ミント後
+                    </span>
                     <span><i class="same"></i>同種族1位</span>
                     <span><i class="food"></i>同種族・同食材1位</span>
                   </div>
@@ -985,7 +1036,7 @@ const candyInfo = computed(() => {
               <tbody>
                 <template v-for="after in selectResult.base.afterList">
                   <tr>
-                    <th rowspan="3">{{ after }}</th>
+                    <th :rowspan="canEvaluateMint ? 4 : 3">{{ after }}</th>
                     <th>本個体</th>
                     <template v-for="{ key } in selectResultColumns">
                       <td
@@ -1007,6 +1058,28 @@ const candyInfo = computed(() => {
                             (selectResult.evaluateResult?.[lv]?.[after][key].score * 100).toFixed(
                               1,
                             )
+                          }}%
+                        </template>
+                      </td>
+                    </template>
+                  </tr>
+                  <tr v-if="canEvaluateMint">
+                    <th>ミント後</th>
+                    <template v-for="{ key } in selectResultColumns">
+                      <td v-for="lv in selectLvList" class="text-align-right">
+                        <template
+                          v-if="
+                            selectResult.evaluateResult?.[lv]?.[after]?.[key]?.pureMint?.score ==
+                            null
+                          "
+                        >
+                          -
+                        </template>
+                        <template v-else>
+                          {{
+                            (
+                              selectResult.evaluateResult[lv][after][key].pureMint.score * 100
+                            ).toFixed(1)
                           }}%
                         </template>
                       </td>
@@ -1102,7 +1175,13 @@ const candyInfo = computed(() => {
     </ToggleArea>
 
     <template #footer>
+      <div class="android-read-status" role="status" v-if="androidReadStatus">
+        {{ androidReadStatus }}
+      </div>
       <div class="edit-pokemon-footer flex-row-start-center gap-10px">
+        <SettingButton @click="readAndroidPokemon">
+          <template #label>Android端末からまとめて取得</template>
+        </SettingButton>
         <FormButton v-if="props.index != null" class="important" @click="deletePokemon"
           >削除</FormButton
         >
@@ -1120,7 +1199,7 @@ const candyInfo = computed(() => {
 <style lang="scss" scoped>
 .edit-pokemon-popup {
   width: 780px;
-  height: min(900px, calc(100dvh - 40px));
+  height: min(900px, calc(100dvh - 140px));
   display: flex;
   flex-direction: column;
 
@@ -1131,10 +1210,18 @@ const candyInfo = computed(() => {
   }
 
   .edit-pokemon-footer {
+    flex-wrap: wrap;
     flex: 0 0 auto;
     padding: 10px 20px;
     border-top: 1px solid var(--color-line);
     background-color: var(--color-surface);
+  }
+
+  .android-read-status {
+    padding: 5px 20px;
+    color: var(--color-muted);
+    font-size: 85%;
+    overflow-wrap: anywhere;
   }
 
   .edit-form {
@@ -1206,6 +1293,7 @@ const candyInfo = computed(() => {
 
   .select-area {
     .select-check-list {
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 3px;
@@ -1309,6 +1397,10 @@ const candyInfo = computed(() => {
         border-top: 4px solid;
         border-color: var(--color-ink);
 
+        &.mint {
+          border-top-style: dashed;
+        }
+
         &.same {
           border-top-style: dashed;
           border-color: #555;
@@ -1335,6 +1427,7 @@ const candyInfo = computed(() => {
 <style lang="scss" scoped>
 @media (max-width: 600px), (max-width: 900px) and (max-height: 500px) {
   .edit-pokemon-popup {
+    height: min(900px, calc(100dvh - 8px));
     .assist-alert,
     .assist-area {
       display: none;

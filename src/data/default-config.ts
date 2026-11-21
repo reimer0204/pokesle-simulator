@@ -354,6 +354,7 @@ const defaultConfig = {
 
   summary: {
     checklist: {
+      showMint: true,
       pokemonCondition: {
         list: [
           {
@@ -425,6 +426,7 @@ const defaultConfig = {
         skillSpecialtyOnly: true,
       },
       field: {
+        excludeMint: false,
         shinkago: false,
         bakecchaMatome: true,
       },

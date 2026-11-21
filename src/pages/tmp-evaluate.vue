@@ -55,6 +55,7 @@ const pokemon = reactive({
   index: -1,
 });
 const basePokemon = computed(() => Pokemon.map[pokemon.name]);
+const canEvaluateMint = computed(() => !!Nature.map[pokemon.nature]?.good);
 const foodSelectList = computed(() =>
   [0, 1, 2].map(
     (index) =>
@@ -452,7 +453,9 @@ const chartOptions = {
       <p v-if="screenshotError" class="screenshot-error">{{ screenshotError }}</p>
       <div class="evaluate-button-list">
         <FormButton class="execute flex-110" @click="evaluate()">通常評価</FormButton>
-        <FormButton class="execute flex-110" @click="evaluate(true)">ミント評価</FormButton>
+        <FormButton class="execute flex-110" :disabled="!canEvaluateMint" @click="evaluate(true)">
+          ミント評価
+        </FormButton>
       </div>
 
       <section v-if="result" class="result">

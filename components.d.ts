@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AndroidPokemonImportPopup: typeof import('./src/components/android-pokemon-import-popup.vue')['default']
     AsyncWatcherArea: typeof import('./src/components/util/async-watcher-area.vue')['default']
     BaseAlert: typeof import('./src/components/alert/base-alert.vue')['default']
     CandyIcon: typeof import('./src/components/icon/candy-icon.vue')['default']

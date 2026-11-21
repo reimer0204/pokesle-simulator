@@ -22,6 +22,18 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/11/21">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ポケモン編集画面、チェックリスト画面でミント使用後の情報も合わせて表示できるように改善しました。</li>
+            <li>Android端末＆Windows端末限定で、ポケモンスリープ本体から最近捕まえたポケモンをまとめて登録するサポートアプリを追加しました。ポケモン編集ポップアップ左下の「Android端末からまとめて取得」から実行できます。</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/11/19">
       <ul>
         <li>

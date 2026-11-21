@@ -120,6 +120,9 @@ const fieldList = computed(() => {
 
 <template>
   <div class="page">
+    <p class="supplement-note">
+      各エナジー列は厳選基準生成で計算したエナジーの期待値です。単に未厳選が多いフィールドではなく、優先して厳選したい強いポケモンが多く出るフィールドに行きたい時に参考にしてください。
+    </p>
     <div class="pokemon-list">
       <AsyncWatcherArea :asyncWatcher="asyncWatcher" class="flex-110 flex-column">
         <SortableTable

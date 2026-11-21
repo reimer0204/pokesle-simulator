@@ -4,6 +4,38 @@ import Skill from '@/data/skill';
 import type { PokemonType, SimulatedPokemon } from '@/type';
 import { matchesPokemonTarget } from './pokemon-target';
 
+// 最良値とボックスは両方を含め、厳選済の表記はミント前の該当を優先する。
+export function withMintChecked(
+  normal: any,
+  mint: any,
+  getKey: (row: any) => string,
+  combined = normal,
+  excludeMintFromField = false,
+) {
+  if (!normal) return normal;
+  const normalRows = new Map(normal.dataList.map((row: any) => [getKey(row), row]));
+  const mintCheckedKeys = new Set(
+    (mint?.dataList ?? []).filter((row: any) => row.checked).map(getKey),
+  );
+  return {
+    ...normal,
+    targetPokemonList: excludeMintFromField ? combined.targetPokemonList : normal.targetPokemonList,
+    dataList: combined.dataList.map((row: any) => ({
+      ...row,
+      checked: (normalRows.get(getKey(row)) as any)?.checked ?? false,
+      mintChecked: mintCheckedKeys.has(getKey(row)),
+    })),
+    columnList: normal.columnList.map((column: any) =>
+      column.key === 'checked'
+        ? {
+            ...column,
+            convert: (row: any) => (row.checked ? '済' : row.mintChecked ? '済（🌿）' : ''),
+          }
+        : column,
+    ),
+  };
+}
+
 export class CheckList {
   lvList: number[];
   evaluateTable: any;
@@ -19,8 +51,8 @@ export class CheckList {
     config: any,
     simulatedPokemonList: SimulatedPokemon[],
     hitList: any[] | null = null,
-    foodCheckList: any[] | null = null,
-    skillCheckList: any[] | null = null,
+    foodCheckList: { dataList: any[] } | null = null,
+    skillCheckList: { dataList: any[] } | null = null,
   ) {
     if (this.evaluateTable == null) {
       return {

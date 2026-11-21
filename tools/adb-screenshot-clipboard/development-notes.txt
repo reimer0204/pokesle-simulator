@@ -1,0 +1,62 @@
+ADB スクリーンショット補助アプリ 開発・動作メモ
+
+README.txtから分離した動作仕様・通信プロトコル・開発手順です。
+このメモは開発用であり、配布zipには同梱しません。
+
+■ Android端末からポケモン情報をまとめて取得
+
+ポケモン編集ポップアップ左下の「Android端末からまとめて取得」で設定を開き、
+登録条件（全員／通常またはミント後のチェックリスト該当／通常のみ該当）を選択します。
+登録日降順で、未登録の最も古いポケモンのステータス画面を表示し、
+食材2,3枠目とせいかくが映っている状態で「まとめて登録を開始」を押してください。
+この時点でexeが起動します。最新の厳選基準がない場合は基準生成を案内します。
+情報は1画面から取得し、上下のスクロール操作は行いません。
+解析後は既存の厳選計算を行い、条件に合う個体だけ自動登録します。
+ミント後だけ該当した場合も、元の性格の個体を登録します。
+判定後に幅25%・高さ50%から幅75%・高さ50%まで300msで水平スワイプし、
+1秒待って次の画面を撮影します。この処理を繰り返し、直前と同じステータスを
+読み取った場合は、重複分を登録せずexeを終了します。
+実行中はブラウザのアプリ画面をロックし、「中断」のみ操作できます。
+中断しても登録済みの個体は保持します。計算中の個体は保存しません。
+外部アプリ起動・ローカルネットワーク接続の確認が出た場合は許可してください。
+
+起動URL:
+  pokesle-adb-screenshot://capture?mode=pokemon-quote
+  pokesle-adb-screenshot://capture?mode=pokemon-quote&port=23721
+直接実行:
+  .\AdbScreenshotClipboard.exe --mode pokemon-quote --port 23720
+
+port省略時は23720です（1～65535）。127.0.0.1のみで待ち受け、管理者権限は不要です。
+WebSocketの接続先は ws://127.0.0.1:<port>/pokemon-quote です。
+URLのsessionが指定された場合、WebSocketのクエリーにも同じsessionが必要です。
+接続成立後にPNGバイナリを1枚返します。以後はテキスト「capture」で次の画像、
+「next」でスワイプ後も接続を維持してJSON {"type":"next"}を返し、
+次の「capture」を待ちます。「close」でスワイプせず終了します。
+旧クライアント用の「complete」は従来どおりスワイプ後に終了します。ADBエラーはコンソールとJSONテキスト
+{"type":"error","message":"エラー内容"}に表示し、アプリは終了しません。
+接続が異常切断された場合は再接続を待ちます。
+
+■ 従来のクリップボード取得
+
+端末が 1 台だけ接続されていれば、AdbScreenshotClipboard.exe を直接実行するだけで、
+スクリーンショットをクリップボードへコピーできます。
+
+■ 開発時のビルド
+
+このリポジトリでは、Git管理外の .local-tools/dotnet/ に開発用SDKを配置し、
+  & ./tools/dotnet.ps1 --list-sdks
+のように実行します。動作確認が完了するまでは、配布zipの作成・更新を省略します。
+ブラウザ起動先は、登録時のexeのパスに固定されます。ローカル検証用exeの更新時は
+同じ場所のexeを差し替え、AdbScreenshotClipboard.jsonのADB設定を維持してください。
+一瞬で終了して接続待ちになる場合は、登録先exeが古く、--mode pokemon-quoteに
+対応していない可能性があります。登録先exeの --help にこのmodeが出るか確認してください。
+
+.NET 8 SDKで以下を実行します。ランタイム同梱のため利用者側の.NETインストールは不要です。
+  dotnet publish tools/adb-screenshot-clipboard/AdbScreenshotClipboard.csproj -c Release -o <出力先>
+出力先の全ファイルをzipにまとめ、public/android-screenshot-to-clipboard.zipを更新します。
+Web側の回帰テストは node --test tests/android-pokemon-reader.test.mjs で実行できます。
+実exeの通信テストは tests/adb-screenshot/MockAdb.csproj をpublishした後、
+POKESLE_TEST_EXEに本体exe、POKESLE_TEST_ADBに模擬ADBのexeの絶対パスを設定し、
+  node --test tests/adb-screenshot/server.test.mjs
+を実行します。実端末への操作やプロトコル登録は行いません。
+

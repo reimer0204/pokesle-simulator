@@ -30,7 +30,10 @@ const props = defineProps({
       </div>
     </div>
     <SubSkillLabelList class="sub-skill-list" :pokemon="props.pokemon" />
-    <NatureInfo v-if="props.nature && props.pokemon" :nature="props.pokemon.nature" />
+    <template v-if="props.nature && props.pokemon">
+      <span v-if="props.pokemon.box?.useMint">🌿</span>
+      <NatureInfo v-else :nature="props.pokemon.nature" />
+    </template>
   </div>
 </template>
 

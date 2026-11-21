@@ -13,11 +13,12 @@ import InputCheckbox from '@/components/form/input-checkbox.vue';
 import InputRadio from '@/components/form/input-radio.vue';
 import DesignTable from '@/components/design-table.vue';
 import Skill from '@/data/skill.ts';
-import type { SimulatedPokemon } from '@/type.ts';
+import type { PokemonBoxType, SimulatedPokemon } from '@/type.ts';
 import Field from '@/data/field.ts';
 import TablePopup from '@/components/table-popup.vue';
 import Popup from '@/models/popup/popup.ts';
-import { CheckList } from '@/models/check-list.ts';
+import { CheckList, withMintChecked } from '@/models/check-list.ts';
+import Nature from '@/data/nature';
 
 let lvList = Object.entries(config.selectEvaluate.levelList)
   .filter(([lv, enable]) => enable)
@@ -62,6 +63,7 @@ const checkList = computed(() => {
 
 let simulatingCount = 0;
 const simulatedPokemonList = ref<SimulatedPokemon[]>([]);
+const mintSimulatedPokemonList = ref<SimulatedPokemon[]>([]);
 const asyncWatcher = AsyncWatcher.init();
 let simulatingPromise: Promise<SimulatedPokemon[]>;
 async function createPokemonList(setConfig = false) {
@@ -75,12 +77,20 @@ async function createPokemonList(setConfig = false) {
 
   try {
     simulatingPromise = asyncWatcher.run(async (progressCounter) => {
-      simulatedPokemonList.value = await PokemonBox.simulation(
-        PokemonBox.list,
+      // ミント前後を別個体として渡し、食材数・スキル回数もそれぞれの性格で計算する。
+      const pokemonList: PokemonBoxType[] = PokemonBox.list;
+      const result: SimulatedPokemon[] = await PokemonBox.simulation(
+        pokemonList.flatMap((pokemon) => [
+          pokemon,
+          ...(config.summary.checklist.showMint && Nature.map[pokemon.nature]?.good
+            ? [{ ...pokemon, nature: 'がんばりや', useMint: true }]
+            : []),
+        ]),
         multiWorker,
         await evaluateTable,
         {
           ...config,
+          pureMint: false,
           simulation: {
             ...config.simulation,
             bagOverOperation: false,
@@ -90,13 +100,15 @@ async function createPokemonList(setConfig = false) {
         progressCounter,
         true,
       );
-      for (let simulatedPokemon of simulatedPokemonList.value) {
+      for (let simulatedPokemon of result) {
         simulatedPokemon.foodCombination = simulatedPokemon
           .box!.foodList.map((x) =>
             String.fromCharCode(simulatedPokemon.base.foodList.findIndex((f) => f.name == x) + 65),
           )
           .join('');
       }
+      simulatedPokemonList.value = result.filter((pokemon) => !pokemon.box?.useMint);
+      mintSimulatedPokemonList.value = result.filter((pokemon) => pokemon.box?.useMint);
     });
   } finally {
     simulatingCount--;
@@ -104,29 +116,95 @@ async function createPokemonList(setConfig = false) {
 }
 createPokemonList();
 watch(
-  () => [config.simulation.selectType, config.simulation.selectBorder],
+  () => [
+    config.simulation.selectType,
+    config.simulation.selectBorder,
+    PokemonBox.watch.value,
+    config.summary.checklist.showMint,
+  ],
   () => {
     createPokemonList(true);
   },
 );
 
 const pokemonCheckList = computed(() => {
-  return checkList.value?.pokemonCheckList(
+  const normal = checkList.value?.pokemonCheckList(
     config,
     simulatedPokemonList.value,
     null,
-    foodCheckList.value,
-    skillCheckList.value,
+    normalFoodCheckList.value,
+    normalSkillCheckList.value,
+  );
+  if (!config.summary.checklist.showMint) return normal;
+  const mint = checkList.value?.pokemonCheckList(
+    config,
+    mintSimulatedPokemonList.value,
+    null,
+    mintFoodCheckList.value,
+    mintSkillCheckList.value,
+  );
+  const combined = checkList.value?.pokemonCheckList(
+    config,
+    [...simulatedPokemonList.value, ...mintSimulatedPokemonList.value],
+    null,
+    combinedFoodCheckList.value,
+    combinedSkillCheckList.value,
+  );
+  return withMintChecked(
+    normal,
+    mint,
+    (row) => row.name,
+    combined,
+    config.summary.checklist.field.excludeMint,
   );
 });
 
 const foodCheckList = computed(() => {
-  return checkList.value?.foodCheckList(config, simulatedPokemonList.value);
+  if (!config.summary.checklist.showMint) return normalFoodCheckList.value;
+  return withMintChecked(
+    normalFoodCheckList.value,
+    mintFoodCheckList.value,
+    (row) => row.food.name,
+    combinedFoodCheckList.value,
+    config.summary.checklist.field.excludeMint,
+  );
 });
 
 const skillCheckList = computed(() => {
-  return checkList.value?.skillCheckList(config, simulatedPokemonList.value);
+  if (!config.summary.checklist.showMint) return normalSkillCheckList.value;
+  return withMintChecked(
+    normalSkillCheckList.value,
+    mintSkillCheckList.value,
+    (row) => row.skill.name,
+    combinedSkillCheckList.value,
+    config.summary.checklist.field.excludeMint,
+  );
 });
+
+const normalFoodCheckList = computed(() =>
+  checkList.value?.foodCheckList(config, simulatedPokemonList.value),
+);
+const normalSkillCheckList = computed(() =>
+  checkList.value?.skillCheckList(config, simulatedPokemonList.value),
+);
+const combinedFoodCheckList = computed(() =>
+  checkList.value?.foodCheckList(config, [
+    ...simulatedPokemonList.value,
+    ...mintSimulatedPokemonList.value,
+  ]),
+);
+const combinedSkillCheckList = computed(() =>
+  checkList.value?.skillCheckList(config, [
+    ...simulatedPokemonList.value,
+    ...mintSimulatedPokemonList.value,
+  ]),
+);
+const mintFoodCheckList = computed(() =>
+  checkList.value?.foodCheckList(config, mintSimulatedPokemonList.value),
+);
+const mintSkillCheckList = computed(() =>
+  checkList.value?.skillCheckList(config, mintSimulatedPokemonList.value),
+);
 </script>
 
 <template>

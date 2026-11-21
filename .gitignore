@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+/.local-tools/
 *.local
 
 # Editor directories and files
@@ -30,3 +31,8 @@ genki-learning/y2z
 genki-learning/data.csv
 
 test
+
+tools/adb-screenshot-clipboard/bin/
+tools/adb-screenshot-clipboard/obj/
+tests/adb-screenshot/bin/
+tests/adb-screenshot/obj/

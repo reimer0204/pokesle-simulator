@@ -12,6 +12,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <None Update="AdbScreenshotClipboard.json" CopyToPublishDirectory="PreserveNewest" />
     <None Update="README.txt" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

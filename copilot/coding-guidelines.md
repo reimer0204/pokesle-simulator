@@ -8,6 +8,8 @@
 - サーバーレスで、シミュレーションやデータ処理は利用者のブラウザ内で完結させます。
 - 画面遷移には `createWebHashHistory()` を使い、GitHub Pages向けの静的成果物を `docs/` に出力します。
 - 開発は `npm run dev`、本番ビルドは `npm run build` を基本とします。
+- Windows補助アプリの.NET SDKはGit管理外の `.local-tools/dotnet/` を使用し、`& ./tools/dotnet.ps1 <引数>` から実行します。動作確認中のローカルexe更新はADB設定を維持し、利用者の確認が取れるまでは配布zipの作成・更新を省略します。
+- 補助アプリの配布READMEは `tools/adb-screenshot-clipboard/README.txt` を正とし、利用者向けの準備・ブラウザ起動手順・免責事項のみを同梱します。一括取得の詳細、直接実行、通信仕様、ビルド手順は同フォルダーの `development-notes.txt` に記録し、配布zipには含めません。
 - `docs/`、`components.d.ts`、`auto-imports.d.ts`、`src/auto-imports.d.ts` などの生成物は、必要な生成処理の結果でない限り手編集しません。
 
 ## 2. ディレクトリと責務

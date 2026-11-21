@@ -231,9 +231,12 @@ addEventListener('message', async (event) => {
                     evaluateResult[lv][after][evaluateKey].pureMint = item;
                   }
                 }
-                evaluateResult[lv][after].foodNumList = afterPokemon.foodList.map(
-                  (f) => simulatedPokemon[f.name],
-                );
+                // 通常のチェックリストがミント後の食材量を参照しないよう、元の値を保持する。
+                if (evaluateType == null) {
+                  evaluateResult[lv][after].foodNumList = afterPokemon.foodList.map(
+                    (f) => simulatedPokemon[f.name],
+                  );
+                }
                 const diagnostic = {
                   berryEnergy: selectEvaluate.bEpD,
                   foodNumMap: Object.fromEntries(
