@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getFieldSetting, getResearchShardToEnergy } from '../models/field-setting';
 import CommonSetting from '../components/common-setting.vue';
 import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
@@ -256,8 +257,10 @@ async function simulation() {
     }
 
     if (targetDay.value != -1) {
-      customConfig.simulation.shardToEnergy =
-        customConfig.selectEvaluate.shardEnergyRate / (7 - targetDay.value);
+      customConfig.simulation.shardToEnergy = getResearchShardToEnergy(
+        customConfig,
+        7 - targetDay.value,
+      );
       customConfig.teamSimulation.day = targetDay.value;
       customConfig.teamSimulation.timeLength =
         targetHour.value != 24 ? targetHour.value / 24 : null;
@@ -657,9 +660,9 @@ async function showEditPopup(pokemon) {
         </SettingTable>
       </SettingButton>
 
-      <SettingButton title="表示設定">
+      <SettingButton title="その他チーム編成設定">
         <template #label>
-          <div class="inline-flex-row-center">その他設定</div>
+          <div class="inline-flex-row-center">その他チーム編成設定</div>
         </template>
 
         <SettingTable>
@@ -899,6 +902,7 @@ async function showEditPopup(pokemon) {
                   title="スコア"
                   markdown="
                   スコアは「エナジー✕(100% + 追加ゆめのかけら ÷ エナジーによるゆめのかけら ✕ ゆめのかけら評価倍率)」です。
+                  追加ゆめのかけらにはリサーチイベントによる増減分を含み、分母にはイベント適用前のリサーチ分とランク上限時のEXP変換分を使います。
                 "
                 />
               </template>
@@ -1195,16 +1199,22 @@ async function showEditPopup(pokemon) {
                       <td :colspan="result.pokemonList.length + 1" class="text-align-right">
                         {{
                           Math.round(
-                            result.rawEnergy * (1 + config.simulation.fieldBonus / 100),
+                            result.rawEnergy * (1 + getFieldSetting(config).bonus / 100),
                           ).toLocaleString()
                         }}
                       </td>
                     </tr>
                     <tr>
-                      <th rowspan="3">ゆめのかけら</th>
-                      <th>エナジー</th>
+                      <th rowspan="4">ゆめかけ</th>
+                      <th>リサーチ</th>
                       <td :colspan="result.pokemonList.length + 1" class="text-align-right">
                         {{ Math.round(result.energyShard).toLocaleString() }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>リサーチEXP変換</th>
+                      <td :colspan="result.pokemonList.length + 1" class="text-align-right">
+                        {{ Math.round(result.researchExp ?? 0).toLocaleString() }}
                       </td>
                     </tr>
                     <tr>

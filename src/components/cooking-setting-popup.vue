@@ -1,30 +1,33 @@
 <script setup>
 import { Cooking } from '../data/food_and_cooking';
-import config from '../models/config.ts';
+import globalConfig from '../models/config.ts';
 import PopupBase from './util/popup-base.vue';
 
 const props = defineProps({
   ignoreCookingMode: Boolean,
+  config: { type: Object, default: () => globalConfig },
 });
 
+const config = computed(() => props.config);
+
 const checkAll = computed({
-  get() { return Cooking.list.every(x => config.simulation.enableCooking[x.name]) },
-  set(newValue) { Cooking.list.forEach(x => config.simulation.enableCooking[x.name] = newValue) },
+  get() { return Cooking.list.every(x => config.value.simulation.enableCooking[x.name]) },
+  set(newValue) { Cooking.list.forEach(x => config.value.simulation.enableCooking[x.name] = newValue) },
 })
 
 const calcCookingList = computed(() => {
   return Cooking.evaluateLvList({
-    ...config,
+    ...config.value,
     simulation: {
-      ...config.simulation,
-      mode: props.ignoreCookingMode ? 0 : config.simulation.mode,
+      ...config.value.simulation,
+      mode: props.ignoreCookingMode ? 0 : config.value.simulation.mode,
     },
   }).toSorted((a, b) => a.type.localeCompare(b.type) || b.energy - a.energy)
 })
 
 const columnList = computed(() => {
   return [
-    { key: 'check', name: '', convert: data => config.simulation.enableCooking[data.name] },
+    { key: 'check', name: '', convert: data => config.value.simulation.enableCooking[data.name] },
     { key: 'type', name: 'タイプ' },
     { key: 'name', name: '名前' },
     { key: 'foodList', name: 'レシピ' },
@@ -33,9 +36,9 @@ const columnList = computed(() => {
     { key: 'energy', name: '基礎エナジー', type: Number, fixed: 0 },
     // { key: 'addEnergy', name: '追加エナジー', type: Number, fixed: 0 },
     // { key: 'maxEnergy', name: 'エナジー(最大)', type: Number, fixed: 0 },
-    config.simulation.cookingRecipeLvType1 ? { key: 'lv1', name: '実際のLv' } : null,
-    config.simulation.cookingRecipeLvType3 ? { key: 'lv3', name: `${config.simulation.cookingRecipeRepeatLv}回\n料理時Lv` } : null,
-    config.simulation.cookingRecipeLvType4 ? { key: 'lv4', name: `基礎エナジー\n✕${config.simulation.cookingRecipeRepeatLv2}%回\n料理時Lv` } : null,
+    config.value.simulation.cookingRecipeLvType1 ? { key: 'lv1', name: '実際のLv' } : null,
+    config.value.simulation.cookingRecipeLvType3 ? { key: 'lv3', name: `${config.value.simulation.cookingRecipeRepeatLv}回\n料理時Lv` } : null,
+    config.value.simulation.cookingRecipeLvType4 ? { key: 'lv4', name: `基礎エナジー\n✕${config.value.simulation.cookingRecipeRepeatLv2}%回\n料理時Lv` } : null,
     { key: 'lv', name: '計算Lv' },
     { key: 'fixEnergy', name: '最終エナジー', type: Number, fixed: 0 },
   ].filter(x => x)

@@ -1,3 +1,4 @@
+import { getFieldSetting, getResearchShardRate } from '../field-setting';
 import PokemonSimulator from './pokemon-simulator';
 
 import { Food, Cooking } from '../../data/food_and_cooking';
@@ -39,6 +40,9 @@ self.addEventListener('message', async (event) => {
         boxPokemonList: PokemonBoxType[];
       };
       const helpRate = new HelpRate(config);
+      const researchShardRate = config.simulation.eventBonus.research?.shard ?? 1;
+      const fieldBonus = getFieldSetting(config).bonus;
+      const researchShardPerEnergy = getResearchShardRate(config);
 
       const boxNoMap: { [key: number]: SimulatedPokemon[] } = {};
       for (let pokemon of fixedPokemonList) {
@@ -591,12 +595,12 @@ self.addEventListener('message', async (event) => {
 
           // フィールドボーナスをかける
           let rawEnergy = energy;
-          energy *= (100 + config.simulation.fieldBonus) / 100;
+          energy *= (100 + fieldBonus) / 100;
 
           if (isNaN(energy)) {
             console.error({
               pokemonList,
-              fieldBonus: config.simulation.fieldBonus,
+              fieldBonus: fieldBonus,
               cookingList,
             });
             throw '計算ロジックに誤りが見つかりました';
@@ -607,34 +611,35 @@ self.addEventListener('message', async (event) => {
           // スコアを計算
           // ゆめのかけらの倍率をエナジーに加算
           let shardRate;
+          let baseEnergyShard;
           if (config.teamSimulation.day != null) {
             let dayRate = 7 - config.teamSimulation.day;
             let shardEnergy = energy * dayRate;
 
-            energyShard = shardEnergy / config.selectEvaluate.shardEnergyRate;
-            researchExp = config.simulation.researchRankMax
-              ? (shardEnergy / config.selectEvaluate.shardEnergyRate) * 0.5
-              : 0;
+            baseEnergyShard = shardEnergy * researchShardPerEnergy;
+            energyShard = baseEnergyShard * researchShardRate;
+            researchExp = config.simulation.researchRankMax ? baseEnergyShard * 0.5 : 0;
 
             // ゆめボとリサボで得られるゆめのかけら
-            todayShard =
-              ((config.teamSimulation.beforeEnergy ?? 0) + energy) /
-              config.selectEvaluate.shardEnergyRate;
-            todayResearchExp = config.simulation.researchRankMax
-              ? (((config.teamSimulation.beforeEnergy ?? 0) + energy) /
-                  config.selectEvaluate.shardEnergyRate) *
-                0.5
-              : 0;
+            const baseTodayShard =
+              ((config.teamSimulation.beforeEnergy ?? 0) + energy) * researchShardPerEnergy;
+            todayShard = baseTodayShard * researchShardRate;
+            todayResearchExp = config.simulation.researchRankMax ? baseTodayShard * 0.5 : 0;
           } else {
-            todayShard = energyShard = (energy * 4) / config.selectEvaluate.shardEnergyRate;
+            baseEnergyShard = energy * 4 * researchShardPerEnergy;
+            todayShard = energyShard = baseEnergyShard * researchShardRate;
             todayResearchExp = researchExp = config.simulation.researchRankMax
-              ? ((energy * 4) / config.selectEvaluate.shardEnergyRate) * 0.5
+              ? baseEnergyShard * 0.5
               : 0;
           }
           bonusShard =
-            todayShard * shardBonusCount * 0.06 +
-            todayResearchExp * researchExpBonusCount * 0.09 * 0.5;
-          shardRate = (bonusShard + skillShard) / (energyShard + researchExp);
+            todayShard * shardBonusCount * 0.06 + todayResearchExp * researchExpBonusCount * 0.09;
+          // イベント増加分を追加獲得量へ含め、比較基準はイベント適用前に固定する。
+          const eventShard = energyShard - baseEnergyShard;
+          shardRate =
+            baseEnergyShard + researchExp > 0
+              ? (eventShard + bonusShard + skillShard) / (baseEnergyShard + researchExp)
+              : 0;
           score = energy * ((shardRate * config.simulation.shardWeight) / 100 + 1);
 
           resultOption = {
@@ -649,6 +654,7 @@ self.addEventListener('message', async (event) => {
                 energy,
                 // aboutScore,
                 energyShard,
+                researchExp,
                 bonusShard,
                 skillShard,
                 todayShard,

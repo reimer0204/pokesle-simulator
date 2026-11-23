@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getFieldSetting, getResearchShardToEnergy } from '../models/field-setting';
 import CommonSetting from '../components/common-setting.vue';
 import EditPokemonPopup from '../components/pokemon-edit-popup.vue';
 import NatureInfo from '../components/status/nature-info.vue';
@@ -118,7 +119,7 @@ async function simulation() {
         }
 
         customConfig.simulation.cookingType = cookingType;
-        customConfig.simulation.shardToEnergy = customConfig.selectEvaluate.shardEnergyRate / 7;
+        customConfig.simulation.shardToEnergy = getResearchShardToEnergy(customConfig, 7);
         customConfig.teamSimulation.day = 0;
         customConfig.teamSimulation.resultNum = 1;
         customConfig.teamSimulation.cookingNum = 3;
@@ -769,7 +770,7 @@ async function showEditPopup(pokemon) {
                     <tr>
                       <th>FB込み</th>
                       <td :colspan="result.pokemonList.length + 1" class="text-align-right">
-                        {{ Math.round(result.rawEnergy * (1 + config.simulation.fieldBonus / 100)).toLocaleString() }}
+                        {{ Math.round(result.rawEnergy * (1 + getFieldSetting(config).bonus / 100)).toLocaleString() }}
                       </td>
                     </tr>
                     <tr>

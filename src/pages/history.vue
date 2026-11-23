@@ -22,6 +22,20 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/11/23">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>ボックス、チーム編成画面の設定レイアウトを整理</li>
+            <li>イベントボーナスにスキルとリサーチの「ゆめのかけら獲得量」を追加</li>
+            <li>フィールドボーナス、ゆめのかけら効率をフィールドごとに設定できるよう改善</li>
+            <li>ボックス画面の▲▼ボタンで並び替えた際に再計算が走らないよう改善</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/11/21">
       <ul>
         <li>

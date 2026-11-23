@@ -3,6 +3,7 @@ import defaultConfig from '../data/default-config';
 import mergeObject from './utils/merge-object';
 import SubSkill from '@/data/sub-skill';
 import { migrateEvaluateConfig } from './evaluate-setting';
+import { migrateFieldSettings } from './field-setting';
 import {
   migrateCheckListPokemonCondition,
   migratePokemonTargetFriendPoint,
@@ -38,6 +39,7 @@ let config = reactive({
 try {
   const cookieConfig = JSON.parse(localStorage.getItem('config'));
   const savedConfigVersion = Number(cookieConfig.v) || 0;
+  migrateFieldSettings(cookieConfig);
   if (cookieConfig.selectEvaluate.silverSeedUse != null) {
     cookieConfig.selectEvaluate.silverSeed = Object.fromEntries(
       SubSkill.list

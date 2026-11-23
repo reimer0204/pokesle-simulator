@@ -1,3 +1,4 @@
+import { getFieldSetting, getResearchShardRate, getResearchShardToEnergy } from '../field-setting';
 import type {
   EvaluateResult,
   EvaluateResultKey,
@@ -18,12 +19,14 @@ import { CheckList } from '../check-list';
 let simulator: PokemonSimulator;
 let evaluateSimulator: PokemonSimulator;
 let config: any;
+let researchShardRate = 1;
 
 addEventListener('message', async (event) => {
   let type = event.data.type;
 
   if (type == 'config') {
     config = event.data.config;
+    researchShardRate = config.simulation.eventBonus.research?.shard ?? 1;
     simulator = new PokemonSimulator(config, PokemonSimulator.MODE_ABOUT);
     evaluateSimulator = new PokemonSimulator(config, PokemonSimulator.MODE_SELECT);
 
@@ -477,11 +480,12 @@ addEventListener('message', async (event) => {
       simulator.calcHelp(pokemon, { boxPokemonList: pokemonList });
 
       // スコアを一旦計算する
-      pokemon.tmpScore = (pokemon.energyPerDay * (100 + config.simulation.fieldBonus)) / 100;
+      pokemon.tmpScore = (pokemon.energyPerDay * (100 + getFieldSetting(config).bonus)) / 100;
+      // 通常リサーチ分は基礎スコアに含まれるため、イベントの増減分とEXP変換分を別々に加算する。
       pokemon.tmpScore +=
-        ((pokemon.tmpScore * (config.simulation.researchRankMax ? 0.5 : 0) +
-          pokemon.shard *
-            (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)) *
+        ((pokemon.tmpScore * (researchShardRate - 1) +
+          pokemon.tmpScore * (config.simulation.researchRankMax ? 0.5 : 0) +
+          pokemon.shard * (config.simulation.shardToEnergy ?? getResearchShardToEnergy(config))) *
           config.simulation.shardWeight) /
         100;
     }
@@ -561,7 +565,7 @@ addEventListener('message', async (event) => {
           pokemon,
         ]) {
           pokemon.supportShardPerDay +=
-            (subPokemon.energyPerDay / config.selectEvaluate.shardEnergyRate) * 0.06;
+            subPokemon.energyPerDay * getResearchShardRate(config) * researchShardRate * 0.06;
         }
       }
 
@@ -575,7 +579,7 @@ addEventListener('message', async (event) => {
           pokemon,
         ]) {
           pokemon.supportShardPerDay +=
-            (subPokemon.energyPerDay / config.selectEvaluate.shardEnergyRate / 2) * 0.09;
+            ((subPokemon.energyPerDay * getResearchShardRate(config)) / 2) * 0.09;
         }
       }
 
@@ -668,13 +672,14 @@ addEventListener('message', async (event) => {
       // 最終的なスコア計算
       pokemon.score =
         ((pokemon.energyPerDay + pokemon.supportEnergyPerDay) *
-          (100 + config.simulation.fieldBonus)) /
+          (100 + getFieldSetting(config).bonus)) /
         100;
 
       pokemon.score +=
-        ((pokemon.score * (config.simulation.researchRankMax ? 0.5 : 0) +
+        ((pokemon.score * (researchShardRate - 1) +
+          pokemon.score * (config.simulation.researchRankMax ? 0.5 : 0) +
           (pokemon.shard + pokemon.supportShardPerDay) *
-            (config.simulation.shardToEnergy ?? config.selectEvaluate.shardEnergyRate / 4)) *
+            (config.simulation.shardToEnergy ?? getResearchShardToEnergy(config))) *
           config.simulation.shardWeight) /
         100;
     }

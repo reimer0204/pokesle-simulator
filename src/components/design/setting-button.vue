@@ -10,10 +10,11 @@ const props = defineProps({
 defineOptions({
   inheritAttrs: false,
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['open', 'close']);
 
 let popup = ref(null);
 async function showPopup() {
+  emit('open');
   const promise = Popup.show(SettingButtonPopup);
   popup.value = promise.popup;
   await promise;

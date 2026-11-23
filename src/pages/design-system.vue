@@ -57,7 +57,12 @@ const componentCatalog = [
   ['フォーム', 'form/form-button.vue', 'FormButton', '標準・実行・重要・無効状態のボタン'],
   ['通知', 'alert/base-alert.vue', 'BaseAlert', '情報通知'],
   ['通知', 'alert/danger-alert.vue', 'DangerAlert', '注意・再計算通知'],
-  ['設定', 'design/setting-button.vue', 'SettingButton', 'ポップアップを開く設定ボタン'],
+  [
+    '設定',
+    'design/setting-button.vue',
+    'SettingButton',
+    'ポップアップを開く設定ボタン。open / closeで編集開始・確定を扱える',
+  ],
   [
     '設定',
     'design/setting-button-popup.vue',

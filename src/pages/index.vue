@@ -12,6 +12,7 @@ import Nature from '../data/nature.ts';
 import Pokemon from '../data/pokemon';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.ts';
+import { useConfigDraft } from '../models/config-draft';
 import EvaluateTable from '../models/simulation/evaluate-table.ts';
 import MultiWorker from '../models/multi-worker.js';
 import PokemonBox from '../models/pokemon-box/pokemon-box.js';
@@ -23,6 +24,9 @@ import type { SimulatedPokemon } from '@/type.ts';
 import SubSkill from '@/data/sub-skill.ts';
 import InputCheckbox from '@/components/form/input-checkbox.vue';
 import StarIcon from '@/components/icon/star-icon.vue';
+
+const { config: displayConfig, begin: beginDisplayEditing, commit: finishDisplayEditing } =
+  useConfigDraft(config);
 
 let evaluateTable = EvaluateTable.load(config);
 
@@ -275,31 +279,28 @@ function processSimulatedPokemonList() {
   }
 }
 
-// 設定が変わる度に再計算する
+// 閉じる際の一括反映で、複数項目が変わっても再計算は1回にまとめる。
 watch(
-  () => config.sleepTime,
-  () => {
-    evaluateTable = EvaluateTable.load(config);
+  () => [
+    config.sleepTime,
+    config.checkFreq,
+    config.simulation,
+    config.teamSimulation.nightCapPikachu,
+    config.candy,
+  ],
+  (values, previousValues) => {
+    if (!previousValues || values[0] !== previousValues[0] || values[1] !== previousValues[1]) {
+      evaluateTable = EvaluateTable.load(config);
+    }
     createPokemonList(true);
   },
+  { deep: true, immediate: true },
 );
-watch(
-  () => config.checkFreq,
-  () => {
-    evaluateTable = EvaluateTable.load(config);
-    createPokemonList(true);
-  },
-);
-watch(mode, () => {
-  createPokemonList(true);
-});
-
-watch(config.simulation, () => createPokemonList(true), { immediate: true });
+watch(mode, () => createPokemonList(true));
 watch(
   () => config.pokemonList.cleaning.mintCalculation,
   () => createPokemonList(true),
 );
-watch(config.candy, processSimulatedPokemonList);
 
 const columnList = computed(() => {
   let result = [
@@ -490,6 +491,27 @@ async function showEditPopup(pokemon) {
   }
 }
 
+function movePokemon(index: number, offset: number) {
+  const targetIndex = index + offset;
+  if (simulatingCount || targetIndex < 0 || targetIndex >= PokemonBox.list.length) return;
+
+  PokemonBox.move(index, offset);
+
+  // 進化先別の結果が同じboxを共有する場合も、参照先番号は一度だけ更新する。
+  const boxes = new Set(simulatedPokemonList.value.map((pokemon) => pokemon.box));
+  for (const box of boxes) {
+    if (!box) continue;
+    if (box.index === index) {
+      box.index = targetIndex;
+    } else if (offset > 0 && index < box.index && box.index <= targetIndex) {
+      box.index--;
+    } else if (offset < 0 && targetIndex <= box.index && box.index < index) {
+      box.index++;
+    }
+  }
+  simulatedPokemonList.value.sort((a, b) => a.box!.index - b.box!.index);
+}
+
 async function addPokemon() {
   await asyncWatcher.wait;
   if (await Popup.show(EditPokemonPopup)) {
@@ -563,9 +585,9 @@ function toggleFavorite(data: SimulatedPokemon) {
 <template>
   <div class="page">
     <div class="flex-row-start-start flex-wrap gap-5px">
-      <CommonSetting @requireReload="createPokemonList(true)" />
+      <CommonSetting defer-commit />
 
-      <SettingButton title="表示設定">
+      <SettingButton title="表示設定" @open="beginDisplayEditing" @close="finishDisplayEditing">
         <template #label>
           <div class="inline-flex-row-center">表示設定</div>
         </template>
@@ -574,7 +596,7 @@ function toggleFavorite(data: SimulatedPokemon) {
           <tr>
             <th>サブスキル名省略</th>
             <td>
-              <InputCheckbox v-model="config.pokemonList.subSkillShort"
+              <InputCheckbox v-model="displayConfig.pokemonList.subSkillShort"
                 >サブスキル名省略</InputCheckbox
               >
             </td>
@@ -582,7 +604,7 @@ function toggleFavorite(data: SimulatedPokemon) {
           <tr>
             <th>メモ</th>
             <td>
-              <InputCheckbox v-model="config.pokemonList.memo">メモを列として表示</InputCheckbox>
+              <InputCheckbox v-model="displayConfig.pokemonList.memo">メモを列として表示</InputCheckbox>
             </td>
           </tr>
           <tr>
@@ -590,16 +612,16 @@ function toggleFavorite(data: SimulatedPokemon) {
             <td>
               <div class="mt-5px">
                 <div class="flex-column gap-5px">
-                  <InputRadio v-model="config.pokemonList.evaluateList" :value="0"
+                  <InputRadio v-model="displayConfig.pokemonList.evaluateList" :value="0"
                     >非表示</InputRadio
                   >
-                  <InputRadio v-model="config.pokemonList.evaluateList" :value="1"
+                  <InputRadio v-model="displayConfig.pokemonList.evaluateList" :value="1"
                     >総合スコアのみ</InputRadio
                   >
-                  <InputRadio v-model="config.pokemonList.evaluateList" :value="2"
+                  <InputRadio v-model="displayConfig.pokemonList.evaluateList" :value="2"
                     >総合スコア＆とくい</InputRadio
                   >
-                  <InputRadio v-model="config.pokemonList.evaluateList" :value="3"
+                  <InputRadio v-model="displayConfig.pokemonList.evaluateList" :value="3"
                     >総合スコア＆きのみ＆食材＆スキル</InputRadio
                   >
                 </div>
@@ -610,7 +632,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                 </div>
               </div>
               <div class="mt-5px">
-                <InputCheckbox v-model="config.pokemonList.selectEnergy"
+                <InputCheckbox v-model="displayConfig.pokemonList.selectEnergy"
                   >厳選元値表示</InputCheckbox
                 >
                 <div class="w-300px">
@@ -620,7 +642,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                 </div>
               </div>
               <div class="mt-5px">
-                <InputCheckbox v-model="config.pokemonList.selectDetail"
+                <InputCheckbox v-model="displayConfig.pokemonList.selectDetail"
                   >最適でない進化先の厳選値も表示</InputCheckbox
                 >
                 <div class="w-300px">
@@ -636,13 +658,13 @@ function toggleFavorite(data: SimulatedPokemon) {
             <td>
               <div class="flex-column gap-5px">
                 <div>
-                  <InputCheckbox v-model="config.pokemonList.candy">アメ情報</InputCheckbox>
+                  <InputCheckbox v-model="displayConfig.pokemonList.candy">アメ情報</InputCheckbox>
                 </div>
                 <div>
                   ブーストEXP倍率&nbsp;<InputNumber
                     type="number"
                     class="w-50px"
-                    v-model="config.candy.boostMultiply"
+                    v-model="displayConfig.candy.boostMultiply"
                   />
                   倍
                 </div>
@@ -650,7 +672,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                   ブーストかけら倍率&nbsp;<InputNumber
                     type="number"
                     class="w-50px"
-                    v-model="config.candy.boostShard"
+                    v-model="displayConfig.candy.boostShard"
                   />
                   倍
                 </div>
@@ -659,23 +681,23 @@ function toggleFavorite(data: SimulatedPokemon) {
           </tr>
           <tr>
             <th>基礎情報</th>
-            <td><InputCheckbox v-model="config.pokemonList.baseInfo">基礎情報</InputCheckbox></td>
+            <td><InputCheckbox v-model="displayConfig.pokemonList.baseInfo">基礎情報</InputCheckbox></td>
           </tr>
           <tr>
             <th>食材数</th>
-            <td><InputCheckbox v-model="config.pokemonList.foodInfo">食材数</InputCheckbox></td>
+            <td><InputCheckbox v-model="displayConfig.pokemonList.foodInfo">食材数</InputCheckbox></td>
           </tr>
           <tr>
             <th>シミュ詳細</th>
             <td>
-              <InputCheckbox v-model="config.pokemonList.simulatedInfo">シミュ詳細</InputCheckbox>
+              <InputCheckbox v-model="displayConfig.pokemonList.simulatedInfo">シミュ詳細</InputCheckbox>
             </td>
           </tr>
           <tr>
             <th>表示設定</th>
             <td>
               <div>
-                <InputCheckbox v-model="config.pokemonList.fixScore"
+                <InputCheckbox v-model="displayConfig.pokemonList.fixScore"
                   >スコアまで列固定</InputCheckbox
                 >
               </div>
@@ -683,7 +705,7 @@ function toggleFavorite(data: SimulatedPokemon) {
                 1ページ表示件数&nbsp;<InputNumber
                   type="number"
                   class="w-50px"
-                  v-model="config.pokemonList.pageUnit"
+                  v-model="displayConfig.pokemonList.pageUnit"
                 />
                 件
               </div>
@@ -808,11 +830,10 @@ function toggleFavorite(data: SimulatedPokemon) {
                   viewBox="0 0 100 100"
                   width="14"
                   @click.stop="
-                    PokemonBox.move(
+                    movePokemon(
                       data.box.index,
                       -(config.sortableTable.pokemonList2.sort[0]?.direction ?? 1),
-                    );
-                    createPokemonList();
+                    )
                   "
                 >
                   <path d="M0,70 L50,20 L100,70z" fill="#888" />
@@ -822,11 +843,10 @@ function toggleFavorite(data: SimulatedPokemon) {
                   viewBox="0 0 100 100"
                   width="14"
                   @click.stop="
-                    PokemonBox.move(
+                    movePokemon(
                       data.box.index,
                       config.sortableTable.pokemonList2.sort[0]?.direction ?? 1,
-                    );
-                    createPokemonList();
+                    )
                   "
                 >
                   <path d="M0,30 L50,80 L100,30z" fill="#888" />
@@ -935,7 +955,7 @@ function toggleFavorite(data: SimulatedPokemon) {
               style="color: #fff"
               title="サポートゆめかけ/日"
               markdown="おてつだいボーナスやげんき回復系スキルによる他ポケモンの効率上昇、もしくはゆめのかけらボーナスやリサーチEXPボーナスによって、得られるであろうゆめのかけらの量です。
-                現状の実装ではリサーチEXPボーナスもゆめのかけらとして扱ってこの値に含めています。
+                リサーチEXPボーナス分は、リサーチランクがカンストしている場合だけゆめのかけらへの変換分として含みます。リサーチのイベント倍率はゆめのかけらボーナス分だけに掛け、EXP変換分やスキル獲得分には掛けません。
               "
             />
           </template>

@@ -1,8 +1,14 @@
 <script setup>
 import Pokemon from '../data/pokemon';
-import config from '../models/config.ts';
+import globalConfig from '../models/config.ts';
 import InputNumber from './form/input-number.vue';
 import PopupBase from './util/popup-base.vue';
+
+const props = defineProps({
+  config: { type: Object, default: () => globalConfig },
+});
+
+const config = computed(() => props.config);
 
 const $emit = defineEmits(['close']);
 

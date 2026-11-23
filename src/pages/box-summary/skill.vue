@@ -56,7 +56,10 @@ async function createPokemonList(setConfig = false) {
           simulation: {
             ...config.simulation,
             field: 'ワカクサ本島',
-            fieldBonus: 0,
+            fieldSettings: {
+              ...config.simulation.fieldSettings,
+              ワカクサ本島: { ...config.simulation.fieldSettings['ワカクサ本島'], bonus: 0 },
+            },
             berryList: ['', '', ''],
             mode: 0,
             ...setting,

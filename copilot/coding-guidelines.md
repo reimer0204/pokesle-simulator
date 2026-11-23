@@ -64,6 +64,7 @@
 - 設定更新時は既存設定を丸ごと置き換えず、`mergeObject` とデフォルト値を利用して旧バージョンの保存データとの互換性を保ちます。
 - 保存形式を変える移行は `config.v` を基準に、localStorage読込直後・`mergeObject` の前で一度だけ実行し、完了後に現行バージョンへ更新します。
 - 編集画面で確定前の値が必要な場合は `config.clone()` で作業用コピーを作り、確定時に `config.save()` します。
+- 設定ポップアップを閉じるまで反映を遅らせる場合は `useConfigDraft`（`src/models/config-draft.ts`）を使用します。`SettingButton` の `open` で作業用設定を開始し、`close` で変更した項目だけを保存します。子ポップアップには作業用設定を渡し、変更がない場合は保存・再計算を起こしません。
 - 画面固有の小さな永続データにlocalStorageを使う場合は、用途が分かる固有キーを定数化します。
 - localStorageの読み込みとJSON解析は `try/catch` で保護し、欠損値・旧形式・不正値では安全な初期値へ戻します。
 - マスターデータを画面上で編集する場合は、`structuredClone` 等でコピーしてからリアクティブ化し、`Cooking.list` や `Pokemon.list` などの共有マスターを直接変更しません。

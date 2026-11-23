@@ -7,7 +7,13 @@ import { getSkillSpecification } from '../models/simulation/skills/skill-specifi
 
 const route = useRoute();
 const router = useRouter();
-const selectedSection = computed(() => (route.query.section === 'help' ? 'help' : 'skill'));
+const selectedSection = computed(() =>
+  route.query.section === 'research'
+    ? 'research'
+    : route.query.section === 'help'
+      ? 'help'
+      : 'skill',
+);
 const selectedSkillName = computed(() => {
   const name = typeof route.query.skill === 'string' ? route.query.skill : null;
   return Skill.map[name ?? ''] ? name! : Skill.list[0].name;
@@ -87,6 +93,10 @@ function selectHelp() {
   router.replace({ query: { ...route.query, section: 'help' } });
 }
 
+function selectResearch() {
+  router.replace({ query: { ...route.query, section: 'research' } });
+}
+
 function formatNumber(value: number) {
   return Number.isFinite(value) ? value.toLocaleString('ja-JP', { maximumFractionDigits: 3 }) : '-';
 }
@@ -106,6 +116,16 @@ function inputLabel(input: (typeof specification.value.inputs)[number]) {
       <SettingSectionTitle>仕様</SettingSectionTitle>
       <p class="menu-description">項目を選ぶと、実装上の計算仕様を確認できます。</p>
 
+      <SettingSectionTitle type="item">睡眠計測</SettingSectionTitle>
+      <router-link
+        :to="{ query: { ...route.query, section: 'research' } }"
+        class="skill-link"
+        :class="{ active: selectedSection === 'research' }"
+        @click.prevent="selectResearch"
+      >
+        リサーチ
+      </router-link>
+
       <SettingSectionTitle type="item">ポケモン</SettingSectionTitle>
       <router-link
         :to="{ query: { ...route.query, section: 'help' } }"
@@ -122,7 +142,7 @@ function inputLabel(input: (typeof specification.value.inputs)[number]) {
         <router-link
           v-for="skill in category.skillList"
           :key="skill.name"
-          :to="{ query: { ...route.query, skill: skill.name } }"
+          :to="{ query: { ...route.query, section: undefined, skill: skill.name } }"
           class="skill-link"
           :class="{ active: selectedSection === 'skill' && skill.name === selectedSkillName }"
           @click.prevent="selectSkill(skill.name)"
@@ -193,7 +213,12 @@ function inputLabel(input: (typeof specification.value.inputs)[number]) {
                   {{ option.label }}
                 </option>
               </InputSelect>
-              <InputNumber v-else v-model="inputValues[input.key]" class="w-100px" :step="input.step" />
+              <InputNumber
+                v-else
+                v-model="inputValues[input.key]"
+                class="w-100px"
+                :step="input.step"
+              />
               <small v-if="input.unit">{{ input.unit }}</small>
             </div>
           </label>
@@ -208,6 +233,49 @@ function inputLabel(input: (typeof specification.value.inputs)[number]) {
       <p class="notice">
         この試算はスキル単体の式を確認するためのものです。実際のシミュレーションでは、発動回数、スキル確率、食材バッグ、料理、げんき、イベントなどの条件を加えて計算します。
       </p>
+    </section>
+
+    <section v-else-if="selectedSection === 'research'" class="skill-detail help-detail">
+      <div class="detail-header">
+        <div>
+          <p class="eyebrow">睡眠計測の仕様</p>
+          <h2>リサーチ</h2>
+        </div>
+      </div>
+
+      <SettingGroup title="リサーチの流れ">
+        <p class="mode-description">
+          リサーチは睡眠を計測することで行えます。睡眠時間と入眠時のエナジーから「ねむけパワー」が決まり、その値に応じて、出会えるポケモン、得られるアメ、リサーチEXP、ゆめのかけらが変化します。
+        </p>
+      </SettingGroup>
+
+      <SettingGroup title="ねむけパワー">
+        <p class="mode-description">
+          睡眠時間は8.5時間を100とし、100を上限として評価します。入眠時のエナジーにこの値を掛けたものが、ねむけパワーです。
+        </p>
+        <pre class="formula">
+睡眠時間の評価値 = min(睡眠時間（時間）÷ 8.5 × 100, 100)
+
+ねむけパワー = 入眠時のエナジー × 睡眠時間の評価値</pre>
+      </SettingGroup>
+
+      <SettingGroup title="リサーチEXPとリサーチランク">
+        <p class="mode-description">
+          リサーチEXPは、リサーチで得られるゆめのかけらの概ね50%程度で、リサーチランクのランクアップに必要です。リサーチランクが上限に達している場合は、ゆめのかけらに変換されます。
+        </p>
+      </SettingGroup>
+
+      <SettingGroup title="本アプリでの扱い">
+        <p class="mode-description">
+          本アプリでは、リサーチで得られるリサーチEXPとゆめのかけらは、ねむけパワーに比例するものとして計算します。睡眠時間8.5時間以上を100とした睡眠スコアをエナジーへ掛け、選択フィールドの「ゆめのかけら効率」で割って求めます。効率の初期値は通常フィールドが12000、EXフィールドが10000ねむけパワーにつき1個です。
+        </p>
+        <p class="mode-description">
+          イベントボーナスの「リサーチ」にある「ゆめのかけら獲得量」は、リサーチで直接得られるゆめのかけらと、そのゆめのかけらボーナス分にだけ掛けます。スキルで得るゆめのかけらや、リサーチランク上限時にリサーチEXPから変換される分（リサーチEXPボーナス分を含む）には掛けません。リサーチEXPはイベント倍率を掛ける前のゆめのかけらの50%として計算します。
+        </p>
+        <p class="mode-description">
+          実際には、ねむけパワーが一定以上高くなると獲得量は比例せず、頭打ちになります。ただし、この挙動を計算へ反映するための情報の整理が難しいため、本アプリでは比例するものとして近似しています。
+        </p>
+      </SettingGroup>
     </section>
 
     <section v-else class="skill-detail help-detail">

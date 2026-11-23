@@ -5,6 +5,7 @@ import Pokemon from './pokemon.ts';
 import Skill from './skill.ts';
 import SubSkill from './sub-skill.ts';
 import { createPokemonTarget } from '@/models/pokemon-target.ts';
+import { createFieldSettings } from '@/models/field-setting';
 
 export interface EventBonusConfig {
   target: {
@@ -41,7 +42,7 @@ export function createEventBonus(): EventBonusConfig {
 }
 
 const defaultConfig = {
-  v: 20260928,
+  v: 20261123,
 
   // 評価全般(げんき係数再計算)
   sleepTime: 8.5, // 睡眠時間
@@ -118,7 +119,7 @@ const defaultConfig = {
     field: 'ワカクサ本島',
     fieldEx: 1,
     fieldExMainBerry: '',
-    fieldBonus: 85,
+    fieldSettings: createFieldSettings(),
     berryList: ['', '', ''],
     berryEnergyRate: Object.fromEntries(Berry.list.map((berry) => [berry.name, 1])),
     cookingType: 'カレー',
@@ -133,6 +134,10 @@ const defaultConfig = {
       skill: {
         berryBurst: 1,
         foodGet: 1,
+        shard: 1,
+      },
+      research: {
+        shard: 1,
       },
       food: null as string | null,
     },

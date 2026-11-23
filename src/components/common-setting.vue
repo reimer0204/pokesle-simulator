@@ -5,7 +5,8 @@ import { createEventBonus } from '../data/default-config.ts';
 import { Cooking, Food } from '../data/food_and_cooking';
 import Field from '../data/field.ts';
 import NightCapPikachu from '../data/nightcap_pikachu';
-import config from '../models/config.ts';
+import globalConfig from '../models/config.ts';
+import { useConfigDraft } from '../models/config-draft';
 import PokemonBox from '../models/pokemon-box/pokemon-box';
 import PokemonFilter from '../models/pokemon-filter';
 import Popup from '../models/popup/popup.ts';
@@ -18,19 +19,41 @@ import SettingSectionTitle from './design/setting-section-title.vue';
 
 const props = defineProps({
   fix: { type: Boolean, default: false },
+  deferCommit: { type: Boolean, default: false },
 });
 
+const { config, begin, commit } = useConfigDraft(globalConfig);
+
+function beginEditing() {
+  if (props.deferCommit) begin();
+}
+
+function finishEditing() {
+  if (props.deferCommit) commit();
+}
+
+function finishGrowthEditing() {
+  if (props.deferCommit) commit();
+  else emit('requireReload');
+}
+
+async function showCookingSettingPopup() {
+  beginEditing();
+  await Popup.show(CookingSettingPopup, { config: config.value });
+  finishEditing();
+}
+
 const disabledCookingNum = computed(() => {
-  return Cooking.getDisabledCookingNum(config);
+  return Cooking.getDisabledCookingNum(config.value);
 });
 const emit = defineEmits(['requireReload']);
 
 const fixFilterResult = computed(() =>
-  PokemonFilter.filter(PokemonBox.list, config.simulation.fixFilter),
+  PokemonFilter.filter(PokemonBox.list, config.value.simulation.fixFilter),
 );
 
 function showResourceEditPopup() {
-  Popup.show(ResourceEditPopup);
+  Popup.show(ResourceEditPopup, { config: config.value });
 }
 
 function isEventBonusAllChecked(eventBonus) {
@@ -50,41 +73,52 @@ function setEventBonusAllChecked(eventBonus, newValue) {
 }
 
 function addEventBonus() {
-  config.simulation.eventBonusList.push(createEventBonus());
+  config.value.simulation.eventBonusList.push(createEventBonus());
 }
 
 function deleteEventBonus(index) {
-  config.simulation.eventBonusList.splice(index, 1);
+  config.value.simulation.eventBonusList.splice(index, 1);
 }
 
 function reset() {
-  config.simulation.eventBonusList = [];
-  config.simulation.eventBonus.skill.berryBurst = 1;
-  config.simulation.eventBonus.skill.foodGet = 1;
-  config.simulation.eventBonus.food = null;
+  config.value.simulation.eventBonusList = [];
+  config.value.simulation.eventBonus.skill.berryBurst = 1;
+  config.value.simulation.eventBonus.skill.foodGet = 1;
+  config.value.simulation.eventBonus.skill.shard = 1;
+  config.value.simulation.eventBonus.research.shard = 1;
+  config.value.simulation.eventBonus.food = null;
+  resetBerryEnergyRate();
+  resetSkillRate();
 }
 
 function resetSkillRate() {
   for (const skill of Skill.list) {
-    config.simulation.skillRate[skill.name] = 1;
+    config.value.simulation.skillRate[skill.name] = 1;
   }
 }
 
-const workerNum = ref(config.workerNum);
+const workerNum = ref(config.value.workerNum);
 function saveWorkerNum() {
-  config.workerNum = workerNum.value;
+  config.value.workerNum = workerNum.value;
+  finishEditing();
+  globalConfig.save();
   location.reload();
 }
 
-const selectedField = computed(() => Field.map[config.simulation.field]);
+const selectedField = computed(() => Field.map[config.value.simulation.field]);
+const selectedFieldSetting = computed(
+  () => config.value.simulation.fieldSettings[config.value.simulation.field],
+);
 
 watch(
-  () => config.simulation.field,
+  () => config.value.simulation.field,
   () => {
     if (selectedField.value?.berryOptionList) {
       for (let i = 0; i < 3; i++) {
-        if (!selectedField.value.berryOptionList[i].includes(config.simulation.berryList[i])) {
-          config.simulation.berryList[i] = selectedField.value.berryOptionList[i][0];
+        if (
+          !selectedField.value.berryOptionList[i].includes(config.value.simulation.berryList[i])
+        ) {
+          config.value.simulation.berryList[i] = selectedField.value.berryOptionList[i][0];
         }
       }
     }
@@ -95,11 +129,11 @@ const berryList = computed(() => {
   return Berry.list.sort((a, b) => a.colorOrder - b.colorOrder);
 });
 const customizedBerryList = computed(() =>
-  Berry.list.filter((berry) => (config.simulation.berryEnergyRate[berry.name] ?? 1) != 1),
+  Berry.list.filter((berry) => (config.value.simulation.berryEnergyRate[berry.name] ?? 1) != 1),
 );
 
 const eventBonusLabel = computed(() => {
-  const eventBonusLabels = config.simulation.eventBonusList
+  const eventBonusLabels = config.value.simulation.eventBonusList
     .map((eventBonus) => {
       const target =
         !Object.values(eventBonus.target.types).includes(false) ||
@@ -127,32 +161,59 @@ const eventBonusLabel = computed(() => {
     })
     .filter((label) => label);
 
-  if (config.simulation.eventBonus.skill.berryBurst != 1) {
-    eventBonusLabels.push(`きのみバーストx${config.simulation.eventBonus.skill.berryBurst}`);
+  if (config.value.simulation.cookingWeight != 1) {
+    eventBonusLabels.push(`料理x${config.value.simulation.cookingWeight}`);
   }
-  if (config.simulation.eventBonus.skill.foodGet != 1) {
-    eventBonusLabels.push(`食材系スキルx${config.simulation.eventBonus.skill.foodGet}`);
+
+  if (config.value.simulation.eventBonus.skill.berryBurst != 1) {
+    eventBonusLabels.push(`きのバx${config.value.simulation.eventBonus.skill.berryBurst}`);
   }
-  if (config.simulation.eventBonus.food) {
-    eventBonusLabels.push(`${config.simulation.eventBonus.food}ボーナス`);
+  if (config.value.simulation.eventBonus.skill.foodGet != 1) {
+    eventBonusLabels.push(`スキル食材x${config.value.simulation.eventBonus.skill.foodGet}`);
+  }
+  if (config.value.simulation.eventBonus.skill.shard != 1) {
+    eventBonusLabels.push(`スキルゆめかけx${config.value.simulation.eventBonus.skill.shard}`);
+  }
+  if (config.value.simulation.eventBonus.research.shard != 1) {
+    eventBonusLabels.push(`リサーチゆめかけx${config.value.simulation.eventBonus.research.shard}`);
+  }
+  if (config.value.simulation.eventBonus.food) {
+    eventBonusLabels.push(`${config.value.simulation.eventBonus.food}ボーナス`);
+  }
+
+  if (customizedBerryList.value.length) {
+    eventBonusLabels.push(
+      'きのみ(' +
+        customizedBerryList.value
+          .map((berry) => `${berry.name} ${formatBerryEnergyRate(berry)}`)
+          .join('、') +
+        ')',
+    );
+  }
+  for (const skill of Skill.list) {
+    if (config.value.simulation.skillRate[skill.name] != 1) {
+      eventBonusLabels.push(
+        `${skill.name}(${config.value.simulation.skillRate[skill.name] * 100}%)`,
+      );
+    }
   }
 
   return eventBonusLabels.join(' ');
 });
 
 function formatBerryEnergyRate(berry) {
-  return `${((config.simulation.berryEnergyRate[berry.name] ?? 1) * 100).toFixed(1)}%`;
+  return `${((config.value.simulation.berryEnergyRate[berry.name] ?? 1) * 100).toFixed(1)}%`;
 }
 
 function resetBerryEnergyRate() {
   for (const berry of Berry.list) {
-    config.simulation.berryEnergyRate[berry.name] = 1;
+    config.value.simulation.berryEnergyRate[berry.name] = 1;
   }
 }
 </script>
 
 <template>
-  <SettingButton title="フィールド">
+  <SettingButton title="フィールド" @open="beginEditing" @close="finishEditing">
     <template #label>
       <div class="inline-flex-row-center" style="gap: 0.25em">
         今週：{{ config.simulation.field }}
@@ -170,7 +231,7 @@ function resetBerryEnergyRate() {
           )
         </template>
 
-        FB:{{ config.simulation.fieldBonus }}
+        FB:{{ selectedFieldSetting.bonus }}
 
         <template v-if="Field.map[config.simulation.field]?.ex">
           <span v-if="config.simulation.fieldEx == 1" class="caution">EXきのみ</span>
@@ -179,14 +240,10 @@ function resetBerryEnergyRate() {
         </template>
 
         <span>
-          {{ config.simulation.cookingType || 'すべて'
-          }}<span v-if="config.simulation.cookingWeight != 1" class="caution"
-            >(x{{ config.simulation.cookingWeight }})</span
-          >
+          {{ config.simulation.cookingType || 'すべて' }}
         </span>
 
         <span v-if="config.simulation.campTicket" class="caution">キャンチケ</span>
-        <span v-if="config.simulation.genkiFull" class="caution">げんき100%</span>
       </div>
     </template>
 
@@ -218,6 +275,35 @@ function resetBerryEnergyRate() {
             </div>
           </td>
         </tr>
+
+        <tr>
+          <th>フィールドボーナス</th>
+          <td>
+            <InputNumber
+              type="number"
+              class="w-40px"
+              v-model="selectedFieldSetting.bonus"
+              step="1"
+            />
+            %
+          </td>
+        </tr>
+
+        <tr>
+          <th>ゆめのかけら効率</th>
+          <td>
+            1ゆめのかけら/
+            <InputNumber
+              class="w-80px"
+              :model-value="selectedFieldSetting.shardEfficiency"
+              @update:model-value="selectedFieldSetting.shardEfficiency = Math.max(1, $event ?? 1)"
+              min="1"
+              step="1"
+            />
+            ねむけパワー
+          </td>
+        </tr>
+
         <tr>
           <th>きのみ</th>
           <td>
@@ -272,18 +358,6 @@ function resetBerryEnergyRate() {
             </div>
           </td>
         </tr>
-        <tr>
-          <th>フィールドボーナス</th>
-          <td>
-            <InputNumber
-              type="number"
-              class="w-40px"
-              v-model="config.simulation.fieldBonus"
-              step="1"
-            />
-            %
-          </td>
-        </tr>
 
         <tr>
           <th>料理の種類</th>
@@ -296,45 +370,16 @@ function resetBerryEnergyRate() {
             </InputSelect>
           </td>
         </tr>
-        <tr>
-          <th>料理評価倍率</th>
-          <td>
-            <InputNumber
-              type="number"
-              class="w-80px"
-              v-model="config.simulation.cookingWeight"
-              step="0.1"
-            />
-            倍
-            <div class="w-400px">
-              <small>
-                イベント等で料理エナジーにボーナスがかかっている場合に設定してください。<br />また、イベント週以外でもきのみエナジー度外視でレシピレベルを育てる場合などはこの値を大きくすると、料理を重視したシミュレーションが出来ます。
-              </small>
-            </div>
-          </td>
-        </tr>
 
         <tr>
           <th>キャンプチケット</th>
           <td><InputCheckbox v-model="config.simulation.campTicket">使う</InputCheckbox></td>
         </tr>
-
-        <tr>
-          <th>げんき</th>
-          <td>
-            <InputCheckbox v-model="config.simulation.genkiFull">常に100%として計算</InputCheckbox>
-            <div class="w-400px">
-              <small>
-                げんきマクラを使用する週や、笛使用時の編成を検討する場合に使用してください。
-              </small>
-            </div>
-          </td>
-        </tr>
       </SettingTable>
     </div>
   </SettingButton>
 
-  <SettingButton title="イベントボーナス">
+  <SettingButton title="イベントボーナス" @open="beginEditing" @close="finishEditing">
     <template #label>
       <div class="inline-flex-row-center" style="gap: 0.25em">
         <span class="inline-flex-row-center">
@@ -429,13 +474,26 @@ function resetBerryEnergyRate() {
 
     <SettingTable>
       <tr>
+        <th>料理</th>
+        <td>
+          <SettingList>
+            <div>
+              <label>料理評価倍率</label>
+              <div class="flex-row-start-center gap-4px">
+                <InputNumber class="w-80px" v-model="config.simulation.cookingWeight" step="0.1" />
+                倍
+              </div>
+            </div>
+          </SettingList>
+        </td>
+      </tr>
+      <tr>
         <th>スキル</th>
         <td>
-          <BaseAlert>スキルの設定は適用タイプによらず適用されます</BaseAlert>
-          <SettingTable class="w-100 mt-5px">
+          <SettingTable class="w-100">
             <SettingList>
               <div>
-                <label>きのみバースト(みかづきのいのり含む)</label>
+                <label>きのみバースト</label>
                 <div class="flex-row-start-center gap-4px">
                   <InputNumber
                     class="w-60px"
@@ -444,6 +502,7 @@ function resetBerryEnergyRate() {
                   />
                   倍
                 </div>
+                <small>みかづきのいのり含む</small>
               </div>
               <div>
                 <label>食材系スキル</label>
@@ -456,8 +515,40 @@ function resetBerryEnergyRate() {
                   倍
                 </div>
               </div>
+              <div>
+                <label>ゆめのかけら獲得量</label>
+                <div class="flex-row-start-center gap-4px">
+                  <InputNumber
+                    class="w-60px"
+                    v-model="config.simulation.eventBonus.skill.shard"
+                    :step="0.1"
+                    :min="0"
+                  />
+                  倍
+                </div>
+              </div>
             </SettingList>
           </SettingTable>
+        </td>
+      </tr>
+      <tr>
+        <th>リサーチ</th>
+        <td>
+          <SettingList>
+            <div>
+              <label>ゆめのかけら獲得量</label>
+              <div class="flex-row-start-center gap-4px">
+                <InputNumber
+                  class="w-60px"
+                  v-model="config.simulation.eventBonus.research.shard"
+                  :step="0.1"
+                  :min="0"
+                />
+                倍
+              </div>
+            </div>
+          </SettingList>
+          <small>スキル獲得分・リサーチEXPからの変換分には適用しません。</small>
         </td>
       </tr>
       <tr>
@@ -472,189 +563,62 @@ function resetBerryEnergyRate() {
               allow-unselect
             />
             <small>
-              食材とくい・オールとくいは食材を拾うたびに対象食材を1個追加で獲得します。<br>
+              食材とくい・オールとくいは食材を拾うたびに対象食材を1個追加で獲得します。<br />
               対象食材を含むレシピと、レシピ外の追加食材として投入した対象食材のエナジーが1.5倍になります。
             </small>
           </div>
         </td>
       </tr>
       <tr>
+        <th>きのみ倍率</th>
         <td>
-          <FormButton @click="reset">リセット</FormButton>
+          <div class="w-600px">
+            <SettingList>
+              <div v-for="berry in berryList" :key="berry.name">
+                <label class="flex-row-start-center"
+                  ><img class="w-20px" :src="berry.img" /> {{ berry.name }}</label
+                >
+                <div>
+                  <InputNumber
+                    class="w-60px"
+                    v-model="config.simulation.berryEnergyRate[berry.name]"
+                    percent
+                  />
+                  %
+                </div>
+              </div>
+            </SettingList>
+          </div>
         </td>
       </tr>
-    </SettingTable>
-  </SettingButton>
-
-  <SettingButton title="きのみ設定">
-    <template #label>
-      <div class="inline-flex-row-center">
-        きのみ設定
-        <template v-if="customizedBerryList.length">
-          <span>：</span>
-          <span class="caution">
-            {{
-              customizedBerryList
-                .map((berry) => `${berry.name} ${formatBerryEnergyRate(berry)}`)
-                .join('、')
-            }}
-          </span>
-        </template>
-      </div>
-    </template>
-
-    <div style="width: calc(100vw - 100px); max-width: 1000px">
-      <SettingList>
-        <div v-for="berry in berryList" :key="berry.name">
-          <label class="flex-row-start-center"
-            ><img class="w-20px" :src="berry.img" /> {{ berry.name }}</label
-          >
-          <div>
-            <InputNumber
-              class="w-60px"
-              v-model="config.simulation.berryEnergyRate[berry.name]"
-              percent
-            />
-            %
-          </div>
-        </div>
-      </SettingList>
-      <FormButton class="mt-10px" @click="resetBerryEnergyRate">リセット</FormButton>
-    </div>
-  </SettingButton>
-
-  <SettingButton title="スキル設定">
-    <template #label>
-      <div class="inline-flex-row-center" style="gap: 0.25em">
-        <span class="inline-flex-row-center">
-          スキル設定
-          <template v-if="Skill.list.some((skill) => config.simulation.skillRate[skill.name] != 1)">
-            ：
-          </template>
-          <div class="inline-flex-row-center gap-5px">
-            <template v-for="skill in Skill.list">
-              <span v-if="config.simulation.skillRate[skill.name] != 1" class="caution">
-                {{ skill.name }}({{ config.simulation.skillRate[skill.name] * 100 }}%)
-              </span>
+      <tr>
+        <th>スキル回数</th>
+        <td>
+          <div class="w-600px">
+            <template v-for="category in Skill.categoryList" :key="category.id">
+              <SettingSectionTitle>{{ category.name }}</SettingSectionTitle>
+              <SettingList grid class="mt-5px mb-10px">
+                <div v-for="skill in category.skillList" :key="skill.name">
+                  <label>{{ skill.name }}</label>
+                  <div>
+                    <InputNumber
+                      class="w-60px"
+                      v-model="config.simulation.skillRate[skill.name]"
+                      percent
+                    />
+                    %
+                  </div>
+                </div>
+              </SettingList>
             </template>
           </div>
-        </span>
-      </div>
-    </template>
-
-    <div style="width: calc(100vw - 100px); max-width: 1000px">
-      <ToggleArea open>
-        <template #headerText>個別スキル設定</template>
-
-        <FormButton class="mb-10px" @click="resetSkillRate">全て100%にリセット</FormButton>
-
-        <SettingTable class="w-100">
-          <template v-for="category in Skill.categoryList" :key="category.id">
-            <SettingSectionTitle>{{ category.name }}</SettingSectionTitle>
-            <SettingList grid class="mt-5px mb-10px">
-              <div v-for="skill in category.skillList" :key="skill.name">
-                <label>{{ skill.name }}</label>
-                <div>
-                  <InputNumber
-                    class="w-60px"
-                    v-model="config.simulation.skillRate[skill.name]"
-                    percent
-                  />
-                  %
-                </div>
-              </div>
-            </SettingList>
-          </template>
-        </SettingTable>
-      </ToggleArea>
-
-      <ToggleArea open class="mt-10px">
-        <template #headerText>共通設定</template>
-
-        <div>
-          <SettingTable class="w-100">
-            <SettingList>
-              <div>
-                <label>
-                  食材ゲット・食材アシスト評価方法
-                  <HelpButton
-                    title="食材ゲット評価方法"
-                    markdown="
-                    # 食材のまま評価
-                    単純に獲得する食材量の期待値で計算します。
-                    実際は期待値通りになることは稀であり、この設定でシミュレーションして出てきた料理は作れないことが多いので注意です。
-
-                    # 今日のエナジーとして評価
-                    食材を最も良い料理に活用した場合のエナジー期待値で計算します。
-
-                    # 翌日のエナジーとして評価
-                    食材を最も良い料理に活用した場合のエナジー期待値で計算しますが、明日のエナジーとして計算します。
-                    今日の睡眠にはエナジーが乗らず、明日以降の睡眠に乗るエナジーとして計算するので、1日分減らした評価で計算します。
-                    月曜の場合：6/7倍
-                    火曜の場合：5/6倍
-                    水曜の場合：4/5倍
-                    木曜の場合：3/4倍
-                    金曜の場合：2/3倍
-                    土曜の場合：1/2倍
-                    日曜の場合：**7倍** (日曜の稼ぎは日曜の睡眠の1日分にしか乗りませんが、月曜に食材を回すことで7日分のエナジーになるため)
-                  "
-                  />
-                </label>
-                <div>
-                  <div>
-                    <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="1"
-                      >食材のまま評価</InputRadio
-                    >
-                  </div>
-                  <div>
-                    <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="2"
-                      >今日のエナジーとして評価</InputRadio
-                    >
-                  </div>
-                  <div>
-                    <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="3"
-                      >翌日のエナジーとして評価</InputRadio
-                    >
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label>食材ゲット評価率</label>
-                <div>
-                  <InputNumber
-                    class="w-60px"
-                    v-model="config.teamSimulation.foodGetEvaluateRate"
-                    percent
-                  />
-                  %
-                </div>
-              </div>
-            </SettingList>
-          </SettingTable>
-        </div>
-      </ToggleArea>
-    </div>
-  </SettingButton>
-
-  <SettingButton title="いつ育運用">
-    <template #label>
-      <div class="inline-flex-row-center">
-        いつ育運用: {{ config.simulation.bagOverOperation ? 'する' : 'しない' }}
-      </div>
-    </template>
-
-    <SettingTable>
-      <tr>
-        <th>いつ育育成</th>
-        <td>
-          <InputCheckbox v-model="config.simulation.bagOverOperation">する</InputCheckbox>
-          <div><small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small></div>
         </td>
       </tr>
     </SettingTable>
+    <FormButton class="mt-10px" @click="reset">リセット</FormButton>
   </SettingButton>
 
-  <SettingButton title="育成仮定" @close="emit('requireReload')">
+  <SettingButton title="育成仮定" @open="beginEditing" @close="finishGrowthEditing">
     <template #label>
       <div class="inline-flex-row-center" :class="{ caution: props.fix }">
         育成仮定: {{ config.simulation.fix || props.fix ? 'する' : 'しない' }}
@@ -845,7 +809,7 @@ function resetBerryEnergyRate() {
     </SettingTable>
   </SettingButton>
 
-  <SettingButton title="厳選設定">
+  <SettingButton title="厳選設定" @open="beginEditing" @close="finishEditing">
     <template #label>
       <div class="inline-flex-row-center">
         厳選設定:
@@ -893,7 +857,7 @@ function resetBerryEnergyRate() {
     </div>
   </SettingButton>
 
-  <SettingButton @click="Popup.show(CookingSettingPopup)" :important="disabledCookingNum > 0">
+  <SettingButton @click="showCookingSettingPopup" :important="disabledCookingNum > 0">
     <template #label>
       <div class="inline-flex-row-center">
         料理設定
@@ -902,7 +866,7 @@ function resetBerryEnergyRate() {
     </template>
   </SettingButton>
 
-  <SettingButton title="下振れ補正">
+  <SettingButton title="下振れ補正" @open="beginEditing" @close="finishEditing">
     <template #label>
       <div class="inline-flex-row-center">下振れ補正</div>
     </template>
@@ -965,12 +929,83 @@ function resetBerryEnergyRate() {
     </SettingTable>
   </SettingButton>
 
-  <SettingButton title="その他設定">
+  <SettingButton title="その他設定" @open="beginEditing" @close="finishEditing">
     <template #label>
-      <div class="inline-flex-row-center">その他設定</div>
+      <div class="inline-flex-row-center gap-5px">
+        その他設定
+        <span v-if="config.simulation.genkiFull" class="caution">げんき100%</span>
+        <span v-if="config.simulation.potSize != Cooking.potMax" class="caution">
+          なべ{{ config.simulation.potSize }}
+        </span>
+      </div>
     </template>
 
     <SettingTable>
+      <tr>
+        <th>
+          食材ゲット・食材アシスト評価方法
+          <HelpButton
+            title="食材ゲット評価方法"
+            markdown="
+                    # 食材のまま評価
+                    単純に獲得する食材量の期待値で計算します。
+                    実際は期待値通りになることは稀であり、この設定でシミュレーションして出てきた料理は作れないことが多いので注意です。
+
+                    # 今日のエナジーとして評価
+                    食材を最も良い料理に活用した場合のエナジー期待値で計算します。
+
+                    # 翌日のエナジーとして評価
+                    食材を最も良い料理に活用した場合のエナジー期待値で計算しますが、明日のエナジーとして計算します。
+                    今日の睡眠にはエナジーが乗らず、明日以降の睡眠に乗るエナジーとして計算するので、1日分減らした評価で計算します。
+                    月曜の場合：6/7倍
+                    火曜の場合：5/6倍
+                    水曜の場合：4/5倍
+                    木曜の場合：3/4倍
+                    金曜の場合：2/3倍
+                    土曜の場合：1/2倍
+                    日曜の場合：**7倍** (日曜の稼ぎは日曜の睡眠の1日分にしか乗りませんが、月曜に食材を回すことで7日分のエナジーになるため)
+                  "
+          />
+        </th>
+        <td>
+          <div class="flex-column gap-5px">
+            <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="1">
+              食材のまま評価
+            </InputRadio>
+            <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="2">
+              今日のエナジーとして評価
+            </InputRadio>
+            <InputRadio v-model="config.teamSimulation.foodGetEvaluateType" :value="3">
+              翌日のエナジーとして評価
+            </InputRadio>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>食材ゲット評価率</th>
+        <td>
+          <InputNumber class="w-60px" v-model="config.teamSimulation.foodGetEvaluateRate" percent />
+          %
+        </td>
+      </tr>
+      <tr>
+        <th>げんき</th>
+        <td>
+          <InputCheckbox v-model="config.simulation.genkiFull">常に100%として計算</InputCheckbox>
+          <div class="w-400px">
+            <small>
+              げんきマクラを使用する週や、笛使用時の編成を検討する場合に使用してください。
+            </small>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>いつ育運用</th>
+        <td>
+          <InputCheckbox v-model="config.simulation.bagOverOperation">する</InputCheckbox>
+          <div><small class="w-80px">きのみタイプ/きのみの数S持ちのみ対象です</small></div>
+        </td>
+      </tr>
       <tr>
         <th>なべの大きさ</th>
         <td>
