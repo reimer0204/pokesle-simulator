@@ -22,6 +22,17 @@ config.version.history = Version.HISTORY;
 
     <h2 class="mt-1em">更新履歴</h2>
 
+    <HistoryItem date="2026/11/26">
+      <ul>
+        <li>
+          機能改善
+          <ul>
+            <li>チーム編成シミュレーション時も、スキルコピーの評価値が全て「エナジーチャージS」相当になっていた不具合を修正</li>
+          </ul>
+        </li>
+      </ul>
+    </HistoryItem>
+
     <HistoryItem date="2026/11/23">
       <ul>
         <li>

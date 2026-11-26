@@ -821,7 +821,7 @@ class PokemonSimulator {
             let list: { skill: SkillType; weight: number }[];
 
             // コピーできないスキルはエナチャSに変換
-            if (!subPokemon.base.skill.copyable) {
+            if (subPokemon.base.skill.copyable === false) {
               list = [{ skill: Skill.map['エナジーチャージS'], weight: 1 }];
             } else {
               list = subPokemon.skillWeightList;
