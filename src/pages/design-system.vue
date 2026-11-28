@@ -84,7 +84,13 @@ const componentCatalog = [
   ['設定', 'design/setting-table.vue', 'SettingTable', 'ラベルと値の簡易テーブル'],
   ['設定', 'design/toggle-area.vue', 'ToggleArea', '折りたたみ領域'],
   ['一覧', 'design-table.vue', 'DesignTable', '設定・一覧向けテーブル'],
-  ['一覧', 'sortable-table.vue', 'SortableTable', 'ソート・固定列・ページ送り対応テーブル'],
+  [
+    '一覧',
+    'sortable-table.vue',
+    'SortableTable',
+    'ソート・列フィルタ・固定列・ページ送り対応テーブル',
+  ],
+  ['一覧', 'table-column-filter.vue', 'TableColumnFilter', '表の列フィルタ編集（範囲・複数選択）'],
   ['一覧', 'tab-list.vue', 'TabList', 'ページ内タブ'],
   ['一覧', 'util/setting-list.vue', 'SettingList', '設定項目の並び'],
   [
@@ -137,8 +143,13 @@ const tableRows = [
   { name: '無効表示', value: 0, rate: 0 },
 ];
 const tableColumns = [
-  { key: 'name', name: '名称', type: String },
-  { key: 'value', name: '数値', type: Number },
+  {
+    key: 'name',
+    name: '名称',
+    type: String,
+    filter: { type: 'select', options: tableRows.map((row) => ({ value: row.name })) },
+  },
+  { key: 'value', name: '数値', type: Number, filter: { type: 'range', min: 0, max: 3000 } },
   { key: 'rate', name: '割合', percent: true },
 ];
 </script>

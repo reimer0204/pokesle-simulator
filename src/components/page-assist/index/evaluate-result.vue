@@ -28,8 +28,14 @@ function showSelectDetail(pokemon: SimulatedPokemon, after: string, lv: number) 
   })
 }
 
+// bestは集約値なので除外し、せいかく等で絞られた実際の計算対象を参照する。
+const evaluatedAfterList = computed(() => {
+  return Object.keys(evaluateResult.value?.[props.lv] ?? {}).filter(after => after !== 'best');
+})
 const afterList = computed<string[]>(() => {
-  return config.pokemonList.selectDetail ? props.pokemon.base.afterList : [evaluateResult.value?.[props.lv]?.best?.[type.value]?.name];
+  return config.pokemonList.selectDetail
+    ? (evaluatedAfterList.value.length ? evaluatedAfterList.value : props.pokemon.base.afterList)
+    : [evaluateResult.value?.[props.lv]?.best?.[type.value]?.name];
 })
 const resultList = computed(() => {
   return afterList.value.map(after => {
@@ -62,12 +68,12 @@ const resultList = computed(() => {
   })
 })
 
-const numWidth = computed(() => type.value == 'energy' && score.value == 'value' ? 40 : 35)
+const numWidth = computed(() => type.value == 'energy' && score.value == 'value' ? 50 : 50)
 
 </script>
 
 <template>
-  <div class="flex-column gap-5px" :style="{ width: config.pokemonList.selectDetail ? undefined : '6em', fontSize: '80%' }">
+  <div class="flex-column gap-5px" :style="{ width: config.pokemonList.selectDetail ? '100px' : '6em' }">
     <div
       v-for="{ after, isBest, result, diff } in resultList"
       :class="{
@@ -76,13 +82,24 @@ const numWidth = computed(() => type.value == 'energy' && score.value == 'value'
         'flex-column-start-end': !config.pokemonList.selectDetail,
       }"
     >
-      <div><NameLabel :pokemon="{ base: Pokemon.map[after] }" memoHidden /></div>
-      <div class="text-align-right" :style="{ width: `${numWidth}px` }">
+      <!-- 実際に計算された進化先が複数ある場合だけ名前を表示する。 -->
+      <div v-if="evaluatedAfterList.length > 1 && Pokemon.map[after]" style="font-size: 70%;">
+        <NameLabel :pokemon="{ base: Pokemon.map[after] }" memoHidden />
+      </div>
+      <!-- パーセント値だけ親の80%指定を打ち消し、通常セルと同じ文字サイズにする。 -->
+      <div
+        class="text-align-right"
+        :style="{ width: `${numWidth}px` }"
+      >
         <template v-if="result == null">-</template>
         <div v-else-if="props.lv != 'max'" class="link" @click="showSelectDetail(props.pokemon, after, props.lv as number)">{{ result }}</div>
         <template v-else>{{ result }}</template>
       </div>
-      <div v-if="diff != null" class="diff" :class="{ plus: diff > 0, minus: diff < 0 }">
+      <div
+        v-if="diff != null"
+        class="diff"
+        :class="{ plus: diff > 0, minus: diff < 0 }"
+      >
         <template v-if="score == 'score'"     >{{ `${(diff > 0 ? '+' : '')}${(diff * 100).toFixed(1)}%` }}</template>
         <template v-else-if="type != 'energy'">{{ `${(diff > 0 ? '+' : '')}${diff.toFixed(1)}` }}</template>
         <template v-else                      >{{ `${(diff > 0 ? '+' : '')}` + Math.round(diff).toLocaleString() }}</template>

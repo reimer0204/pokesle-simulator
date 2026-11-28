@@ -10,6 +10,7 @@ import Exp from '../data/exp.ts';
 import { Food, Cooking } from '../data/food_and_cooking';
 import Nature from '../data/nature.ts';
 import Pokemon from '../data/pokemon';
+import Berry from '../data/berry';
 import { AsyncWatcher } from '../models/async-watcher.js';
 import config from '../models/config.ts';
 import { useConfigDraft } from '../models/config-draft';
@@ -347,7 +348,7 @@ const columnList = computed(() => {
   }
 
   result.push(
-    { key: 'lv', name: 'Lv', type: Number },
+    { key: 'lv', name: 'Lv', type: Number, filter: { type: 'range', min: 1, max: 100 } },
     // { key: 'useCandy', name: '使用アメ', type: Number },
     // { key: 'useShard', name: '使用ゆめかけ', type: Number },
 
@@ -436,7 +437,19 @@ const columnList = computed(() => {
     result.push(
       { key: 'no', name: '図鑑\nNo', convert: (x) => x.base.no },
       { key: 'afterList', name: '最終進化' },
-      { key: 'berryName', name: 'きのみ', convert: (x) => x.base.berry.name },
+      {
+        key: 'berryName',
+        name: 'きのみ',
+        convert: (x) => x.base.berry.name,
+        filter: {
+          type: 'select',
+          options: Berry.list.map((berry) => ({
+            value: berry.name,
+            label: berry.name,
+            img: berry.img,
+          })),
+        },
+      },
       { key: 'skillName', name: 'スキル', convert: (x) => x.base.skill.name },
     );
   }
@@ -798,7 +811,10 @@ function toggleFavorite(data: SimulatedPokemon) {
           "
           selectedField="selected"
         >
-          <template #edit="{ data }">
+          <template #filter.berryName="{ option }">
+            <img :src="option.img" alt="" class="w-20px h-20px" />{{ option.label }}
+          </template>
+          <template #edit="{ data, isFiltered }">
             <div v-if="!data.box?.useMint" class="flex-row-start-center gap-3px">
               <InputCheckbox
                 v-model="data.selected"
@@ -820,6 +836,7 @@ function toggleFavorite(data: SimulatedPokemon) {
               <template
                 v-if="
                   !isPokemonListFiltered &&
+                  !isFiltered &&
                   ((config.sortableTable.pokemonList2.sort.length == 1 &&
                     config.sortableTable.pokemonList2.sort[0].key == 'index') ||
                     config.sortableTable.pokemonList2.sort.length == 0)

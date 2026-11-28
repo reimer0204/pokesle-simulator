@@ -1,4 +1,13 @@
 <script setup>
+import { mdiSortReverseVariant, mdiSortVariant, mdiSort } from '@mdi/js';
+import TableColumnFilter from './table-column-filter.vue';
+
+const sortIconMap = {
+  0: { path: mdiSort, label: '未設定' },
+  1: { path: mdiSortReverseVariant, label: '昇順' },
+  '-1': { path: mdiSortVariant, label: '降順' },
+};
+
 const props = defineProps({
   dataList: { type: Array },
   columnList: { type: Array, default: () => [] },
@@ -11,12 +20,36 @@ const props = defineProps({
   selectedField: { type: String, default: null },
   sortColor: { type: Boolean, default: true },
 })
-const emits = defineEmits(['clickRow', 'update:setting'])
+const emits = defineEmits(['clickRow', 'update:setting', 'update:filters'])
+const filters = reactive({});
+
+// セルごとにIntl.NumberFormatを作らず、同じ小数桁数の列で再利用する。
+const numberFormatterMap = new Map();
+function formatNumber(value, fixed = 0) {
+  // toFixed後にNumberへ戻す従来の丸め順序（負のゼロを含む）を維持する。
+  const rounded = Number(value.toFixed(fixed));
+  let formatter = numberFormatterMap.get(fixed);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: fixed,
+      maximumFractionDigits: fixed,
+    });
+    numberFormatterMap.set(fixed, formatter);
+  }
+  return formatter.format(rounded);
+}
+
+function setFilter(key, value) {
+  if (value == null) delete filters[key];
+  else filters[key] = value;
+  page.value = 0;
+  emits('update:filters', { ...filters });
+}
 
 const page = ref(0);
 const pageMax = computed(() => {
   if (props.pager == null) return null;
-  return Math.ceil(props.dataList.length / props.pager);
+  return Math.ceil(filteredDataList.value.length / props.pager);
 })
 const pageLinkList = computed(() => {
   if (props.pager == null) return null;
@@ -35,6 +68,9 @@ const hiddenColumn = reactive(new Set(props.setting?.hiddenColumn ?? []));
 
 watch(() => props.columnList, () => {
   sortInfo.value = sortInfo.value.filter(sort => columnMap.value[sort.key] !== undefined);
+  for (const key of Object.keys(filters)) {
+    if (!columnMap.value[key]?.filter) setFilter(key, null);
+  }
 })
 
 const columnMap = computed(() => {
@@ -90,18 +126,36 @@ function getSortKey(data, column) {
   return column.type === String ? convertKatakanaForSort(value ?? '') : value || 0;
 }
 
+// 列のconvert後の値を使い、列間はAND・複数選択の選択肢間はORで絞り込む。
+const filteredDataList = computed(() => convertedDataList.value.filter(data => {
+  return Object.entries(filters).every(([key, filter]) => {
+    const column = columnMap.value[key];
+    if (!column?.filter) return true;
+    const value = data.$clone[key];
+    if (column.filter.type === 'range') {
+      return typeof value === 'number' && Number.isFinite(value)
+        && value >= filter.min && value <= filter.max;
+    }
+    return filter.includes(value);
+  });
+}));
+
+watch(pageMax, max => {
+  page.value = Math.max(0, Math.min(page.value, (max ?? 1) - 1));
+});
+
 // ソートしたデータ
 const allSortedDataList = computed(() => {
-  if (!sortInfo.value?.length) return convertedDataList.value;
+  if (!sortInfo.value?.length) return filteredDataList.value;
 
-  for(let data of convertedDataList.value) {
+  for(let data of filteredDataList.value) {
     for(let sort of sortInfo.value) {
       let column = columnMap.value[sort.key];
       if (column) data.$sortKey[sort.key] = getSortKey(data, column);
     }
   }
 
-  return convertedDataList.value.toSorted((a, b) => {
+  return filteredDataList.value.toSorted((a, b) => {
     for(let sort of sortInfo.value) {
       if ((a.$sortKey[sort.key]) > (b.$sortKey[sort.key])) return sort.direction;
       if ((a.$sortKey[sort.key]) < (b.$sortKey[sort.key])) return -sort.direction;
@@ -314,12 +368,40 @@ function onClickRow(event, data) {
                   <path d="M50,10L50,90" stroke="#FFF" stroke-width="20" v-if="hiddenColumn.has(column.key)" />
                 </svg>
               </template>
-              <template v-else>
-                <svg viewBox="0 0 100 100" width="14" @click="setSort($event, column.key)" @contextmenu.prevent.stop="clearSort(column.key)">
-                  <path d="M10,40L90,40L50,0z"   :fill="sortInfoMap[column.key] ==  1 ? '#FFF' : '#FFF4'" />
-                  <path d="M10,60L90,60L50,100z" :fill="sortInfoMap[column.key] == -1 ? '#FFF' : '#FFF4'" />
+              <div v-else class="flex-row-start-center">
+                <TableColumnFilter
+                  v-if="column.filter"
+                  :key="column.key"
+                  :column="column"
+                  :model-value="filters[column.key]"
+                  @update:model-value="setFilter(column.key, $event)"
+                >
+                  <template #option="scope">
+                    <slot :name="`filter.${column.template ?? column.key}`" v-bind="scope">
+                      {{ scope.option.label ?? scope.option.value }}
+                    </slot>
+                  </template>
+                </TableColumnFilter>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="`${column.name}のソート：${sortIconMap[sortInfoMap[column.key] ?? 0].label}`"
+                  @click="setSort($event, column.key)"
+                  @keydown.enter.prevent="setSort($event, column.key)"
+                  @keydown.space.prevent="setSort($event, column.key)"
+                  @contextmenu.prevent.stop="clearSort(column.key)"
+                >
+                  <title>{{ column.name }}のソート：{{ sortIconMap[sortInfoMap[column.key] ?? 0].label }}</title>
+                  <path
+                    :d="sortIconMap[sortInfoMap[column.key] ?? 0].path"
+                    fill="currentColor"
+                    :opacity="sortInfoMap[column.key] ? 1 : 0.45"
+                  />
                 </svg>
-              </template>
+              </div>
             </th>
           </tr>
         </thead>
@@ -338,16 +420,13 @@ function onClickRow(event, data) {
               }"
               @click="onClickRow($event, data)"
             >
-              <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key], key: column.key }">
+              <slot :name="column.template ?? column.key" v-bind="{ data: data.$original, column, value: data.$original[column.key], key: column.key, isFiltered: Object.keys(filters).length > 0 }">
                 <template v-if="column.percent">
                   {{ data.$clone[column.key] != null ? `${(data.$clone[column.key] * 100).toFixed(column.fixed ?? 1)}%` : null }}
                 </template>
                 <template v-else-if="column.type == Number">
                   <template v-if="data.$clone[column.key] != null">
-                    {{ Number(data.$clone[column.key].toFixed(column.fixed ?? 0)).toLocaleString(undefined, {
-                      minimumFractionDigits: column.fixed ?? 0,
-                      maximumFractionDigits: column.fixed ?? 0,
-                    }) }}
+                    {{ formatNumber(data.$clone[column.key], column.fixed ?? 0) }}
                   </template>
                 </template>
                 <template v-else-if="column.type == Boolean">

@@ -38,15 +38,19 @@
 - UIを追加・変更する前に `src/pages/design-system.vue` を確認し、目的に合うデザインシステム部品を優先して使用します。該当部品がない場合のみ、既存画面に調和するUIを実装します。
 - 新しいUIを独自実装する前に、`DesignTable`、`SortableTable`、`SettingList`、`TabList`、`InputText`、`InputNumber`、`InputPassword`、`InputFile`、`InputSelect`、`InputRadio`、`InputCheckbox`、`FormButton`、`ToggleArea` など既存部品を再利用します。
 - クリックでポップアップを開いて選択値を決めるUIは、右側に矢印を表示する `SettingButton` をトリガーとして使用します。選択ポップアップを `Popup.show(...)` で開く場合も、`SettingButton` の `@click` から起動します。
+- 表ヘッダーの列フィルタは省スペースのため例外とし、ソート操作と同じ大きさのアイコンだけを表示する `FormButton` を使います。枠・通常時の背景・下向き矢印・ボタン余白は付けません。
 - 設定画面内のカテゴリ、個別ルール、入力項目の見出しには、役割に応じて `SettingSectionTitle` の `category`、`item`、`field` を使用します。
 - 関連する複数の設定を見出し付きの枠で区切る場合は、`SettingGroup` を使用します。グループ単位の操作は、`actions` スロットでヘッダー右端に配置します。
 - 画面内で中心となる実行操作には、`FormButton` の `execute` クラスを使い、青色で通常のブルーグレーの操作から区別します。削除などの重要・破壊的な操作には従来どおり `important` を使います。
 - 画面と共通表示コンポーネントでは、ネイティブな `input`、`select`、`button` を直接配置せず、`components/form/` の対応コンポーネントを使います。ネイティブ要素はフォームコンポーネントの実装内部に限定します。
 - `InputText`、`InputNumber`、`InputSelect` の編集値は原則として `v-model` で渡します。空欄時の `null` や `0` への変換など個別の正規化が必要な場合は、`model-value` と `@update:model-value` を対にして扱います。
 - 一覧は `SortableTable` の `columnList` と名前付きスロットを使い、ソート・固定列・数値表示の挙動を統一します。
+- `SortableTable` の標準数値表示は、小数桁数ごとに `Intl.NumberFormat` を表内で再利用し、セルごとのフォーマッター生成を避けます。既存の `toFixed` → `Number` による丸め順序と表示桁数は維持します。
+- 列フィルタは `SortableTable` の列定義に `filter: { type: 'range', min, max, step? }` または `filter: { type: 'select', options: [{ value, label?, ... }] }` を指定します。`convert` 後の列値を対象に、範囲は両端を含み、列間はAND・選択肢間はORでソート・ページ送りの前に絞り込みます。選択肢の表示は `filter.<templateまたはkey>` スロット（`option`、`column`）で注入できます。編集中は反映せず決定で確定し、クリアで即時解除します。条件は表内の一時状態で、`update:filters` は確定・解除時の通知、セルスロットの `isFiltered` は並替操作等の表示制御に使用します。
 - ポップアップは原則として `Popup.show(Component, props)` を使い、結果が必要なら返されるPromiseを `await` します。
 - UI文言とドメインコメントは、既存画面に合わせて日本語を基本とします。
 - コンポーネント固有のスタイルは `<style lang="scss" scoped>` に置きます。
+- 汎用UIアイコンには `@mdi/js` の必要なパスだけを名前付きimportし、SVGの `viewBox="0 0 24 24"` と `currentColor` で表示します。アイコンだけの操作には、用途が分かる読み上げ用テキストやツールチップを付けます。
 - レイアウトや余白は `src/bootstrap.scss` のflex、幅、高さ、margin、padding、gap等のユーティリティを優先し、再利用できない見た目だけをscoped SCSSへ追加します。
 - 色は `src/style.scss` のCSS変数を優先し、広い面積には低彩度のブルーグレーとニュートラルな背景色を使います。主要操作はブルーグレー、補助的な選択状態はミント、重要操作・エラーはDanger、注意はオレンジを使い、鮮やかな色は状態を伝える範囲に留めます。表はセル余白をむやみに増やさず、背景色・罫線・ホバーで状態を伝えます。
 - 表やグラフの読み方など、主情報を補う静的な説明には `supplement-note` を使用します。
